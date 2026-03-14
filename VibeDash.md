@@ -1,0 +1,3 @@
+VibeDash.app:
+
+Vibedash is a SaaS tool, Project and AI Coordination layer for vibe coders, entrepreneurs, new and existing developers, product managers, and startup launchers that helps them ideate with AI, create projects for themselves and clients, ai and automated proposals with payment links for clients, client management, contracts with signing, project management and automated task assignment for AI coding agents, utilize claude code, codex etc, automated ticket management and drop in feedback widgets, automated roadmap pages with drop in widget, automated ai powered end to end testing, etc. Handles all current vibe coding tools and grows with the market
