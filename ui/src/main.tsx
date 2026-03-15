@@ -17,7 +17,17 @@ import "./index.css";
 
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("/sw.js");
+    if (import.meta.env.PROD) {
+      navigator.serviceWorker.register("/sw.js");
+      return;
+    }
+
+    // In dev, stale service workers can serve old shells and cause blank UI states.
+    navigator.serviceWorker.getRegistrations().then((registrations) => {
+      for (const registration of registrations) {
+        registration.unregister();
+      }
+    });
   });
 }
 

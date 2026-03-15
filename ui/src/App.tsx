@@ -239,6 +239,7 @@ export function App() {
             {boardRoutes()}
           </Route>
         </Route>
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       <OnboardingWizard />
     </>
