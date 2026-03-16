@@ -5,7 +5,7 @@ import path from "node:path";
 import { testEnvironment } from "@paperclipai/adapter-opencode-local/server";
 
 describe("opencode_local environment diagnostics", () => {
-  it("reports a missing working directory as an error when cwd is absolute", async () => {
+  it("creates a missing absolute working directory during validation", async () => {
     const cwd = path.join(
       os.tmpdir(),
       `paperclip-opencode-local-cwd-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -13,19 +13,31 @@ describe("opencode_local environment diagnostics", () => {
     );
 
     await fs.rm(path.dirname(cwd), { recursive: true, force: true });
+    try {
+      const result = await testEnvironment({
+        companyId: "company-1",
+        adapterType: "opencode_local",
+        config: {
+          command: process.execPath,
+          cwd,
+        },
+      });
 
-    const result = await testEnvironment({
-      companyId: "company-1",
-      adapterType: "opencode_local",
-      config: {
-        command: process.execPath,
-        cwd,
-      },
-    });
+      const cwdExists = await fs
+        .stat(cwd)
+        .then((stats) => stats.isDirectory())
+        .catch(() => false);
 
-    expect(result.checks.some((check) => check.code === "opencode_cwd_invalid")).toBe(true);
-    expect(result.checks.some((check) => check.level === "error")).toBe(true);
-    expect(result.status).toBe("fail");
+      expect(cwdExists).toBe(true);
+      expect(result.checks.some((check) => check.code === "opencode_cwd_valid")).toBe(
+        true
+      );
+      expect(result.checks.some((check) => check.code === "opencode_cwd_invalid")).toBe(
+        false
+      );
+    } finally {
+      await fs.rm(path.dirname(cwd), { recursive: true, force: true });
+    }
   });
 
   it("treats an empty OPENAI_API_KEY override as missing", async () => {
