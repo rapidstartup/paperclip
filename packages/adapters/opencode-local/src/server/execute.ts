@@ -228,6 +228,23 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     env: runtimeEnv,
   });
 
+  // Diagnostic: dump opencode config and test binary responsiveness
+  {
+    const configPath = opencodeConfigPath();
+    const configContents = await fs.readFile(configPath, "utf8").catch(() => "(file not found)");
+    await onLog("stderr", `[paperclip] OpenCode config (${configPath}):\n${configContents}\n`);
+
+    const { execFile } = await import("node:child_process");
+    const versionCheck = await new Promise<string>((resolve) => {
+      const cp = execFile(command, ["version"], { cwd, env: runtimeEnv, timeout: 10_000 }, (err, stdout, stderr) => {
+        if (err) resolve(`error: ${err.message}`);
+        else resolve(`stdout=${(stdout || "").trim()} stderr=${(stderr || "").trim()}`);
+      });
+      cp.stdin?.end();
+    });
+    await onLog("stderr", `[paperclip] opencode version check: ${versionCheck}\n`);
+  }
+
   const rawTimeoutSec = config.timeoutSec;
   const timeoutSec =
     typeof rawTimeoutSec === "number" && Number.isFinite(rawTimeoutSec) && rawTimeoutSec > 0
