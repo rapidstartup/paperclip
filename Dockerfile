@@ -24,7 +24,7 @@ COPY . .
 RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Run local build before deploy." && exit 1)
 RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Run local build before deploy." && exit 1)
 RUN npm install --no-save tsx
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai@1.2.26 \
   && mkdir -p /paperclip \
   && chown node:node /paperclip
 
