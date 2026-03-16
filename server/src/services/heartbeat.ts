@@ -23,6 +23,7 @@ import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 import { parseObject, asBoolean, asNumber, appendWithCap, MAX_EXCERPT_BYTES } from "../adapters/utils.js";
 import { secretService } from "./secrets.js";
 import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
+import { ensureWorkspaceRepo } from "./workspace-materializer.js";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
 const HEARTBEAT_MAX_CONCURRENT_RUNS_DEFAULT = 1;
@@ -518,30 +519,70 @@ export function heartbeatService(db: Db) {
 
     if (projectWorkspaceRows.length > 0) {
       const missingProjectCwds: string[] = [];
+      const repoWorkspaceWarnings: string[] = [];
       let hasConfiguredProjectCwd = false;
+      let hasRepoWorkspace = false;
       for (const workspace of projectWorkspaceRows) {
         const projectCwd = readNonEmptyString(workspace.cwd);
-        if (!projectCwd || projectCwd === REPO_ONLY_CWD_SENTINEL) {
-          continue;
+        const workspaceRepoUrl = readNonEmptyString(workspace.repoUrl);
+        const workspaceRepoRef = readNonEmptyString(workspace.repoRef);
+        const hasLocalCwd = Boolean(projectCwd && projectCwd !== REPO_ONLY_CWD_SENTINEL);
+
+        if (hasLocalCwd && projectCwd) {
+          hasConfiguredProjectCwd = true;
+          const projectCwdExists = await fs
+            .stat(projectCwd)
+            .then((stats) => stats.isDirectory())
+            .catch(() => false);
+          if (projectCwdExists) {
+            return {
+              cwd: projectCwd,
+              source: "project_primary" as const,
+              projectId: resolvedProjectId,
+              workspaceId: workspace.id,
+              repoUrl: workspace.repoUrl,
+              repoRef: workspace.repoRef,
+              workspaceHints,
+              warnings: [],
+            };
+          }
+          missingProjectCwds.push(projectCwd);
         }
-        hasConfiguredProjectCwd = true;
-        const projectCwdExists = await fs
-          .stat(projectCwd)
-          .then((stats) => stats.isDirectory())
-          .catch(() => false);
-        if (projectCwdExists) {
+
+        if (!workspaceRepoUrl) continue;
+        hasRepoWorkspace = true;
+        try {
+          const materialized = await ensureWorkspaceRepo({
+            companyId: agent.companyId,
+            projectId: workspace.projectId,
+            workspaceId: workspace.id,
+            repoUrl: workspaceRepoUrl,
+            repoRef: workspaceRepoRef,
+          });
           return {
-            cwd: projectCwd,
+            cwd: materialized.cwd,
             source: "project_primary" as const,
             projectId: resolvedProjectId,
             workspaceId: workspace.id,
             repoUrl: workspace.repoUrl,
             repoRef: workspace.repoRef,
             workspaceHints,
-            warnings: [],
+            warnings: [
+              ...(hasLocalCwd && projectCwd
+                ? [
+                    `Project workspace path "${projectCwd}" is not available. Using managed checkout at "${materialized.cwd}" for this run.`,
+                  ]
+                : []),
+              ...materialized.warnings,
+            ],
           };
+        } catch (err) {
+          const reason =
+            err instanceof Error
+              ? err.message
+              : `Failed to prepare workspace repo "${workspaceRepoUrl}".`;
+          repoWorkspaceWarnings.push(reason);
         }
-        missingProjectCwds.push(projectCwd);
       }
 
       const fallbackCwd = resolveDefaultAgentWorkspaceDir(agent.id);
@@ -557,9 +598,12 @@ export function heartbeatService(db: Db) {
         );
       } else if (!hasConfiguredProjectCwd) {
         warnings.push(
-          `Project workspace has no local cwd configured. Using fallback workspace "${fallbackCwd}" for this run.`,
+          hasRepoWorkspace
+            ? `Project workspace has no available local cwd. Using fallback workspace "${fallbackCwd}" for this run.`
+            : `Project workspace has no local cwd configured. Using fallback workspace "${fallbackCwd}" for this run.`,
         );
       }
+      warnings.push(...repoWorkspaceWarnings);
       return {
         cwd: fallbackCwd,
         source: "project_primary" as const,

@@ -1,5 +1,9 @@
 node_modules/
 dist/
+!ui/dist/
+!ui/dist/**
+!server/dist/
+!server/dist/**
 .env
 *.tsbuildinfo
 drizzle/meta/
@@ -11,6 +15,7 @@ data/
 .pnpm-store/
 tmp-*
 cli/tmp/
+.env*
 
 # Scratch/seed scripts (but not scripts/ dir)
 check-*.mjs
