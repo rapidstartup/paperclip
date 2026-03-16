@@ -22,7 +22,9 @@ function errorText(value: unknown): string {
 export function parseOpenCodeJsonl(stdout: string) {
   let sessionId: string | null = null;
   const messages: string[] = [];
-  const errors: string[] = [];
+  const terminalErrors: string[] = [];
+  const toolErrors: string[] = [];
+  let sawTerminalStop = false;
   const usage = {
     inputTokens: 0,
     cachedInputTokens: 0,
@@ -51,6 +53,10 @@ export function parseOpenCodeJsonl(stdout: string) {
 
     if (type === "step_finish") {
       const part = parseObject(event.part);
+      const reason = asString(part.reason, "").trim().toLowerCase();
+      if (reason === "stop") {
+        sawTerminalStop = true;
+      }
       const tokens = parseObject(part.tokens);
       const cache = parseObject(tokens.cache);
       usage.inputTokens += asNumber(tokens.input, 0);
@@ -65,24 +71,31 @@ export function parseOpenCodeJsonl(stdout: string) {
       const state = parseObject(part.state);
       if (asString(state.status, "") === "error") {
         const text = asString(state.error, "").trim();
-        if (text) errors.push(text);
+        if (text) toolErrors.push(text);
       }
       continue;
     }
 
     if (type === "error") {
       const text = errorText(event.error ?? event.message).trim();
-      if (text) errors.push(text);
+      if (text) terminalErrors.push(text);
       continue;
     }
   }
+
+  const errorMessage = (() => {
+    if (terminalErrors.length > 0) return terminalErrors.join("\n");
+    // Tool-level errors can be recoverable when the model continues to a terminal stop.
+    if (!sawTerminalStop && toolErrors.length > 0) return toolErrors.join("\n");
+    return null;
+  })();
 
   return {
     sessionId,
     summary: messages.join("\n\n").trim(),
     usage,
     costUsd,
-    errorMessage: errors.length > 0 ? errors.join("\n") : null,
+    errorMessage,
   };
 }
 

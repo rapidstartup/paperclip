@@ -42,6 +42,45 @@ describe("parseOpenCodeJsonl", () => {
     expect(parsed.errorMessage).toContain("model unavailable");
   });
 
+  it("ignores recoverable tool errors once the run reaches stop", () => {
+    const stdout = [
+      JSON.stringify({
+        type: "tool_use",
+        sessionID: "session_456",
+        part: {
+          state: {
+            status: "error",
+            error: "Error: File not found: /tmp/memory/today.md",
+          },
+        },
+      }),
+      JSON.stringify({
+        type: "text",
+        sessionID: "session_456",
+        part: { text: "Continuing after a recoverable tool error." },
+      }),
+      JSON.stringify({
+        type: "step_finish",
+        sessionID: "session_456",
+        part: {
+          reason: "stop",
+          cost: 0,
+          tokens: {
+            input: 10,
+            output: 5,
+            reasoning: 1,
+            cache: { read: 0, write: 0 },
+          },
+        },
+      }),
+    ].join("\n");
+
+    const parsed = parseOpenCodeJsonl(stdout);
+    expect(parsed.sessionId).toBe("session_456");
+    expect(parsed.summary).toContain("Continuing after a recoverable tool error.");
+    expect(parsed.errorMessage).toBeNull();
+  });
+
   it("detects unknown session errors", () => {
     expect(isOpenCodeUnknownSessionError("Session not found: s_123", "")).toBe(true);
     expect(isOpenCodeUnknownSessionError("", "unknown session id")).toBe(true);

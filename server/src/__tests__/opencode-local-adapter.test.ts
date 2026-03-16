@@ -46,6 +46,40 @@ describe("opencode_local parser", () => {
     expect(parsed.costUsd).toBeCloseTo(0.003, 6);
     expect(parsed.errorMessage).toBe("model access denied");
   });
+
+  it("does not fail solely on recoverable tool-use errors", () => {
+    const stdout = [
+      JSON.stringify({ type: "step_start", sessionID: "ses_recoverable" }),
+      JSON.stringify({
+        type: "tool_use",
+        sessionID: "ses_recoverable",
+        part: {
+          state: {
+            status: "error",
+            error: "Error: File not found: /paperclip/instances/default/workspaces/agents/ceo/memory/2026-03-16.md",
+          },
+        },
+      }),
+      JSON.stringify({ type: "text", part: { type: "text", text: "Recovered and completed." } }),
+      JSON.stringify({
+        type: "step_finish",
+        part: {
+          reason: "stop",
+          cost: 0,
+          tokens: {
+            input: 25,
+            output: 8,
+            cache: { read: 0, write: 0 },
+          },
+        },
+      }),
+    ].join("\n");
+
+    const parsed = parseOpenCodeJsonl(stdout);
+    expect(parsed.sessionId).toBe("ses_recoverable");
+    expect(parsed.summary).toContain("Recovered and completed.");
+    expect(parsed.errorMessage).toBeNull();
+  });
 });
 
 describe("opencode_local stale session detection", () => {

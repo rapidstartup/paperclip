@@ -24,6 +24,7 @@ const PAPERCLIP_SKILLS_CANDIDATES = [
   path.resolve(__moduleDir, "../../skills"),
   path.resolve(__moduleDir, "../../../../../skills"),
 ];
+const DEFAULT_OPENCODE_TIMEOUT_SEC = 900;
 
 function firstNonEmptyLine(text: string): string {
   return (
@@ -43,6 +44,14 @@ function parseModelProvider(model: string | null): string | null {
 
 function claudeSkillsHome(): string {
   return path.join(os.homedir(), ".claude", "skills");
+}
+
+function opencodeConfigDir(): string {
+  return path.join(os.homedir(), ".config", "opencode");
+}
+
+function opencodeConfigPath(): string {
+  return path.join(opencodeConfigDir(), "config.json");
 }
 
 async function resolvePaperclipSkillsDir(): Promise<string | null> {
@@ -82,6 +91,52 @@ async function ensureOpenCodeSkillsInjected(onLog: AdapterExecutionContext["onLo
   }
 }
 
+async function ensureOpenCodeExternalDirectoryPermissions(
+  cwd: string,
+  onLog: AdapterExecutionContext["onLog"],
+) {
+  const configDir = opencodeConfigDir();
+  const configPath = opencodeConfigPath();
+  const allowPatterns = Array.from(new Set([
+    path.join(path.resolve(cwd), "*"),
+    path.join(path.resolve(os.tmpdir()), "*"),
+    path.join(path.resolve(configDir), "*"),
+  ]));
+
+  await fs.mkdir(configDir, { recursive: true });
+
+  let parsedConfig: Record<string, unknown> = {};
+  const existing = await fs.readFile(configPath, "utf8").catch(() => null);
+  if (existing) {
+    try {
+      parsedConfig = parseObject(JSON.parse(existing));
+    } catch {
+      parsedConfig = {};
+    }
+  }
+
+  const permission = parseObject(parsedConfig.permission);
+  const externalDirectory = parseObject(permission.external_directory);
+  let changed = false;
+
+  for (const pattern of allowPatterns) {
+    if (asString(externalDirectory[pattern], "").trim().toLowerCase() === "allow") continue;
+    externalDirectory[pattern] = "allow";
+    changed = true;
+  }
+
+  if (!changed) return;
+
+  permission.external_directory = externalDirectory;
+  parsedConfig.permission = permission;
+  await fs.writeFile(configPath, `${JSON.stringify(parsedConfig, null, 2)}\n`, "utf8");
+
+  await onLog(
+    "stderr",
+    `[paperclip] Updated OpenCode external_directory permissions in ${configPath}: ${allowPatterns.join(", ")}\n`,
+  );
+}
+
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
   const { runId, agent, runtime, config, context, onLog, onMeta, authToken } = ctx;
 
@@ -109,6 +164,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const effectiveWorkspaceCwd = useConfiguredInsteadOfAgentHome ? "" : workspaceCwd;
   const cwd = effectiveWorkspaceCwd || configuredCwd || process.cwd();
   await ensureAbsoluteDirectory(cwd, { createIfMissing: true });
+  await ensureOpenCodeExternalDirectoryPermissions(cwd, onLog);
   await ensureOpenCodeSkillsInjected(onLog);
 
   const envConfig = parseObject(config.env);
@@ -172,7 +228,23 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     env: runtimeEnv,
   });
 
-  const timeoutSec = asNumber(config.timeoutSec, 0);
+  const rawTimeoutSec = config.timeoutSec;
+  const timeoutSec =
+    typeof rawTimeoutSec === "number" && Number.isFinite(rawTimeoutSec) && rawTimeoutSec > 0
+      ? Math.floor(rawTimeoutSec)
+      : DEFAULT_OPENCODE_TIMEOUT_SEC;
+  if (
+    !(
+      typeof rawTimeoutSec === "number" &&
+      Number.isFinite(rawTimeoutSec) &&
+      rawTimeoutSec > 0
+    )
+  ) {
+    await onLog(
+      "stderr",
+      `[paperclip] OpenCode timeoutSec was missing or non-positive; using ${DEFAULT_OPENCODE_TIMEOUT_SEC}s default.\n`,
+    );
+  }
   const graceSec = asNumber(config.graceSec, 20);
   const extraArgs = (() => {
     const fromExtraArgs = asStringArray(config.extraArgs);
@@ -250,6 +322,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (model) args.push("--model", model);
     if (variant) args.push("--variant", variant);
     if (extraArgs.length > 0) args.push(...extraArgs);
+    args.push("--", prompt);
     return args;
   };
 
@@ -261,21 +334,31 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         command,
         cwd,
         commandNotes,
-        commandArgs: [...args, `<stdin prompt ${prompt.length} chars>`],
+        commandArgs: [...args.slice(0, -1), `<prompt ${prompt.length} chars>`],
         env: redactEnvForLogs(env),
         prompt,
         context,
       });
     }
 
+    await onLog(
+      "stderr",
+      `[paperclip] Spawning: ${command} run --format json --model ${model || "(default)"} -- <prompt ${prompt.length} chars> (timeout=${timeoutSec}s, cwd=${cwd})\n`,
+    );
+
     const proc = await runChildProcess(runId, command, args, {
       cwd,
       env: runtimeEnv,
-      stdin: prompt,
       timeoutSec,
       graceSec,
       onLog,
     });
+
+    await onLog(
+      "stderr",
+      `[paperclip] OpenCode process exited: code=${proc.exitCode}, signal=${proc.signal ?? "none"}, timedOut=${proc.timedOut}, stdout=${proc.stdout.length}B, stderr=${proc.stderr.length}B\n`,
+    );
+
     return {
       proc,
       rawStderr: proc.stderr,
