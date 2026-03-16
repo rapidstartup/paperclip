@@ -322,7 +322,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     if (model) args.push("--model", model);
     if (variant) args.push("--variant", variant);
     if (extraArgs.length > 0) args.push(...extraArgs);
-    args.push("--", prompt);
     return args;
   };
 
@@ -334,7 +333,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         command,
         cwd,
         commandNotes,
-        commandArgs: [...args.slice(0, -1), `<prompt ${prompt.length} chars>`],
+        commandArgs: [...args, `<stdin prompt ${prompt.length} chars>`],
         env: redactEnvForLogs(env),
         prompt,
         context,
@@ -343,12 +342,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
     await onLog(
       "stderr",
-      `[paperclip] Spawning: ${command} run --format json --model ${model || "(default)"} -- <prompt ${prompt.length} chars> (timeout=${timeoutSec}s, cwd=${cwd})\n`,
+      `[paperclip] Spawning: ${command} ${args.join(" ")} (stdin=${prompt.length} chars, timeout=${timeoutSec}s, cwd=${cwd})\n`,
     );
 
     const proc = await runChildProcess(runId, command, args, {
       cwd,
       env: runtimeEnv,
+      stdin: prompt,
       timeoutSec,
       graceSec,
       onLog,
