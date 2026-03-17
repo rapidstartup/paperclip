@@ -58,6 +58,17 @@ type AdapterType =
   | "http"
   | "openclaw_gateway";
 
+const HOSTED_WORKSPACES_ROOT = "/paperclip/instances/default/workspaces";
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "::1"]);
+
+function slugifyWorkspaceSegment(value: string) {
+  const normalized = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return normalized.length > 0 ? normalized.slice(0, 48) : "agent";
+}
+
 const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the ceo persona found here: [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
 
 Ensure you have a folder agents/ceo and then download this AGENTS.md as well as the sibling HEARTBEAT.md, SOUL.md, and TOOLS.md. and set that AGENTS.md as the path to your agents instruction file
@@ -78,6 +89,7 @@ export function OnboardingWizard() {
   const [error, setError] = useState<string | null>(null);
   const [modelOpen, setModelOpen] = useState(false);
   const [modelSearch, setModelSearch] = useState("");
+  const didAutoSuggestWorkspacePath = useRef(false);
 
   // Step 1
   const [companyName, setCompanyName] = useState("");
@@ -133,6 +145,7 @@ export function OnboardingWizard() {
     setStep(onboardingOptions.initialStep ?? 1);
     setCreatedCompanyId(cId);
     setCreatedCompanyPrefix(null);
+    didAutoSuggestWorkspacePath.current = false;
   }, [
     onboardingOpen,
     onboardingOptions.companyId,
@@ -227,6 +240,15 @@ export function OnboardingWizard() {
         entries: [...entries].sort((a, b) => a.id.localeCompare(b.id)),
       }));
   }, [filteredModels, adapterType]);
+  const isHostedDeployment =
+    typeof window !== "undefined" && !LOCAL_HOSTNAMES.has(window.location.hostname);
+  const suggestedHostedWorkspacePath = useMemo(() => {
+    const baseName = companyName.trim() || agentName.trim() || "agent";
+    return `${HOSTED_WORKSPACES_ROOT}/${slugifyWorkspaceSegment(baseName)}`;
+  }, [companyName, agentName]);
+  const workspacePathExample = isHostedDeployment
+    ? suggestedHostedWorkspacePath
+    : `${HOSTED_WORKSPACES_ROOT}/ceo-agent`;
 
   function reset() {
     setStep(1);
@@ -252,7 +274,16 @@ export function OnboardingWizard() {
     setCreatedCompanyPrefix(null);
     setCreatedAgentId(null);
     setCreatedIssueRef(null);
+    didAutoSuggestWorkspacePath.current = false;
   }
+
+  useEffect(() => {
+    if (step !== 2 || !isHostedDeployment) return;
+    if (cwd.trim().length > 0) return;
+    if (didAutoSuggestWorkspacePath.current) return;
+    didAutoSuggestWorkspacePath.current = true;
+    setCwd(suggestedHostedWorkspacePath);
+  }, [step, isHostedDeployment, cwd, suggestedHostedWorkspacePath]);
 
   function handleClose() {
     reset();
@@ -741,13 +772,15 @@ export function OnboardingWizard() {
                           <label className="text-xs text-muted-foreground">
                             Working directory
                           </label>
-                          <HintIcon text="Use an absolute path on the machine running Paperclip. Hosted deploys should use container paths (for example: /paperclip/instances/default/workspaces/ceo-agent). Missing folders are created automatically." />
+                          <HintIcon
+                            text={`Use an absolute path on the machine running Paperclip. Hosted deploys should use container paths (for example: ${workspacePathExample}). Missing folders are created automatically.`}
+                          />
                         </div>
                         <div className="flex items-center gap-2 rounded-md border border-border px-2.5 py-1.5">
                           <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                           <input
                             className="w-full bg-transparent outline-none text-sm font-mono placeholder:text-muted-foreground/50"
-                            placeholder="C:\\path\\to\\project or /paperclip/instances/default/workspaces/ceo-agent"
+                            placeholder={`C:\\path\\to\\project or ${workspacePathExample}`}
                             value={cwd}
                             onChange={(e) => setCwd(e.target.value)}
                           />
