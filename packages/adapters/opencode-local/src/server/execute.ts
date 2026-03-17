@@ -97,11 +97,14 @@ async function ensureOpenCodeExternalDirectoryPermissions(
 ) {
   const configDir = opencodeConfigDir();
   const configPath = opencodeConfigPath();
-  const allowPatterns = Array.from(new Set([
+  const skillsDir = await resolvePaperclipSkillsDir();
+  const basePatterns = [
     path.join(path.resolve(cwd), "*"),
     path.join(path.resolve(os.tmpdir()), "*"),
     path.join(path.resolve(configDir), "*"),
-  ]));
+  ];
+  if (skillsDir) basePatterns.push(path.join(path.resolve(skillsDir), "*"));
+  const allowPatterns = Array.from(new Set(basePatterns));
 
   await fs.mkdir(configDir, { recursive: true });
 
