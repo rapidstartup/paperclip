@@ -374,14 +374,42 @@ async function migrationStatementAlreadyApplied(
     return columnExists(sql, addColumnMatch[1], addColumnMatch[2]);
   }
 
+  // DROP COLUMN is already applied when the column no longer exists.
+  const dropColumnMatch = normalized.match(
+    /^ALTER TABLE "([^"]+)" DROP COLUMN(?: IF EXISTS)? "([^"]+)"/i,
+  );
+  if (dropColumnMatch) {
+    return !(await columnExists(sql, dropColumnMatch[1], dropColumnMatch[2]));
+  }
+
   const createIndexMatch = normalized.match(/^CREATE (?:UNIQUE )?INDEX(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createIndexMatch) {
     return indexExists(sql, createIndexMatch[1]);
   }
 
+  // DROP INDEX is already applied when the index no longer exists.
+  const dropIndexMatch = normalized.match(/^DROP INDEX(?: IF EXISTS)? (?:"[^"]+"\.)??"([^"]+)"/i);
+  if (dropIndexMatch) {
+    return !(await indexExists(sql, dropIndexMatch[1]));
+  }
+
   const addConstraintMatch = normalized.match(/^ALTER TABLE "([^"]+)" ADD CONSTRAINT "([^"]+)"/i);
   if (addConstraintMatch) {
     return constraintExists(sql, addConstraintMatch[2]);
+  }
+
+  // DROP CONSTRAINT is already applied when the constraint no longer exists.
+  const dropConstraintMatch = normalized.match(
+    /^ALTER TABLE "([^"]+)" DROP CONSTRAINT(?: IF EXISTS)? "([^"]+)"/i,
+  );
+  if (dropConstraintMatch) {
+    return !(await constraintExists(sql, dropConstraintMatch[2]));
+  }
+
+  // DROP TABLE is already applied when the table no longer exists.
+  const dropTableMatch = normalized.match(/^DROP TABLE(?: IF EXISTS)? "([^"]+)"/i);
+  if (dropTableMatch) {
+    return !(await tableExists(sql, dropTableMatch[1]));
   }
 
   // If we cannot reason about a statement safely, require manual migration.
