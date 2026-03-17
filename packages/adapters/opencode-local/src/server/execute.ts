@@ -98,11 +98,21 @@ async function ensureOpenCodeExternalDirectoryPermissions(
   const configDir = opencodeConfigDir();
   const configPath = opencodeConfigPath();
   const skillsDir = await resolvePaperclipSkillsDir();
+  const cwdResolved = path.resolve(cwd);
   const basePatterns = [
-    path.join(path.resolve(cwd), "*"),
+    path.join(cwdResolved, "*"),
     path.join(path.resolve(os.tmpdir()), "*"),
     path.join(path.resolve(configDir), "*"),
   ];
+  // OpenCode may request parent directory access (for example /paperclip/*) while
+  // traversing a nested workspace. Allow a short ancestor chain to avoid auto-rejects.
+  let ancestor = cwdResolved;
+  for (let depth = 0; depth < 4; depth += 1) {
+    const parent = path.dirname(ancestor);
+    if (parent === ancestor) break;
+    basePatterns.push(path.join(path.resolve(parent), "*"));
+    ancestor = parent;
+  }
   if (skillsDir) basePatterns.push(path.join(path.resolve(skillsDir), "*"));
   const allowPatterns = Array.from(new Set(basePatterns));
 

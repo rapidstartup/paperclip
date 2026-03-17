@@ -242,6 +242,8 @@ async function applyPendingMigrationsManually(
 
       await runInTransaction(sql, async () => {
         for (const statement of splitMigrationStatements(migrationContent)) {
+          const alreadyApplied = await migrationStatementAlreadyApplied(sql, statement);
+          if (alreadyApplied) continue;
           await sql.unsafe(statement);
         }
 
@@ -642,13 +644,40 @@ export async function applyPendingMigrations(url: string): Promise<void> {
   const initialState = await inspectMigrations(url);
   if (initialState.status === "upToDate") return;
 
+  let migrateError: unknown = null;
   const sql = postgres(url, { max: 1 });
 
   try {
     const db = drizzlePg(sql);
     await migratePg(db, { migrationsFolder: MIGRATIONS_FOLDER });
+  } catch (error) {
+    migrateError = error;
   } finally {
     await sql.end();
+  }
+
+  // Drizzle migrator may fail on partially applied history (e.g. relation already exists).
+  // Attempt repair + manual apply before surfacing startup-breaking errors.
+  if (migrateError) {
+    let stateAfterError = await inspectMigrations(url);
+    if (stateAfterError.status === "upToDate") return;
+
+    const repairAfterError = await reconcilePendingMigrationHistory(url);
+    if (repairAfterError.repairedMigrations.length > 0) {
+      stateAfterError = await inspectMigrations(url);
+      if (stateAfterError.status === "upToDate") return;
+    }
+
+    if (
+      stateAfterError.status === "needsMigrations" &&
+      stateAfterError.reason === "pending-migrations"
+    ) {
+      await applyPendingMigrationsManually(url, stateAfterError.pendingMigrations);
+      const finalAfterError = await inspectMigrations(url);
+      if (finalAfterError.status === "upToDate") return;
+    }
+
+    throw migrateError;
   }
 
   let state = await inspectMigrations(url);
