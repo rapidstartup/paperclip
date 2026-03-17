@@ -657,21 +657,30 @@ export async function applyPendingMigrations(url: string): Promise<void> {
   }
 
   // Drizzle migrator may fail on partially applied history (e.g. relation already exists).
-  // Attempt repair + manual apply before surfacing startup-breaking errors.
+  // The transaction may be fully rolled back, leaving no journal table at all, or partially
+  // committed. Handle both "no-journal-non-empty-db" and "pending-migrations" cases by
+  // attempting repair then falling through to manual per-statement apply (which skips already-
+  // applied statements) before surfacing a startup-breaking error.
   if (migrateError) {
     let stateAfterError = await inspectMigrations(url);
     if (stateAfterError.status === "upToDate") return;
-
-    const repairAfterError = await reconcilePendingMigrationHistory(url);
-    if (repairAfterError.repairedMigrations.length > 0) {
-      stateAfterError = await inspectMigrations(url);
-      if (stateAfterError.status === "upToDate") return;
-    }
 
     if (
       stateAfterError.status === "needsMigrations" &&
       stateAfterError.reason === "pending-migrations"
     ) {
+      const repairAfterError = await reconcilePendingMigrationHistory(url);
+      if (repairAfterError.repairedMigrations.length > 0) {
+        stateAfterError = await inspectMigrations(url);
+        if (stateAfterError.status === "upToDate") return;
+      }
+    }
+
+    // For both "no-migration-journal-non-empty-db" and remaining "pending-migrations" cases:
+    // applyPendingMigrationsManually creates the journal if absent and skips already-applied
+    // statements, so it recovers cleanly from a schema that was partially applied outside the
+    // migration journal.
+    if (stateAfterError.status === "needsMigrations") {
       await applyPendingMigrationsManually(url, stateAfterError.pendingMigrations);
       const finalAfterError = await inspectMigrations(url);
       if (finalAfterError.status === "upToDate") return;
