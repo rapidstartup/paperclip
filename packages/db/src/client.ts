@@ -360,7 +360,11 @@ async function migrationStatementAlreadyApplied(
   sql: ReturnType<typeof postgres>,
   statement: string,
 ): Promise<boolean> {
-  const normalized = statement.replace(/\s+/g, " ").trim();
+  // Strip SQL single-line comments before normalizing whitespace so that
+  // leading comments (e.g. "-- Add issue prefix\nALTER TABLE ...") don't
+  // prevent the regex patterns from matching at the start of the string.
+  const stripped = statement.replace(/--[^\n]*/g, "");
+  const normalized = stripped.replace(/\s+/g, " ").trim();
 
   const createTableMatch = normalized.match(/^CREATE TABLE(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createTableMatch) {
