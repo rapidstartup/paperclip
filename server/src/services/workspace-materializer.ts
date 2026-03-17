@@ -9,6 +9,8 @@ const GITHUB_HOSTS = new Set(["github.com", "www.github.com"]);
 const workspaceLocks = new Map<string, Promise<EnsureWorkspaceRepoResult>>();
 const PATH_SEGMENT_RE = /^[a-zA-Z0-9_-]+$/;
 const DEFAULT_REMOTE = "origin";
+const GITHUB_SSH_SCHEME_RE = /^ssh:\/\/(?:git@)?(github\.com|www\.github\.com)\//i;
+const GITHUB_SCP_STYLE_RE = /^(?:git@)?(github\.com|www\.github\.com):/i;
 
 export type EnsureWorkspaceRepoInput = {
   companyId: string;
@@ -44,13 +46,21 @@ function readGitHubToken(): string | null {
   return null;
 }
 
-function isGitHubUrl(repoUrl: string) {
+function isGitHubHttpUrl(repoUrl: string) {
   try {
     const parsed = new URL(repoUrl);
     return (parsed.protocol === "https:" || parsed.protocol === "http:") && GITHUB_HOSTS.has(parsed.hostname.toLowerCase());
   } catch {
     return false;
   }
+}
+
+function isGitHubSshUrl(repoUrl: string) {
+  return GITHUB_SSH_SCHEME_RE.test(repoUrl) || GITHUB_SCP_STYLE_RE.test(repoUrl);
+}
+
+function isGitHubUrl(repoUrl: string) {
+  return isGitHubHttpUrl(repoUrl) || isGitHubSshUrl(repoUrl);
 }
 
 function redactRepoUrl(repoUrl: string): string {
@@ -82,6 +92,20 @@ function buildGitAuthArgs(repoUrl: string) {
   const token = readGitHubToken();
   if (!token) return [] as string[];
   const basic = Buffer.from(`x-access-token:${token}`).toString("base64");
+  if (isGitHubSshUrl(repoUrl)) {
+    return [
+      "-c",
+      "url.https://github.com/.insteadof=git@github.com:",
+      "-c",
+      "url.https://github.com/.insteadof=ssh://git@github.com/",
+      "-c",
+      "url.https://github.com/.insteadof=ssh://github.com/",
+      "-c",
+      "url.https://github.com/.insteadof=git://github.com/",
+      "-c",
+      `http.extraheader=AUTHORIZATION: basic ${basic}`,
+    ] as string[];
+  }
   return ["-c", `http.extraheader=AUTHORIZATION: basic ${basic}`] as string[];
 }
 
