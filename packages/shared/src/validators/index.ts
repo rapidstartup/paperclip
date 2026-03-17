@@ -133,3 +133,8 @@ export {
   type UpdateMemberPermissions,
   type UpdateUserCompanyAccess,
 } from "./access.js";
+
+export {
+  createVibedashProjectBootstrapSchema,
+  type CreateVibedashProjectBootstrap,
+} from "./vibedash.js";

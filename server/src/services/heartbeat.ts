@@ -22,7 +22,10 @@ import type { AdapterExecutionResult, AdapterInvocationMeta, AdapterSessionCodec
 import { createLocalAgentJwt } from "../agent-auth-jwt.js";
 import { parseObject, asBoolean, asNumber, appendWithCap, MAX_EXCERPT_BYTES } from "../adapters/utils.js";
 import { secretService } from "./secrets.js";
-import { resolveDefaultAgentWorkspaceDir } from "../home-paths.js";
+import {
+  resolveDefaultAgentWorkspaceDir,
+  resolveDefaultProjectWorkspaceFallbackDir,
+} from "../home-paths.js";
 import { ensureWorkspaceRepo } from "./workspace-materializer.js";
 
 const MAX_LIVE_LOG_CHUNK_BYTES = 8 * 1024;
@@ -124,7 +127,13 @@ export function resolveRuntimeSessionParamsForWorkspace(input: {
     };
   }
   const fallbackAgentHomeCwd = resolveDefaultAgentWorkspaceDir(agentId);
-  if (path.resolve(previousCwd) !== path.resolve(fallbackAgentHomeCwd)) {
+  const fallbackProjectCwd = resolvedWorkspace.projectId
+    ? resolveDefaultProjectWorkspaceFallbackDir(agentId, resolvedWorkspace.projectId)
+    : null;
+  const previousIsFallbackHome = path.resolve(previousCwd) === path.resolve(fallbackAgentHomeCwd);
+  const previousIsProjectFallback =
+    fallbackProjectCwd !== null && path.resolve(previousCwd) === path.resolve(fallbackProjectCwd);
+  if (!previousIsFallbackHome && !previousIsProjectFallback) {
     return {
       sessionParams: previousSessionParams,
       warning: null as string | null,
@@ -508,7 +517,11 @@ export function heartbeatService(db: Db) {
               eq(projectWorkspaces.projectId, workspaceProjectId),
             ),
           )
-          .orderBy(asc(projectWorkspaces.createdAt), asc(projectWorkspaces.id))
+          .orderBy(
+            desc(projectWorkspaces.isPrimary),
+            asc(projectWorkspaces.createdAt),
+            asc(projectWorkspaces.id),
+          )
       : [];
 
     const workspaceHints = projectWorkspaceRows.map((workspace) => ({
@@ -588,7 +601,9 @@ export function heartbeatService(db: Db) {
         }
       }
 
-      const fallbackCwd = resolveDefaultAgentWorkspaceDir(agent.id);
+      const fallbackCwd = resolvedProjectId
+        ? resolveDefaultProjectWorkspaceFallbackDir(agent.id, resolvedProjectId)
+        : resolveDefaultAgentWorkspaceDir(agent.id);
       await fs.mkdir(fallbackCwd, { recursive: true });
       const warnings: string[] = [];
       let fatalError: string | null = null;
@@ -650,7 +665,9 @@ export function heartbeatService(db: Db) {
       }
     }
 
-    const cwd = resolveDefaultAgentWorkspaceDir(agent.id);
+    const cwd = resolvedProjectId
+      ? resolveDefaultProjectWorkspaceFallbackDir(agent.id, resolvedProjectId)
+      : resolveDefaultAgentWorkspaceDir(agent.id);
     await fs.mkdir(cwd, { recursive: true });
     const warnings: string[] = [];
     if (sessionCwd) {

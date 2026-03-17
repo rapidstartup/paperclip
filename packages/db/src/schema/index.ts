@@ -14,6 +14,7 @@ export { agentWakeupRequests } from "./agent_wakeup_requests.js";
 export { projects } from "./projects.js";
 export { projectWorkspaces } from "./project_workspaces.js";
 export { projectGoals } from "./project_goals.js";
+export { vibedashProjectLinks } from "./vibedash_project_links.js";
 export { goals } from "./goals.js";
 export { issues } from "./issues.js";
 export { labels } from "./labels.js";
