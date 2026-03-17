@@ -385,6 +385,7 @@ export function heartbeatService(db) {
                             workspaceId: workspace.id,
                             repoUrl: workspace.repoUrl,
                             repoRef: workspace.repoRef,
+                            fatalError: null,
                             workspaceHints,
                             warnings: [],
                         };
@@ -409,6 +410,7 @@ export function heartbeatService(db) {
                         workspaceId: workspace.id,
                         repoUrl: workspace.repoUrl,
                         repoRef: workspace.repoRef,
+                        fatalError: null,
                         workspaceHints,
                         warnings: [
                             ...(hasLocalCwd && projectCwd
@@ -430,6 +432,7 @@ export function heartbeatService(db) {
             const fallbackCwd = resolveDefaultAgentWorkspaceDir(agent.id);
             await fs.mkdir(fallbackCwd, { recursive: true });
             const warnings = [];
+            let fatalError = null;
             if (missingProjectCwds.length > 0) {
                 const firstMissing = missingProjectCwds[0];
                 const extraMissingCount = Math.max(0, missingProjectCwds.length - 1);
@@ -443,6 +446,14 @@ export function heartbeatService(db) {
                     : `Project workspace has no local cwd configured. Using fallback workspace "${fallbackCwd}" for this run.`);
             }
             warnings.push(...repoWorkspaceWarnings);
+            if (hasRepoWorkspace && repoWorkspaceWarnings.length > 0) {
+                const firstFailure = repoWorkspaceWarnings[0];
+                const extraFailureCount = Math.max(0, repoWorkspaceWarnings.length - 1);
+                fatalError =
+                    extraFailureCount > 0
+                        ? `Project workspace repository is configured but unavailable: ${firstFailure} (${extraFailureCount} additional repo workspace error(s)).`
+                        : `Project workspace repository is configured but unavailable: ${firstFailure}`;
+            }
             return {
                 cwd: fallbackCwd,
                 source: "project_primary",
@@ -450,6 +461,7 @@ export function heartbeatService(db) {
                 workspaceId: projectWorkspaceRows[0]?.id ?? null,
                 repoUrl: projectWorkspaceRows[0]?.repoUrl ?? null,
                 repoRef: projectWorkspaceRows[0]?.repoRef ?? null,
+                fatalError,
                 workspaceHints,
                 warnings,
             };
@@ -468,6 +480,7 @@ export function heartbeatService(db) {
                     workspaceId: readNonEmptyString(previousSessionParams?.workspaceId),
                     repoUrl: readNonEmptyString(previousSessionParams?.repoUrl),
                     repoRef: readNonEmptyString(previousSessionParams?.repoRef),
+                    fatalError: null,
                     workspaceHints,
                     warnings: [],
                 };
@@ -492,6 +505,7 @@ export function heartbeatService(db) {
             workspaceId: null,
             repoUrl: null,
             repoRef: null,
+            fatalError: null,
             workspaceHints,
             warnings,
         };
@@ -910,6 +924,39 @@ export function heartbeatService(db) {
                 ]
                 : []),
         ];
+        if (resolvedWorkspace.fatalError) {
+            const message = resolvedWorkspace.fatalError;
+            const finishedAt = new Date();
+            const failedRun = await setRunStatus(run.id, "failed", {
+                error: message,
+                errorCode: "workspace_unavailable",
+                finishedAt,
+            });
+            await setWakeupStatus(run.wakeupRequestId, "failed", {
+                finishedAt,
+                error: message,
+            });
+            if (failedRun) {
+                await appendRunEvent(failedRun, 1, {
+                    eventType: "error",
+                    stream: "system",
+                    level: "error",
+                    message,
+                });
+                await releaseIssueExecutionAndPromote(failedRun);
+                await updateRuntimeState(agent, failedRun, {
+                    exitCode: null,
+                    signal: null,
+                    timedOut: false,
+                    errorMessage: message,
+                }, {
+                    legacySessionId: runtime.sessionId,
+                });
+            }
+            await finalizeAgentStatus(agent.id, "failed");
+            await startNextQueuedRunForAgent(agent.id);
+            return;
+        }
         context.paperclipWorkspace = {
             cwd: resolvedWorkspace.cwd,
             source: resolvedWorkspace.source,
