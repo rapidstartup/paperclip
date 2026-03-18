@@ -21,6 +21,7 @@ import { sidebarBadgeRoutes } from "./routes/sidebar-badges.js";
 import { llmRoutes } from "./routes/llms.js";
 import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
+import { vibedashRoutes } from "./routes/vibedash.js";
 export async function createApp(db, opts) {
     const app = express();
     app.use(express.json());
@@ -87,6 +88,7 @@ export async function createApp(db, opts) {
         bindHost: opts.bindHost,
         allowedHostnames: opts.allowedHostnames,
     }));
+    api.use(vibedashRoutes(db));
     app.use("/api", api);
     app.use("/api", (_req, res) => {
         res.status(404).json({ error: "API route not found" });

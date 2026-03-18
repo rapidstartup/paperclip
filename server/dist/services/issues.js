@@ -235,6 +235,44 @@ export function issueService(db) {
             throw notFound("Assignee user not found");
         }
     }
+    async function assertProjectInCompany(companyId, projectId, dbOrTx = db) {
+        const projectRows = await dbOrTx
+            .select({ id: projects.id })
+            .from(projects)
+            .where(and(eq(projects.id, projectId), eq(projects.companyId, companyId)));
+        const project = projectRows[0] ?? null;
+        if (!project)
+            throw unprocessable("Issue project must belong to same company");
+    }
+    async function assertGoalInCompany(companyId, goalId, dbOrTx = db) {
+        const goalRows = await dbOrTx
+            .select({ id: goals.id })
+            .from(goals)
+            .where(and(eq(goals.id, goalId), eq(goals.companyId, companyId)));
+        const goal = goalRows[0] ?? null;
+        if (!goal)
+            throw unprocessable("Issue goal must belong to same company");
+    }
+    async function assertParentIssueInCompany(companyId, parentId, dbOrTx = db) {
+        const parentRows = await dbOrTx
+            .select({ id: issues.id })
+            .from(issues)
+            .where(and(eq(issues.id, parentId), eq(issues.companyId, companyId)));
+        const parent = parentRows[0] ?? null;
+        if (!parent)
+            throw unprocessable("Parent issue must belong to same company");
+    }
+    async function assertIssueLinksBelongToCompany(companyId, links, dbOrTx = db) {
+        if (links.projectId) {
+            await assertProjectInCompany(companyId, links.projectId, dbOrTx);
+        }
+        if (links.goalId) {
+            await assertGoalInCompany(companyId, links.goalId, dbOrTx);
+        }
+        if (links.parentId) {
+            await assertParentIssueInCompany(companyId, links.parentId, dbOrTx);
+        }
+    }
     async function assertValidLabelIds(companyId, labelIds, dbOrTx = db) {
         if (labelIds.length === 0)
             return;
@@ -486,6 +524,11 @@ export function issueService(db) {
             if (data.status === "in_progress" && !data.assigneeAgentId && !data.assigneeUserId) {
                 throw unprocessable("in_progress issues require an assignee");
             }
+            await assertIssueLinksBelongToCompany(companyId, {
+                projectId: data.projectId ?? null,
+                goalId: data.goalId ?? null,
+                parentId: data.parentId ?? null,
+            });
             return db.transaction(async (tx) => {
                 const [company] = await tx
                     .update(companies)
@@ -530,6 +573,9 @@ export function issueService(db) {
             };
             const nextAssigneeAgentId = issueData.assigneeAgentId !== undefined ? issueData.assigneeAgentId : existing.assigneeAgentId;
             const nextAssigneeUserId = issueData.assigneeUserId !== undefined ? issueData.assigneeUserId : existing.assigneeUserId;
+            const nextProjectId = issueData.projectId !== undefined ? issueData.projectId : existing.projectId;
+            const nextGoalId = issueData.goalId !== undefined ? issueData.goalId : existing.goalId;
+            const nextParentId = issueData.parentId !== undefined ? issueData.parentId : existing.parentId;
             if (nextAssigneeAgentId && nextAssigneeUserId) {
                 throw unprocessable("Issue can only have one assignee");
             }
@@ -541,6 +587,15 @@ export function issueService(db) {
             }
             if (issueData.assigneeUserId) {
                 await assertAssignableUser(existing.companyId, issueData.assigneeUserId);
+            }
+            if (issueData.projectId !== undefined ||
+                issueData.goalId !== undefined ||
+                issueData.parentId !== undefined) {
+                await assertIssueLinksBelongToCompany(existing.companyId, {
+                    projectId: nextProjectId ?? null,
+                    goalId: nextGoalId ?? null,
+                    parentId: nextParentId ?? null,
+                });
             }
             applyStatusSideEffects(issueData.status, patch);
             if (issueData.status && issueData.status !== "done") {

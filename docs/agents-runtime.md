@@ -36,10 +36,11 @@ Common choices:
 
 - `claude_local`: runs your local `claude` CLI
 - `codex_local`: runs your local `codex` CLI
+- `agent_browser`: runs your local/self-hosted `agent-browser` CLI
 - `process`: generic shell command adapter
 - `http`: calls an external HTTP endpoint
 
-For `claude_local` and `codex_local`, Paperclip assumes the CLI is already installed and authenticated on the host machine.
+For local adapters (`claude_local`, `codex_local`, `agent_browser`), Paperclip assumes the CLI is already installed and authenticated on the host machine (or provider credentials are configured via env vars).
 
 ## 3.2 Runtime behavior
 
@@ -147,6 +148,11 @@ Typical failure causes:
 - malformed adapter args/env
 - prompt too broad or missing constraints
 - process timeout
+
+Agent Browser provider note:
+
+- Self-hosted/local `agent-browser` usage does not require a Vercel token.
+- Remote providers may require provider-specific env keys (`BROWSERLESS_API_KEY`, `BROWSERBASE_API_KEY`, `BROWSER_USE_API_KEY`, `KERNEL_API_KEY`).
 
 Claude-specific note:
 

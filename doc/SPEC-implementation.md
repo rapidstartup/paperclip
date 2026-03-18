@@ -38,7 +38,7 @@ These decisions close open questions from `SPEC.md` for V1.
 | Communication | Tasks + comments only (no separate chat system) |
 | Task ownership | Single assignee; atomic checkout required for `in_progress` transition |
 | Recovery | No automatic reassignment; stale work is surfaced, not silently fixed |
-| Agent adapters | Built-in `process` and `http` adapters |
+| Agent adapters | Built-in `process`, `http`, and browser-focused `agent_browser` adapters (plus local coding adapters shipped in this repo) |
 | Auth | Mode-dependent human auth (`local_trusted` implicit board in current code; authenticated mode uses sessions), API keys for agents |
 | Budget period | Monthly UTC calendar window |
 | Budget enforcement | Soft alerts + hard limit auto-pause |
@@ -137,7 +137,7 @@ Invariant: every business record belongs to exactly one company.
 - `status` enum: `active | paused | idle | running | error | terminated`
 - `reports_to` uuid fk `agents.id` null
 - `capabilities` text null
-- `adapter_type` enum: `process | http`
+- `adapter_type` enum: `process | http | claude_local | codex_local | opencode_local | pi_local | cursor | agent_browser | openclaw_gateway`
 - `adapter_config` jsonb not null
 - `context_mode` enum: `thin | fat` default `thin`
 - `budget_monthly_cents` int not null default 0
@@ -768,6 +768,7 @@ A release candidate is blocked unless these pass:
 - implement adapter interface
 - ship `process` adapter with cancel semantics
 - ship `http` adapter with timeout/error handling
+- ship `agent_browser` adapter with provider-aware environment diagnostics
 - persist heartbeat runs and statuses
 
 ## Milestone 4: Cost and Budget Controls

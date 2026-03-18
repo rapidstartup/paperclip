@@ -25,6 +25,7 @@ import {
   DEFAULT_CODEX_LOCAL_MODEL
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
+import { DEFAULT_AGENT_BROWSER_COMMAND } from "@paperclipai/adapter-agent-browser";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
 import { ChoosePathButton } from "./PathInstructionsModal";
 import { HintIcon } from "./agent-config-primitives";
@@ -40,6 +41,7 @@ import {
   Terminal,
   Sparkles,
   MousePointer2,
+  Globe,
   Check,
   Loader2,
   FolderOpen,
@@ -54,6 +56,7 @@ type AdapterType =
   | "opencode_local"
   | "pi_local"
   | "cursor"
+  | "agent_browser"
   | "process"
   | "http"
   | "openclaw_gateway";
@@ -69,11 +72,11 @@ function slugifyWorkspaceSegment(value: string) {
   return normalized.length > 0 ? normalized.slice(0, 48) : "agent";
 }
 
-const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the ceo persona found here: [https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md](https://github.com/paperclipai/companies/blob/main/default/ceo/AGENTS.md)
+const DEFAULT_TASK_DESCRIPTION = `Setup yourself as the CEO. Use the CEO persona found in agents/ceo/AGENTS.md in this repository.
 
-Ensure you have a folder agents/ceo and then download this AGENTS.md as well as the sibling HEARTBEAT.md, SOUL.md, and TOOLS.md. and set that AGENTS.md as the path to your agents instruction file
+Read AGENTS.md and its sibling files (HEARTBEAT.md, SOUL.md, TOOLS.md), and set agents/ceo/AGENTS.md as your instruction file path.
 
-And after you've finished that, hire yourself a Founding Engineer agent`;
+After setup, submit your initial strategy proposal for board approval, then hire yourself a Founding Engineer agent.`;
 
 export function OnboardingWizard() {
   const { onboardingOpen, onboardingOptions, closeOnboarding } = useDialog();
@@ -103,6 +106,11 @@ export function OnboardingWizard() {
   const [command, setCommand] = useState("");
   const [args, setArgs] = useState("");
   const [url, setUrl] = useState("");
+  const [provider, setProvider] = useState("");
+  const [sessionNameTemplate, setSessionNameTemplate] = useState("{{companyId}}-{{agentId}}");
+  const [allowedDomains, setAllowedDomains] = useState("");
+  const [subcommand, setSubcommand] = useState("snapshot");
+  const [subcommandArgs, setSubcommandArgs] = useState("-i, --json");
   const [adapterEnvResult, setAdapterEnvResult] =
     useState<AdapterEnvironmentTestResult | null>(null);
   const [adapterEnvError, setAdapterEnvError] = useState<string | null>(null);
@@ -178,13 +186,19 @@ export function OnboardingWizard() {
     enabled: Boolean(createdCompanyId) && onboardingOpen && step === 2
   });
   const isLocalAdapter =
-    adapterType === "claude_local" || adapterType === "codex_local" || adapterType === "opencode_local" || adapterType === "cursor";
+    adapterType === "claude_local" ||
+    adapterType === "codex_local" ||
+    adapterType === "opencode_local" ||
+    adapterType === "cursor" ||
+    adapterType === "agent_browser";
   const effectiveAdapterCommand =
     command.trim() ||
     (adapterType === "codex_local"
       ? "codex"
       : adapterType === "cursor"
         ? "agent"
+        : adapterType === "agent_browser"
+          ? DEFAULT_AGENT_BROWSER_COMMAND
         : adapterType === "opencode_local"
           ? "opencode"
           : "claude");
@@ -193,7 +207,7 @@ export function OnboardingWizard() {
     if (step !== 2) return;
     setAdapterEnvResult(null);
     setAdapterEnvError(null);
-  }, [step, adapterType, cwd, model, command, args, url]);
+  }, [step, adapterType, cwd, model, command, args, url, provider, sessionNameTemplate, allowedDomains, subcommand, subcommandArgs]);
 
   const selectedModel = (adapterModels ?? []).find((m) => m.id === model);
   const hasAnthropicApiKeyOverrideCheck =
@@ -263,6 +277,11 @@ export function OnboardingWizard() {
     setCommand("");
     setArgs("");
     setUrl("");
+    setProvider("");
+    setSessionNameTemplate("{{companyId}}-{{agentId}}");
+    setAllowedDomains("");
+    setSubcommand("snapshot");
+    setSubcommandArgs("-i, --json");
     setAdapterEnvResult(null);
     setAdapterEnvError(null);
     setAdapterEnvLoading(false);
@@ -305,6 +324,11 @@ export function OnboardingWizard() {
       command,
       args,
       url,
+      provider,
+      sessionNameTemplate,
+      allowedDomains,
+      subcommand,
+      subcommandArgs,
       dangerouslySkipPermissions: adapterType === "claude_local",
       dangerouslyBypassSandbox:
         adapterType === "codex_local"
@@ -711,6 +735,12 @@ export function OnboardingWizard() {
                           label: "Cursor",
                           icon: MousePointer2,
                           desc: "Local Cursor agent"
+                        },
+                        {
+                          value: "agent_browser" as const,
+                          label: "Agent Browser",
+                          icon: Globe,
+                          desc: "Browser automation runtime"
                         }
                       ].map((opt) => (
                         <button
@@ -732,6 +762,11 @@ export function OnboardingWizard() {
                               setModel(DEFAULT_CODEX_LOCAL_MODEL);
                             } else if (nextType === "cursor" && !model) {
                               setModel(DEFAULT_CURSOR_LOCAL_MODEL);
+                            } else if (nextType === "agent_browser") {
+                              setCommand((prev) => prev.trim() || DEFAULT_AGENT_BROWSER_COMMAND);
+                              setSessionNameTemplate((prev) => prev.trim() || "{{companyId}}-{{agentId}}");
+                              setSubcommand((prev) => prev.trim() || "snapshot");
+                              setSubcommandArgs((prev) => prev.trim() || "-i, --json");
                             }
                             if (nextType === "opencode_local") {
                               if (!model.includes("/")) {
@@ -765,7 +800,8 @@ export function OnboardingWizard() {
                     adapterType === "codex_local" ||
                     adapterType === "opencode_local" ||
                     adapterType === "pi_local" ||
-                    adapterType === "cursor") && (
+                    adapterType === "cursor" ||
+                    adapterType === "agent_browser") && (
                     <div className="space-y-3">
                       <div>
                         <div className="flex items-center gap-1.5 mb-1">
@@ -787,95 +823,159 @@ export function OnboardingWizard() {
                           <ChoosePathButton />
                         </div>
                       </div>
-                      <div>
-                        <label className="text-xs text-muted-foreground mb-1 block">
-                          Model
-                        </label>
-                        <Popover
-                          open={modelOpen}
-                          onOpenChange={(next) => {
-                            setModelOpen(next);
-                            if (!next) setModelSearch("");
-                          }}
-                        >
-                          <PopoverTrigger asChild>
-                            <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
-                              <span
-                                className={cn(
-                                  !model && "text-muted-foreground"
-                                )}
-                              >
-                                {selectedModel
-                                  ? selectedModel.label
-                                  : model ||
-                                    (adapterType === "opencode_local"
-                                      ? "Select model (required)"
-                                      : "Default")}
-                              </span>
-                              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                            </button>
-                          </PopoverTrigger>
-                          <PopoverContent
-                            className="w-[var(--radix-popover-trigger-width)] p-1"
-                            align="start"
+                      {adapterType !== "agent_browser" && (
+                        <div>
+                          <label className="text-xs text-muted-foreground mb-1 block">
+                            Model
+                          </label>
+                          <Popover
+                            open={modelOpen}
+                            onOpenChange={(next) => {
+                              setModelOpen(next);
+                              if (!next) setModelSearch("");
+                            }}
                           >
-                            <input
-                              className="w-full px-2 py-1.5 text-xs bg-transparent outline-none border-b border-border mb-1 placeholder:text-muted-foreground/50"
-                              placeholder="Search models..."
-                              value={modelSearch}
-                              onChange={(e) => setModelSearch(e.target.value)}
-                              autoFocus
-                            />
-                            {adapterType !== "opencode_local" && (
-                              <button
-                                className={cn(
-                                  "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                  !model && "bg-accent"
-                                )}
-                                onClick={() => {
-                                  setModel("");
-                                  setModelOpen(false);
-                                }}
-                              >
-                                  Default
-                                </button>
-                            )}
-                            <div className="max-h-[240px] overflow-y-auto">
-                              {groupedModels.map((group) => (
-                                <div key={group.provider} className="mb-1 last:mb-0">
-                                  {adapterType === "opencode_local" && (
-                                    <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
-                                      {group.provider} ({group.entries.length})
-                                    </div>
+                            <PopoverTrigger asChild>
+                              <button className="inline-flex items-center gap-1.5 rounded-md border border-border px-2.5 py-1.5 text-sm hover:bg-accent/50 transition-colors w-full justify-between">
+                                <span
+                                  className={cn(
+                                    !model && "text-muted-foreground"
                                   )}
-                                  {group.entries.map((m) => (
-                                    <button
-                                      key={m.id}
-                                      className={cn(
-                                        "flex items-center w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
-                                        m.id === model && "bg-accent"
-                                      )}
-                                      onClick={() => {
-                                        setModel(m.id);
-                                        setModelOpen(false);
-                                      }}
-                                    >
-                                      <span className="block w-full text-left truncate" title={m.id}>
-                                        {adapterType === "opencode_local" ? extractModelName(m.id) : m.label}
-                                      </span>
-                                    </button>
-                                  ))}
-                                </div>
-                              ))}
+                                >
+                                  {selectedModel
+                                    ? selectedModel.label
+                                    : model ||
+                                      (adapterType === "opencode_local"
+                                        ? "Select model (required)"
+                                        : "Default")}
+                                </span>
+                                <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                              </button>
+                            </PopoverTrigger>
+                            <PopoverContent
+                              className="w-[var(--radix-popover-trigger-width)] p-1"
+                              align="start"
+                            >
+                              <input
+                                className="w-full px-2 py-1.5 text-xs bg-transparent outline-none border-b border-border mb-1 placeholder:text-muted-foreground/50"
+                                placeholder="Search models..."
+                                value={modelSearch}
+                                onChange={(e) => setModelSearch(e.target.value)}
+                                autoFocus
+                              />
+                              {adapterType !== "opencode_local" && (
+                                <button
+                                  className={cn(
+                                    "flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                    !model && "bg-accent"
+                                  )}
+                                  onClick={() => {
+                                    setModel("");
+                                    setModelOpen(false);
+                                  }}
+                                >
+                                    Default
+                                  </button>
+                              )}
+                              <div className="max-h-[240px] overflow-y-auto">
+                                {groupedModels.map((group) => (
+                                  <div key={group.provider} className="mb-1 last:mb-0">
+                                    {adapterType === "opencode_local" && (
+                                      <div className="px-2 py-1 text-[10px] uppercase tracking-wide text-muted-foreground">
+                                        {group.provider} ({group.entries.length})
+                                      </div>
+                                    )}
+                                    {group.entries.map((m) => (
+                                      <button
+                                        key={m.id}
+                                        className={cn(
+                                          "flex items-center w-full px-2 py-1.5 text-sm rounded hover:bg-accent/50",
+                                          m.id === model && "bg-accent"
+                                        )}
+                                        onClick={() => {
+                                          setModel(m.id);
+                                          setModelOpen(false);
+                                        }}
+                                      >
+                                        <span className="block w-full text-left truncate" title={m.id}>
+                                          {adapterType === "opencode_local" ? extractModelName(m.id) : m.label}
+                                        </span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                ))}
+                              </div>
+                              {filteredModels.length === 0 && (
+                                <p className="px-2 py-1.5 text-xs text-muted-foreground">
+                                  No models discovered.
+                                </p>
+                              )}
+                            </PopoverContent>
+                          </Popover>
+                        </div>
+                      )}
+
+                      {adapterType === "agent_browser" && (
+                        <>
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Provider (optional)
+                            </label>
+                            <input
+                              className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                              placeholder="browserless / browserbase / browseruse / kernel"
+                              value={provider}
+                              onChange={(e) => setProvider(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Session template
+                            </label>
+                            <input
+                              className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                              placeholder="{{companyId}}-{{agentId}}"
+                              value={sessionNameTemplate}
+                              onChange={(e) => setSessionNameTemplate(e.target.value)}
+                            />
+                          </div>
+                          <div>
+                            <label className="text-xs text-muted-foreground mb-1 block">
+                              Allowed domains (optional)
+                            </label>
+                            <input
+                              className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                              placeholder="docs.example.com, app.example.com"
+                              value={allowedDomains}
+                              onChange={(e) => setAllowedDomains(e.target.value)}
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">
+                                Subcommand
+                              </label>
+                              <input
+                                className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                                placeholder="snapshot"
+                                value={subcommand}
+                                onChange={(e) => setSubcommand(e.target.value)}
+                              />
                             </div>
-                            {filteredModels.length === 0 && (
-                              <p className="px-2 py-1.5 text-xs text-muted-foreground">
-                                No models discovered.
-                              </p>
-                            )}
-                          </PopoverContent>
-                        </Popover>
-                      </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground mb-1 block">
+                                Subcommand args
+                              </label>
+                              <input
+                                className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm font-mono outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                                placeholder="-i, --json"
+                                value={subcommandArgs}
+                                onChange={(e) => setSubcommandArgs(e.target.value)}
+                              />
+                            </div>
+                          </div>
+                        </>
+                      )}
                     </div>
                   )}
 
@@ -937,6 +1037,8 @@ export function OnboardingWizard() {
                             ? `${effectiveAdapterCommand} -p --mode ask --output-format json \"Respond with hello.\"`
                             : adapterType === "codex_local"
                             ? `${effectiveAdapterCommand} exec --json -`
+                            : adapterType === "agent_browser"
+                              ? `${effectiveAdapterCommand} --help`
                             : adapterType === "opencode_local"
                               ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
                             : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}
@@ -945,17 +1047,23 @@ export function OnboardingWizard() {
                           Prompt:{" "}
                           <span className="font-mono">Respond with hello.</span>
                         </p>
-                        {adapterType === "cursor" || adapterType === "codex_local" || adapterType === "opencode_local" ? (
+                        {adapterType === "cursor" || adapterType === "codex_local" || adapterType === "opencode_local" || adapterType === "agent_browser" ? (
                           <p className="text-muted-foreground">
                             If auth fails, set{" "}
                             <span className="font-mono">
-                              {adapterType === "cursor" ? "CURSOR_API_KEY" : "OPENAI_API_KEY"}
+                              {adapterType === "cursor"
+                                ? "CURSOR_API_KEY"
+                                : adapterType === "agent_browser"
+                                  ? "BROWSERLESS_API_KEY / BROWSERBASE_API_KEY / BROWSER_USE_API_KEY / KERNEL_API_KEY"
+                                  : "OPENAI_API_KEY"}
                             </span>{" "}
                             in
                             env or run{" "}
                             <span className="font-mono">
                               {adapterType === "cursor"
                                 ? "agent login"
+                                : adapterType === "agent_browser"
+                                  ? "agent-browser auth login (provider-specific)"
                                 : adapterType === "codex_local"
                                   ? "codex login"
                                   : "opencode auth login"}

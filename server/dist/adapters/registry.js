@@ -4,6 +4,8 @@ import { execute as codexExecute, testEnvironment as codexTestEnvironment, sessi
 import { agentConfigurationDoc as codexAgentConfigurationDoc, models as codexModels } from "@paperclipai/adapter-codex-local";
 import { execute as cursorExecute, testEnvironment as cursorTestEnvironment, sessionCodec as cursorSessionCodec, } from "@paperclipai/adapter-cursor-local/server";
 import { agentConfigurationDoc as cursorAgentConfigurationDoc, models as cursorModels } from "@paperclipai/adapter-cursor-local";
+import { execute as agentBrowserExecute, testEnvironment as agentBrowserTestEnvironment, sessionCodec as agentBrowserSessionCodec, } from "@paperclipai/adapter-agent-browser/server";
+import { agentConfigurationDoc as agentBrowserAgentConfigurationDoc, models as agentBrowserModels, } from "@paperclipai/adapter-agent-browser";
 import { execute as openCodeExecute, testEnvironment as openCodeTestEnvironment, sessionCodec as openCodeSessionCodec, listOpenCodeModels, } from "@paperclipai/adapter-opencode-local/server";
 import { agentConfigurationDoc as openCodeAgentConfigurationDoc, } from "@paperclipai/adapter-opencode-local";
 import { execute as openclawGatewayExecute, testEnvironment as openclawGatewayTestEnvironment, } from "@paperclipai/adapter-openclaw-gateway/server";
@@ -43,6 +45,15 @@ const cursorLocalAdapter = {
     supportsLocalAgentJwt: true,
     agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
+const agentBrowserAdapter = {
+    type: "agent_browser",
+    execute: agentBrowserExecute,
+    testEnvironment: agentBrowserTestEnvironment,
+    sessionCodec: agentBrowserSessionCodec,
+    models: agentBrowserModels,
+    supportsLocalAgentJwt: true,
+    agentConfigurationDoc: agentBrowserAgentConfigurationDoc,
+};
 const openclawGatewayAdapter = {
     type: "openclaw_gateway",
     execute: openclawGatewayExecute,
@@ -77,6 +88,7 @@ const adaptersByType = new Map([
     openCodeLocalAdapter,
     piLocalAdapter,
     cursorLocalAdapter,
+    agentBrowserAdapter,
     openclawGatewayAdapter,
     processAdapter,
     httpAdapter,

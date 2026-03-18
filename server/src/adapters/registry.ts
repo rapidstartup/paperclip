@@ -18,6 +18,15 @@ import {
 } from "@paperclipai/adapter-cursor-local/server";
 import { agentConfigurationDoc as cursorAgentConfigurationDoc, models as cursorModels } from "@paperclipai/adapter-cursor-local";
 import {
+  execute as agentBrowserExecute,
+  testEnvironment as agentBrowserTestEnvironment,
+  sessionCodec as agentBrowserSessionCodec,
+} from "@paperclipai/adapter-agent-browser/server";
+import {
+  agentConfigurationDoc as agentBrowserAgentConfigurationDoc,
+  models as agentBrowserModels,
+} from "@paperclipai/adapter-agent-browser";
+import {
   execute as openCodeExecute,
   testEnvironment as openCodeTestEnvironment,
   sessionCodec as openCodeSessionCodec,
@@ -80,6 +89,16 @@ const cursorLocalAdapter: ServerAdapterModule = {
   agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
 
+const agentBrowserAdapter: ServerAdapterModule = {
+  type: "agent_browser",
+  execute: agentBrowserExecute,
+  testEnvironment: agentBrowserTestEnvironment,
+  sessionCodec: agentBrowserSessionCodec,
+  models: agentBrowserModels,
+  supportsLocalAgentJwt: true,
+  agentConfigurationDoc: agentBrowserAgentConfigurationDoc,
+};
+
 const openclawGatewayAdapter: ServerAdapterModule = {
   type: "openclaw_gateway",
   execute: openclawGatewayExecute,
@@ -118,6 +137,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     openCodeLocalAdapter,
     piLocalAdapter,
     cursorLocalAdapter,
+    agentBrowserAdapter,
     openclawGatewayAdapter,
     processAdapter,
     httpAdapter,

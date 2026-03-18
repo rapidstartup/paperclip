@@ -14,12 +14,14 @@ import { runClaudeLogin } from "@paperclipai/adapter-claude-local/server";
 import { DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX, DEFAULT_CODEX_LOCAL_MODEL, } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "@paperclipai/adapter-opencode-local/server";
+import { DEFAULT_AGENT_BROWSER_COMMAND, DEFAULT_AGENT_BROWSER_SESSION_TEMPLATE, DEFAULT_AGENT_BROWSER_SUBCOMMAND, } from "@paperclipai/adapter-agent-browser";
 export function agentRoutes(db) {
     const DEFAULT_INSTRUCTIONS_PATH_KEYS = {
         claude_local: "instructionsFilePath",
         codex_local: "instructionsFilePath",
         opencode_local: "instructionsFilePath",
         cursor: "instructionsFilePath",
+        agent_browser: "instructionsFilePath",
     };
     const KNOWN_INSTRUCTIONS_PATH_KEYS = new Set(["instructionsFilePath", "agentsMdPath"]);
     const router = Router();
@@ -197,6 +199,17 @@ export function agentRoutes(db) {
         // OpenCode requires explicit model selection — no default
         if (adapterType === "cursor" && !asNonEmptyString(next.model)) {
             next.model = DEFAULT_CURSOR_LOCAL_MODEL;
+        }
+        if (adapterType === "agent_browser") {
+            if (!asNonEmptyString(next.command)) {
+                next.command = DEFAULT_AGENT_BROWSER_COMMAND;
+            }
+            if (!asNonEmptyString(next.sessionNameTemplate)) {
+                next.sessionNameTemplate = DEFAULT_AGENT_BROWSER_SESSION_TEMPLATE;
+            }
+            if (!asNonEmptyString(next.subcommand)) {
+                next.subcommand = DEFAULT_AGENT_BROWSER_SUBCOMMAND;
+            }
         }
         return ensureGatewayDeviceKey(adapterType, next);
     }

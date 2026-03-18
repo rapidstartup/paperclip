@@ -48,3 +48,8 @@ These are set automatically by the server when invoking agents:
 |----------|-------------|
 | `ANTHROPIC_API_KEY` | Anthropic API key (for Claude Local adapter) |
 | `OPENAI_API_KEY` | OpenAI API key (for Codex Local adapter) |
+| `CURSOR_API_KEY` | Cursor API key (for Cursor adapter API-key mode) |
+| `BROWSERLESS_API_KEY` | Browserless credential (for `agent_browser` provider mode) |
+| `BROWSERBASE_API_KEY` | Browserbase credential (for `agent_browser` provider mode) |
+| `BROWSER_USE_API_KEY` | Browser Use credential (for `agent_browser` provider mode) |
+| `KERNEL_API_KEY` | Kernel credential (for `agent_browser` provider mode) |

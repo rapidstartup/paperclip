@@ -33,6 +33,13 @@ const ADAPTER_DEFAULT_RULES_BY_TYPE = {
         { path: ["timeoutSec"], value: 0 },
         { path: ["graceSec"], value: 15 },
     ],
+    agent_browser: [
+        { path: ["timeoutSec"], value: 0 },
+        { path: ["graceSec"], value: 20 },
+        { path: ["command"], value: "agent-browser" },
+        { path: ["sessionNameTemplate"], value: "{{companyId}}-{{agentId}}" },
+        { path: ["subcommand"], value: "snapshot" },
+    ],
     claude_local: [
         { path: ["timeoutSec"], value: 0 },
         { path: ["graceSec"], value: 15 },
