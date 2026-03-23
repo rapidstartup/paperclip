@@ -79,6 +79,9 @@ export function printStartupBanner(opts) {
     const dbBackup = opts.databaseBackupEnabled
         ? `enabled ${color(`(every ${opts.databaseBackupIntervalMinutes}m, keep ${opts.databaseBackupRetentionDays}d)`, "dim")}`
         : color("disabled", "yellow");
+    const backupTarget = opts.databaseBackupTarget === "s3"
+        ? `s3://${opts.databaseBackupS3Bucket}${opts.databaseBackupS3Prefix ? `/${opts.databaseBackupS3Prefix}` : ""}`
+        : "local filesystem";
     const art = [
         color("██████╗  █████╗ ██████╗ ███████╗██████╗  ██████╗██╗     ██╗██████╗ ", "cyan"),
         color("██╔══██╗██╔══██╗██╔══██╗██╔════╝██╔══██╗██╔════╝██║     ██║██╔══██╗", "cyan"),
@@ -104,6 +107,7 @@ export function printStartupBanner(opts) {
             : color(agentJwtSecret.message, "yellow")),
         row("Heartbeat", heartbeat),
         row("DB Backup", dbBackup),
+        row("Backup Target", backupTarget),
         row("Backup Dir", opts.databaseBackupDir),
         row("Config", configPath),
         agentJwtSecret.status === "warn"

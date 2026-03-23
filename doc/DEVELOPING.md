@@ -180,6 +180,18 @@ Environment overrides:
 - `PAPERCLIP_DB_BACKUP_INTERVAL_MINUTES=<minutes>`
 - `PAPERCLIP_DB_BACKUP_RETENTION_DAYS=<days>`
 - `PAPERCLIP_DB_BACKUP_DIR=/absolute/or/~/path`
+- `PAPERCLIP_DB_BACKUP_TARGET=local|s3` (default: `local`)
+- `PAPERCLIP_DB_BACKUP_S3_BUCKET=<bucket-name>` (required when target is `s3`)
+- `PAPERCLIP_DB_BACKUP_S3_REGION=<region>` (default: `auto`)
+- `PAPERCLIP_DB_BACKUP_S3_ENDPOINT=<s3-compatible-endpoint>`
+- `PAPERCLIP_DB_BACKUP_S3_PREFIX=<object-prefix>` (default: `db-backups`)
+- `PAPERCLIP_DB_BACKUP_S3_FORCE_PATH_STYLE=true|false`
+- `PAPERCLIP_DB_BACKUP_S3_DELETE_LOCAL_ON_SUCCESS=true|false` (default: `true`)
+
+Credential aliases accepted by AWS SDK clients:
+
+- `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`
+- `ACCESS_KEY_ID` / `SECRET_ACCESS_KEY` (auto-mapped at runtime)
 
 ## Secrets in Dev
 
