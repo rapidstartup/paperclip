@@ -24,6 +24,7 @@ import {
   Plus,
   X,
   HelpCircle,
+  FolderOpen,
 } from "lucide-react";
 import {
   Tooltip,
@@ -34,7 +35,6 @@ import { PROJECT_COLORS } from "@paperclipai/shared";
 import { cn } from "../lib/utils";
 import { MarkdownEditor, type MarkdownEditorRef } from "./MarkdownEditor";
 import { StatusBadge } from "./StatusBadge";
-import { ChoosePathButton } from "./PathInstructionsModal";
 
 const projectStatuses = [
   { value: "backlog", label: "Backlog" },
@@ -54,7 +54,6 @@ export function NewProjectDialog() {
   const [goalIds, setGoalIds] = useState<string[]>([]);
   const [targetDate, setTargetDate] = useState("");
   const [expanded, setExpanded] = useState(false);
-  const [workspaceLocalPath, setWorkspaceLocalPath] = useState("");
   const [workspaceRepoUrl, setWorkspaceRepoUrl] = useState("");
   const [workspaceError, setWorkspaceError] = useState<string | null>(null);
 
@@ -87,12 +86,9 @@ export function NewProjectDialog() {
     setGoalIds([]);
     setTargetDate("");
     setExpanded(false);
-    setWorkspaceLocalPath("");
     setWorkspaceRepoUrl("");
     setWorkspaceError(null);
   }
-
-  const isAbsolutePath = (value: string) => value.startsWith("/") || /^[A-Za-z]:[\\/]/.test(value);
 
   const isGitHubRepoUrl = (value: string) => {
     try {
@@ -104,12 +100,6 @@ export function NewProjectDialog() {
     } catch {
       return false;
     }
-  };
-
-  const deriveWorkspaceNameFromPath = (value: string) => {
-    const normalized = value.trim().replace(/[\\/]+$/, "");
-    const segments = normalized.split(/[\\/]/).filter(Boolean);
-    return segments[segments.length - 1] ?? "Local folder";
   };
 
   const deriveWorkspaceNameFromRepo = (value: string) => {
@@ -125,13 +115,8 @@ export function NewProjectDialog() {
 
   async function handleSubmit() {
     if (!selectedCompanyId || !name.trim()) return;
-    const localPath = workspaceLocalPath.trim();
     const repoUrl = workspaceRepoUrl.trim();
 
-    if (localPath && !isAbsolutePath(localPath)) {
-      setWorkspaceError("Local folder must be a full absolute path.");
-      return;
-    }
     if (repoUrl && !isGitHubRepoUrl(repoUrl)) {
       setWorkspaceError("Repo must use a valid GitHub repo URL.");
       return;
@@ -149,13 +134,10 @@ export function NewProjectDialog() {
         ...(targetDate ? { targetDate } : {}),
       });
 
-      if (localPath || repoUrl) {
+      if (repoUrl) {
         const workspacePayload: Record<string, unknown> = {
-          name: localPath
-            ? deriveWorkspaceNameFromPath(localPath)
-            : deriveWorkspaceNameFromRepo(repoUrl),
-          ...(localPath ? { cwd: localPath } : {}),
-          ...(repoUrl ? { repoUrl } : {}),
+          name: deriveWorkspaceNameFromRepo(repoUrl),
+          repoUrl,
         };
         await projectsApi.createWorkspace(created.id, workspacePayload);
       }
@@ -280,28 +262,12 @@ export function NewProjectDialog() {
             />
           </div>
 
-          <div>
-            <div className="mb-1 flex items-center gap-1.5">
-              <label className="block text-xs text-muted-foreground">Local folder</label>
-              <span className="text-xs text-muted-foreground/50">optional</span>
-              <Tooltip delayDuration={300}>
-                <TooltipTrigger asChild>
-                  <HelpCircle className="h-3 w-3 text-muted-foreground/50 cursor-help" />
-                </TooltipTrigger>
-                <TooltipContent side="top" className="max-w-[240px] text-xs">
-                  Set an absolute path on this machine where local agents will read and write files for this project.
-                </TooltipContent>
-              </Tooltip>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                className="w-full rounded border border-border bg-transparent px-2 py-1 text-xs font-mono outline-none"
-                value={workspaceLocalPath}
-                onChange={(e) => { setWorkspaceLocalPath(e.target.value); setWorkspaceError(null); }}
-                placeholder="/absolute/path/to/workspace"
-              />
-              <ChoosePathButton />
-            </div>
+          <div className="flex items-center gap-2 rounded border border-border/50 bg-muted/30 px-2.5 py-2">
+            <FolderOpen className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-xs text-muted-foreground">
+              Workspace folder is auto-managed on the server.
+              {workspaceRepoUrl.trim() ? " The repo will be cloned automatically." : " A workspace directory will be created for this project."}
+            </span>
           </div>
 
           {workspaceError && (
