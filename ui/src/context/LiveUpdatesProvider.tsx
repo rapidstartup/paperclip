@@ -730,7 +730,8 @@ export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
       };
 
       socket.onerror = () => {
-        socket?.close();
+        // Let the browser drive socket teardown. Calling close() while CONNECTING
+        // can trigger noisy "closed before established" console warnings.
       };
 
       socket.onclose = () => {
@@ -745,11 +746,20 @@ export function LiveUpdatesProvider({ children }: { children: ReactNode }) {
       closed = true;
       clearReconnect();
       if (socket) {
-        socket.onopen = null;
-        socket.onmessage = null;
-        socket.onerror = null;
-        socket.onclose = null;
-        socket.close(1000, "provider_unmount");
+        const current = socket;
+        const readyState = current.readyState;
+        current.onmessage = null;
+        current.onerror = null;
+        current.onclose = null;
+        if (readyState === WebSocket.OPEN) {
+          current.close(1000, "provider_unmount");
+        } else if (readyState === WebSocket.CONNECTING) {
+          current.onopen = () => {
+            current.close(1000, "provider_unmount");
+          };
+        } else {
+          current.onopen = null;
+        }
       }
     };
   }, [queryClient, selectedCompanyId, pushToast, currentUserId]);

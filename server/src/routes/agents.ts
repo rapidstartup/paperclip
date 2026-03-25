@@ -206,6 +206,28 @@ export function agentRoutes(db: Db) {
     return assertCanCreateAgentsForCompany(req, companyId);
   }
 
+  async function assertCanTestAdapterEnvironment(req: Request, companyId: string) {
+    assertCompanyAccess(req, companyId);
+    if (req.actor.type === "board") {
+      return null;
+    }
+    if (!req.actor.agentId) throw forbidden("Agent authentication required");
+    const actorAgent = await svc.getById(req.actor.agentId);
+    if (!actorAgent || actorAgent.companyId !== companyId) {
+      throw forbidden("Agent key cannot access another company");
+    }
+    const allowedByGrant = await access.hasPermission(
+      companyId,
+      "agent",
+      actorAgent.id,
+      "agents:create",
+    );
+    if (!allowedByGrant && !canCreateAgents(actorAgent)) {
+      throw forbidden("Missing permission: can create agents");
+    }
+    return actorAgent;
+  }
+
   async function actorCanReadConfigurationsForCompany(req: Request, companyId: string) {
     assertCompanyAccess(req, companyId);
     if (req.actor.type === "board") {
@@ -677,7 +699,7 @@ export function agentRoutes(db: Db) {
     async (req, res) => {
       const companyId = req.params.companyId as string;
       const type = req.params.type as string;
-      await assertCanReadConfigurations(req, companyId);
+      await assertCanTestAdapterEnvironment(req, companyId);
 
       const adapter = findServerAdapter(type);
       if (!adapter) {

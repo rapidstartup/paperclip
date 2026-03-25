@@ -37,6 +37,7 @@ if (!isSameFile && existsSync(CWD_ENV_PATH)) {
 }
 
 type DatabaseMode = "embedded-postgres" | "postgres";
+type DatabaseBackupTarget = "local" | "s3";
 
 export interface Config {
   deploymentMode: DeploymentMode;
@@ -55,6 +56,13 @@ export interface Config {
   databaseBackupIntervalMinutes: number;
   databaseBackupRetentionDays: number;
   databaseBackupDir: string;
+  databaseBackupTarget: DatabaseBackupTarget;
+  databaseBackupS3Bucket: string;
+  databaseBackupS3Region: string;
+  databaseBackupS3Endpoint: string | undefined;
+  databaseBackupS3Prefix: string;
+  databaseBackupS3ForcePathStyle: boolean;
+  databaseBackupS3DeleteLocalOnSuccess: boolean;
   serveUi: boolean;
   uiDevMiddleware: boolean;
   secretsProvider: SecretProvider;
@@ -209,6 +217,35 @@ export function loadConfig(): Config {
       fileDatabaseBackup?.dir ??
       resolveDefaultBackupDir(),
   );
+  const databaseBackupTargetRaw = process.env.PAPERCLIP_DB_BACKUP_TARGET?.trim().toLowerCase();
+  const databaseBackupTarget: DatabaseBackupTarget = databaseBackupTargetRaw === "s3" ? "s3" : "local";
+  const databaseBackupS3Bucket =
+    process.env.PAPERCLIP_DB_BACKUP_S3_BUCKET ??
+    process.env.PAPERCLIP_STORAGE_S3_BUCKET ??
+    fileStorage?.s3?.bucket ??
+    "";
+  const databaseBackupS3Region =
+    process.env.PAPERCLIP_DB_BACKUP_S3_REGION ??
+    process.env.PAPERCLIP_STORAGE_S3_REGION ??
+    fileStorage?.s3?.region ??
+    "auto";
+  const databaseBackupS3Endpoint =
+    process.env.PAPERCLIP_DB_BACKUP_S3_ENDPOINT ??
+    process.env.S3_STORAGE_ENDPOINT ??
+    process.env.PAPERCLIP_STORAGE_S3_ENDPOINT ??
+    fileStorage?.s3?.endpoint ??
+    undefined;
+  const databaseBackupS3Prefix = process.env.PAPERCLIP_DB_BACKUP_S3_PREFIX ?? "db-backups";
+  const databaseBackupS3ForcePathStyle =
+    process.env.PAPERCLIP_DB_BACKUP_S3_FORCE_PATH_STYLE !== undefined
+      ? process.env.PAPERCLIP_DB_BACKUP_S3_FORCE_PATH_STYLE === "true"
+      : process.env.PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE !== undefined
+        ? process.env.PAPERCLIP_STORAGE_S3_FORCE_PATH_STYLE === "true"
+        : (fileStorage?.s3?.forcePathStyle ?? false);
+  const databaseBackupS3DeleteLocalOnSuccess =
+    process.env.PAPERCLIP_DB_BACKUP_S3_DELETE_LOCAL_ON_SUCCESS !== undefined
+      ? process.env.PAPERCLIP_DB_BACKUP_S3_DELETE_LOCAL_ON_SUCCESS === "true"
+      : true;
 
   return {
     deploymentMode,
@@ -229,6 +266,13 @@ export function loadConfig(): Config {
     databaseBackupIntervalMinutes,
     databaseBackupRetentionDays,
     databaseBackupDir,
+    databaseBackupTarget,
+    databaseBackupS3Bucket,
+    databaseBackupS3Region,
+    databaseBackupS3Endpoint,
+    databaseBackupS3Prefix,
+    databaseBackupS3ForcePathStyle,
+    databaseBackupS3DeleteLocalOnSuccess,
     serveUi:
       process.env.SERVE_UI !== undefined
         ? process.env.SERVE_UI === "true"

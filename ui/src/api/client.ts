@@ -22,6 +22,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     headers,
     credentials: "include",
+    // React Query already handles client-side caching; disable HTTP cache revalidation
+    // so API requests don't surface 304 responses as errors.
+    cache: "no-store",
     ...init,
   });
   if (!res.ok) {

@@ -279,3 +279,8 @@ export {
   type SetPluginState,
   type ListPluginState,
 } from "./plugin.js";
+
+export {
+  createVibedashProjectBootstrapSchema,
+  type CreateVibedashProjectBootstrap,
+} from "./vibedash.js";

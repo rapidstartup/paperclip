@@ -102,22 +102,63 @@ function buildCliAuthApprovalPath(challengeId: string, token: string) {
   return `/cli-auth/${challengeId}?token=${encodeURIComponent(token)}`;
 }
 
-function readSkillMarkdown(skillName: string): string | null {
-  const normalized = skillName.trim().toLowerCase();
-  if (
-    normalized !== "paperclip" &&
-    normalized !== "paperclip-create-agent" &&
-    normalized !== "paperclip-create-plugin" &&
-    normalized !== "para-memory-files"
-  )
-    return null;
+const SKILL_NAME_RE = /^[a-z0-9][a-z0-9_-]*$/;
+
+function resolveSkillRoots(): string[] {
   const moduleDir = path.dirname(fileURLToPath(import.meta.url));
   const candidates = [
-    path.resolve(moduleDir, "../../skills", normalized, "SKILL.md"), // published: dist/routes/ -> <pkg>/skills/
-    path.resolve(process.cwd(), "skills", normalized, "SKILL.md"), // cwd (e.g. monorepo root)
-    path.resolve(moduleDir, "../../../skills", normalized, "SKILL.md") // dev: src/routes/ -> repo root/skills/
+    path.resolve(moduleDir, "../../skills"),
+    path.resolve(process.cwd(), "skills"),
+    path.resolve(moduleDir, "../../../skills"),
   ];
-  for (const skillPath of candidates) {
+  const seen = new Set<string>();
+  const roots: string[] = [];
+  for (const candidate of candidates) {
+    if (seen.has(candidate)) continue;
+    seen.add(candidate);
+    try {
+      if (fs.statSync(candidate).isDirectory()) roots.push(candidate);
+    } catch {
+      // Continue to next candidate.
+    }
+  }
+  return roots;
+}
+
+function isValidSkillName(skillName: string): boolean {
+  return SKILL_NAME_RE.test(skillName);
+}
+
+function listAvailableSkillNames(): string[] {
+  const names = new Set<string>();
+  const roots = resolveSkillRoots();
+  for (const root of roots) {
+    let entries: fs.Dirent[] = [];
+    try {
+      entries = fs.readdirSync(root, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const entry of entries) {
+      if (!entry.isDirectory()) continue;
+      const normalizedName = entry.name.trim().toLowerCase();
+      if (!isValidSkillName(normalizedName)) continue;
+      const skillPath = path.join(root, entry.name, "SKILL.md");
+      try {
+        if (fs.statSync(skillPath).isFile()) names.add(normalizedName);
+      } catch {
+        // Ignore malformed skill directories.
+      }
+    }
+  }
+  return Array.from(names).sort((a, b) => a.localeCompare(b));
+}
+
+function readSkillMarkdown(skillName: string): string | null {
+  const normalized = skillName.trim().toLowerCase();
+  if (!isValidSkillName(normalized)) return null;
+  for (const root of resolveSkillRoots()) {
+    const skillPath = path.join(root, normalized, "SKILL.md");
     try {
       return fs.readFileSync(skillPath, "utf8");
     } catch {
@@ -1888,17 +1929,10 @@ export function accessRoutes(
 
   router.get("/skills/index", (_req, res) => {
     res.json({
-      skills: [
-        { name: "paperclip", path: "/api/skills/paperclip" },
-        {
-          name: "para-memory-files",
-          path: "/api/skills/para-memory-files"
-        },
-        {
-          name: "paperclip-create-agent",
-          path: "/api/skills/paperclip-create-agent"
-        }
-      ]
+      skills: listAvailableSkillNames().map((name) => ({
+        name,
+        path: `/api/skills/${name}`,
+      })),
     });
   });
 

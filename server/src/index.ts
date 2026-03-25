@@ -24,6 +24,7 @@ import {
 import detectPort from "detect-port";
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
+import { createDatabaseBackupOffloader } from "./database-backup-offloader.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
 import { heartbeatService, reconcilePersistedRuntimeServicesOnStartup, routineService } from "./services/index.js";
@@ -79,7 +80,23 @@ export async function startServer(): Promise<StartedServer> {
   if (process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE === undefined) {
     process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE = config.secretsMasterKeyFilePath;
   }
-  
+  if (process.env.AWS_ACCESS_KEY_ID === undefined && process.env.ACCESS_KEY_ID) {
+    process.env.AWS_ACCESS_KEY_ID = process.env.ACCESS_KEY_ID;
+  }
+  if (process.env.AWS_SECRET_ACCESS_KEY === undefined && process.env.SECRET_ACCESS_KEY) {
+    process.env.AWS_SECRET_ACCESS_KEY = process.env.SECRET_ACCESS_KEY;
+  }
+
+  const backupOffloader = createDatabaseBackupOffloader({
+    target: config.databaseBackupTarget,
+    s3Bucket: config.databaseBackupS3Bucket,
+    s3Region: config.databaseBackupS3Region,
+    s3Endpoint: config.databaseBackupS3Endpoint,
+    s3Prefix: config.databaseBackupS3Prefix,
+    s3ForcePathStyle: config.databaseBackupS3ForcePathStyle,
+    deleteLocalOnSuccess: config.databaseBackupS3DeleteLocalOnSuccess,
+  });
+
   type MigrationSummary =
     | "skipped"
     | "already applied"
@@ -588,6 +605,21 @@ export async function startServer(): Promise<StartedServer> {
           retentionDays: config.databaseBackupRetentionDays,
           filenamePrefix: "paperclip",
         });
+        let offloadResult: Awaited<ReturnType<typeof backupOffloader.offload>> | null = null;
+        if (backupOffloader.target !== "local") {
+          try {
+            offloadResult = await backupOffloader.offload(result.backupFile);
+          } catch (err) {
+            logger.error(
+              {
+                err,
+                backupFile: result.backupFile,
+                backupTarget: backupOffloader.summary,
+              },
+              "Automatic database backup offload failed; local backup file retained",
+            );
+          }
+        }
         logger.info(
           {
             backupFile: result.backupFile,
@@ -595,6 +627,11 @@ export async function startServer(): Promise<StartedServer> {
             prunedCount: result.prunedCount,
             backupDir: config.databaseBackupDir,
             retentionDays: config.databaseBackupRetentionDays,
+            backupTarget: backupOffloader.summary,
+            offloaded: offloadResult?.uploaded ?? false,
+            offloadedBucket: offloadResult?.bucket,
+            offloadedObjectKey: offloadResult?.objectKey,
+            localDeletedAfterOffload: offloadResult?.localDeleted ?? false,
           },
           `Automatic database backup complete: ${formatDatabaseBackupResult(result)}`,
         );
@@ -610,6 +647,7 @@ export async function startServer(): Promise<StartedServer> {
         intervalMinutes: config.databaseBackupIntervalMinutes,
         retentionDays: config.databaseBackupRetentionDays,
         backupDir: config.databaseBackupDir,
+        backupTarget: backupOffloader.summary,
       },
       "Automatic database backups enabled",
     );
@@ -656,6 +694,9 @@ export async function startServer(): Promise<StartedServer> {
         databaseBackupIntervalMinutes: config.databaseBackupIntervalMinutes,
         databaseBackupRetentionDays: config.databaseBackupRetentionDays,
         databaseBackupDir: config.databaseBackupDir,
+        databaseBackupTarget: config.databaseBackupTarget,
+        databaseBackupS3Bucket: config.databaseBackupS3Bucket,
+        databaseBackupS3Prefix: config.databaseBackupS3Prefix,
       });
 
       const boardClaimUrl = getBoardClaimWarningUrl(config.host, listenPort);

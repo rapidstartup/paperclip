@@ -534,6 +534,8 @@ export {
   type PluginStateScopeKey,
   type SetPluginState,
   type ListPluginState,
+  createVibedashProjectBootstrapSchema,
+  type CreateVibedashProjectBootstrap,
 } from "./validators/index.js";
 
 export { API_PREFIX, API } from "./api.js";
