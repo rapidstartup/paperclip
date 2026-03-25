@@ -261,6 +261,8 @@ async function applyPendingMigrationsManually(
 
       await runInTransaction(sql, async () => {
         for (const statement of splitMigrationStatements(migrationContent)) {
+          const alreadyApplied = await migrationStatementAlreadyApplied(sql, statement);
+          if (alreadyApplied) continue;
           await sql.unsafe(statement);
         }
 
@@ -377,7 +379,10 @@ async function migrationStatementAlreadyApplied(
   sql: ReturnType<typeof postgres>,
   statement: string,
 ): Promise<boolean> {
-  const normalized = statement.replace(/\s+/g, " ").trim();
+  // Strip SQL single-line comments before normalizing whitespace so that
+  // leading comments don't prevent the regex patterns from matching.
+  const stripped = statement.replace(/--[^\n]*/g, "");
+  const normalized = stripped.replace(/\s+/g, " ").trim();
 
   const createTableMatch = normalized.match(/^CREATE TABLE(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createTableMatch) {
@@ -391,14 +396,38 @@ async function migrationStatementAlreadyApplied(
     return columnExists(sql, addColumnMatch[1], addColumnMatch[2]);
   }
 
+  const dropColumnMatch = normalized.match(
+    /^ALTER TABLE "([^"]+)" DROP COLUMN(?: IF EXISTS)? "([^"]+)"/i,
+  );
+  if (dropColumnMatch) {
+    return !(await columnExists(sql, dropColumnMatch[1], dropColumnMatch[2]));
+  }
+
   const createIndexMatch = normalized.match(/^CREATE (?:UNIQUE )?INDEX(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createIndexMatch) {
     return indexExists(sql, createIndexMatch[1]);
   }
 
+  const dropIndexMatch = normalized.match(/^DROP INDEX(?: IF EXISTS)? (?:"[^"]+"\.)??"([^"]+)"/i);
+  if (dropIndexMatch) {
+    return !(await indexExists(sql, dropIndexMatch[1]));
+  }
+
   const addConstraintMatch = normalized.match(/^ALTER TABLE "([^"]+)" ADD CONSTRAINT "([^"]+)"/i);
   if (addConstraintMatch) {
     return constraintExists(sql, addConstraintMatch[2]);
+  }
+
+  const dropConstraintMatch = normalized.match(
+    /^ALTER TABLE "([^"]+)" DROP CONSTRAINT(?: IF EXISTS)? "([^"]+)"/i,
+  );
+  if (dropConstraintMatch) {
+    return !(await constraintExists(sql, dropConstraintMatch[2]));
+  }
+
+  const dropTableMatch = normalized.match(/^DROP TABLE(?: IF EXISTS)? "([^"]+)"/i);
+  if (dropTableMatch) {
+    return !(await tableExists(sql, dropTableMatch[1]));
   }
 
   // If we cannot reason about a statement safely, require manual migration.
@@ -662,12 +691,36 @@ export async function applyPendingMigrations(url: string): Promise<void> {
   if (initialState.status === "upToDate") return;
 
   if (initialState.reason === "no-migration-journal-empty-db") {
+    let migrateError: unknown = null;
     const sql = createUtilitySql(url);
     try {
       const db = drizzlePg(sql);
       await migratePg(db, { migrationsFolder: MIGRATIONS_FOLDER });
+    } catch (error) {
+      migrateError = error;
     } finally {
       await sql.end();
+    }
+
+    if (migrateError) {
+      let stateAfterError = await inspectMigrations(url);
+      if (stateAfterError.status === "upToDate") return;
+      if (
+        stateAfterError.status === "needsMigrations" &&
+        stateAfterError.reason === "pending-migrations"
+      ) {
+        const repairAfterError = await reconcilePendingMigrationHistory(url);
+        if (repairAfterError.repairedMigrations.length > 0) {
+          stateAfterError = await inspectMigrations(url);
+          if (stateAfterError.status === "upToDate") return;
+        }
+      }
+      if (stateAfterError.status === "needsMigrations") {
+        await applyPendingMigrationsManually(url, stateAfterError.pendingMigrations);
+        const finalAfterError = await inspectMigrations(url);
+        if (finalAfterError.status === "upToDate") return;
+      }
+      throw migrateError;
     }
 
     let bootstrappedState = await inspectMigrations(url);
@@ -689,8 +742,15 @@ export async function applyPendingMigrations(url: string): Promise<void> {
   }
 
   if (initialState.reason === "no-migration-journal-non-empty-db") {
+    // Database has tables but no migration journal. Instead of throwing immediately,
+    // attempt to recover by applying migrations manually (which skips already-applied
+    // statements). This handles Railway and other deployments where the Drizzle migrator
+    // may have partially applied schema changes without recording them in the journal.
+    await applyPendingMigrationsManually(url, initialState.pendingMigrations);
+    const recoveredState = await inspectMigrations(url);
+    if (recoveredState.status === "upToDate") return;
     throw new Error(
-      "Database has tables but no migration journal; automatic migration is unsafe. Initialize migration history manually.",
+      "Database has tables but no migration journal; automatic recovery failed. Initialize migration history manually.",
     );
   }
 
