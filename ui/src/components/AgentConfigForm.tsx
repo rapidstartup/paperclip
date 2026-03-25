@@ -18,6 +18,11 @@ import {
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
 import {
+  DEFAULT_AGENT_BROWSER_COMMAND,
+  DEFAULT_AGENT_BROWSER_SESSION_TEMPLATE,
+  DEFAULT_AGENT_BROWSER_SUBCOMMAND,
+} from "@paperclipai/adapter-agent-browser";
+import {
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -298,7 +303,8 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     adapterType === "gemini_local" ||
     adapterType === "opencode_local" ||
     adapterType === "pi_local" ||
-    adapterType === "cursor";
+    adapterType === "cursor" ||
+    adapterType === "agent_browser";
   const showLegacyWorkingDirectoryField =
     isLocal && shouldShowLegacyWorkingDirectoryField({ isCreate, adapterConfig: config });
   const uiAdapter = useMemo(() => getUIAdapter(adapterType), [adapterType]);

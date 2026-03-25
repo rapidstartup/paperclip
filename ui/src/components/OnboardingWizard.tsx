@@ -65,6 +65,7 @@ type AdapterType =
   | "opencode_local"
   | "pi_local"
   | "cursor"
+  | "agent_browser"
   | "http"
   | "openclaw_gateway";
 
