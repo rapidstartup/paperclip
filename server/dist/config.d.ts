@@ -40,6 +40,7 @@ export interface Config {
     heartbeatSchedulerEnabled: boolean;
     heartbeatSchedulerIntervalMs: number;
     companyDeletionEnabled: boolean;
+    gitCloneToken: string | undefined;
 }
 export declare function loadConfig(): Config;
 export {};

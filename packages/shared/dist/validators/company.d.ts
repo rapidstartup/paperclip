@@ -23,6 +23,7 @@ export declare const updateCompanySchema: z.ZodObject<{
     requireBoardApprovalForNewAgents: z.ZodOptional<z.ZodBoolean>;
     brandColor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logoAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    githubToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     status?: "active" | "paused" | "archived" | undefined;
     name?: string | undefined;
@@ -32,6 +33,7 @@ export declare const updateCompanySchema: z.ZodObject<{
     requireBoardApprovalForNewAgents?: boolean | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
+    githubToken?: string | null | undefined;
 }, {
     status?: "active" | "paused" | "archived" | undefined;
     name?: string | undefined;
@@ -41,6 +43,7 @@ export declare const updateCompanySchema: z.ZodObject<{
     requireBoardApprovalForNewAgents?: boolean | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
+    githubToken?: string | null | undefined;
 }>;
 export type UpdateCompany = z.infer<typeof updateCompanySchema>;
 export declare const updateCompanyBrandingSchema: z.ZodEffects<z.ZodObject<{

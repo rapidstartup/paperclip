@@ -12,6 +12,7 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubTokenConfigured: boolean;
         logoAssetId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -31,6 +32,7 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubTokenConfigured: boolean;
         logoAssetId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -50,6 +52,7 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubTokenConfigured: boolean;
         logoAssetId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -74,6 +77,7 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     } & {
@@ -92,6 +96,7 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubTokenConfigured: boolean;
         logoAssetId: string | null;
         createdAt: Date;
         updatedAt: Date;
@@ -113,9 +118,11 @@ export declare function companyService(db: Db): {
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
+        githubToken: string | null;
         createdAt: Date;
         updatedAt: Date;
     }>;
+    getGithubToken: (id: string) => Promise<string | null>;
     stats: () => Promise<Record<string, {
         agentCount: number;
         issueCount: number;

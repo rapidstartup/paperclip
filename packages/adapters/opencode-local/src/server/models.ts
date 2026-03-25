@@ -10,6 +10,17 @@ import {
 const MODELS_CACHE_TTL_MS = 60_000;
 const MODELS_DISCOVERY_TIMEOUT_MS = 20_000;
 
+const OPENCODE_MIGRATING_RE = /(?:performing|running)?\s*one[\s-]*time\s+database\s+migration/i;
+
+export class OpenCodeMigratingError extends Error {
+  readonly detail: string;
+  constructor(detail: string) {
+    super(`opencode is performing its one-time database migration. It will be available in a few minutes.`);
+    this.name = "OpenCodeMigratingError";
+    this.detail = detail;
+  }
+}
+
 function resolveOpenCodeCommand(input: unknown): string {
   const envOverride =
     typeof process.env.PAPERCLIP_OPENCODE_COMMAND === "string" &&
@@ -136,14 +147,29 @@ export async function discoverOpenCodeModels(input: {
   );
 
   if (result.timedOut) {
+    // If the timeout output mentions a migration, surface the friendlier error.
+    const fullOutput = `${result.stderr}\n${result.stdout}`.trim();
+    if (OPENCODE_MIGRATING_RE.test(fullOutput)) {
+      throw new OpenCodeMigratingError(firstNonEmptyLine(result.stderr) || firstNonEmptyLine(result.stdout));
+    }
     throw new Error(`\`opencode models\` timed out after ${MODELS_DISCOVERY_TIMEOUT_MS / 1000}s.`);
   }
   if ((result.exitCode ?? 1) !== 0) {
     const detail = firstNonEmptyLine(result.stderr) || firstNonEmptyLine(result.stdout);
+    const fullOutput = `${result.stderr}\n${result.stdout}`.trim();
+    if (OPENCODE_MIGRATING_RE.test(fullOutput)) {
+      throw new OpenCodeMigratingError(detail);
+    }
     throw new Error(detail ? `\`opencode models\` failed: ${detail}` : "`opencode models` failed.");
   }
 
-  return sortModels(parseModelsOutput(result.stdout));
+  // Even a zero exit sometimes only outputs the migration notice before the real list.
+  const models = sortModels(parseModelsOutput(result.stdout));
+  const fullOutput = `${result.stderr}\n${result.stdout}`.trim();
+  if (models.length === 0 && OPENCODE_MIGRATING_RE.test(fullOutput)) {
+    throw new OpenCodeMigratingError(firstNonEmptyLine(result.stderr) || firstNonEmptyLine(result.stdout));
+  }
+  return models;
 }
 
 export async function discoverOpenCodeModelsCached(input: {

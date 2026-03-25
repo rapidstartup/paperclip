@@ -12,6 +12,7 @@ export interface Company {
     spentMonthlyCents: number;
     requireBoardApprovalForNewAgents: boolean;
     brandColor: string | null;
+    githubTokenConfigured: boolean;
     logoAssetId: string | null;
     logoUrl: string | null;
     createdAt: Date;

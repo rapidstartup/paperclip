@@ -14,6 +14,7 @@ export function companyService(db) {
         spentMonthlyCents: companies.spentMonthlyCents,
         requireBoardApprovalForNewAgents: companies.requireBoardApprovalForNewAgents,
         brandColor: companies.brandColor,
+        githubTokenConfigured: sql `(${companies.githubToken} IS NOT NULL)`.as("github_token_configured"),
         logoAssetId: companyLogos.assetId,
         createdAt: companies.createdAt,
         updatedAt: companies.updatedAt,
@@ -227,6 +228,14 @@ export function companyService(db) {
                 .returning();
             return rows[0] ?? null;
         }),
+        getGithubToken: async (id) => {
+            const row = await db
+                .select({ githubToken: companies.githubToken })
+                .from(companies)
+                .where(eq(companies.id, id))
+                .then((rows) => rows[0] ?? null);
+            return row?.githubToken ?? null;
+        },
         stats: () => Promise.all([
             db
                 .select({ companyId: agents.companyId, count: count() })

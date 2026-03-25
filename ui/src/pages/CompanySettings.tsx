@@ -8,7 +8,7 @@ import { accessApi } from "../api/access";
 import { assetsApi } from "../api/assets";
 import { queryKeys } from "../lib/queryKeys";
 import { Button } from "@/components/ui/button";
-import { Settings, Check, Download, Upload } from "lucide-react";
+import { Settings, Check, Download, Upload, Github, Eye, EyeOff } from "lucide-react";
 import { CompanyPatternIcon } from "../components/CompanyPatternIcon";
 import {
   Field,
@@ -38,6 +38,10 @@ export function CompanySettings() {
   const [brandColor, setBrandColor] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [logoUploadError, setLogoUploadError] = useState<string | null>(null);
+
+  // GitHub integration
+  const [githubToken, setGithubToken] = useState("");
+  const [showGithubToken, setShowGithubToken] = useState(false);
 
   // Sync local state from selected company
   useEffect(() => {
@@ -78,6 +82,24 @@ export function CompanySettings() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
     }
+  });
+
+  const githubTokenMutation = useMutation({
+    mutationFn: (token: string | null) =>
+      companiesApi.update(selectedCompanyId!, { githubToken: token }),
+    onSuccess: () => {
+      setGithubToken("");
+      setShowGithubToken(false);
+      queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
+      pushToast({ title: "GitHub token saved.", tone: "success" });
+    },
+    onError: (err) => {
+      pushToast({
+        title: "Failed to save GitHub token",
+        body: err instanceof Error ? err.message : undefined,
+        tone: "error",
+      });
+    },
   });
 
   const inviteMutation = useMutation({
@@ -375,6 +397,83 @@ export function CompanySettings() {
           )}
         </div>
       )}
+
+      {/* GitHub Integration */}
+      <div className="space-y-4">
+        <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          GitHub Integration
+        </div>
+        <div className="space-y-3 rounded-md border border-border px-4 py-4">
+          <div className="flex items-start gap-2">
+            <Github className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+            <div className="space-y-1">
+              <p className="text-sm font-medium">Personal Access Token</p>
+              <p className="text-xs text-muted-foreground">
+                Used by agents to clone and access private GitHub repositories for this company.
+                Falls back to the server-level <code className="font-mono bg-muted px-1 rounded">GITHUB_TOKEN</code> if not set.
+              </p>
+            </div>
+          </div>
+          {(selectedCompany as { githubTokenConfigured?: boolean }).githubTokenConfigured && !githubToken && (
+            <div className="flex items-center gap-2 rounded border border-border/50 bg-muted/30 px-2.5 py-2">
+              <span className="text-xs text-muted-foreground">
+                A GitHub token is currently configured for this company.
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="ml-auto h-6 text-xs text-destructive hover:text-destructive"
+                onClick={() => githubTokenMutation.mutate(null)}
+                disabled={githubTokenMutation.isPending}
+              >
+                {githubTokenMutation.isPending ? "Removing..." : "Remove"}
+              </Button>
+            </div>
+          )}
+          <Field
+            label={
+              (selectedCompany as { githubTokenConfigured?: boolean }).githubTokenConfigured
+                ? "Replace token"
+                : "Token"
+            }
+            hint="GitHub Personal Access Token with repo access. Never shown after saving."
+          >
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <input
+                  className="w-full rounded-md border border-border bg-transparent px-2.5 py-1.5 pr-8 text-sm font-mono outline-none"
+                  type={showGithubToken ? "text" : "password"}
+                  value={githubToken}
+                  onChange={(e) => setGithubToken(e.target.value)}
+                  placeholder={
+                    (selectedCompany as { githubTokenConfigured?: boolean }).githubTokenConfigured
+                      ? "Enter new token to replace…"
+                      : "ghp_xxxxxxxxxxxxxxxxxxxx"
+                  }
+                  autoComplete="new-password"
+                />
+                <button
+                  type="button"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowGithubToken((v) => !v)}
+                  tabIndex={-1}
+                >
+                  {showGithubToken
+                    ? <EyeOff className="h-3.5 w-3.5" />
+                    : <Eye className="h-3.5 w-3.5" />}
+                </button>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => githubTokenMutation.mutate(githubToken.trim() || null)}
+                disabled={!githubToken.trim() || githubTokenMutation.isPending}
+              >
+                {githubTokenMutation.isPending ? "Saving…" : "Save"}
+              </Button>
+            </div>
+          </Field>
+        </div>
+      </div>
 
       {/* Hiring */}
       <div className="space-y-4">

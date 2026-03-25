@@ -15,6 +15,7 @@ export const updateCompanySchema = createCompanySchema
     requireBoardApprovalForNewAgents: z.boolean().optional(),
     brandColor: brandColorSchema,
     logoAssetId: logoAssetIdSchema,
+    githubToken: z.string().nullable().optional(),
 });
 export const updateCompanyBrandingSchema = z
     .object({

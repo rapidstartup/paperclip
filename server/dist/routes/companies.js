@@ -233,6 +233,10 @@ export function companyRoutes(db, storage) {
             res.status(404).json({ error: "Company not found" });
             return;
         }
+        const { githubToken: _redactedToken, ...loggableBody } = body;
+        const logDetails = "githubToken" in body
+            ? { ...loggableBody, githubToken: "[redacted]" }
+            : loggableBody;
         await logActivity(db, {
             companyId,
             actorType: actor.actorType,
@@ -242,7 +246,7 @@ export function companyRoutes(db, storage) {
             action: "company.updated",
             entityType: "company",
             entityId: companyId,
-            details: body,
+            details: logDetails,
         });
         res.json(company);
     });

@@ -10,6 +10,7 @@ import {
   agentRuntimeState,
   agentTaskSessions,
   agentWakeupRequests,
+  companies,
   heartbeatRunEvents,
   heartbeatRuns,
   issues,
@@ -89,10 +90,38 @@ function deriveRepoNameFromRepoUrl(repoUrl: string | null): string | null {
   }
 }
 
+/**
+ * Injects a GitHub/Git personal access token into an HTTPS clone URL so the
+ * server can clone private repositories without interactive prompts.
+ *
+ * Token priority: company-level token > PAPERCLIP_GIT_CLONE_TOKEN env var > GITHUB_TOKEN env var.
+ * Only HTTPS URLs are rewritten; SSH URLs are returned unchanged.
+ * The raw URL (without credentials) is always used in log/error messages.
+ */
+function injectGitCloneToken(repoUrl: string, companyToken: string | null = null): string {
+  const token = (
+    companyToken?.trim() ||
+    process.env.PAPERCLIP_GIT_CLONE_TOKEN?.trim() ||
+    process.env.GITHUB_TOKEN?.trim() ||
+    ""
+  );
+  if (!token) return repoUrl;
+  try {
+    const parsed = new URL(repoUrl);
+    if (parsed.protocol !== "https:") return repoUrl;
+    parsed.username = "x-access-token";
+    parsed.password = token;
+    return parsed.toString();
+  } catch {
+    return repoUrl;
+  }
+}
+
 async function ensureManagedProjectWorkspace(input: {
   companyId: string;
   projectId: string;
   repoUrl: string | null;
+  companyGithubToken?: string | null;
 }): Promise<{ cwd: string; warning: string | null }> {
   const cwd = resolveManagedProjectWorkspaceDir({
     companyId: input.companyId,
@@ -128,14 +157,17 @@ async function ensureManagedProjectWorkspace(input: {
     await fs.rm(cwd, { recursive: true, force: true });
   }
 
+  const cloneUrl = injectGitCloneToken(input.repoUrl, input.companyGithubToken ?? null);
   try {
-    await execFile("git", ["clone", input.repoUrl, cwd], {
-      env: sanitizeRuntimeServiceBaseEnv(process.env),
+    await execFile("git", ["clone", cloneUrl, cwd], {
+      env: { ...sanitizeRuntimeServiceBaseEnv(process.env), GIT_TERMINAL_PROMPT: "0" },
       timeout: MANAGED_WORKSPACE_GIT_CLONE_TIMEOUT_MS,
     });
     return { cwd, warning: null };
   } catch (error) {
-    const reason = error instanceof Error ? error.message : String(error);
+    const reason = error instanceof Error
+      ? error.message.replace(cloneUrl, input.repoUrl)
+      : String(error).replace(cloneUrl, input.repoUrl);
     throw new Error(`Failed to prepare managed checkout for "${input.repoUrl}" at "${cwd}": ${reason}`);
   }
 }
@@ -1100,6 +1132,12 @@ export function heartbeatService(db: Db) {
     const useProjectWorkspace = opts?.useProjectWorkspace !== false;
     const workspaceProjectId = useProjectWorkspace ? resolvedProjectId : null;
 
+    const companyGithubToken = await db
+      .select({ githubToken: companies.githubToken })
+      .from(companies)
+      .where(eq(companies.id, agent.companyId))
+      .then((rows) => rows[0]?.githubToken ?? null);
+
     const unorderedProjectWorkspaceRows = workspaceProjectId
       ? await db
           .select()
@@ -1144,6 +1182,7 @@ export function heartbeatService(db: Db) {
               companyId: agent.companyId,
               projectId: workspaceProjectId ?? resolvedProjectId ?? workspace.projectId,
               repoUrl: readNonEmptyString(workspace.repoUrl),
+              companyGithubToken,
             });
             projectCwd = managedWorkspace.cwd;
             managedWorkspaceWarning = managedWorkspace.warning;
@@ -1216,6 +1255,7 @@ export function heartbeatService(db: Db) {
         companyId: agent.companyId,
         projectId: workspaceProjectId,
         repoUrl: null,
+        companyGithubToken,
       });
       return {
         cwd: managedWorkspace.cwd,

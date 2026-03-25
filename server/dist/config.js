@@ -188,6 +188,7 @@ export function loadConfig() {
         heartbeatSchedulerEnabled: process.env.HEARTBEAT_SCHEDULER_ENABLED !== "false",
         heartbeatSchedulerIntervalMs: Math.max(10000, Number(process.env.HEARTBEAT_SCHEDULER_INTERVAL_MS) || 30000),
         companyDeletionEnabled,
+        gitCloneToken: (process.env.PAPERCLIP_GIT_CLONE_TOKEN ?? process.env.GITHUB_TOKEN ?? "").trim() || undefined,
     };
 }
 //# sourceMappingURL=config.js.map

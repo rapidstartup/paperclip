@@ -1,5 +1,5 @@
 import { asString, asStringArray, parseObject, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
-import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
+import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable, OpenCodeMigratingError } from "./models.js";
 import { parseOpenCodeJsonl } from "./parse.js";
 function summarizeStatus(checks) {
     if (checks.some((check) => check.level === "error"))
@@ -120,23 +120,34 @@ export async function testEnvironment(ctx) {
             }
         }
         catch (err) {
-            const errMsg = err instanceof Error ? err.message : String(err);
-            if (/ProviderModelNotFoundError/i.test(errMsg)) {
+            if (err instanceof OpenCodeMigratingError) {
                 checks.push({
-                    code: "opencode_hello_probe_model_unavailable",
+                    code: "opencode_migrating",
                     level: "warn",
-                    message: "The configured model was not found by the provider.",
-                    detail: errMsg,
-                    hint: "Run `opencode models` and choose an available provider/model ID.",
+                    message: err.message,
+                    detail: err.detail || undefined,
+                    hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes (usually within a few minutes).",
                 });
             }
             else {
-                checks.push({
-                    code: "opencode_models_discovery_failed",
-                    level: "error",
-                    message: errMsg || "OpenCode model discovery failed.",
-                    hint: "Run `opencode models` manually to verify provider auth and config.",
-                });
+                const errMsg = err instanceof Error ? err.message : String(err);
+                if (/ProviderModelNotFoundError/i.test(errMsg)) {
+                    checks.push({
+                        code: "opencode_hello_probe_model_unavailable",
+                        level: "warn",
+                        message: "The configured model was not found by the provider.",
+                        detail: errMsg,
+                        hint: "Run `opencode models` and choose an available provider/model ID.",
+                    });
+                }
+                else {
+                    checks.push({
+                        code: "opencode_models_discovery_failed",
+                        level: "error",
+                        message: errMsg || "OpenCode model discovery failed.",
+                        hint: "Run `opencode models` manually to verify provider auth and config.",
+                    });
+                }
             }
         }
     }
@@ -152,23 +163,34 @@ export async function testEnvironment(ctx) {
             }
         }
         catch (err) {
-            const errMsg = err instanceof Error ? err.message : String(err);
-            if (/ProviderModelNotFoundError/i.test(errMsg)) {
+            if (err instanceof OpenCodeMigratingError) {
                 checks.push({
-                    code: "opencode_hello_probe_model_unavailable",
+                    code: "opencode_migrating",
                     level: "warn",
-                    message: "The configured model was not found by the provider.",
-                    detail: errMsg,
-                    hint: "Run `opencode models` and choose an available provider/model ID.",
+                    message: err.message,
+                    detail: err.detail || undefined,
+                    hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes.",
                 });
             }
             else {
-                checks.push({
-                    code: "opencode_models_discovery_failed",
-                    level: "warn",
-                    message: errMsg || "OpenCode model discovery failed (best-effort, no model configured).",
-                    hint: "Run `opencode models` manually to verify provider auth and config.",
-                });
+                const errMsg = err instanceof Error ? err.message : String(err);
+                if (/ProviderModelNotFoundError/i.test(errMsg)) {
+                    checks.push({
+                        code: "opencode_hello_probe_model_unavailable",
+                        level: "warn",
+                        message: "The configured model was not found by the provider.",
+                        detail: errMsg,
+                        hint: "Run `opencode models` and choose an available provider/model ID.",
+                    });
+                }
+                else {
+                    checks.push({
+                        code: "opencode_models_discovery_failed",
+                        level: "warn",
+                        message: errMsg || "OpenCode model discovery failed (best-effort, no model configured).",
+                        hint: "Run `opencode models` manually to verify provider auth and config.",
+                    });
+                }
             }
         }
     }
@@ -177,27 +199,45 @@ export async function testEnvironment(ctx) {
         // No model configured – skip model requirement if no model-related checks exist
     }
     else if (configuredModel && canRunProbe) {
-        try {
-            await ensureOpenCodeModelConfiguredAndAvailable({
-                model: configuredModel,
-                command,
-                cwd,
-                env: runtimeEnv,
-            });
-            checks.push({
-                code: "opencode_model_configured",
-                level: "info",
-                message: `Configured model: ${configuredModel}`,
-            });
+        const isMigrating = checks.some((c) => c.code === "opencode_migrating");
+        if (isMigrating) {
+            // Skip model validation while opencode is performing its one-time DB migration.
             modelValidationPassed = true;
         }
-        catch (err) {
-            checks.push({
-                code: "opencode_model_invalid",
-                level: "error",
-                message: err instanceof Error ? err.message : "Configured model is unavailable.",
-                hint: "Run `opencode models` and choose a currently available provider/model ID.",
-            });
+        else {
+            try {
+                await ensureOpenCodeModelConfiguredAndAvailable({
+                    model: configuredModel,
+                    command,
+                    cwd,
+                    env: runtimeEnv,
+                });
+                checks.push({
+                    code: "opencode_model_configured",
+                    level: "info",
+                    message: `Configured model: ${configuredModel}`,
+                });
+                modelValidationPassed = true;
+            }
+            catch (err) {
+                if (err instanceof OpenCodeMigratingError) {
+                    checks.push({
+                        code: "opencode_migrating",
+                        level: "warn",
+                        message: err.message,
+                        hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes.",
+                    });
+                    modelValidationPassed = true;
+                }
+                else {
+                    checks.push({
+                        code: "opencode_model_invalid",
+                        level: "error",
+                        message: err instanceof Error ? err.message : "Configured model is unavailable.",
+                        hint: "Run `opencode models` and choose a currently available provider/model ID.",
+                    });
+                }
+            }
         }
     }
     if (canRunProbe && modelValidationPassed) {

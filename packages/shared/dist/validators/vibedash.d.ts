@@ -53,12 +53,12 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
         capabilities?: string | null | undefined;
         model?: string | null | undefined;
     };
+    githubToken?: string | null | undefined;
     vibedashProjectDescription?: string | null | undefined;
     vibedashOwnerEmail?: string | null | undefined;
     customerBoardUserId?: string | null | undefined;
     customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve")[] | undefined;
     githubRepoRef?: string | null | undefined;
-    githubToken?: string | null | undefined;
     vibedashApiUrl?: string | null | undefined;
     workspaceRootHint?: string | null | undefined;
 }, {
@@ -68,12 +68,12 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     githubRepoUrl: string;
     vibedashApiKey: string;
     requireBoardApprovalForNewAgents?: boolean | undefined;
+    githubToken?: string | null | undefined;
     vibedashProjectDescription?: string | null | undefined;
     vibedashOwnerEmail?: string | null | undefined;
     customerBoardUserId?: string | null | undefined;
     customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve")[] | undefined;
     githubRepoRef?: string | null | undefined;
-    githubToken?: string | null | undefined;
     vibedashApiUrl?: string | null | undefined;
     workspaceRootHint?: string | null | undefined;
     triggerInitialWakeup?: boolean | undefined;

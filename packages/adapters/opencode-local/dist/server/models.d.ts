@@ -1,4 +1,8 @@
 import type { AdapterModel } from "@paperclipai/adapter-utils";
+export declare class OpenCodeMigratingError extends Error {
+    readonly detail: string;
+    constructor(detail: string);
+}
 export declare function discoverOpenCodeModels(input?: {
     command?: unknown;
     cwd?: unknown;
