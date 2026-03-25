@@ -241,6 +241,9 @@ importers:
 
   packages/db:
     dependencies:
+      '@embedded-postgres/windows-x64':
+        specifier: 18.3.0-beta.16
+        version: 18.3.0-beta.16
       '@paperclipai/shared':
         specifier: workspace:*
         version: link:../shared
@@ -1257,6 +1260,12 @@ packages:
 
   '@embedded-postgres/windows-x64@18.1.0-beta.16':
     resolution: {integrity: sha512-v6AXH1zi6YyoqPM6U7mX08prJ33yD9gqsbo3YdtPi8FDx0C/y9sYa3aQVf/3blPJvHyERYbY8fZnYXbb79Lo0Q==}
+    engines: {node: '>=16'}
+    cpu: [x64]
+    os: [win32]
+
+  '@embedded-postgres/windows-x64@18.3.0-beta.16':
+    resolution: {integrity: sha512-REupF2FhJMEsXqdeUG+wVWSKpykbruh9Ro5bHG/7RCBuSa/ncJ/8qhtVSI71RTJn1Cb9Shqa/gbnorz+8hat9Q==}
     engines: {node: '>=16'}
     cpu: [x64]
     os: [win32]
@@ -7047,6 +7056,8 @@ snapshots:
 
   '@embedded-postgres/windows-x64@18.1.0-beta.16':
     optional: true
+
+  '@embedded-postgres/windows-x64@18.3.0-beta.16': {}
 
   '@emnapi/runtime@1.9.1':
     dependencies:
