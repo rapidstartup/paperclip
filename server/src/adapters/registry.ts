@@ -75,6 +75,15 @@ import {
   agentConfigurationDoc as hermesAgentConfigurationDoc,
   models as hermesModels,
 } from "hermes-paperclip-adapter";
+import {
+  execute as agentBrowserExecute,
+  testEnvironment as agentBrowserTestEnvironment,
+  sessionCodec as agentBrowserSessionCodec,
+} from "@paperclipai/adapter-agent-browser/server";
+import {
+  agentConfigurationDoc as agentBrowserAgentConfigurationDoc,
+  models as agentBrowserModels,
+} from "@paperclipai/adapter-agent-browser";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 
@@ -181,6 +190,17 @@ const hermesLocalAdapter: ServerAdapterModule = {
   agentConfigurationDoc: hermesAgentConfigurationDoc,
 };
 
+const agentBrowserAdapter: ServerAdapterModule = {
+  type: "agent_browser",
+  execute: agentBrowserExecute,
+  testEnvironment: agentBrowserTestEnvironment,
+  sessionCodec: agentBrowserSessionCodec,
+  sessionManagement: getAdapterSessionManagement("agent_browser") ?? undefined,
+  models: agentBrowserModels,
+  supportsLocalAgentJwt: false,
+  agentConfigurationDoc: agentBrowserAgentConfigurationDoc,
+};
+
 const adaptersByType = new Map<string, ServerAdapterModule>(
   [
     claudeLocalAdapter,
@@ -191,6 +211,7 @@ const adaptersByType = new Map<string, ServerAdapterModule>(
     geminiLocalAdapter,
     openclawGatewayAdapter,
     hermesLocalAdapter,
+    agentBrowserAdapter,
     processAdapter,
     httpAdapter,
   ].map((a) => [a.type, a]),

@@ -58,6 +58,11 @@ import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "@paperclipai/adapter-opencode-local/server";
 import {
+  DEFAULT_AGENT_BROWSER_COMMAND,
+  DEFAULT_AGENT_BROWSER_SESSION_TEMPLATE,
+  DEFAULT_AGENT_BROWSER_SUBCOMMAND,
+} from "@paperclipai/adapter-agent-browser";
+import {
   loadDefaultAgentInstructionsBundle,
   resolveDefaultAgentInstructionsBundleRole,
 } from "../services/default-agent-instructions.js";
@@ -70,6 +75,7 @@ export function agentRoutes(db: Db) {
     opencode_local: "instructionsFilePath",
     cursor: "instructionsFilePath",
     pi_local: "instructionsFilePath",
+    agent_browser: "instructionsFilePath",
   };
   const DEFAULT_MANAGED_INSTRUCTIONS_ADAPTER_TYPES = new Set(Object.keys(DEFAULT_INSTRUCTIONS_PATH_KEYS));
   const KNOWN_INSTRUCTIONS_PATH_KEYS = new Set(["instructionsFilePath", "agentsMdPath"]);
@@ -423,6 +429,17 @@ export function agentRoutes(db: Db) {
     // OpenCode requires explicit model selection — no default
     if (adapterType === "cursor" && !asNonEmptyString(next.model)) {
       next.model = DEFAULT_CURSOR_LOCAL_MODEL;
+    }
+    if (adapterType === "agent_browser") {
+      if (!asNonEmptyString(next.command)) {
+        next.command = DEFAULT_AGENT_BROWSER_COMMAND;
+      }
+      if (!asNonEmptyString(next.sessionNameTemplate)) {
+        next.sessionNameTemplate = DEFAULT_AGENT_BROWSER_SESSION_TEMPLATE;
+      }
+      if (!asNonEmptyString(next.subcommand)) {
+        next.subcommand = DEFAULT_AGENT_BROWSER_SUBCOMMAND;
+      }
     }
     return ensureGatewayDeviceKey(adapterType, next);
   }
