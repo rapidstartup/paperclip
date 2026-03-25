@@ -408,7 +408,8 @@ var init_company = __esm({
       spentMonthlyCents: z3.number().int().nonnegative().optional(),
       requireBoardApprovalForNewAgents: z3.boolean().optional(),
       brandColor: brandColorSchema,
-      logoAssetId: logoAssetIdSchema
+      logoAssetId: logoAssetIdSchema,
+      githubToken: z3.string().nullable().optional()
     });
     updateCompanyBrandingSchema = z3.object({
       name: z3.string().min(1).optional(),
@@ -3127,6 +3128,7 @@ var init_companies = __esm({
         spentMonthlyCents: integer("spent_monthly_cents").notNull().default(0),
         requireBoardApprovalForNewAgents: boolean("require_board_approval_for_new_agents").notNull().default(true),
         brandColor: text6("brand_color"),
+        githubToken: text6("github_token"),
         createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
