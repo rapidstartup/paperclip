@@ -395,7 +395,22 @@ export async function startServer(): Promise<StartedServer> {
     }
   
     const embeddedAdminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/postgres`;
-    const dbStatus = await ensurePostgresDatabase(embeddedAdminConnectionString, "paperclip");
+    let dbStatus: "created" | "exists";
+    const maxStartupRetries = 15;
+    for (let attempt = 1; ; attempt++) {
+      try {
+        dbStatus = await ensurePostgresDatabase(embeddedAdminConnectionString, "paperclip");
+        break;
+      } catch (err: unknown) {
+        const pgCode = (err as { code?: string })?.code;
+        if (pgCode === "57P03" && attempt < maxStartupRetries) {
+          logger.info(`Waiting for embedded PostgreSQL to finish starting up (attempt ${attempt}/${maxStartupRetries})...`);
+          await new Promise((r) => setTimeout(r, 1000));
+          continue;
+        }
+        throw err;
+      }
+    }
     if (dbStatus === "created") {
       logger.info("Created embedded PostgreSQL database: paperclip");
     }
