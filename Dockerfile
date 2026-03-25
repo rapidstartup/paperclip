@@ -1,10 +1,9 @@
-FROM node:lts-trixie-slim AS base
+FROM node:22-bookworm-slim AS production
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates curl git \
   && rm -rf /var/lib/apt/lists/*
 RUN corepack enable
 
-FROM base AS deps
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
 COPY cli/package.json cli/
@@ -17,29 +16,22 @@ COPY packages/adapters/claude-local/package.json packages/adapters/claude-local/
 COPY packages/adapters/codex-local/package.json packages/adapters/codex-local/
 COPY packages/adapters/cursor-local/package.json packages/adapters/cursor-local/
 COPY packages/adapters/gemini-local/package.json packages/adapters/gemini-local/
+COPY packages/adapters/agent-browser/package.json packages/adapters/agent-browser/
 COPY packages/adapters/openclaw-gateway/package.json packages/adapters/openclaw-gateway/
 COPY packages/adapters/opencode-local/package.json packages/adapters/opencode-local/
 COPY packages/adapters/pi-local/package.json packages/adapters/pi-local/
 COPY packages/plugins/sdk/package.json packages/plugins/sdk/
 COPY patches/ patches/
+RUN pnpm install --frozen-lockfile --prod --filter @paperclipai/server... --ignore-scripts --force
 
-RUN pnpm install --frozen-lockfile
-
-FROM base AS build
-WORKDIR /app
-COPY --from=deps /app /app
 COPY . .
-RUN pnpm --filter @paperclipai/ui build
-RUN pnpm --filter @paperclipai/plugin-sdk build
-RUN pnpm --filter @paperclipai/server build
-RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
-
-FROM base AS production
-WORKDIR /app
-COPY --chown=node:node --from=build /app /app
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && mkdir -p /paperclip \
-  && chown node:node /paperclip
+RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Run local build before deploy." && exit 1)
+RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Run local build before deploy." && exit 1)
+RUN npm install --no-save tsx
+RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
+RUN npm install --global --omit=dev @openai/codex@latest && npm cache clean --force
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest && npm cache clean --force
+RUN mkdir -p /paperclip && chown node:node /paperclip
 
 ENV NODE_ENV=production \
   HOME=/paperclip \
@@ -52,8 +44,6 @@ ENV NODE_ENV=production \
   PAPERCLIP_DEPLOYMENT_MODE=authenticated \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private
 
-VOLUME ["/paperclip"]
 EXPOSE 3100
 
-USER node
-CMD ["node", "--import", "./server/node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
+CMD ["node", "--import", "./node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
