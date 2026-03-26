@@ -22,6 +22,9 @@ The `claude_local` adapter runs Anthropic's Claude Code CLI locally. It supports
 | `graceSec` | number | No | Grace period before force-kill |
 | `maxTurnsPerRun` | number | No | Max agentic turns per heartbeat (defaults to `300`) |
 | `dangerouslySkipPermissions` | boolean | No | Skip permission prompts (dev only) |
+| `runAsNonRoot` | boolean | No | When Paperclip runs as root, spawn Claude as non-root (default `true`) |
+| `runAsUid` | number | No | Target uid for Claude process when `runAsNonRoot` is enabled (default `1000`) |
+| `runAsGid` | number | No | Target gid for Claude process when `runAsNonRoot` is enabled (default `1000`) |
 
 ## Prompt Templates
 

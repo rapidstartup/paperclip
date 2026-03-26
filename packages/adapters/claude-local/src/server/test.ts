@@ -49,6 +49,34 @@ function summarizeProbeDetail(stdout: string, stderr: string): string | null {
   return clean.length > max ? `${clean.slice(0, max - 1)}…` : clean;
 }
 
+function parseBooleanEnv(value: string | undefined, fallback: boolean): boolean {
+  if (typeof value !== "string") return fallback;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "1" || normalized === "true" || normalized === "yes" || normalized === "on") return true;
+  if (normalized === "0" || normalized === "false" || normalized === "no" || normalized === "off") return false;
+  return fallback;
+}
+
+function resolveClaudeRunAsUser(config: Record<string, unknown>): { uid: number; gid: number } | null {
+  if (process.platform === "win32") return null;
+  if (typeof process.getuid !== "function" || process.getuid() !== 0) return null;
+
+  const runAsNonRoot = typeof config.runAsNonRoot === "boolean"
+    ? config.runAsNonRoot
+    : parseBooleanEnv(process.env.PAPERCLIP_CLAUDE_RUN_AS_NON_ROOT, true);
+  if (!runAsNonRoot) return null;
+
+  const envUid = Number(process.env.PAPERCLIP_CLAUDE_RUN_AS_UID ?? "1000");
+  const envGid = Number(process.env.PAPERCLIP_CLAUDE_RUN_AS_GID ?? "1000");
+  const defaultUid = Number.isFinite(envUid) ? envUid : 1000;
+  const defaultGid = Number.isFinite(envGid) ? envGid : 1000;
+  const uid = Math.trunc(asNumber(config.runAsUid, defaultUid));
+  const gid = Math.trunc(asNumber(config.runAsGid, defaultGid));
+  if (uid <= 0 || gid <= 0) return null;
+
+  return { uid, gid };
+}
+
 export async function testEnvironment(
   ctx: AdapterEnvironmentTestContext,
 ): Promise<AdapterEnvironmentTestResult> {
@@ -132,19 +160,44 @@ export async function testEnvironment(
       const chrome = asBoolean(config.chrome, false);
       const maxTurns = asNumber(config.maxTurnsPerRun, 0);
       const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, false);
+      const runningAsRoot = typeof process.getuid === "function" && process.getuid() === 0;
+      const runAsUser = resolveClaudeRunAsUser(config);
       const extraArgs = (() => {
         const fromExtraArgs = asStringArray(config.extraArgs);
         if (fromExtraArgs.length > 0) return fromExtraArgs;
         return asStringArray(config.args);
       })();
+      const hasDangerousSkipInExtraArgs = extraArgs.includes("--dangerously-skip-permissions");
+      const effectiveRunAsRoot = runAsUser ? runAsUser.uid === 0 : runningAsRoot;
+      const canUseDangerousSkipPermissions = dangerouslySkipPermissions && !effectiveRunAsRoot;
+      const sanitizedExtraArgs = effectiveRunAsRoot
+        ? extraArgs.filter((arg) => arg !== "--dangerously-skip-permissions")
+        : extraArgs;
 
       const args = ["--print", "-", "--output-format", "stream-json", "--verbose"];
-      if (dangerouslySkipPermissions) args.push("--dangerously-skip-permissions");
+      if (canUseDangerousSkipPermissions) args.push("--dangerously-skip-permissions");
       if (chrome) args.push("--chrome");
       if (model) args.push("--model", model);
       if (effort) args.push("--effort", effort);
       if (maxTurns > 0) args.push("--max-turns", String(maxTurns));
-      if (extraArgs.length > 0) args.push(...extraArgs);
+      if (sanitizedExtraArgs.length > 0) args.push(...sanitizedExtraArgs);
+      if (runAsUser) {
+        checks.push({
+          code: "claude_probe_spawned_as_non_root_user",
+          level: "info",
+          message: `Claude probe process will run as uid ${runAsUser.uid}, gid ${runAsUser.gid}.`,
+        });
+      }
+      if ((dangerouslySkipPermissions || hasDangerousSkipInExtraArgs) && effectiveRunAsRoot) {
+        checks.push({
+          code: "claude_skip_permissions_ignored_under_root",
+          level: "warn",
+          message:
+            "Ignoring dangerouslySkipPermissions because Claude CLI forbids --dangerously-skip-permissions under root/sudo.",
+          hint:
+            "Run the adapter process as a non-root user to use unattended permission bypass with Claude.",
+        });
+      }
 
       const probe = await runChildProcess(
         `claude-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -156,6 +209,7 @@ export async function testEnvironment(
           timeoutSec: 45,
           graceSec: 5,
           stdin: "Respond with hello.",
+          runAsUser: runAsUser ?? undefined,
           onLog: async () => {},
         },
       );

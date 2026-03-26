@@ -557,12 +557,22 @@ export async function runChildProcess(runId, command, args, opts) {
         const mergedEnv = ensurePathInEnv(rawMerged);
         void resolveSpawnTarget(command, args, opts.cwd, mergedEnv)
             .then((target) => {
-            const child = spawn(target.command, target.args, {
+            const stdio = [
+                opts.stdin != null ? "pipe" : "ignore",
+                "pipe",
+                "pipe",
+            ];
+            const spawnOpts = {
                 cwd: opts.cwd,
                 env: mergedEnv,
                 shell: false,
-                stdio: [opts.stdin != null ? "pipe" : "ignore", "pipe", "pipe"],
-            });
+                stdio,
+            };
+            if (process.platform !== "win32" && opts.runAsUser) {
+                spawnOpts.uid = opts.runAsUser.uid;
+                spawnOpts.gid = opts.runAsUser.gid;
+            }
+            const child = spawn(target.command, target.args, spawnOpts);
             const startedAt = new Date().toISOString();
             if (opts.stdin != null && child.stdin) {
                 child.stdin.write(opts.stdin);

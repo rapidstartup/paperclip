@@ -20,6 +20,9 @@ Core fields:
 - promptTemplate (string, optional): run prompt template
 - maxTurnsPerRun (number, optional): max turns for one run
 - dangerouslySkipPermissions (boolean, optional): pass --dangerously-skip-permissions to claude
+- runAsNonRoot (boolean, optional): when server runs as root, spawn Claude child process as a non-root uid/gid (default true)
+- runAsUid (number, optional): target uid for Claude process when runAsNonRoot is active (default 1000)
+- runAsGid (number, optional): target gid for Claude process when runAsNonRoot is active (default 1000)
 - command (string, optional): defaults to "claude"
 - extraArgs (string[], optional): additional CLI args
 - env (object, optional): KEY=VALUE environment variables

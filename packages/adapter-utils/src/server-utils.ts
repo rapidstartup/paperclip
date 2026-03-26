@@ -1,4 +1,4 @@
-import { spawn, type ChildProcess } from "node:child_process";
+import { spawn, type ChildProcess, type SpawnOptions } from "node:child_process";
 import { constants as fsConstants, promises as fs, type Dirent } from "node:fs";
 import path from "node:path";
 import type {
@@ -728,6 +728,10 @@ export async function runChildProcess(
     onLogError?: (err: unknown, runId: string, message: string) => void;
     onSpawn?: (meta: { pid: number; startedAt: string }) => Promise<void>;
     stdin?: string;
+    runAsUser?: {
+      uid: number;
+      gid: number;
+    };
   },
 ): Promise<RunProcessResult> {
   const onLogError = opts.onLogError ?? ((err, id, msg) => console.warn({ err, runId: id }, msg));
@@ -753,12 +757,22 @@ export async function runChildProcess(
     const mergedEnv = ensurePathInEnv(rawMerged);
     void resolveSpawnTarget(command, args, opts.cwd, mergedEnv)
       .then((target) => {
-        const child = spawn(target.command, target.args, {
+        const stdio: ["ignore" | "pipe", "pipe", "pipe"] = [
+          opts.stdin != null ? "pipe" : "ignore",
+          "pipe",
+          "pipe",
+        ];
+        const spawnOpts: SpawnOptions = {
           cwd: opts.cwd,
           env: mergedEnv,
           shell: false,
-          stdio: [opts.stdin != null ? "pipe" : "ignore", "pipe", "pipe"],
-        }) as ChildProcessWithEvents;
+          stdio,
+        };
+        if (process.platform !== "win32" && opts.runAsUser) {
+          spawnOpts.uid = opts.runAsUser.uid;
+          spawnOpts.gid = opts.runAsUser.gid;
+        }
+        const child = spawn(target.command, target.args, spawnOpts) as ChildProcessWithEvents;
         const startedAt = new Date().toISOString();
 
         if (opts.stdin != null && child.stdin) {

@@ -91,6 +91,10 @@ export declare function runChildProcess(runId: string, command: string, args: st
         startedAt: string;
     }) => Promise<void>;
     stdin?: string;
+    runAsUser?: {
+        uid: number;
+        gid: number;
+    };
 }): Promise<RunProcessResult>;
 export {};
 //# sourceMappingURL=server-utils.d.ts.map
