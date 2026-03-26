@@ -346,6 +346,7 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
   const [runPolicyAdvancedOpen, setRunPolicyAdvancedOpen] = useState(false);
   // Popover states
   const [modelOpen, setModelOpen] = useState(false);
+  const [fallbackModelOpen, setFallbackModelOpen] = useState(false);
   const [thinkingEffortOpen, setThinkingEffortOpen] = useState(false);
 
   // Create mode helpers
@@ -859,13 +860,16 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                           className={inputClass}
                         />
                       </Field>
-                      <Field label="Fallback model" hint="OpenCode model to retry with if the primary model produces no output. E.g. opencode/mimo-v2-pro-free. Leave blank to disable.">
-                        <input
-                          type="text"
-                          className={inputClass}
+                      <Field label="Fallback model" hint="OpenCode model to retry with if the primary model produces no output within the first-response timeout. Leave blank to disable.">
+                        <ModelDropdown
+                          models={models}
                           value={eff("adapterConfig", "fallbackModel", String(config.fallbackModel ?? ""))}
-                          onChange={(e) => mark("adapterConfig", "fallbackModel", e.target.value)}
-                          placeholder="opencode/mimo-v2-pro-free"
+                          onChange={(v) => mark("adapterConfig", "fallbackModel", v || undefined)}
+                          open={fallbackModelOpen}
+                          onOpenChange={setFallbackModelOpen}
+                          allowDefault={true}
+                          required={false}
+                          groupByProvider={true}
                         />
                       </Field>
                     </>
