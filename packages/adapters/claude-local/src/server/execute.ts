@@ -451,10 +451,15 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     heartbeatPromptChars: renderedPrompt.length,
   };
 
-  const buildClaudeArgs = (resumeSessionId: string | null) => {
+  const buildClaudeArgs = (
+    resumeSessionId: string | null,
+    options?: { disableDangerousSkipPermissions?: boolean },
+  ) => {
     const args = ["--print", "-", "--output-format", "stream-json", "--verbose"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
-    if (canUseDangerousSkipPermissions) args.push("--dangerously-skip-permissions");
+    if (canUseDangerousSkipPermissions && !options?.disableDangerousSkipPermissions) {
+      args.push("--dangerously-skip-permissions");
+    }
     if (chrome) args.push("--chrome");
     if (model) args.push("--model", model);
     if (effort) args.push("--effort", effort);
@@ -473,9 +478,22 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         .split(/\r?\n/)
         .map((line) => line.trim())
         .find(Boolean) ?? "";
+    const stdoutLine =
+      proc.stdout
+        .split(/\r?\n/)
+        .map((line) => line.trim())
+        .find(Boolean) ?? "";
 
-    if ((proc.exitCode ?? 0) === 0) {
+    if (proc.signal) {
+      return `Claude process terminated by signal ${proc.signal}`;
+    }
+
+    if ((proc.exitCode ?? 0) === 0 && !stderrLine && !stdoutLine) {
       return "Failed to parse claude JSON output";
+    }
+
+    if ((proc.exitCode ?? 0) === 0 && stdoutLine) {
+      return `Failed to parse claude JSON output: ${stdoutLine}`;
     }
 
     return stderrLine
@@ -483,15 +501,21 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       : `Claude exited with code ${proc.exitCode ?? -1}`;
   };
 
-  const runAttempt = async (resumeSessionId: string | null) => {
-    const args = buildClaudeArgs(resumeSessionId);
+  const runAttempt = async (
+    resumeSessionId: string | null,
+    options?: { disableDangerousSkipPermissions?: boolean; attemptNote?: string },
+  ) => {
+    const args = buildClaudeArgs(resumeSessionId, {
+      disableDangerousSkipPermissions: options?.disableDangerousSkipPermissions,
+    });
+    const attemptNotes = options?.attemptNote ? [...commandNotes, options.attemptNote] : commandNotes;
     if (onMeta) {
       await onMeta({
         adapterType: "claude_local",
         command,
         cwd,
         commandArgs: args,
-        commandNotes,
+        commandNotes: attemptNotes,
         env: redactEnvForLogs(env),
         prompt,
         promptMetrics,
@@ -616,6 +640,26 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   try {
     const initial = await runAttempt(sessionId ?? null);
+    const noClaudeOutput =
+      initial.proc.stdout.trim().length === 0 &&
+      initial.proc.stderr.trim().length === 0 &&
+      (initial.proc.exitCode ?? 0) === 0 &&
+      !initial.proc.timedOut &&
+      !initial.parsed;
+    if (canUseDangerousSkipPermissions && noClaudeOutput) {
+      await onLog(
+        "stdout",
+        "[paperclip] Claude returned no output with --dangerously-skip-permissions; retrying without that flag.\n",
+      );
+      const retryWithoutSkipPermissions = await runAttempt(sessionId ?? null, {
+        disableDangerousSkipPermissions: true,
+        attemptNote:
+          "Retried without --dangerously-skip-permissions after Claude returned empty stdout/stderr.",
+      });
+      return toAdapterResult(retryWithoutSkipPermissions, {
+        fallbackSessionId: runtimeSessionId || runtime.sessionId,
+      });
+    }
     if (
       sessionId &&
       !initial.proc.timedOut &&

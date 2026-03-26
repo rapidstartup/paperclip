@@ -327,12 +327,13 @@ export async function execute(ctx) {
         sessionHandoffChars: sessionHandoffNote.length,
         heartbeatPromptChars: renderedPrompt.length,
     };
-    const buildClaudeArgs = (resumeSessionId) => {
+    const buildClaudeArgs = (resumeSessionId, options) => {
         const args = ["--print", "-", "--output-format", "stream-json", "--verbose"];
         if (resumeSessionId)
             args.push("--resume", resumeSessionId);
-        if (canUseDangerousSkipPermissions)
+        if (canUseDangerousSkipPermissions && !options?.disableDangerousSkipPermissions) {
             args.push("--dangerously-skip-permissions");
+        }
         if (chrome)
             args.push("--chrome");
         if (model)
@@ -354,22 +355,35 @@ export async function execute(ctx) {
             .split(/\r?\n/)
             .map((line) => line.trim())
             .find(Boolean) ?? "";
-        if ((proc.exitCode ?? 0) === 0) {
+        const stdoutLine = proc.stdout
+            .split(/\r?\n/)
+            .map((line) => line.trim())
+            .find(Boolean) ?? "";
+        if (proc.signal) {
+            return `Claude process terminated by signal ${proc.signal}`;
+        }
+        if ((proc.exitCode ?? 0) === 0 && !stderrLine && !stdoutLine) {
             return "Failed to parse claude JSON output";
+        }
+        if ((proc.exitCode ?? 0) === 0 && stdoutLine) {
+            return `Failed to parse claude JSON output: ${stdoutLine}`;
         }
         return stderrLine
             ? `Claude exited with code ${proc.exitCode ?? -1}: ${stderrLine}`
             : `Claude exited with code ${proc.exitCode ?? -1}`;
     };
-    const runAttempt = async (resumeSessionId) => {
-        const args = buildClaudeArgs(resumeSessionId);
+    const runAttempt = async (resumeSessionId, options) => {
+        const args = buildClaudeArgs(resumeSessionId, {
+            disableDangerousSkipPermissions: options?.disableDangerousSkipPermissions,
+        });
+        const attemptNotes = options?.attemptNote ? [...commandNotes, options.attemptNote] : commandNotes;
         if (onMeta) {
             await onMeta({
                 adapterType: "claude_local",
                 command,
                 cwd,
                 commandArgs: args,
-                commandNotes,
+                commandNotes: attemptNotes,
                 env: redactEnvForLogs(env),
                 prompt,
                 promptMetrics,
@@ -474,6 +488,21 @@ export async function execute(ctx) {
     };
     try {
         const initial = await runAttempt(sessionId ?? null);
+        const noClaudeOutput = initial.proc.stdout.trim().length === 0 &&
+            initial.proc.stderr.trim().length === 0 &&
+            (initial.proc.exitCode ?? 0) === 0 &&
+            !initial.proc.timedOut &&
+            !initial.parsed;
+        if (canUseDangerousSkipPermissions && noClaudeOutput) {
+            await onLog("stdout", "[paperclip] Claude returned no output with --dangerously-skip-permissions; retrying without that flag.\n");
+            const retryWithoutSkipPermissions = await runAttempt(sessionId ?? null, {
+                disableDangerousSkipPermissions: true,
+                attemptNote: "Retried without --dangerously-skip-permissions after Claude returned empty stdout/stderr.",
+            });
+            return toAdapterResult(retryWithoutSkipPermissions, {
+                fallbackSessionId: runtimeSessionId || runtime.sessionId,
+            });
+        }
         if (sessionId &&
             !initial.proc.timedOut &&
             (initial.proc.exitCode ?? 0) !== 0 &&
