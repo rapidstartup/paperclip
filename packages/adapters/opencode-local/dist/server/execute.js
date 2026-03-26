@@ -214,20 +214,24 @@ export async function execute(ctx) {
         sessionHandoffChars: sessionHandoffNote.length,
         heartbeatPromptChars: renderedPrompt.length,
     };
-    const buildArgs = (resumeSessionId) => {
+    const fallbackModel = asString(config.fallbackModel, "").trim();
+    const firstResponseTimeoutSec = asNumber(config.firstResponseTimeoutSec, 90);
+    const buildArgs = (resumeSessionId, modelOverride) => {
         const args = ["run", "--format", "json"];
         if (resumeSessionId)
             args.push("--session", resumeSessionId);
-        if (model)
-            args.push("--model", model);
+        const effectiveModel = modelOverride ?? model;
+        if (effectiveModel)
+            args.push("--model", effectiveModel);
         if (variant)
             args.push("--variant", variant);
         if (extraArgs.length > 0)
             args.push(...extraArgs);
         return args;
     };
-    const runAttempt = async (resumeSessionId) => {
-        const args = buildArgs(resumeSessionId);
+    const runAttempt = async (resumeSessionId, options) => {
+        const args = buildArgs(resumeSessionId, options?.modelOverride);
+        const effectiveTimeoutSec = options?.timeoutOverride ?? timeoutSec;
         if (onMeta) {
             await onMeta({
                 adapterType: "opencode_local",
@@ -245,7 +249,7 @@ export async function execute(ctx) {
             cwd,
             env: runtimeEnv,
             stdin: prompt,
-            timeoutSec,
+            timeoutSec: effectiveTimeoutSec,
             graceSec,
             onSpawn,
             onLog,
@@ -256,7 +260,7 @@ export async function execute(ctx) {
             parsed: parseOpenCodeJsonl(proc.stdout),
         };
     };
-    const toResult = (attempt, clearSessionOnMissingSession = false) => {
+    const toResult = (attempt, clearSessionOnMissingSession = false, modelOverride) => {
         if (attempt.proc.timedOut) {
             return {
                 exitCode: attempt.proc.exitCode,
@@ -284,7 +288,7 @@ export async function execute(ctx) {
         const fallbackErrorMessage = parsedError ||
             stderrLine ||
             `OpenCode exited with code ${synthesizedExitCode ?? -1}`;
-        const modelId = model || null;
+        const modelId = modelOverride ?? (model || null);
         return {
             exitCode: synthesizedExitCode,
             signal: attempt.proc.signal,
@@ -311,8 +315,38 @@ export async function execute(ctx) {
             clearSession: Boolean(clearSessionOnMissingSession && !attempt.parsed.sessionId),
         };
     };
-    const initial = await runAttempt(sessionId);
+    // Determine if we should use a first-response timeout on the initial attempt.
+    // When a fallback model is configured and firstResponseTimeoutSec is set, cap the
+    // initial run's timeout so we can detect a hung model quickly and retry.
+    const hasFirstResponseTimeout = fallbackModel.length > 0 &&
+        firstResponseTimeoutSec > 0 &&
+        (timeoutSec === 0 || firstResponseTimeoutSec < timeoutSec);
+    const initial = await runAttempt(sessionId, hasFirstResponseTimeout ? { timeoutOverride: firstResponseTimeoutSec } : undefined);
     const initialFailed = !initial.proc.timedOut && ((initial.proc.exitCode ?? 0) !== 0 || Boolean(initial.parsed.errorMessage));
+    // Retry with fallback model if: initial attempt timed out with zero output tokens
+    // (model hung on first call), or produced no tokens at all and failed.
+    const noAiResponse = initial.parsed.usage.outputTokens === 0;
+    const shouldFallback = fallbackModel.length > 0 &&
+        noAiResponse &&
+        (initial.proc.timedOut || initialFailed);
+    if (shouldFallback) {
+        const reason = initial.proc.timedOut
+            ? `timed out after ${firstResponseTimeoutSec}s with no response`
+            : `exited with no AI output`;
+        await onLog("stdout", `[paperclip] Model "${model || "default"}" ${reason}; retrying with fallback model "${fallbackModel}".\n`);
+        const fallbackAttempt = await runAttempt(sessionId, { modelOverride: fallbackModel });
+        const fallbackFailed = !fallbackAttempt.proc.timedOut &&
+            ((fallbackAttempt.proc.exitCode ?? 0) !== 0 || Boolean(fallbackAttempt.parsed.errorMessage));
+        if (sessionId &&
+            fallbackFailed &&
+            isOpenCodeUnknownSessionError(fallbackAttempt.proc.stdout, fallbackAttempt.rawStderr)) {
+            await onLog("stdout", `[paperclip] OpenCode session "${sessionId}" is unavailable; retrying with a fresh session.\n`);
+            const retry = await runAttempt(null, { modelOverride: fallbackModel });
+            return toResult(retry, true, fallbackModel);
+        }
+        return toResult(fallbackAttempt, false, fallbackModel);
+    }
+    // Original session-retry logic for unknown session errors.
     if (sessionId &&
         initialFailed &&
         isOpenCodeUnknownSessionError(initial.proc.stdout, initial.rawStderr)) {

@@ -845,6 +845,31 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       className={inputClass}
                     />
                   </Field>
+                  {adapterType === "opencode_local" && (
+                    <>
+                      <Field label="First-response timeout (sec)" hint="Kill and retry with fallback model if the AI produces no output within this many seconds. Set to 0 to disable. Default: 90.">
+                        <DraftNumberInput
+                          value={eff(
+                            "adapterConfig",
+                            "firstResponseTimeoutSec",
+                            Number(config.firstResponseTimeoutSec ?? 90),
+                          )}
+                          onCommit={(v) => mark("adapterConfig", "firstResponseTimeoutSec", v)}
+                          immediate
+                          className={inputClass}
+                        />
+                      </Field>
+                      <Field label="Fallback model" hint="OpenCode model to retry with if the primary model produces no output. E.g. opencode/mimo-v2-pro-free. Leave blank to disable.">
+                        <input
+                          type="text"
+                          className={inputClass}
+                          value={eff("adapterConfig", "fallbackModel", String(config.fallbackModel ?? ""))}
+                          onChange={(e) => mark("adapterConfig", "fallbackModel", e.target.value)}
+                          placeholder="opencode/mimo-v2-pro-free"
+                        />
+                      </Field>
+                    </>
+                  )}
                 </>
               )}
           </div>
