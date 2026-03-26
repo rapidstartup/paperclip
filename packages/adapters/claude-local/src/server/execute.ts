@@ -370,9 +370,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const hasDangerousSkipInExtraArgs = extraArgs.includes("--dangerously-skip-permissions");
   const effectiveRunAsRoot = runAsUser ? runAsUser.uid === 0 : runningAsRoot;
   const canUseDangerousSkipPermissions = dangerouslySkipPermissions && !effectiveRunAsRoot;
-  const sanitizedExtraArgs = effectiveRunAsRoot
-    ? extraArgs.filter((arg) => arg !== "--dangerously-skip-permissions")
-    : extraArgs;
   if (runAsUser) {
     commandNotes.push(`Spawned Claude CLI as uid ${runAsUser.uid}, gid ${runAsUser.gid}.`);
   }
@@ -453,11 +450,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const buildClaudeArgs = (
     resumeSessionId: string | null,
-    options?: { disableDangerousSkipPermissions?: boolean },
+    options?: { useDangerousSkipPermissions?: boolean; sanitizedExtraArgs?: string[] },
   ) => {
     const args = ["--print", "-", "--output-format", "stream-json", "--verbose"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
-    if (canUseDangerousSkipPermissions && !options?.disableDangerousSkipPermissions) {
+    if (options?.useDangerousSkipPermissions) {
       args.push("--dangerously-skip-permissions");
     }
     if (chrome) args.push("--chrome");
@@ -468,7 +465,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       args.push("--append-system-prompt-file", effectiveInstructionsFilePath);
     }
     args.push("--add-dir", skillsDir);
-    if (sanitizedExtraArgs.length > 0) args.push(...sanitizedExtraArgs);
+    if ((options?.sanitizedExtraArgs?.length ?? 0) > 0) args.push(...(options?.sanitizedExtraArgs ?? []));
     return args;
   };
 
@@ -503,10 +500,24 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
 
   const runAttempt = async (
     resumeSessionId: string | null,
-    options?: { disableDangerousSkipPermissions?: boolean; attemptNote?: string },
+    options?: {
+      disableDangerousSkipPermissions?: boolean;
+      disableRunAsUser?: boolean;
+      attemptNote?: string;
+    },
   ) => {
+    const attemptRunAsUser = options?.disableRunAsUser ? undefined : (runAsUser ?? undefined);
+    const attemptRunAsRoot = attemptRunAsUser ? attemptRunAsUser.uid === 0 : runningAsRoot;
+    const useDangerousSkipPermissions =
+      dangerouslySkipPermissions &&
+      !attemptRunAsRoot &&
+      !Boolean(options?.disableDangerousSkipPermissions);
+    const attemptSanitizedExtraArgs = attemptRunAsRoot
+      ? extraArgs.filter((arg) => arg !== "--dangerously-skip-permissions")
+      : extraArgs;
     const args = buildClaudeArgs(resumeSessionId, {
-      disableDangerousSkipPermissions: options?.disableDangerousSkipPermissions,
+      useDangerousSkipPermissions,
+      sanitizedExtraArgs: attemptSanitizedExtraArgs,
     });
     const attemptNotes = options?.attemptNote ? [...commandNotes, options.attemptNote] : commandNotes;
     if (onMeta) {
@@ -529,7 +540,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       stdin: prompt,
       timeoutSec,
       graceSec,
-      runAsUser: runAsUser ?? undefined,
+      runAsUser: attemptRunAsUser,
       onSpawn,
       onLog,
     });
@@ -638,27 +649,39 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     };
   };
 
+  const isNoOutputParseFailure = (attempt: { proc: RunProcessResult; parsed: Record<string, unknown> | null }) =>
+    !attempt.proc.timedOut &&
+    !attempt.parsed &&
+    (attempt.proc.exitCode ?? 0) === 0 &&
+    attempt.proc.stdout.trim().length === 0 &&
+    attempt.proc.stderr.trim().length === 0;
+
   try {
-    const initial = await runAttempt(sessionId ?? null);
-    const noClaudeOutput =
-      initial.proc.stdout.trim().length === 0 &&
-      initial.proc.stderr.trim().length === 0 &&
-      (initial.proc.exitCode ?? 0) === 0 &&
-      !initial.proc.timedOut &&
-      !initial.parsed;
-    if (canUseDangerousSkipPermissions && noClaudeOutput) {
-      await onLog(
-        "stdout",
-        "[paperclip] Claude returned no output with --dangerously-skip-permissions; retrying without that flag.\n",
-      );
-      const retryWithoutSkipPermissions = await runAttempt(sessionId ?? null, {
-        disableDangerousSkipPermissions: true,
-        attemptNote:
-          "Retried without --dangerously-skip-permissions after Claude returned empty stdout/stderr.",
-      });
-      return toAdapterResult(retryWithoutSkipPermissions, {
-        fallbackSessionId: runtimeSessionId || runtime.sessionId,
-      });
+    let initial = await runAttempt(sessionId ?? null);
+    if (runAsUser && isNoOutputParseFailure(initial)) {
+      if (canUseDangerousSkipPermissions) {
+        await onLog(
+          "stdout",
+          "[paperclip] Claude returned no output with --dangerously-skip-permissions; retrying without that flag.\n",
+        );
+        initial = await runAttempt(sessionId ?? null, {
+          disableDangerousSkipPermissions: true,
+          attemptNote:
+            "Retried without --dangerously-skip-permissions after Claude returned empty stdout/stderr.",
+        });
+      }
+      if (isNoOutputParseFailure(initial)) {
+        await onLog(
+          "stdout",
+          "[paperclip] Claude returned no output as non-root user; retrying as root process.\n",
+        );
+        initial = await runAttempt(sessionId ?? null, {
+          disableRunAsUser: true,
+          disableDangerousSkipPermissions: true,
+          attemptNote:
+            "Retried as root process after non-root Claude attempts returned empty stdout/stderr.",
+        });
+      }
     }
     if (
       sessionId &&
