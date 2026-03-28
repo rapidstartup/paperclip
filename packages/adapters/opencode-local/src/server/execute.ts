@@ -46,6 +46,25 @@ function resolveOpenCodeBiller(env: Record<string, string>, provider: string | n
   return inferOpenAiCompatibleBiller(env, null) ?? provider ?? "unknown";
 }
 
+function selectFallbackModel(
+  primaryModel: string,
+  configuredFallbackModel: string,
+  availableModels: Array<{ id: string }>,
+): string {
+  const configured = configuredFallbackModel.trim();
+  if (configured && configured !== primaryModel) return configured;
+
+  const primaryProvider = parseModelProvider(primaryModel);
+  if (primaryProvider) {
+    const sameProviderAlternative = availableModels.find(
+      (entry) => entry.id !== primaryModel && parseModelProvider(entry.id) === primaryProvider,
+    );
+    if (sameProviderAlternative) return sameProviderAlternative.id;
+  }
+
+  return availableModels.find((entry) => entry.id !== primaryModel)?.id ?? "";
+}
+
 function claudeSkillsHome(): string {
   return path.join(os.homedir(), ".claude", "skills");
 }
@@ -179,7 +198,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   );
   await ensureCommandResolvable(command, cwd, runtimeEnv);
 
-  await ensureOpenCodeModelConfiguredAndAvailable({
+  const availableModels = await ensureOpenCodeModelConfiguredAndAvailable({
     model,
     command,
     cwd,
@@ -273,7 +292,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     heartbeatPromptChars: renderedPrompt.length,
   };
 
-  const fallbackModel = asString(config.fallbackModel, "").trim();
+  const configuredFallbackModel = asString(config.fallbackModel, "").trim();
+  const fallbackModel = selectFallbackModel(model, configuredFallbackModel, availableModels);
   const firstResponseTimeoutSec = asNumber(config.firstResponseTimeoutSec, 90);
 
   const buildArgs = (resumeSessionId: string | null, modelOverride?: string) => {
@@ -316,6 +336,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       proc,
       rawStderr: proc.stderr,
       parsed: parseOpenCodeJsonl(proc.stdout),
+      timeoutSecUsed: effectiveTimeoutSec,
     };
   };
 
@@ -324,6 +345,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       proc: { exitCode: number | null; signal: string | null; timedOut: boolean; stdout: string; stderr: string };
       rawStderr: string;
       parsed: ReturnType<typeof parseOpenCodeJsonl>;
+      timeoutSecUsed: number;
     },
     clearSessionOnMissingSession = false,
     modelOverride?: string,
@@ -333,7 +355,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         exitCode: attempt.proc.exitCode,
         signal: attempt.proc.signal,
         timedOut: true,
-        errorMessage: `Timed out after ${timeoutSec}s`,
+        errorMessage: `Timed out after ${attempt.timeoutSecUsed}s`,
         clearSession: clearSessionOnMissingSession,
       };
     }
@@ -392,7 +414,6 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   // When a fallback model is configured and firstResponseTimeoutSec is set, cap the
   // initial run's timeout so we can detect a hung model quickly and retry.
   const hasFirstResponseTimeout =
-    fallbackModel.length > 0 &&
     firstResponseTimeoutSec > 0 &&
     (timeoutSec === 0 || firstResponseTimeoutSec < timeoutSec);
 
@@ -403,20 +424,24 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   // Retry with fallback model if: initial attempt timed out with zero output tokens
   // (model hung on first call), or produced no tokens at all and failed.
   const noAiResponse = initial.parsed.usage.outputTokens === 0;
-  const shouldFallback =
-    fallbackModel.length > 0 &&
-    noAiResponse &&
-    (initial.proc.timedOut || initialFailed);
+  const shouldRetryForNoResponse = noAiResponse && (initial.proc.timedOut || initialFailed);
 
-  if (shouldFallback) {
+  if (shouldRetryForNoResponse) {
+    const usingFallbackModel = fallbackModel.length > 0 && fallbackModel !== model;
     const reason = initial.proc.timedOut
       ? `timed out after ${firstResponseTimeoutSec}s with no response`
       : `exited with no AI output`;
+    const retryDescription = usingFallbackModel
+      ? `fallback model "${fallbackModel}"`
+      : `same model "${model || "default"}"`;
     await onLog(
       "stdout",
-      `[paperclip] Model "${model || "default"}" ${reason}; retrying with fallback model "${fallbackModel}".\n`,
+      `[paperclip] Model "${model || "default"}" ${reason}; retrying with ${retryDescription}.\n`,
     );
-    const fallbackAttempt = await runAttempt(sessionId, { modelOverride: fallbackModel });
+    const fallbackAttempt = await runAttempt(sessionId, {
+      ...(usingFallbackModel ? { modelOverride: fallbackModel } : {}),
+      ...(hasFirstResponseTimeout ? { timeoutOverride: firstResponseTimeoutSec } : {}),
+    });
     const fallbackFailed =
       !fallbackAttempt.proc.timedOut &&
       ((fallbackAttempt.proc.exitCode ?? 0) !== 0 || Boolean(fallbackAttempt.parsed.errorMessage));
@@ -426,10 +451,13 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       isOpenCodeUnknownSessionError(fallbackAttempt.proc.stdout, fallbackAttempt.rawStderr)
     ) {
       await onLog("stdout", `[paperclip] OpenCode session "${sessionId}" is unavailable; retrying with a fresh session.\n`);
-      const retry = await runAttempt(null, { modelOverride: fallbackModel });
-      return toResult(retry, true, fallbackModel);
+      const retry = await runAttempt(null, {
+        ...(usingFallbackModel ? { modelOverride: fallbackModel } : {}),
+        ...(hasFirstResponseTimeout ? { timeoutOverride: firstResponseTimeoutSec } : {}),
+      });
+      return toResult(retry, true, usingFallbackModel ? fallbackModel : undefined);
     }
-    return toResult(fallbackAttempt, false, fallbackModel);
+    return toResult(fallbackAttempt, false, usingFallbackModel ? fallbackModel : undefined);
   }
 
   // Original session-retry logic for unknown session errors.
