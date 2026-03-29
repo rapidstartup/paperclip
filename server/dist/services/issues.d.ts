@@ -6,6 +6,7 @@ export interface IssueFilters {
     participantAgentId?: string;
     assigneeUserId?: string;
     touchedByUserId?: string;
+    inboxArchivedByUserId?: string;
     unreadForUserId?: string;
     projectId?: string;
     parentId?: string;
@@ -62,6 +63,24 @@ export declare function issueService(db: Db): {
         userId: string;
         issueId: string;
         lastReadAt: Date;
+    }>;
+    archiveInbox: (companyId: string, issueId: string, userId: string, archivedAt?: Date) => Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        userId: string;
+        archivedAt: Date;
+        issueId: string;
+    }>;
+    unarchiveInbox: (companyId: string, issueId: string, userId: string) => Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        userId: string;
+        archivedAt: Date;
+        issueId: string;
     }>;
     getById: (id: string) => Promise<IssueWithLabels | null>;
     getByIdentifier: (identifier: string) => Promise<IssueWithLabels | null>;

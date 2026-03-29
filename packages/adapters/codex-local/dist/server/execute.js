@@ -4,7 +4,7 @@ import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
 import { asString, asNumber, asBoolean, asStringArray, parseObject, buildPaperclipEnv, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, renderTemplate, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { parseCodexJsonl, isCodexUnknownSessionError } from "./parse.js";
-import { pathExists, prepareManagedCodexHome, resolveManagedCodexHomeDir } from "./codex-home.js";
+import { pathExists, prepareManagedCodexHome, resolveManagedCodexHomeDir, resolveSharedCodexHomeDir } from "./codex-home.js";
 import { resolveCodexDesiredSkillNames } from "./skills.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 const CODEX_ROLLOUT_NOISE_RE = /^\d{4}-\d{2}-\d{2}T[^\s]+\s+ERROR\s+codex_core::rollout::list:\s+state db missing rollout path for thread\s+[a-z0-9-]+$/i;
@@ -94,8 +94,8 @@ async function pruneBrokenUnavailablePaperclipSkillSymlinks(skillsHome, allowedS
         await onLog("stdout", `[paperclip] Removed stale Codex skill "${entry.name}" from ${skillsHome}\n`);
     }
 }
-function resolveCodexWorkspaceSkillsDir(cwd) {
-    return path.join(cwd, ".agents", "skills");
+function resolveCodexSkillsDir(codexHome) {
+    return path.join(codexHome, "skills");
 }
 export async function ensureCodexSkillsInjected(onLog, options = {}) {
     const allSkillsEntries = options.skillsEntries ?? await readPaperclipRuntimeSkillEntries({}, __moduleDir);
@@ -104,7 +104,7 @@ export async function ensureCodexSkillsInjected(onLog, options = {}) {
     const skillsEntries = allSkillsEntries.filter((entry) => desiredSet.has(entry.key));
     if (skillsEntries.length === 0)
         return;
-    const skillsHome = options.skillsHome ?? resolveCodexWorkspaceSkillsDir(process.cwd());
+    const skillsHome = options.skillsHome ?? resolveCodexSkillsDir(resolveSharedCodexHomeDir());
     await fs.mkdir(skillsHome, { recursive: true });
     const linkSkill = options.linkSkill;
     for (const entry of skillsEntries) {
@@ -184,9 +184,11 @@ export async function execute(ctx) {
     const defaultCodexHome = resolveManagedCodexHomeDir(process.env, agent.companyId);
     const effectiveCodexHome = configuredCodexHome ?? preparedManagedCodexHome ?? defaultCodexHome;
     await fs.mkdir(effectiveCodexHome, { recursive: true });
-    const codexWorkspaceSkillsDir = resolveCodexWorkspaceSkillsDir(cwd);
+    // Inject skills into the same CODEX_HOME that Codex will actually run with
+    // (managed home in the default case, or an explicit override from adapter config).
+    const codexSkillsDir = resolveCodexSkillsDir(effectiveCodexHome);
     await ensureCodexSkillsInjected(onLog, {
-        skillsHome: codexWorkspaceSkillsDir,
+        skillsHome: codexSkillsDir,
         skillsEntries: codexSkillEntries,
         desiredSkillNames,
     });

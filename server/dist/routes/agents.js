@@ -9,7 +9,7 @@ import { validate } from "../middleware/validate.js";
 import { agentService, agentInstructionsService, accessService, approvalService, companySkillService, budgetService, heartbeatService, issueApprovalService, issueService, logActivity, secretService, syncInstructionsBundleConfigFromFilePath, workspaceOperationService, } from "../services/index.js";
 import { conflict, forbidden, notFound, unprocessable } from "../errors.js";
 import { assertBoard, assertCompanyAccess, assertInstanceAdmin, getActorInfo } from "./authz.js";
-import { findServerAdapter, listAdapterModels } from "../adapters/index.js";
+import { findServerAdapter, listAdapterModels, detectAdapterModel } from "../adapters/index.js";
 import { redactEventPayload } from "../redaction.js";
 import { redactCurrentUserValue } from "../log-redaction.js";
 import { renderOrgChartSvg, renderOrgChartPng, ORG_CHART_STYLES } from "./org-chart-svg.js";
@@ -559,6 +559,13 @@ export function agentRoutes(db) {
         const type = req.params.type;
         const models = await listAdapterModels(type);
         res.json(models);
+    });
+    router.get("/companies/:companyId/adapters/:type/detect-model", async (req, res) => {
+        const companyId = req.params.companyId;
+        assertCompanyAccess(req, companyId);
+        const type = req.params.type;
+        const detected = await detectAdapterModel(type);
+        res.json(detected);
     });
     router.post("/companies/:companyId/adapters/:type/test-environment", validate(testAdapterEnvironmentSchema), async (req, res) => {
         const companyId = req.params.companyId;

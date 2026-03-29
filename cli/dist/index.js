@@ -4739,29 +4739,61 @@ var init_issue_comments = __esm({
   }
 });
 
-// ../packages/db/src/schema/issue_read_states.ts
+// ../packages/db/src/schema/issue_inbox_archives.ts
 import { pgTable as pgTable38, uuid as uuid37, text as text40, timestamp as timestamp38, index as index34, uniqueIndex as uniqueIndex19 } from "drizzle-orm/pg-core";
+var issueInboxArchives;
+var init_issue_inbox_archives = __esm({
+  "../packages/db/src/schema/issue_inbox_archives.ts"() {
+    "use strict";
+    init_companies();
+    init_issues();
+    issueInboxArchives = pgTable38(
+      "issue_inbox_archives",
+      {
+        id: uuid37("id").primaryKey().defaultRandom(),
+        companyId: uuid37("company_id").notNull().references(() => companies.id),
+        issueId: uuid37("issue_id").notNull().references(() => issues.id),
+        userId: text40("user_id").notNull(),
+        archivedAt: timestamp38("archived_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp38("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp38("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        companyIssueIdx: index34("issue_inbox_archives_company_issue_idx").on(table.companyId, table.issueId),
+        companyUserIdx: index34("issue_inbox_archives_company_user_idx").on(table.companyId, table.userId),
+        companyIssueUserUnique: uniqueIndex19("issue_inbox_archives_company_issue_user_idx").on(
+          table.companyId,
+          table.issueId,
+          table.userId
+        )
+      })
+    );
+  }
+});
+
+// ../packages/db/src/schema/issue_read_states.ts
+import { pgTable as pgTable39, uuid as uuid38, text as text41, timestamp as timestamp39, index as index35, uniqueIndex as uniqueIndex20 } from "drizzle-orm/pg-core";
 var issueReadStates;
 var init_issue_read_states = __esm({
   "../packages/db/src/schema/issue_read_states.ts"() {
     "use strict";
     init_companies();
     init_issues();
-    issueReadStates = pgTable38(
+    issueReadStates = pgTable39(
       "issue_read_states",
       {
-        id: uuid37("id").primaryKey().defaultRandom(),
-        companyId: uuid37("company_id").notNull().references(() => companies.id),
-        issueId: uuid37("issue_id").notNull().references(() => issues.id),
-        userId: text40("user_id").notNull(),
-        lastReadAt: timestamp38("last_read_at", { withTimezone: true }).notNull().defaultNow(),
-        createdAt: timestamp38("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp38("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid38("id").primaryKey().defaultRandom(),
+        companyId: uuid38("company_id").notNull().references(() => companies.id),
+        issueId: uuid38("issue_id").notNull().references(() => issues.id),
+        userId: text41("user_id").notNull(),
+        lastReadAt: timestamp39("last_read_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp39("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index34("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
-        companyUserIdx: index34("issue_read_states_company_user_idx").on(table.companyId, table.userId),
-        companyIssueUserUnique: uniqueIndex19("issue_read_states_company_issue_user_idx").on(
+        companyIssueIdx: index35("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
+        companyUserIdx: index35("issue_read_states_company_user_idx").on(table.companyId, table.userId),
+        companyIssueUserUnique: uniqueIndex20("issue_read_states_company_issue_user_idx").on(
           table.companyId,
           table.issueId,
           table.userId
@@ -4772,7 +4804,7 @@ var init_issue_read_states = __esm({
 });
 
 // ../packages/db/src/schema/issue_attachments.ts
-import { pgTable as pgTable39, uuid as uuid38, timestamp as timestamp39, index as index35, uniqueIndex as uniqueIndex20 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable40, uuid as uuid39, timestamp as timestamp40, index as index36, uniqueIndex as uniqueIndex21 } from "drizzle-orm/pg-core";
 var issueAttachments;
 var init_issue_attachments = __esm({
   "../packages/db/src/schema/issue_attachments.ts"() {
@@ -4781,61 +4813,61 @@ var init_issue_attachments = __esm({
     init_issues();
     init_assets();
     init_issue_comments();
-    issueAttachments = pgTable39(
+    issueAttachments = pgTable40(
       "issue_attachments",
       {
-        id: uuid38("id").primaryKey().defaultRandom(),
-        companyId: uuid38("company_id").notNull().references(() => companies.id),
-        issueId: uuid38("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        assetId: uuid38("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
-        issueCommentId: uuid38("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
-        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp39("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid39("id").primaryKey().defaultRandom(),
+        companyId: uuid39("company_id").notNull().references(() => companies.id),
+        issueId: uuid39("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        assetId: uuid39("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
+        issueCommentId: uuid39("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
+        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp40("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index35("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
-        issueCommentIdx: index35("issue_attachments_issue_comment_idx").on(table.issueCommentId),
-        assetUq: uniqueIndex20("issue_attachments_asset_uq").on(table.assetId)
+        companyIssueIdx: index36("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
+        issueCommentIdx: index36("issue_attachments_issue_comment_idx").on(table.issueCommentId),
+        assetUq: uniqueIndex21("issue_attachments_asset_uq").on(table.assetId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/documents.ts
-import { pgTable as pgTable40, uuid as uuid39, text as text41, integer as integer13, timestamp as timestamp40, index as index36 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable41, uuid as uuid40, text as text42, integer as integer13, timestamp as timestamp41, index as index37 } from "drizzle-orm/pg-core";
 var documents;
 var init_documents = __esm({
   "../packages/db/src/schema/documents.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    documents = pgTable40(
+    documents = pgTable41(
       "documents",
       {
-        id: uuid39("id").primaryKey().defaultRandom(),
-        companyId: uuid39("company_id").notNull().references(() => companies.id),
-        title: text41("title"),
-        format: text41("format").notNull().default("markdown"),
-        latestBody: text41("latest_body").notNull(),
-        latestRevisionId: uuid39("latest_revision_id"),
+        id: uuid40("id").primaryKey().defaultRandom(),
+        companyId: uuid40("company_id").notNull().references(() => companies.id),
+        title: text42("title"),
+        format: text42("format").notNull().default("markdown"),
+        latestBody: text42("latest_body").notNull(),
+        latestRevisionId: uuid40("latest_revision_id"),
         latestRevisionNumber: integer13("latest_revision_number").notNull().default(1),
-        createdByAgentId: uuid39("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text41("created_by_user_id"),
-        updatedByAgentId: uuid39("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        updatedByUserId: text41("updated_by_user_id"),
-        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp40("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdByAgentId: uuid40("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text42("created_by_user_id"),
+        updatedByAgentId: uuid40("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        updatedByUserId: text42("updated_by_user_id"),
+        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp41("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyUpdatedIdx: index36("documents_company_updated_idx").on(table.companyId, table.updatedAt),
-        companyCreatedIdx: index36("documents_company_created_idx").on(table.companyId, table.createdAt)
+        companyUpdatedIdx: index37("documents_company_updated_idx").on(table.companyId, table.updatedAt),
+        companyCreatedIdx: index37("documents_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/document_revisions.ts
-import { pgTable as pgTable41, uuid as uuid40, text as text42, integer as integer14, timestamp as timestamp41, index as index37, uniqueIndex as uniqueIndex21 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable42, uuid as uuid41, text as text43, integer as integer14, timestamp as timestamp42, index as index38, uniqueIndex as uniqueIndex22 } from "drizzle-orm/pg-core";
 var documentRevisions;
 var init_document_revisions = __esm({
   "../packages/db/src/schema/document_revisions.ts"() {
@@ -4843,25 +4875,25 @@ var init_document_revisions = __esm({
     init_companies();
     init_agents();
     init_documents();
-    documentRevisions = pgTable41(
+    documentRevisions = pgTable42(
       "document_revisions",
       {
-        id: uuid40("id").primaryKey().defaultRandom(),
-        companyId: uuid40("company_id").notNull().references(() => companies.id),
-        documentId: uuid40("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        id: uuid41("id").primaryKey().defaultRandom(),
+        companyId: uuid41("company_id").notNull().references(() => companies.id),
+        documentId: uuid41("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
         revisionNumber: integer14("revision_number").notNull(),
-        body: text42("body").notNull(),
-        changeSummary: text42("change_summary"),
-        createdByAgentId: uuid40("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text42("created_by_user_id"),
-        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow()
+        body: text43("body").notNull(),
+        changeSummary: text43("change_summary"),
+        createdByAgentId: uuid41("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text43("created_by_user_id"),
+        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        documentRevisionUq: uniqueIndex21("document_revisions_document_revision_uq").on(
+        documentRevisionUq: uniqueIndex22("document_revisions_document_revision_uq").on(
           table.documentId,
           table.revisionNumber
         ),
-        companyDocumentCreatedIdx: index37("document_revisions_company_document_created_idx").on(
+        companyDocumentCreatedIdx: index38("document_revisions_company_document_created_idx").on(
           table.companyId,
           table.documentId,
           table.createdAt
@@ -4872,7 +4904,7 @@ var init_document_revisions = __esm({
 });
 
 // ../packages/db/src/schema/issue_documents.ts
-import { pgTable as pgTable42, uuid as uuid41, text as text43, timestamp as timestamp42, index as index38, uniqueIndex as uniqueIndex22 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable43, uuid as uuid42, text as text44, timestamp as timestamp43, index as index39, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
 var issueDocuments;
 var init_issue_documents = __esm({
   "../packages/db/src/schema/issue_documents.ts"() {
@@ -4880,25 +4912,25 @@ var init_issue_documents = __esm({
     init_companies();
     init_issues();
     init_documents();
-    issueDocuments = pgTable42(
+    issueDocuments = pgTable43(
       "issue_documents",
       {
-        id: uuid41("id").primaryKey().defaultRandom(),
-        companyId: uuid41("company_id").notNull().references(() => companies.id),
-        issueId: uuid41("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        documentId: uuid41("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
-        key: text43("key").notNull(),
-        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp42("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid42("id").primaryKey().defaultRandom(),
+        companyId: uuid42("company_id").notNull().references(() => companies.id),
+        issueId: uuid42("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        documentId: uuid42("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        key: text44("key").notNull(),
+        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp43("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueKeyUq: uniqueIndex22("issue_documents_company_issue_key_uq").on(
+        companyIssueKeyUq: uniqueIndex23("issue_documents_company_issue_key_uq").on(
           table.companyId,
           table.issueId,
           table.key
         ),
-        documentUq: uniqueIndex22("issue_documents_document_uq").on(table.documentId),
-        companyIssueUpdatedIdx: index38("issue_documents_company_issue_updated_idx").on(
+        documentUq: uniqueIndex23("issue_documents_document_uq").on(table.documentId),
+        companyIssueUpdatedIdx: index39("issue_documents_company_issue_updated_idx").on(
           table.companyId,
           table.issueId,
           table.updatedAt
@@ -4909,7 +4941,7 @@ var init_issue_documents = __esm({
 });
 
 // ../packages/db/src/schema/heartbeat_run_events.ts
-import { pgTable as pgTable43, uuid as uuid42, text as text44, timestamp as timestamp43, integer as integer15, jsonb as jsonb20, index as index39, bigserial } from "drizzle-orm/pg-core";
+import { pgTable as pgTable44, uuid as uuid43, text as text45, timestamp as timestamp44, integer as integer15, jsonb as jsonb20, index as index40, bigserial } from "drizzle-orm/pg-core";
 var heartbeatRunEvents;
 var init_heartbeat_run_events = __esm({
   "../packages/db/src/schema/heartbeat_run_events.ts"() {
@@ -4917,33 +4949,33 @@ var init_heartbeat_run_events = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    heartbeatRunEvents = pgTable43(
+    heartbeatRunEvents = pgTable44(
       "heartbeat_run_events",
       {
         id: bigserial("id", { mode: "number" }).primaryKey(),
-        companyId: uuid42("company_id").notNull().references(() => companies.id),
-        runId: uuid42("run_id").notNull().references(() => heartbeatRuns.id),
-        agentId: uuid42("agent_id").notNull().references(() => agents.id),
+        companyId: uuid43("company_id").notNull().references(() => companies.id),
+        runId: uuid43("run_id").notNull().references(() => heartbeatRuns.id),
+        agentId: uuid43("agent_id").notNull().references(() => agents.id),
         seq: integer15("seq").notNull(),
-        eventType: text44("event_type").notNull(),
-        stream: text44("stream"),
-        level: text44("level"),
-        color: text44("color"),
-        message: text44("message"),
+        eventType: text45("event_type").notNull(),
+        stream: text45("stream"),
+        level: text45("level"),
+        color: text45("color"),
+        message: text45("message"),
         payload: jsonb20("payload").$type(),
-        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        runSeqIdx: index39("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
-        companyRunIdx: index39("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
-        companyCreatedIdx: index39("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
+        runSeqIdx: index40("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
+        companyRunIdx: index40("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
+        companyCreatedIdx: index40("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/cost_events.ts
-import { pgTable as pgTable44, uuid as uuid43, text as text45, timestamp as timestamp44, integer as integer16, index as index40 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable45, uuid as uuid44, text as text46, timestamp as timestamp45, integer as integer16, index as index41 } from "drizzle-orm/pg-core";
 var costEvents;
 var init_cost_events = __esm({
   "../packages/db/src/schema/cost_events.ts"() {
@@ -4954,46 +4986,46 @@ var init_cost_events = __esm({
     init_projects();
     init_goals();
     init_heartbeat_runs();
-    costEvents = pgTable44(
+    costEvents = pgTable45(
       "cost_events",
       {
-        id: uuid43("id").primaryKey().defaultRandom(),
-        companyId: uuid43("company_id").notNull().references(() => companies.id),
-        agentId: uuid43("agent_id").notNull().references(() => agents.id),
-        issueId: uuid43("issue_id").references(() => issues.id),
-        projectId: uuid43("project_id").references(() => projects.id),
-        goalId: uuid43("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid43("heartbeat_run_id").references(() => heartbeatRuns.id),
-        billingCode: text45("billing_code"),
-        provider: text45("provider").notNull(),
-        biller: text45("biller").notNull().default("unknown"),
-        billingType: text45("billing_type").notNull().default("unknown"),
-        model: text45("model").notNull(),
+        id: uuid44("id").primaryKey().defaultRandom(),
+        companyId: uuid44("company_id").notNull().references(() => companies.id),
+        agentId: uuid44("agent_id").notNull().references(() => agents.id),
+        issueId: uuid44("issue_id").references(() => issues.id),
+        projectId: uuid44("project_id").references(() => projects.id),
+        goalId: uuid44("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid44("heartbeat_run_id").references(() => heartbeatRuns.id),
+        billingCode: text46("billing_code"),
+        provider: text46("provider").notNull(),
+        biller: text46("biller").notNull().default("unknown"),
+        billingType: text46("billing_type").notNull().default("unknown"),
+        model: text46("model").notNull(),
         inputTokens: integer16("input_tokens").notNull().default(0),
         cachedInputTokens: integer16("cached_input_tokens").notNull().default(0),
         outputTokens: integer16("output_tokens").notNull().default(0),
         costCents: integer16("cost_cents").notNull(),
-        occurredAt: timestamp44("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow()
+        occurredAt: timestamp45("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index40("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyAgentOccurredIdx: index40("cost_events_company_agent_occurred_idx").on(
+        companyOccurredIdx: index41("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyAgentOccurredIdx: index41("cost_events_company_agent_occurred_idx").on(
           table.companyId,
           table.agentId,
           table.occurredAt
         ),
-        companyProviderOccurredIdx: index40("cost_events_company_provider_occurred_idx").on(
+        companyProviderOccurredIdx: index41("cost_events_company_provider_occurred_idx").on(
           table.companyId,
           table.provider,
           table.occurredAt
         ),
-        companyBillerOccurredIdx: index40("cost_events_company_biller_occurred_idx").on(
+        companyBillerOccurredIdx: index41("cost_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index40("cost_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index41("cost_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         )
@@ -5003,7 +5035,7 @@ var init_cost_events = __esm({
 });
 
 // ../packages/db/src/schema/finance_events.ts
-import { pgTable as pgTable45, uuid as uuid44, text as text46, timestamp as timestamp45, integer as integer17, index as index41, boolean as boolean9, jsonb as jsonb21 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable46, uuid as uuid45, text as text47, timestamp as timestamp46, integer as integer17, index as index42, boolean as boolean9, jsonb as jsonb21 } from "drizzle-orm/pg-core";
 var financeEvents;
 var init_finance_events = __esm({
   "../packages/db/src/schema/finance_events.ts"() {
@@ -5015,59 +5047,59 @@ var init_finance_events = __esm({
     init_goals();
     init_heartbeat_runs();
     init_cost_events();
-    financeEvents = pgTable45(
+    financeEvents = pgTable46(
       "finance_events",
       {
-        id: uuid44("id").primaryKey().defaultRandom(),
-        companyId: uuid44("company_id").notNull().references(() => companies.id),
-        agentId: uuid44("agent_id").references(() => agents.id),
-        issueId: uuid44("issue_id").references(() => issues.id),
-        projectId: uuid44("project_id").references(() => projects.id),
-        goalId: uuid44("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid44("heartbeat_run_id").references(() => heartbeatRuns.id),
-        costEventId: uuid44("cost_event_id").references(() => costEvents.id),
-        billingCode: text46("billing_code"),
-        description: text46("description"),
-        eventKind: text46("event_kind").notNull(),
-        direction: text46("direction").notNull().default("debit"),
-        biller: text46("biller").notNull(),
-        provider: text46("provider"),
-        executionAdapterType: text46("execution_adapter_type"),
-        pricingTier: text46("pricing_tier"),
-        region: text46("region"),
-        model: text46("model"),
+        id: uuid45("id").primaryKey().defaultRandom(),
+        companyId: uuid45("company_id").notNull().references(() => companies.id),
+        agentId: uuid45("agent_id").references(() => agents.id),
+        issueId: uuid45("issue_id").references(() => issues.id),
+        projectId: uuid45("project_id").references(() => projects.id),
+        goalId: uuid45("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid45("heartbeat_run_id").references(() => heartbeatRuns.id),
+        costEventId: uuid45("cost_event_id").references(() => costEvents.id),
+        billingCode: text47("billing_code"),
+        description: text47("description"),
+        eventKind: text47("event_kind").notNull(),
+        direction: text47("direction").notNull().default("debit"),
+        biller: text47("biller").notNull(),
+        provider: text47("provider"),
+        executionAdapterType: text47("execution_adapter_type"),
+        pricingTier: text47("pricing_tier"),
+        region: text47("region"),
+        model: text47("model"),
         quantity: integer17("quantity"),
-        unit: text46("unit"),
+        unit: text47("unit"),
         amountCents: integer17("amount_cents").notNull(),
-        currency: text46("currency").notNull().default("USD"),
+        currency: text47("currency").notNull().default("USD"),
         estimated: boolean9("estimated").notNull().default(false),
-        externalInvoiceId: text46("external_invoice_id"),
+        externalInvoiceId: text47("external_invoice_id"),
         metadataJson: jsonb21("metadata_json").$type(),
-        occurredAt: timestamp45("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow()
+        occurredAt: timestamp46("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index41("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyBillerOccurredIdx: index41("finance_events_company_biller_occurred_idx").on(
+        companyOccurredIdx: index42("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyBillerOccurredIdx: index42("finance_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyKindOccurredIdx: index41("finance_events_company_kind_occurred_idx").on(
+        companyKindOccurredIdx: index42("finance_events_company_kind_occurred_idx").on(
           table.companyId,
           table.eventKind,
           table.occurredAt
         ),
-        companyDirectionOccurredIdx: index41("finance_events_company_direction_occurred_idx").on(
+        companyDirectionOccurredIdx: index42("finance_events_company_direction_occurred_idx").on(
           table.companyId,
           table.direction,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index41("finance_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index42("finance_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         ),
-        companyCostEventIdx: index41("finance_events_company_cost_event_idx").on(
+        companyCostEventIdx: index42("finance_events_company_cost_event_idx").on(
           table.companyId,
           table.costEventId
         )
@@ -5077,7 +5109,7 @@ var init_finance_events = __esm({
 });
 
 // ../packages/db/src/schema/approval_comments.ts
-import { pgTable as pgTable46, uuid as uuid45, text as text47, timestamp as timestamp46, index as index42 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable47, uuid as uuid46, text as text48, timestamp as timestamp47, index as index43 } from "drizzle-orm/pg-core";
 var approvalComments;
 var init_approval_comments = __esm({
   "../packages/db/src/schema/approval_comments.ts"() {
@@ -5085,22 +5117,22 @@ var init_approval_comments = __esm({
     init_companies();
     init_approvals();
     init_agents();
-    approvalComments = pgTable46(
+    approvalComments = pgTable47(
       "approval_comments",
       {
-        id: uuid45("id").primaryKey().defaultRandom(),
-        companyId: uuid45("company_id").notNull().references(() => companies.id),
-        approvalId: uuid45("approval_id").notNull().references(() => approvals.id),
-        authorAgentId: uuid45("author_agent_id").references(() => agents.id),
-        authorUserId: text47("author_user_id"),
-        body: text47("body").notNull(),
-        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp46("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid46("id").primaryKey().defaultRandom(),
+        companyId: uuid46("company_id").notNull().references(() => companies.id),
+        approvalId: uuid46("approval_id").notNull().references(() => approvals.id),
+        authorAgentId: uuid46("author_agent_id").references(() => agents.id),
+        authorUserId: text48("author_user_id"),
+        body: text48("body").notNull(),
+        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp47("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index42("approval_comments_company_idx").on(table.companyId),
-        approvalIdx: index42("approval_comments_approval_idx").on(table.approvalId),
-        approvalCreatedIdx: index42("approval_comments_approval_created_idx").on(
+        companyIdx: index43("approval_comments_company_idx").on(table.companyId),
+        approvalIdx: index43("approval_comments_approval_idx").on(table.approvalId),
+        approvalCreatedIdx: index43("approval_comments_approval_created_idx").on(
           table.approvalId,
           table.createdAt
         )
@@ -5110,7 +5142,7 @@ var init_approval_comments = __esm({
 });
 
 // ../packages/db/src/schema/activity_log.ts
-import { pgTable as pgTable47, uuid as uuid46, text as text48, timestamp as timestamp47, jsonb as jsonb22, index as index43 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable48, uuid as uuid47, text as text49, timestamp as timestamp48, jsonb as jsonb22, index as index44 } from "drizzle-orm/pg-core";
 var activityLog;
 var init_activity_log = __esm({
   "../packages/db/src/schema/activity_log.ts"() {
@@ -5118,55 +5150,55 @@ var init_activity_log = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    activityLog = pgTable47(
+    activityLog = pgTable48(
       "activity_log",
       {
-        id: uuid46("id").primaryKey().defaultRandom(),
-        companyId: uuid46("company_id").notNull().references(() => companies.id),
-        actorType: text48("actor_type").notNull().default("system"),
-        actorId: text48("actor_id").notNull(),
-        action: text48("action").notNull(),
-        entityType: text48("entity_type").notNull(),
-        entityId: text48("entity_id").notNull(),
-        agentId: uuid46("agent_id").references(() => agents.id),
-        runId: uuid46("run_id").references(() => heartbeatRuns.id),
+        id: uuid47("id").primaryKey().defaultRandom(),
+        companyId: uuid47("company_id").notNull().references(() => companies.id),
+        actorType: text49("actor_type").notNull().default("system"),
+        actorId: text49("actor_id").notNull(),
+        action: text49("action").notNull(),
+        entityType: text49("entity_type").notNull(),
+        entityId: text49("entity_id").notNull(),
+        agentId: uuid47("agent_id").references(() => agents.id),
+        runId: uuid47("run_id").references(() => heartbeatRuns.id),
         details: jsonb22("details").$type(),
-        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyCreatedIdx: index43("activity_log_company_created_idx").on(table.companyId, table.createdAt),
-        runIdIdx: index43("activity_log_run_id_idx").on(table.runId),
-        entityIdx: index43("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
+        companyCreatedIdx: index44("activity_log_company_created_idx").on(table.companyId, table.createdAt),
+        runIdIdx: index44("activity_log_run_id_idx").on(table.runId),
+        entityIdx: index44("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/company_secret_versions.ts
-import { pgTable as pgTable48, uuid as uuid47, text as text49, timestamp as timestamp48, integer as integer18, jsonb as jsonb23, index as index44, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable49, uuid as uuid48, text as text50, timestamp as timestamp49, integer as integer18, jsonb as jsonb23, index as index45, uniqueIndex as uniqueIndex24 } from "drizzle-orm/pg-core";
 var companySecretVersions;
 var init_company_secret_versions = __esm({
   "../packages/db/src/schema/company_secret_versions.ts"() {
     "use strict";
     init_agents();
     init_company_secrets();
-    companySecretVersions = pgTable48(
+    companySecretVersions = pgTable49(
       "company_secret_versions",
       {
-        id: uuid47("id").primaryKey().defaultRandom(),
-        secretId: uuid47("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
+        id: uuid48("id").primaryKey().defaultRandom(),
+        secretId: uuid48("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
         version: integer18("version").notNull(),
         material: jsonb23("material").$type().notNull(),
-        valueSha256: text49("value_sha256").notNull(),
-        createdByAgentId: uuid47("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text49("created_by_user_id"),
-        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow(),
-        revokedAt: timestamp48("revoked_at", { withTimezone: true })
+        valueSha256: text50("value_sha256").notNull(),
+        createdByAgentId: uuid48("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text50("created_by_user_id"),
+        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow(),
+        revokedAt: timestamp49("revoked_at", { withTimezone: true })
       },
       (table) => ({
-        secretIdx: index44("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
-        valueHashIdx: index44("company_secret_versions_value_sha256_idx").on(table.valueSha256),
-        secretVersionUq: uniqueIndex23("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
+        secretIdx: index45("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
+        valueHashIdx: index45("company_secret_versions_value_sha256_idx").on(table.valueSha256),
+        secretVersionUq: uniqueIndex24("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
       })
     );
   }
@@ -5174,42 +5206,42 @@ var init_company_secret_versions = __esm({
 
 // ../packages/db/src/schema/company_skills.ts
 import {
-  pgTable as pgTable49,
-  uuid as uuid48,
-  text as text50,
-  timestamp as timestamp49,
+  pgTable as pgTable50,
+  uuid as uuid49,
+  text as text51,
+  timestamp as timestamp50,
   jsonb as jsonb24,
-  index as index45,
-  uniqueIndex as uniqueIndex24
+  index as index46,
+  uniqueIndex as uniqueIndex25
 } from "drizzle-orm/pg-core";
 var companySkills;
 var init_company_skills = __esm({
   "../packages/db/src/schema/company_skills.ts"() {
     "use strict";
     init_companies();
-    companySkills = pgTable49(
+    companySkills = pgTable50(
       "company_skills",
       {
-        id: uuid48("id").primaryKey().defaultRandom(),
-        companyId: uuid48("company_id").notNull().references(() => companies.id),
-        key: text50("key").notNull(),
-        slug: text50("slug").notNull(),
-        name: text50("name").notNull(),
-        description: text50("description"),
-        markdown: text50("markdown").notNull(),
-        sourceType: text50("source_type").notNull().default("local_path"),
-        sourceLocator: text50("source_locator"),
-        sourceRef: text50("source_ref"),
-        trustLevel: text50("trust_level").notNull().default("markdown_only"),
-        compatibility: text50("compatibility").notNull().default("compatible"),
+        id: uuid49("id").primaryKey().defaultRandom(),
+        companyId: uuid49("company_id").notNull().references(() => companies.id),
+        key: text51("key").notNull(),
+        slug: text51("slug").notNull(),
+        name: text51("name").notNull(),
+        description: text51("description"),
+        markdown: text51("markdown").notNull(),
+        sourceType: text51("source_type").notNull().default("local_path"),
+        sourceLocator: text51("source_locator"),
+        sourceRef: text51("source_ref"),
+        trustLevel: text51("trust_level").notNull().default("markdown_only"),
+        compatibility: text51("compatibility").notNull().default("compatible"),
         fileInventory: jsonb24("file_inventory").$type().notNull().default([]),
         metadata: jsonb24("metadata").$type(),
-        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp49("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp50("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp50("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyKeyUniqueIdx: uniqueIndex24("company_skills_company_key_idx").on(table.companyId, table.key),
-        companyNameIdx: index45("company_skills_company_name_idx").on(table.companyId, table.name)
+        companyKeyUniqueIdx: uniqueIndex25("company_skills_company_key_idx").on(table.companyId, table.key),
+        companyNameIdx: index46("company_skills_company_name_idx").on(table.companyId, table.name)
       })
     );
   }
@@ -5217,93 +5249,93 @@ var init_company_skills = __esm({
 
 // ../packages/db/src/schema/plugins.ts
 import {
-  pgTable as pgTable50,
-  uuid as uuid49,
-  text as text51,
+  pgTable as pgTable51,
+  uuid as uuid50,
+  text as text52,
   integer as integer19,
-  timestamp as timestamp50,
+  timestamp as timestamp51,
   jsonb as jsonb25,
-  index as index46,
-  uniqueIndex as uniqueIndex25
+  index as index47,
+  uniqueIndex as uniqueIndex26
 } from "drizzle-orm/pg-core";
 var plugins;
 var init_plugins = __esm({
   "../packages/db/src/schema/plugins.ts"() {
     "use strict";
-    plugins = pgTable50(
+    plugins = pgTable51(
       "plugins",
       {
-        id: uuid49("id").primaryKey().defaultRandom(),
-        pluginKey: text51("plugin_key").notNull(),
-        packageName: text51("package_name").notNull(),
-        version: text51("version").notNull(),
+        id: uuid50("id").primaryKey().defaultRandom(),
+        pluginKey: text52("plugin_key").notNull(),
+        packageName: text52("package_name").notNull(),
+        version: text52("version").notNull(),
         apiVersion: integer19("api_version").notNull().default(1),
         categories: jsonb25("categories").$type().notNull().default([]),
         manifestJson: jsonb25("manifest_json").$type().notNull(),
-        status: text51("status").$type().notNull().default("installed"),
+        status: text52("status").$type().notNull().default("installed"),
         installOrder: integer19("install_order"),
         /** Resolved package path for local-path installs; used to find worker entrypoint. */
-        packagePath: text51("package_path"),
-        lastError: text51("last_error"),
-        installedAt: timestamp50("installed_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp50("updated_at", { withTimezone: true }).notNull().defaultNow()
+        packagePath: text52("package_path"),
+        lastError: text52("last_error"),
+        installedAt: timestamp51("installed_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp51("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginKeyIdx: uniqueIndex25("plugins_plugin_key_idx").on(table.pluginKey),
-        statusIdx: index46("plugins_status_idx").on(table.status)
+        pluginKeyIdx: uniqueIndex26("plugins_plugin_key_idx").on(table.pluginKey),
+        statusIdx: index47("plugins_status_idx").on(table.status)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_config.ts
-import { pgTable as pgTable51, uuid as uuid50, text as text52, timestamp as timestamp51, jsonb as jsonb26, uniqueIndex as uniqueIndex26 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable52, uuid as uuid51, text as text53, timestamp as timestamp52, jsonb as jsonb26, uniqueIndex as uniqueIndex27 } from "drizzle-orm/pg-core";
 var pluginConfig;
 var init_plugin_config = __esm({
   "../packages/db/src/schema/plugin_config.ts"() {
     "use strict";
     init_plugins();
-    pluginConfig = pgTable51(
+    pluginConfig = pgTable52(
       "plugin_config",
       {
-        id: uuid50("id").primaryKey().defaultRandom(),
-        pluginId: uuid50("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        id: uuid51("id").primaryKey().defaultRandom(),
+        pluginId: uuid51("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         configJson: jsonb26("config_json").$type().notNull().default({}),
-        lastError: text52("last_error"),
-        createdAt: timestamp51("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp51("updated_at", { withTimezone: true }).notNull().defaultNow()
+        lastError: text53("last_error"),
+        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp52("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdIdx: uniqueIndex26("plugin_config_plugin_id_idx").on(table.pluginId)
+        pluginIdIdx: uniqueIndex27("plugin_config_plugin_id_idx").on(table.pluginId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_company_settings.ts
-import { pgTable as pgTable52, uuid as uuid51, text as text53, timestamp as timestamp52, jsonb as jsonb27, index as index47, uniqueIndex as uniqueIndex27, boolean as boolean10 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable53, uuid as uuid52, text as text54, timestamp as timestamp53, jsonb as jsonb27, index as index48, uniqueIndex as uniqueIndex28, boolean as boolean10 } from "drizzle-orm/pg-core";
 var pluginCompanySettings;
 var init_plugin_company_settings = __esm({
   "../packages/db/src/schema/plugin_company_settings.ts"() {
     "use strict";
     init_companies();
     init_plugins();
-    pluginCompanySettings = pgTable52(
+    pluginCompanySettings = pgTable53(
       "plugin_company_settings",
       {
-        id: uuid51("id").primaryKey().defaultRandom(),
-        companyId: uuid51("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        pluginId: uuid51("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        id: uuid52("id").primaryKey().defaultRandom(),
+        companyId: uuid52("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        pluginId: uuid52("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         enabled: boolean10("enabled").notNull().default(true),
         settingsJson: jsonb27("settings_json").$type().notNull().default({}),
-        lastError: text53("last_error"),
-        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp52("updated_at", { withTimezone: true }).notNull().defaultNow()
+        lastError: text54("last_error"),
+        createdAt: timestamp53("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp53("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index47("plugin_company_settings_company_idx").on(table.companyId),
-        pluginIdx: index47("plugin_company_settings_plugin_idx").on(table.pluginId),
-        companyPluginUq: uniqueIndex27("plugin_company_settings_company_plugin_uq").on(
+        companyIdx: index48("plugin_company_settings_company_idx").on(table.companyId),
+        pluginIdx: index48("plugin_company_settings_plugin_idx").on(table.pluginId),
+        companyPluginUq: uniqueIndex28("plugin_company_settings_company_plugin_uq").on(
           table.companyId,
           table.pluginId
         )
@@ -5314,12 +5346,12 @@ var init_plugin_company_settings = __esm({
 
 // ../packages/db/src/schema/plugin_state.ts
 import {
-  pgTable as pgTable53,
-  uuid as uuid52,
-  text as text54,
-  timestamp as timestamp53,
+  pgTable as pgTable54,
+  uuid as uuid53,
+  text as text55,
+  timestamp as timestamp54,
   jsonb as jsonb28,
-  index as index48,
+  index as index49,
   unique as unique2
 } from "drizzle-orm/pg-core";
 var pluginState;
@@ -5327,30 +5359,30 @@ var init_plugin_state = __esm({
   "../packages/db/src/schema/plugin_state.ts"() {
     "use strict";
     init_plugins();
-    pluginState = pgTable53(
+    pluginState = pgTable54(
       "plugin_state",
       {
-        id: uuid52("id").primaryKey().defaultRandom(),
+        id: uuid53("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid52("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid53("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Granularity of the scope (e.g. `"instance"`, `"project"`, `"issue"`). */
-        scopeKind: text54("scope_kind").$type().notNull(),
+        scopeKind: text55("scope_kind").$type().notNull(),
         /**
          * UUID or text identifier for the scoped object.
          * Null for `instance` scope (which has no associated entity).
          */
-        scopeId: text54("scope_id"),
+        scopeId: text55("scope_id"),
         /**
          * Sub-namespace to avoid key collisions within a scope.
          * Defaults to `"default"` if the plugin does not specify one.
          */
-        namespace: text54("namespace").notNull().default("default"),
+        namespace: text55("namespace").notNull().default("default"),
         /** The key identifying this state entry within the namespace. */
-        stateKey: text54("state_key").notNull(),
+        stateKey: text55("state_key").notNull(),
         /** JSON-serializable value stored by the plugin. */
         valueJson: jsonb28("value_json").notNull(),
         /** Timestamp of the most recent write. */
-        updatedAt: timestamp53("updated_at", { withTimezone: true }).notNull().defaultNow()
+        updatedAt: timestamp54("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         /**
@@ -5372,7 +5404,7 @@ var init_plugin_state = __esm({
           table.stateKey
         ).nullsNotDistinct(),
         /** Speed up lookups by plugin + scope kind (most common access pattern). */
-        pluginScopeIdx: index48("plugin_state_plugin_scope_idx").on(
+        pluginScopeIdx: index49("plugin_state_plugin_scope_idx").on(
           table.pluginId,
           table.scopeKind
         )
@@ -5383,41 +5415,41 @@ var init_plugin_state = __esm({
 
 // ../packages/db/src/schema/plugin_entities.ts
 import {
-  pgTable as pgTable54,
-  uuid as uuid53,
-  text as text55,
-  timestamp as timestamp54,
+  pgTable as pgTable55,
+  uuid as uuid54,
+  text as text56,
+  timestamp as timestamp55,
   jsonb as jsonb29,
-  index as index49,
-  uniqueIndex as uniqueIndex28
+  index as index50,
+  uniqueIndex as uniqueIndex29
 } from "drizzle-orm/pg-core";
 var pluginEntities;
 var init_plugin_entities = __esm({
   "../packages/db/src/schema/plugin_entities.ts"() {
     "use strict";
     init_plugins();
-    pluginEntities = pgTable54(
+    pluginEntities = pgTable55(
       "plugin_entities",
       {
-        id: uuid53("id").primaryKey().defaultRandom(),
-        pluginId: uuid53("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        entityType: text55("entity_type").notNull(),
-        scopeKind: text55("scope_kind").$type().notNull(),
-        scopeId: text55("scope_id"),
+        id: uuid54("id").primaryKey().defaultRandom(),
+        pluginId: uuid54("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        entityType: text56("entity_type").notNull(),
+        scopeKind: text56("scope_kind").$type().notNull(),
+        scopeId: text56("scope_id"),
         // NULL for global scope (text to match plugin_state.scope_id)
-        externalId: text55("external_id"),
+        externalId: text56("external_id"),
         // ID in the external system
-        title: text55("title"),
-        status: text55("status"),
+        title: text56("title"),
+        status: text56("status"),
         data: jsonb29("data").$type().notNull().default({}),
-        createdAt: timestamp54("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp54("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp55("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index49("plugin_entities_plugin_idx").on(table.pluginId),
-        typeIdx: index49("plugin_entities_type_idx").on(table.entityType),
-        scopeIdx: index49("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
-        externalIdx: uniqueIndex28("plugin_entities_external_idx").on(
+        pluginIdx: index50("plugin_entities_plugin_idx").on(table.pluginId),
+        typeIdx: index50("plugin_entities_type_idx").on(table.entityType),
+        scopeIdx: index50("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
+        externalIdx: uniqueIndex29("plugin_entities_external_idx").on(
           table.pluginId,
           table.entityType,
           table.externalId
@@ -5429,71 +5461,71 @@ var init_plugin_entities = __esm({
 
 // ../packages/db/src/schema/plugin_jobs.ts
 import {
-  pgTable as pgTable55,
-  uuid as uuid54,
-  text as text56,
+  pgTable as pgTable56,
+  uuid as uuid55,
+  text as text57,
   integer as integer20,
-  timestamp as timestamp55,
+  timestamp as timestamp56,
   jsonb as jsonb30,
-  index as index50,
-  uniqueIndex as uniqueIndex29
+  index as index51,
+  uniqueIndex as uniqueIndex30
 } from "drizzle-orm/pg-core";
 var pluginJobs, pluginJobRuns;
 var init_plugin_jobs = __esm({
   "../packages/db/src/schema/plugin_jobs.ts"() {
     "use strict";
     init_plugins();
-    pluginJobs = pgTable55(
+    pluginJobs = pgTable56(
       "plugin_jobs",
       {
-        id: uuid54("id").primaryKey().defaultRandom(),
+        id: uuid55("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid54("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `jobs` array. */
-        jobKey: text56("job_key").notNull(),
+        jobKey: text57("job_key").notNull(),
         /** Cron expression (e.g. `"0 * * * *"`) or interval string. */
-        schedule: text56("schedule").notNull(),
+        schedule: text57("schedule").notNull(),
         /** Current scheduling state. */
-        status: text56("status").$type().notNull().default("active"),
+        status: text57("status").$type().notNull().default("active"),
         /** Timestamp of the most recent successful execution. */
-        lastRunAt: timestamp55("last_run_at", { withTimezone: true }),
+        lastRunAt: timestamp56("last_run_at", { withTimezone: true }),
         /** Pre-computed timestamp of the next scheduled execution. */
-        nextRunAt: timestamp55("next_run_at", { withTimezone: true }),
-        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp55("updated_at", { withTimezone: true }).notNull().defaultNow()
+        nextRunAt: timestamp56("next_run_at", { withTimezone: true }),
+        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp56("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index50("plugin_jobs_plugin_idx").on(table.pluginId),
-        nextRunIdx: index50("plugin_jobs_next_run_idx").on(table.nextRunAt),
-        uniqueJobIdx: uniqueIndex29("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
+        pluginIdx: index51("plugin_jobs_plugin_idx").on(table.pluginId),
+        nextRunIdx: index51("plugin_jobs_next_run_idx").on(table.nextRunAt),
+        uniqueJobIdx: uniqueIndex30("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
       })
     );
-    pluginJobRuns = pgTable55(
+    pluginJobRuns = pgTable56(
       "plugin_job_runs",
       {
-        id: uuid54("id").primaryKey().defaultRandom(),
+        id: uuid55("id").primaryKey().defaultRandom(),
         /** FK to the parent job definition. Cascades on delete. */
-        jobId: uuid54("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
+        jobId: uuid55("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
         /** Denormalized FK to the owning plugin for efficient querying. Cascades on delete. */
-        pluginId: uuid54("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** What caused this run to start (`"scheduled"` or `"manual"`). */
-        trigger: text56("trigger").$type().notNull(),
+        trigger: text57("trigger").$type().notNull(),
         /** Current lifecycle state of this run. */
-        status: text56("status").$type().notNull().default("pending"),
+        status: text57("status").$type().notNull().default("pending"),
         /** Wall-clock duration in milliseconds. Null until the run finishes. */
         durationMs: integer20("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text56("error"),
+        error: text57("error"),
         /** Ordered list of log lines emitted during this run. */
         logs: jsonb30("logs").$type().notNull().default([]),
-        startedAt: timestamp55("started_at", { withTimezone: true }),
-        finishedAt: timestamp55("finished_at", { withTimezone: true }),
-        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow()
+        startedAt: timestamp56("started_at", { withTimezone: true }),
+        finishedAt: timestamp56("finished_at", { withTimezone: true }),
+        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        jobIdx: index50("plugin_job_runs_job_idx").on(table.jobId),
-        pluginIdx: index50("plugin_job_runs_plugin_idx").on(table.pluginId),
-        statusIdx: index50("plugin_job_runs_status_idx").on(table.status)
+        jobIdx: index51("plugin_job_runs_job_idx").on(table.jobId),
+        pluginIdx: index51("plugin_job_runs_plugin_idx").on(table.pluginId),
+        statusIdx: index51("plugin_job_runs_status_idx").on(table.status)
       })
     );
   }
@@ -5501,47 +5533,47 @@ var init_plugin_jobs = __esm({
 
 // ../packages/db/src/schema/plugin_webhooks.ts
 import {
-  pgTable as pgTable56,
-  uuid as uuid55,
-  text as text57,
+  pgTable as pgTable57,
+  uuid as uuid56,
+  text as text58,
   integer as integer21,
-  timestamp as timestamp56,
+  timestamp as timestamp57,
   jsonb as jsonb31,
-  index as index51
+  index as index52
 } from "drizzle-orm/pg-core";
 var pluginWebhookDeliveries;
 var init_plugin_webhooks = __esm({
   "../packages/db/src/schema/plugin_webhooks.ts"() {
     "use strict";
     init_plugins();
-    pluginWebhookDeliveries = pgTable56(
+    pluginWebhookDeliveries = pgTable57(
       "plugin_webhook_deliveries",
       {
-        id: uuid55("id").primaryKey().defaultRandom(),
+        id: uuid56("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid56("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `webhooks` array. */
-        webhookKey: text57("webhook_key").notNull(),
+        webhookKey: text58("webhook_key").notNull(),
         /** Optional de-duplication ID provided by the external system. */
-        externalId: text57("external_id"),
+        externalId: text58("external_id"),
         /** Current delivery state. */
-        status: text57("status").$type().notNull().default("pending"),
+        status: text58("status").$type().notNull().default("pending"),
         /** Wall-clock processing duration in milliseconds. Null until delivery finishes. */
         durationMs: integer21("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text57("error"),
+        error: text58("error"),
         /** Raw JSON body of the inbound HTTP request. */
         payload: jsonb31("payload").$type().notNull(),
         /** Relevant HTTP headers from the inbound request (e.g. signature headers). */
         headers: jsonb31("headers").$type().notNull().default({}),
-        startedAt: timestamp56("started_at", { withTimezone: true }),
-        finishedAt: timestamp56("finished_at", { withTimezone: true }),
-        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow()
+        startedAt: timestamp57("started_at", { withTimezone: true }),
+        finishedAt: timestamp57("finished_at", { withTimezone: true }),
+        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index51("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
-        statusIdx: index51("plugin_webhook_deliveries_status_idx").on(table.status),
-        keyIdx: index51("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
+        pluginIdx: index52("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
+        statusIdx: index52("plugin_webhook_deliveries_status_idx").on(table.status),
+        keyIdx: index52("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
       })
     );
   }
@@ -5549,34 +5581,34 @@ var init_plugin_webhooks = __esm({
 
 // ../packages/db/src/schema/plugin_logs.ts
 import {
-  pgTable as pgTable57,
-  uuid as uuid56,
-  text as text58,
-  timestamp as timestamp57,
+  pgTable as pgTable58,
+  uuid as uuid57,
+  text as text59,
+  timestamp as timestamp58,
   jsonb as jsonb32,
-  index as index52
+  index as index53
 } from "drizzle-orm/pg-core";
 var pluginLogs;
 var init_plugin_logs = __esm({
   "../packages/db/src/schema/plugin_logs.ts"() {
     "use strict";
     init_plugins();
-    pluginLogs = pgTable57(
+    pluginLogs = pgTable58(
       "plugin_logs",
       {
-        id: uuid56("id").primaryKey().defaultRandom(),
-        pluginId: uuid56("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        level: text58("level").notNull().default("info"),
-        message: text58("message").notNull(),
+        id: uuid57("id").primaryKey().defaultRandom(),
+        pluginId: uuid57("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        level: text59("level").notNull().default("info"),
+        message: text59("message").notNull(),
         meta: jsonb32("meta").$type(),
-        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginTimeIdx: index52("plugin_logs_plugin_time_idx").on(
+        pluginTimeIdx: index53("plugin_logs_plugin_time_idx").on(
           table.pluginId,
           table.createdAt
         ),
-        levelIdx: index52("plugin_logs_level_idx").on(table.level)
+        levelIdx: index53("plugin_logs_level_idx").on(table.level)
       })
     );
   }
@@ -5584,13 +5616,13 @@ var init_plugin_logs = __esm({
 
 // ../packages/db/src/schema/vibedash_project_links.ts
 import {
-  index as index53,
+  index as index54,
   jsonb as jsonb33,
-  pgTable as pgTable58,
-  text as text59,
-  timestamp as timestamp58,
-  uniqueIndex as uniqueIndex30,
-  uuid as uuid57
+  pgTable as pgTable59,
+  text as text60,
+  timestamp as timestamp59,
+  uniqueIndex as uniqueIndex31,
+  uuid as uuid58
 } from "drizzle-orm/pg-core";
 var vibedashProjectLinks;
 var init_vibedash_project_links = __esm({
@@ -5599,36 +5631,36 @@ var init_vibedash_project_links = __esm({
     init_companies();
     init_projects();
     init_agents();
-    vibedashProjectLinks = pgTable58(
+    vibedashProjectLinks = pgTable59(
       "vibedash_project_links",
       {
-        id: uuid57("id").primaryKey().defaultRandom(),
-        companyId: uuid57("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        projectId: uuid57("project_id").references(() => projects.id, { onDelete: "set null" }),
-        pmAgentId: uuid57("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        vibedashProjectId: text59("vibedash_project_id").notNull(),
-        vibedashOwnerUserId: text59("vibedash_owner_user_id").notNull(),
-        vibedashOwnerEmail: text59("vibedash_owner_email"),
-        githubRepoUrl: text59("github_repo_url"),
-        githubRepoRef: text59("github_repo_ref"),
-        githubProvider: text59("github_provider").notNull().default("github"),
-        bootstrapStatus: text59("bootstrap_status").notNull().default("provisioning"),
-        lastSyncedAt: timestamp58("last_synced_at", { withTimezone: true }),
+        id: uuid58("id").primaryKey().defaultRandom(),
+        companyId: uuid58("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        projectId: uuid58("project_id").references(() => projects.id, { onDelete: "set null" }),
+        pmAgentId: uuid58("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        vibedashProjectId: text60("vibedash_project_id").notNull(),
+        vibedashOwnerUserId: text60("vibedash_owner_user_id").notNull(),
+        vibedashOwnerEmail: text60("vibedash_owner_email"),
+        githubRepoUrl: text60("github_repo_url"),
+        githubRepoRef: text60("github_repo_ref"),
+        githubProvider: text60("github_provider").notNull().default("github"),
+        bootstrapStatus: text60("bootstrap_status").notNull().default("provisioning"),
+        lastSyncedAt: timestamp59("last_synced_at", { withTimezone: true }),
         metadata: jsonb33("metadata").$type(),
-        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp58("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp59("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp59("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        vibedashProjectIdUniqueIdx: uniqueIndex30(
+        vibedashProjectIdUniqueIdx: uniqueIndex31(
           "vibedash_project_links_vibedash_project_id_idx"
         ).on(table.vibedashProjectId),
-        companyUniqueIdx: uniqueIndex30("vibedash_project_links_company_id_idx").on(table.companyId),
-        companyStatusIdx: index53("vibedash_project_links_company_status_idx").on(
+        companyUniqueIdx: uniqueIndex31("vibedash_project_links_company_id_idx").on(table.companyId),
+        companyStatusIdx: index54("vibedash_project_links_company_status_idx").on(
           table.companyId,
           table.bootstrapStatus
         ),
-        projectIdx: index53("vibedash_project_links_project_idx").on(table.projectId),
-        pmAgentIdx: index53("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
+        projectIdx: index54("vibedash_project_links_project_idx").on(table.projectId),
+        pmAgentIdx: index54("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
       })
     );
   }
@@ -5676,6 +5708,7 @@ __export(schema_exports, {
   issueAttachments: () => issueAttachments,
   issueComments: () => issueComments,
   issueDocuments: () => issueDocuments,
+  issueInboxArchives: () => issueInboxArchives,
   issueLabels: () => issueLabels,
   issueReadStates: () => issueReadStates,
   issueWorkProducts: () => issueWorkProducts,
@@ -5738,6 +5771,7 @@ var init_schema2 = __esm({
     init_issue_labels();
     init_issue_approvals();
     init_issue_comments();
+    init_issue_inbox_archives();
     init_issue_read_states();
     init_assets();
     init_issue_attachments();
@@ -6386,6 +6420,125 @@ var init_client = __esm({
   }
 });
 
+// ../packages/db/src/test-embedded-postgres.ts
+import fs5 from "node:fs";
+import net from "node:net";
+import os2 from "node:os";
+import path6 from "node:path";
+async function getEmbeddedPostgresCtor() {
+  const mod = await import("embedded-postgres");
+  return mod.default;
+}
+async function getAvailablePort() {
+  return await new Promise((resolve2, reject) => {
+    const server = net.createServer();
+    server.unref();
+    server.on("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      const address = server.address();
+      if (!address || typeof address === "string") {
+        server.close(() => reject(new Error("Failed to allocate test port")));
+        return;
+      }
+      const { port } = address;
+      server.close((error) => {
+        if (error) reject(error);
+        else resolve2(port);
+      });
+    });
+  });
+}
+function formatEmbeddedPostgresError(error) {
+  if (error instanceof Error && error.message.length > 0) return error.message;
+  if (typeof error === "string" && error.length > 0) return error;
+  return "embedded Postgres startup failed";
+}
+async function probeEmbeddedPostgresSupport() {
+  const dataDir = fs5.mkdtempSync(path6.join(os2.tmpdir(), "paperclip-embedded-postgres-probe-"));
+  const port = await getAvailablePort();
+  const EmbeddedPostgres = await getEmbeddedPostgresCtor();
+  const instance = new EmbeddedPostgres({
+    databaseDir: dataDir,
+    user: "paperclip",
+    password: "paperclip",
+    port,
+    persistent: true,
+    initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
+    onLog: () => {
+    },
+    onError: () => {
+    }
+  });
+  try {
+    await instance.initialise();
+    await instance.start();
+    return { supported: true };
+  } catch (error) {
+    return {
+      supported: false,
+      reason: formatEmbeddedPostgresError(error)
+    };
+  } finally {
+    await instance.stop().catch(() => {
+    });
+    fs5.rmSync(dataDir, { recursive: true, force: true });
+  }
+}
+async function getEmbeddedPostgresTestSupport() {
+  if (!embeddedPostgresSupportPromise) {
+    embeddedPostgresSupportPromise = probeEmbeddedPostgresSupport();
+  }
+  return await embeddedPostgresSupportPromise;
+}
+async function startEmbeddedPostgresTestDatabase(tempDirPrefix) {
+  const dataDir = fs5.mkdtempSync(path6.join(os2.tmpdir(), tempDirPrefix));
+  const port = await getAvailablePort();
+  const EmbeddedPostgres = await getEmbeddedPostgresCtor();
+  const instance = new EmbeddedPostgres({
+    databaseDir: dataDir,
+    user: "paperclip",
+    password: "paperclip",
+    port,
+    persistent: true,
+    initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
+    onLog: () => {
+    },
+    onError: () => {
+    }
+  });
+  try {
+    await instance.initialise();
+    await instance.start();
+    const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/postgres`;
+    await ensurePostgresDatabase(adminConnectionString, "paperclip");
+    const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${port}/paperclip`;
+    await applyPendingMigrations(connectionString);
+    return {
+      connectionString,
+      cleanup: async () => {
+        await instance.stop().catch(() => {
+        });
+        fs5.rmSync(dataDir, { recursive: true, force: true });
+      }
+    };
+  } catch (error) {
+    await instance.stop().catch(() => {
+    });
+    fs5.rmSync(dataDir, { recursive: true, force: true });
+    throw new Error(
+      `Failed to start embedded PostgreSQL test database: ${formatEmbeddedPostgresError(error)}`
+    );
+  }
+}
+var embeddedPostgresSupportPromise;
+var init_test_embedded_postgres = __esm({
+  "../packages/db/src/test-embedded-postgres.ts"() {
+    "use strict";
+    init_client();
+    embeddedPostgresSupportPromise = null;
+  }
+});
+
 // ../packages/db/src/backup-lib.ts
 import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { readFile as readFile2, writeFile } from "node:fs/promises";
@@ -6402,7 +6555,7 @@ function sanitizeRestoreErrorMessage(error) {
   }
   return error instanceof Error ? error.message : String(error);
 }
-function timestamp59(date2 = /* @__PURE__ */ new Date()) {
+function timestamp60(date2 = /* @__PURE__ */ new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${date2.getFullYear()}${pad(date2.getMonth() + 1)}${pad(date2.getDate())}-${pad(date2.getHours())}${pad(date2.getMinutes())}${pad(date2.getSeconds())}`;
 }
@@ -6726,8 +6879,8 @@ async function runDatabaseBackup(opts) {
       const rows = await sql4.unsafe(`SELECT * FROM ${qualifiedTableName}`).values();
       const nullifiedColumns = nullifiedColumnsByTable.get(tablename) ?? /* @__PURE__ */ new Set();
       for (const row of rows) {
-        const values = row.map((rawValue, index54) => {
-          const columnName = cols[index54]?.column_name;
+        const values = row.map((rawValue, index55) => {
+          const columnName = cols[index55]?.column_name;
           const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
           if (val === null || val === void 0) return "NULL";
           if (typeof val === "boolean") return val ? "true" : "false";
@@ -6757,7 +6910,7 @@ async function runDatabaseBackup(opts) {
     emitStatement("COMMIT;");
     emit("");
     mkdirSync(opts.backupDir, { recursive: true });
-    const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp59()}.sql`);
+    const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp60()}.sql`);
     await writeFile(backupFile, lines.join("\n"), "utf8");
     const sizeBytes = statSync(backupFile).size;
     const prunedCount = pruneOldBackups(opts.backupDir, retentionDays, filenamePrefix);
@@ -6804,6 +6957,70 @@ var init_backup_lib = __esm({
   }
 });
 
+// ../packages/db/src/embedded-postgres-error.ts
+function toError(error, fallbackMessage) {
+  if (error instanceof Error) return error;
+  if (error === void 0) return new Error(fallbackMessage);
+  if (typeof error === "string") return new Error(`${fallbackMessage}: ${error}`);
+  try {
+    return new Error(`${fallbackMessage}: ${JSON.stringify(error)}`);
+  } catch {
+    return new Error(`${fallbackMessage}: ${String(error)}`);
+  }
+}
+function summarizeRecentLogs(recentLogs) {
+  if (recentLogs.length === 0) return null;
+  return recentLogs.slice(-RECENT_LOG_SUMMARY_LINES).map((line) => line.trim()).filter((line) => line.length > 0).join(" | ");
+}
+function detectEmbeddedPostgresHint(recentLogs) {
+  const haystack = recentLogs.join("\n").toLowerCase();
+  if (!haystack.includes("could not create shared memory segment")) {
+    return null;
+  }
+  return "Embedded PostgreSQL bootstrap could not allocate shared memory. On macOS, this usually means the host's kern.sysv.shm* limits are too low for another local PostgreSQL cluster. Stop other local PostgreSQL servers or raise the shared-memory sysctls, then retry.";
+}
+function createEmbeddedPostgresLogBuffer(limit = DEFAULT_RECENT_LOG_LIMIT) {
+  const recentLogs = [];
+  return {
+    append(message) {
+      const text61 = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
+      for (const rawLine of text61.split(/\r?\n/)) {
+        const line = rawLine.trim();
+        if (!line) continue;
+        recentLogs.push(line);
+        if (recentLogs.length > limit) {
+          recentLogs.splice(0, recentLogs.length - limit);
+        }
+      }
+    },
+    getRecentLogs() {
+      return [...recentLogs];
+    }
+  };
+}
+function formatEmbeddedPostgresError2(error, input) {
+  const baseError = toError(error, input.fallbackMessage);
+  const recentLogs = input.recentLogs ?? [];
+  const parts = [baseError.message];
+  const hint = detectEmbeddedPostgresHint(recentLogs);
+  const recentSummary = summarizeRecentLogs(recentLogs);
+  if (hint) {
+    parts.push(hint);
+  }
+  if (recentSummary) {
+    parts.push(`Recent embedded Postgres logs: ${recentSummary}`);
+  }
+  return new Error(parts.join(" "));
+}
+var DEFAULT_RECENT_LOG_LIMIT, RECENT_LOG_SUMMARY_LINES;
+var init_embedded_postgres_error = __esm({
+  "../packages/db/src/embedded-postgres-error.ts"() {
+    "use strict";
+    DEFAULT_RECENT_LOG_LIMIT = 40;
+    RECENT_LOG_SUMMARY_LINES = 8;
+  }
+});
+
 // ../packages/db/src/index.ts
 var src_exports = {};
 __export(src_exports, {
@@ -6834,12 +7051,15 @@ __export(src_exports, {
   companySkills: () => companySkills,
   costEvents: () => costEvents,
   createDb: () => createDb,
+  createEmbeddedPostgresLogBuffer: () => createEmbeddedPostgresLogBuffer,
   documentRevisions: () => documentRevisions,
   documents: () => documents,
   ensurePostgresDatabase: () => ensurePostgresDatabase,
   executionWorkspaces: () => executionWorkspaces,
   financeEvents: () => financeEvents,
   formatDatabaseBackupResult: () => formatDatabaseBackupResult,
+  formatEmbeddedPostgresError: () => formatEmbeddedPostgresError2,
+  getEmbeddedPostgresTestSupport: () => getEmbeddedPostgresTestSupport,
   getPostgresDataDirectory: () => getPostgresDataDirectory,
   goals: () => goals,
   heartbeatRunEvents: () => heartbeatRunEvents,
@@ -6852,6 +7072,7 @@ __export(src_exports, {
   issueAttachments: () => issueAttachments,
   issueComments: () => issueComments,
   issueDocuments: () => issueDocuments,
+  issueInboxArchives: () => issueInboxArchives,
   issueLabels: () => issueLabels,
   issueReadStates: () => issueReadStates,
   issueWorkProducts: () => issueWorkProducts,
@@ -6878,6 +7099,7 @@ __export(src_exports, {
   routines: () => routines,
   runDatabaseBackup: () => runDatabaseBackup,
   runDatabaseRestore: () => runDatabaseRestore,
+  startEmbeddedPostgresTestDatabase: () => startEmbeddedPostgresTestDatabase,
   vibedashProjectLinks: () => vibedashProjectLinks,
   workspaceOperations: () => workspaceOperations,
   workspaceRuntimeServices: () => workspaceRuntimeServices
@@ -6886,7 +7108,9 @@ var init_src2 = __esm({
   "../packages/db/src/index.ts"() {
     "use strict";
     init_client();
+    init_test_embedded_postgres();
     init_backup_lib();
+    init_embedded_postgres_error();
     init_schema2();
   }
 });
@@ -7191,7 +7415,7 @@ var init_path_resolver2 = __esm({
 });
 
 // src/checks/database-check.ts
-import fs5 from "node:fs";
+import fs6 from "node:fs";
 async function databaseCheck(config, configPath) {
   if (config.database.mode === "postgres") {
     if (!config.database.connectionString) {
@@ -7225,8 +7449,8 @@ async function databaseCheck(config, configPath) {
   if (config.database.mode === "embedded-postgres") {
     const dataDir = resolveRuntimeLikePath(config.database.embeddedPostgresDataDir, configPath);
     const reportedPath = dataDir;
-    if (!fs5.existsSync(dataDir)) {
-      fs5.mkdirSync(reportedPath, { recursive: true });
+    if (!fs6.existsSync(dataDir)) {
+      fs6.mkdirSync(reportedPath, { recursive: true });
     }
     return {
       name: "Database",
@@ -7334,15 +7558,15 @@ var init_llm_check = __esm({
 });
 
 // src/checks/log-check.ts
-import fs6 from "node:fs";
+import fs7 from "node:fs";
 function logCheck(config, configPath) {
   const logDir = resolveRuntimeLikePath(config.logging.logDir, configPath);
   const reportedDir = logDir;
-  if (!fs6.existsSync(logDir)) {
-    fs6.mkdirSync(reportedDir, { recursive: true });
+  if (!fs7.existsSync(logDir)) {
+    fs7.mkdirSync(reportedDir, { recursive: true });
   }
   try {
-    fs6.accessSync(reportedDir, fs6.constants.W_OK);
+    fs7.accessSync(reportedDir, fs7.constants.W_OK);
     return {
       name: "Log directory",
       status: "pass",
@@ -7366,10 +7590,10 @@ var init_log_check = __esm({
 });
 
 // src/utils/net.ts
-import net from "node:net";
+import net2 from "node:net";
 function checkPort(port) {
   return new Promise((resolve2) => {
-    const server = net.createServer();
+    const server = net2.createServer();
     server.once("error", (err) => {
       if (err.code === "EADDRINUSE") {
         resolve2({ available: false, error: `Port ${port} is already in use` });
@@ -7417,8 +7641,8 @@ var init_port_check = __esm({
 
 // src/checks/secrets-check.ts
 import { randomBytes as randomBytes4 } from "node:crypto";
-import fs7 from "node:fs";
-import path6 from "node:path";
+import fs8 from "node:fs";
+import path7 from "node:path";
 function decodeMasterKey(raw) {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -7480,7 +7704,7 @@ function secretsCheck(config, configPath) {
   const keyFileOverride = process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE;
   const configuredPath = keyFileOverride && keyFileOverride.trim().length > 0 ? keyFileOverride.trim() : config.secrets.localEncrypted.keyFilePath;
   const keyFilePath = resolveRuntimeLikePath(configuredPath, configPath);
-  if (!fs7.existsSync(keyFilePath)) {
+  if (!fs8.existsSync(keyFilePath)) {
     return withStrictModeNote(
       {
         name: "Secrets adapter",
@@ -7488,13 +7712,13 @@ function secretsCheck(config, configPath) {
         message: `Secrets key file does not exist yet: ${keyFilePath}`,
         canRepair: true,
         repair: () => {
-          fs7.mkdirSync(path6.dirname(keyFilePath), { recursive: true });
-          fs7.writeFileSync(keyFilePath, randomBytes4(32).toString("base64"), {
+          fs8.mkdirSync(path7.dirname(keyFilePath), { recursive: true });
+          fs8.writeFileSync(keyFilePath, randomBytes4(32).toString("base64"), {
             encoding: "utf8",
             mode: 384
           });
           try {
-            fs7.chmodSync(keyFilePath, 384);
+            fs8.chmodSync(keyFilePath, 384);
           } catch {
           }
         },
@@ -7505,7 +7729,7 @@ function secretsCheck(config, configPath) {
   }
   let raw;
   try {
-    raw = fs7.readFileSync(keyFilePath, "utf8");
+    raw = fs8.readFileSync(keyFilePath, "utf8");
   } catch (err) {
     return {
       name: "Secrets adapter",
@@ -7541,15 +7765,15 @@ var init_secrets_check = __esm({
 });
 
 // src/checks/storage-check.ts
-import fs8 from "node:fs";
+import fs9 from "node:fs";
 function storageCheck(config, configPath) {
   if (config.storage.provider === "local_disk") {
     const baseDir = resolveRuntimeLikePath(config.storage.localDisk.baseDir, configPath);
-    if (!fs8.existsSync(baseDir)) {
-      fs8.mkdirSync(baseDir, { recursive: true });
+    if (!fs9.existsSync(baseDir)) {
+      fs9.mkdirSync(baseDir, { recursive: true });
     }
     try {
-      fs8.accessSync(baseDir, fs8.constants.W_OK);
+      fs9.accessSync(baseDir, fs9.constants.W_OK);
       return {
         name: "Storage",
         status: "pass",
@@ -7762,8 +7986,8 @@ var run_exports = {};
 __export(run_exports, {
   runCommand: () => runCommand
 });
-import fs9 from "node:fs";
-import path7 from "node:path";
+import fs10 from "node:fs";
+import path8 from "node:path";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "node:url";
 import * as p9 from "@clack/prompts";
 import pc4 from "picocolors";
@@ -7771,9 +7995,9 @@ async function runCommand(opts) {
   const instanceId = resolvePaperclipInstanceId(opts.instance);
   process.env.PAPERCLIP_INSTANCE_ID = instanceId;
   const homeDir = resolvePaperclipHomeDir();
-  fs9.mkdirSync(homeDir, { recursive: true });
+  fs10.mkdirSync(homeDir, { recursive: true });
   const paths = describeLocalInstancePaths(instanceId);
-  fs9.mkdirSync(paths.instanceRoot, { recursive: true });
+  fs10.mkdirSync(paths.instanceRoot, { recursive: true });
   const configPath = resolveConfigPath(opts.config);
   process.env.PAPERCLIP_CONFIG = configPath;
   loadPaperclipEnvFile(configPath);
@@ -7857,9 +8081,9 @@ function maybeEnableUiDevMiddleware(entrypoint) {
   }
 }
 async function importServerEntry() {
-  const projectRoot = path7.resolve(path7.dirname(fileURLToPath2(import.meta.url)), "../../..");
-  const devEntry = path7.resolve(projectRoot, "server/src/index.ts");
-  if (fs9.existsSync(devEntry)) {
+  const projectRoot = path8.resolve(path8.dirname(fileURLToPath2(import.meta.url)), "../../..");
+  const devEntry = path8.resolve(projectRoot, "server/src/index.ts");
+  if (fs10.existsSync(devEntry)) {
     maybeEnableUiDevMiddleware(devEntry);
     const mod = await import(pathToFileURL(devEntry).href);
     return await startServerFromModule(mod, devEntry);
@@ -7908,7 +8132,7 @@ var init_run = __esm({
 
 // src/commands/onboard.ts
 import * as p10 from "@clack/prompts";
-import path8 from "node:path";
+import path9 from "node:path";
 import pc5 from "picocolors";
 function parseBooleanFromEnv(rawValue) {
   if (rawValue === void 0) return null;
@@ -7929,7 +8153,7 @@ function parseEnumFromEnv(rawValue, allowedValues) {
 }
 function resolvePathFromEnv(rawValue) {
   if (!rawValue || rawValue.trim().length === 0) return null;
-  return path8.resolve(expandHomePrefix(rawValue.trim()));
+  return path9.resolve(expandHomePrefix(rawValue.trim()));
 }
 function quickstartDefaultsFromEnv() {
   const instanceId = resolvePaperclipInstanceId();
@@ -8848,8 +9072,8 @@ function printClaudeStreamEvent(raw, debug) {
       const block = blockRaw;
       const blockType = typeof block.type === "string" ? block.type : "";
       if (blockType === "text") {
-        const text60 = typeof block.text === "string" ? block.text : "";
-        if (text60) console.log(pc9.green(`assistant: ${text60}`));
+        const text61 = typeof block.text === "string" ? block.text : "";
+        if (text61) console.log(pc9.green(`assistant: ${text61}`));
       } else if (blockType === "tool_use") {
         const name = typeof block.name === "string" ? block.name : "unknown";
         console.log(pc9.yellow(`tool_call: ${name}`));
@@ -8941,13 +9165,13 @@ function printItemStarted(item) {
 function printItemCompleted(item) {
   const itemType = asString(item.type);
   if (itemType === "agent_message") {
-    const text60 = asString(item.text);
-    if (text60) console.log(pc10.green(`assistant: ${text60}`));
+    const text61 = asString(item.text);
+    if (text61) console.log(pc10.green(`assistant: ${text61}`));
     return true;
   }
   if (itemType === "reasoning") {
-    const text60 = asString(item.text);
-    if (text60) console.log(pc10.gray(`thinking: ${text60}`));
+    const text61 = asString(item.text);
+    if (text61) console.log(pc10.gray(`thinking: ${text61}`));
     return true;
   }
   if (itemType === "tool_use") {
@@ -8982,8 +9206,8 @@ function printItemCompleted(item) {
     const changes = Array.isArray(item.changes) ? item.changes : [];
     const entries = changes.map((changeRaw) => asRecord(changeRaw)).filter((change) => Boolean(change)).map((change) => {
       const kind = asString(change.kind, "update");
-      const path20 = asString(change.path, "unknown");
-      return `${kind} ${path20}`;
+      const path21 = asString(change.path, "unknown");
+      return `${kind} ${path21}`;
     });
     const preview = entries.length > 0 ? entries.slice(0, 6).join(", ") : "none";
     const more = entries.length > 6 ? ` (+${entries.length - 6} more)` : "";
@@ -8997,9 +9221,9 @@ function printItemCompleted(item) {
   }
   if (itemType === "tool_result") {
     const isError = item.is_error === true || asString(item.status) === "error";
-    const text60 = asString(item.content) || asString(item.result) || asString(item.output);
+    const text61 = asString(item.content) || asString(item.result) || asString(item.output);
     console.log((isError ? pc10.red : pc10.cyan)(`tool_result${isError ? " (error)" : ""}`));
-    if (text60) console.log((isError ? pc10.red : pc10.gray)(text60));
+    if (text61) console.log((isError ? pc10.red : pc10.gray)(text61));
     return true;
   }
   return false;
@@ -9118,8 +9342,8 @@ function stringifyUnknown(value) {
 }
 function printUserMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text60 = messageRaw.trim();
-    if (text60) console.log(pc11.gray(`user: ${text60}`));
+    const text61 = messageRaw.trim();
+    if (text61) console.log(pc11.gray(`user: ${text61}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -9132,14 +9356,14 @@ function printUserMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type !== "output_text" && type !== "text") continue;
-    const text60 = asString2(part.text).trim();
-    if (text60) console.log(pc11.gray(`user: ${text60}`));
+    const text61 = asString2(part.text).trim();
+    if (text61) console.log(pc11.gray(`user: ${text61}`));
   }
 }
 function printAssistantMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text60 = messageRaw.trim();
-    if (text60) console.log(pc11.green(`assistant: ${text60}`));
+    const text61 = messageRaw.trim();
+    if (text61) console.log(pc11.green(`assistant: ${text61}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -9152,13 +9376,13 @@ function printAssistantMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type === "output_text" || type === "text") {
-      const text60 = asString2(part.text).trim();
-      if (text60) console.log(pc11.green(`assistant: ${text60}`));
+      const text61 = asString2(part.text).trim();
+      if (text61) console.log(pc11.green(`assistant: ${text61}`));
       continue;
     }
     if (type === "thinking") {
-      const text60 = asString2(part.text).trim();
-      if (text60) console.log(pc11.gray(`thinking: ${text60}`));
+      const text61 = asString2(part.text).trim();
+      if (text61) console.log(pc11.gray(`thinking: ${text61}`));
       continue;
     }
     if (type === "tool_call") {
@@ -9278,8 +9502,8 @@ function printCursorStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text60 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
-    if (text60) console.log(pc11.gray(`thinking: ${text60}`));
+    const text61 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
+    if (text61) console.log(pc11.gray(`thinking: ${text61}`));
     return;
   }
   if (type === "tool_call") {
@@ -9317,8 +9541,8 @@ function printCursorStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord2(parsed.part);
-    const text60 = asString2(part?.text);
-    if (text60) console.log(pc11.green(`assistant: ${text60}`));
+    const text61 = asString2(part?.text);
+    if (text61) console.log(pc11.green(`assistant: ${text61}`));
     return;
   }
   if (type === "tool_use") {
@@ -9381,8 +9605,8 @@ function errorText2(value) {
 }
 function printTextMessage(prefix, colorize, messageRaw) {
   if (typeof messageRaw === "string") {
-    const text60 = messageRaw.trim();
-    if (text60) console.log(colorize(`${prefix}: ${text60}`));
+    const text61 = messageRaw.trim();
+    if (text61) console.log(colorize(`${prefix}: ${text61}`));
     return;
   }
   const message = asRecord3(messageRaw);
@@ -9395,13 +9619,13 @@ function printTextMessage(prefix, colorize, messageRaw) {
     if (!part) continue;
     const type = asString3(part.type).trim();
     if (type === "output_text" || type === "text" || type === "content") {
-      const text60 = asString3(part.text).trim() || asString3(part.content).trim();
-      if (text60) console.log(colorize(`${prefix}: ${text60}`));
+      const text61 = asString3(part.text).trim() || asString3(part.content).trim();
+      if (text61) console.log(colorize(`${prefix}: ${text61}`));
       continue;
     }
     if (type === "thinking") {
-      const text60 = asString3(part.text).trim();
-      if (text60) console.log(pc12.gray(`thinking: ${text60}`));
+      const text61 = asString3(part.text).trim();
+      if (text61) console.log(pc12.gray(`thinking: ${text61}`));
       continue;
     }
     if (type === "tool_call") {
@@ -9453,8 +9677,8 @@ function printGeminiStreamEvent(raw, _debug) {
       return;
     }
     if (subtype === "error") {
-      const text60 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-      if (text60) console.log(pc12.red(`error: ${text60}`));
+      const text61 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+      if (text61) console.log(pc12.red(`error: ${text61}`));
       return;
     }
     console.log(pc12.blue(`system: ${subtype || "event"}`));
@@ -9469,8 +9693,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text60 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
-    if (text60) console.log(pc12.gray(`thinking: ${text60}`));
+    const text61 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
+    if (text61) console.log(pc12.gray(`thinking: ${text61}`));
     return;
   }
   if (type === "tool_call") {
@@ -9506,8 +9730,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "error") {
-    const text60 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-    if (text60) console.log(pc12.red(`error: ${text60}`));
+    const text61 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+    if (text61) console.log(pc12.red(`error: ${text61}`));
     return;
   }
   console.log(line);
@@ -9515,9 +9739,9 @@ function printGeminiStreamEvent(raw, _debug) {
 
 // ../packages/adapters/opencode-local/src/cli/format-event.ts
 import pc13 from "picocolors";
-function safeJsonParse(text60) {
+function safeJsonParse(text61) {
   try {
-    return JSON.parse(text60);
+    return JSON.parse(text61);
   } catch {
     return null;
   }
@@ -9561,14 +9785,14 @@ function printOpenCodeStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord4(parsed.part);
-    const text60 = asString4(part?.text).trim();
-    if (text60) console.log(pc13.green(`assistant: ${text60}`));
+    const text61 = asString4(part?.text).trim();
+    if (text61) console.log(pc13.green(`assistant: ${text61}`));
     return;
   }
   if (type === "reasoning") {
     const part = asRecord4(parsed.part);
-    const text60 = asString4(part?.text).trim();
-    if (text60) console.log(pc13.gray(`thinking: ${text60}`));
+    const text61 = asString4(part?.text).trim();
+    if (text61) console.log(pc13.gray(`thinking: ${text61}`));
     return;
   }
   if (type === "tool_use") {
@@ -9616,9 +9840,9 @@ function printOpenCodeStreamEvent(raw, _debug) {
 
 // ../packages/adapters/pi-local/src/cli/format-event.ts
 import pc14 from "picocolors";
-function safeJsonParse2(text60) {
+function safeJsonParse2(text61) {
   try {
-    return JSON.parse(text60);
+    return JSON.parse(text61);
   } catch {
     return null;
   }
@@ -9660,9 +9884,9 @@ function printPiStreamEvent(raw, _debug) {
     const message = asRecord5(parsed.message);
     if (message) {
       const content = message.content;
-      const text60 = extractTextContent(content);
-      if (text60) {
-        console.log(pc14.green(`assistant: ${text60}`));
+      const text61 = extractTextContent(content);
+      if (text61) {
+        console.log(pc14.green(`assistant: ${text61}`));
       }
     }
     return;
@@ -9727,9 +9951,9 @@ function printOpenClawGatewayStreamEvent(raw, debug) {
 
 // ../packages/adapters/agent-browser/src/cli/format-event.ts
 import pc16 from "picocolors";
-function safeJsonParse3(text60) {
+function safeJsonParse3(text61) {
   try {
-    return JSON.parse(text60);
+    return JSON.parse(text61);
   } catch {
     return null;
   }
@@ -9872,8 +10096,8 @@ import pc18 from "picocolors";
 
 // src/client/board-auth.ts
 import { spawn } from "node:child_process";
-import fs10 from "node:fs";
-import path9 from "node:path";
+import fs11 from "node:fs";
+import path10 from "node:path";
 import pc17 from "picocolors";
 
 // src/client/command-label.ts
@@ -9897,14 +10121,14 @@ function normalizeApiBase(apiBase) {
   return apiBase.trim().replace(/\/+$/, "");
 }
 function resolveBoardAuthStorePath(overridePath) {
-  if (overridePath?.trim()) return path9.resolve(overridePath.trim());
-  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path9.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
+  if (overridePath?.trim()) return path10.resolve(overridePath.trim());
+  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path10.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
   return resolveDefaultCliAuthPath();
 }
 function readBoardAuthStore(storePath) {
   const filePath = resolveBoardAuthStorePath(storePath);
-  if (!fs10.existsSync(filePath)) return defaultBoardAuthStore();
-  const raw = JSON.parse(fs10.readFileSync(filePath, "utf8"));
+  if (!fs11.existsSync(filePath)) return defaultBoardAuthStore();
+  const raw = JSON.parse(fs11.readFileSync(filePath, "utf8"));
   const credentials = raw?.credentials && typeof raw.credentials === "object" ? raw.credentials : {};
   const normalized = {};
   for (const [key, value] of Object.entries(credentials)) {
@@ -9930,8 +10154,8 @@ function readBoardAuthStore(storePath) {
 }
 function writeBoardAuthStore(store, storePath) {
   const filePath = resolveBoardAuthStorePath(storePath);
-  fs10.mkdirSync(path9.dirname(filePath), { recursive: true });
-  fs10.writeFileSync(filePath, `${JSON.stringify(store, null, 2)}
+  fs11.mkdirSync(path10.dirname(filePath), { recursive: true });
+  fs11.writeFileSync(filePath, `${JSON.stringify(store, null, 2)}
 `, { mode: 384 });
 }
 function getStoredBoardCredential(apiBase, storePath) {
@@ -10080,27 +10304,27 @@ init_store();
 
 // src/client/context.ts
 init_home();
-import fs11 from "node:fs";
-import path10 from "node:path";
+import fs12 from "node:fs";
+import path11 from "node:path";
 var DEFAULT_CONTEXT_BASENAME = "context.json";
 var DEFAULT_PROFILE = "default";
 function findContextFileFromAncestors(startDir) {
-  const absoluteStartDir = path10.resolve(startDir);
+  const absoluteStartDir = path11.resolve(startDir);
   let currentDir = absoluteStartDir;
   while (true) {
-    const candidate = path10.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
-    if (fs11.existsSync(candidate)) {
+    const candidate = path11.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
+    if (fs12.existsSync(candidate)) {
       return candidate;
     }
-    const nextDir = path10.resolve(currentDir, "..");
+    const nextDir = path11.resolve(currentDir, "..");
     if (nextDir === currentDir) break;
     currentDir = nextDir;
   }
   return null;
 }
 function resolveContextPath(overridePath) {
-  if (overridePath) return path10.resolve(overridePath);
-  if (process.env.PAPERCLIP_CONTEXT) return path10.resolve(process.env.PAPERCLIP_CONTEXT);
+  if (overridePath) return path11.resolve(overridePath);
+  if (process.env.PAPERCLIP_CONTEXT) return path11.resolve(process.env.PAPERCLIP_CONTEXT);
   return findContextFileFromAncestors(process.cwd()) ?? resolveDefaultContextPath();
 }
 function defaultClientContext() {
@@ -10114,7 +10338,7 @@ function defaultClientContext() {
 }
 function parseJson2(filePath) {
   try {
-    return JSON.parse(fs11.readFileSync(filePath, "utf-8"));
+    return JSON.parse(fs12.readFileSync(filePath, "utf-8"));
   } catch (err) {
     throw new Error(`Failed to parse JSON at ${filePath}: ${err instanceof Error ? err.message : String(err)}`);
   }
@@ -10160,7 +10384,7 @@ function normalizeContext(raw) {
 }
 function readContext(contextPath) {
   const filePath = resolveContextPath(contextPath);
-  if (!fs11.existsSync(filePath)) {
+  if (!fs12.existsSync(filePath)) {
     return defaultClientContext();
   }
   const raw = parseJson2(filePath);
@@ -10168,10 +10392,10 @@ function readContext(contextPath) {
 }
 function writeContext(context, contextPath) {
   const filePath = resolveContextPath(contextPath);
-  const dir = path10.dirname(filePath);
-  fs11.mkdirSync(dir, { recursive: true });
+  const dir = path11.dirname(filePath);
+  fs12.mkdirSync(dir, { recursive: true });
   const normalized = normalizeContext(context);
-  fs11.writeFileSync(filePath, `${JSON.stringify(normalized, null, 2)}
+  fs12.writeFileSync(filePath, `${JSON.stringify(normalized, null, 2)}
 `, { mode: 384 });
 }
 function upsertProfile(profileName, patch, contextPath) {
@@ -10247,29 +10471,29 @@ var PaperclipApiClient = class {
     this.runId = opts.runId?.trim() || void 0;
     this.recoverAuth = opts.recoverAuth;
   }
-  get(path20, opts) {
-    return this.request(path20, { method: "GET" }, opts);
+  get(path21, opts) {
+    return this.request(path21, { method: "GET" }, opts);
   }
-  post(path20, body, opts) {
-    return this.request(path20, {
+  post(path21, body, opts) {
+    return this.request(path21, {
       method: "POST",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  patch(path20, body, opts) {
-    return this.request(path20, {
+  patch(path21, body, opts) {
+    return this.request(path21, {
       method: "PATCH",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  delete(path20, opts) {
-    return this.request(path20, { method: "DELETE" }, opts);
+  delete(path21, opts) {
+    return this.request(path21, { method: "DELETE" }, opts);
   }
   setApiKey(apiKey) {
     this.apiKey = apiKey?.trim() || void 0;
   }
-  async request(path20, init, opts, hasRetriedAuth = false) {
-    const url = buildUrl(this.apiBase, path20);
+  async request(path21, init, opts, hasRetriedAuth = false) {
+    const url = buildUrl(this.apiBase, path21);
     const method = String(init.method ?? "GET").toUpperCase();
     const headers = {
       accept: "application/json",
@@ -10293,7 +10517,7 @@ var PaperclipApiClient = class {
     } catch (error) {
       throw new ApiConnectionError({
         apiBase: this.apiBase,
-        path: path20,
+        path: path21,
         method,
         cause: error
       });
@@ -10305,13 +10529,13 @@ var PaperclipApiClient = class {
       const apiError = await toApiError(response);
       if (!hasRetriedAuth && this.recoverAuth) {
         const recoveredToken = await this.recoverAuth({
-          path: path20,
+          path: path21,
           method,
           error: apiError
         });
         if (recoveredToken) {
           this.setApiKey(recoveredToken);
-          return this.request(path20, init, opts, true);
+          return this.request(path21, init, opts, true);
         }
       }
       throw apiError;
@@ -10319,31 +10543,31 @@ var PaperclipApiClient = class {
     if (response.status === 204) {
       return null;
     }
-    const text60 = await response.text();
-    if (!text60.trim()) {
+    const text61 = await response.text();
+    if (!text61.trim()) {
       return null;
     }
-    return safeParseJson(text60);
+    return safeParseJson(text61);
   }
 };
-function buildUrl(apiBase, path20) {
-  const normalizedPath = path20.startsWith("/") ? path20 : `/${path20}`;
+function buildUrl(apiBase, path21) {
+  const normalizedPath = path21.startsWith("/") ? path21 : `/${path21}`;
   const [pathname, query] = normalizedPath.split("?");
   const url = new URL2(apiBase);
   url.pathname = `${url.pathname.replace(/\/+$/, "")}${pathname}`;
   if (query) url.search = query;
   return url.toString();
 }
-function safeParseJson(text60) {
+function safeParseJson(text61) {
   try {
-    return JSON.parse(text60);
+    return JSON.parse(text61);
   } catch {
-    return text60;
+    return text61;
   }
 }
 async function toApiError(response) {
-  const text60 = await response.text();
-  const parsed = safeParseJson(text60);
+  const text61 = await response.text();
+  const parsed = safeParseJson(text61);
   if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
     const body = parsed;
     const message = typeof body.error === "string" && body.error.trim() || typeof body.message === "string" && body.message.trim() || `Request failed with status ${response.status}`;
@@ -10809,7 +11033,7 @@ init_src2();
 init_home();
 init_store();
 init_banner();
-import path11 from "node:path";
+import path12 from "node:path";
 import * as p14 from "@clack/prompts";
 import pc20 from "picocolors";
 function resolveConnectionString(configPath) {
@@ -10833,7 +11057,7 @@ function normalizeRetentionDays(value, fallback) {
   return candidate;
 }
 function resolveBackupDir(raw) {
-  return path11.resolve(expandHomePrefix(raw.trim()));
+  return path12.resolve(expandHomePrefix(raw.trim()));
 }
 async function dbBackupCommand(opts) {
   printPaperclipCliBanner();
@@ -10953,13 +11177,13 @@ function registerContextCommands(program2) {
 
 // src/commands/client/company.ts
 import { mkdir, readdir as readdir2, readFile as readFile3, stat, writeFile as writeFile2 } from "node:fs/promises";
-import path13 from "node:path";
+import path14 from "node:path";
 import * as p15 from "@clack/prompts";
 import pc22 from "picocolors";
 
 // src/commands/client/zip.ts
 import { inflateRawSync } from "node:zlib";
-import path12 from "node:path";
+import path13 from "node:path";
 var textDecoder = new TextDecoder();
 var binaryContentTypeByExtension = {
   ".gif": "image/gif",
@@ -10986,7 +11210,7 @@ function sharedArchiveRoot(paths) {
   return firstSegments.every((parts) => parts.length > 1 && parts[0] === candidate) ? candidate : null;
 }
 function bytesToPortableFileEntry(pathValue, bytes) {
-  const contentType = binaryContentTypeByExtension[path12.extname(pathValue).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path13.extname(pathValue).toLowerCase()];
   if (!contentType) return textDecoder.decode(bytes);
   return {
     encoding: "base64",
@@ -11074,7 +11298,7 @@ var IMPORT_INCLUDE_OPTIONS = [
 ];
 var IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
 function readPortableFileEntry(filePath, contents) {
-  const contentType = binaryContentTypeByExtension[path13.extname(filePath).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path14.extname(filePath).toLowerCase()];
   if (!contentType) return contents.toString("utf8");
   return {
     encoding: "base64",
@@ -11129,10 +11353,10 @@ function normalizePortablePath(filePath) {
   return filePath.replace(/\\/g, "/");
 }
 function shouldIncludePortableFile(filePath) {
-  const baseName = path13.basename(filePath);
+  const baseName = path14.basename(filePath);
   const isMarkdown = baseName.endsWith(".md");
   const isPaperclipYaml = baseName === ".paperclip.yaml" || baseName === ".paperclip.yml";
-  const contentType = binaryContentTypeByExtension[path13.extname(baseName).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path14.extname(baseName).toLowerCase()];
   return isMarkdown || isPaperclipYaml || Boolean(contentType);
 }
 function findPortableExtensionPath(files) {
@@ -11683,7 +11907,7 @@ function normalizeGithubImportSource(input, refOverride) {
 }
 async function pathExists(inputPath) {
   try {
-    await stat(path13.resolve(inputPath));
+    await stat(path14.resolve(inputPath));
     return true;
   } catch {
     return false;
@@ -11693,45 +11917,45 @@ async function collectPackageFiles(root, current, files) {
   const entries = await readdir2(current, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".git")) continue;
-    const absolutePath = path13.join(current, entry.name);
+    const absolutePath = path14.join(current, entry.name);
     if (entry.isDirectory()) {
       await collectPackageFiles(root, absolutePath, files);
       continue;
     }
     if (!entry.isFile()) continue;
-    const relativePath = path13.relative(root, absolutePath).replace(/\\/g, "/");
+    const relativePath = path14.relative(root, absolutePath).replace(/\\/g, "/");
     if (!shouldIncludePortableFile(relativePath)) continue;
     files[relativePath] = readPortableFileEntry(relativePath, await readFile3(absolutePath));
   }
 }
 async function resolveInlineSourceFromPath(inputPath) {
-  const resolved = path13.resolve(inputPath);
+  const resolved = path14.resolve(inputPath);
   const resolvedStat = await stat(resolved);
-  if (resolvedStat.isFile() && path13.extname(resolved).toLowerCase() === ".zip") {
+  if (resolvedStat.isFile() && path14.extname(resolved).toLowerCase() === ".zip") {
     const archive = await readZipArchive(await readFile3(resolved));
     const filteredFiles = Object.fromEntries(
       Object.entries(archive.files).filter(([relativePath]) => shouldIncludePortableFile(relativePath))
     );
     return {
-      rootPath: archive.rootPath ?? path13.basename(resolved, ".zip"),
+      rootPath: archive.rootPath ?? path14.basename(resolved, ".zip"),
       files: filteredFiles
     };
   }
-  const rootDir = resolvedStat.isDirectory() ? resolved : path13.dirname(resolved);
+  const rootDir = resolvedStat.isDirectory() ? resolved : path14.dirname(resolved);
   const files = {};
   await collectPackageFiles(rootDir, rootDir, files);
   return {
-    rootPath: path13.basename(rootDir),
+    rootPath: path14.basename(rootDir),
     files
   };
 }
 async function writeExportToFolder(outDir, exported) {
-  const root = path13.resolve(outDir);
+  const root = path14.resolve(outDir);
   await mkdir(root, { recursive: true });
   for (const [relativePath, content] of Object.entries(exported.files)) {
     const normalized = relativePath.replace(/\\/g, "/");
-    const filePath = path13.join(root, normalized);
-    await mkdir(path13.dirname(filePath), { recursive: true });
+    const filePath = path14.join(root, normalized);
+    await mkdir(path14.dirname(filePath), { recursive: true });
     const writeValue = portableFileEntryToWriteValue(content);
     if (typeof writeValue === "string") {
       await writeFile2(filePath, writeValue, "utf8");
@@ -11741,7 +11965,7 @@ async function writeExportToFolder(outDir, exported) {
   }
 }
 async function confirmOverwriteExportDirectory(outDir) {
-  const root = path13.resolve(outDir);
+  const root = path14.resolve(outDir);
   const stats = await stat(root).catch(() => null);
   if (!stats) return;
   if (!stats.isDirectory()) {
@@ -11887,7 +12111,7 @@ function registerCompanyCommands(program2) {
         printOutput(
           {
             ok: true,
-            out: path13.resolve(opts.out),
+            out: path14.resolve(opts.out),
             rootPath: exported.rootPath,
             filesWritten: Object.keys(exported.files).length,
             paperclipExtensionPath: exported.paperclipExtensionPath,
@@ -12176,8 +12400,8 @@ function registerIssueCommands(program2) {
         if (opts.assigneeAgentId) params.set("assigneeAgentId", opts.assigneeAgentId);
         if (opts.projectId) params.set("projectId", opts.projectId);
         const query = params.toString();
-        const path20 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path20) ?? [];
+        const path21 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path21) ?? [];
         const filtered = filterIssueRows(rows, opts.match);
         if (ctx.json) {
           printOutput(filtered, { json: true });
@@ -12333,14 +12557,14 @@ function filterIssueRows(rows, match) {
   if (!match?.trim()) return rows;
   const needle = match.trim().toLowerCase();
   return rows.filter((row) => {
-    const text60 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
-    return text60.includes(needle);
+    const text61 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
+    return text61.includes(needle);
   });
 }
 
 // ../packages/adapter-utils/src/server-utils.ts
-import { constants as fsConstants, promises as fs12 } from "node:fs";
-import path14 from "node:path";
+import { constants as fsConstants, promises as fs13 } from "node:fs";
+import path15 from "node:path";
 var MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 var MAX_EXCERPT_BYTES = 32 * 1024;
 var PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
@@ -12355,14 +12579,14 @@ function isMaintainerOnlySkillTarget(candidate) {
 }
 async function resolvePaperclipSkillsDir(moduleDir, additionalCandidates = []) {
   const candidates = [
-    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path14.resolve(moduleDir, relativePath)),
-    ...additionalCandidates.map((candidate) => path14.resolve(candidate))
+    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path15.resolve(moduleDir, relativePath)),
+    ...additionalCandidates.map((candidate) => path15.resolve(candidate))
   ];
   const seenRoots = /* @__PURE__ */ new Set();
   for (const root of candidates) {
     if (seenRoots.has(root)) continue;
     seenRoots.add(root);
-    const isDirectory = await fs12.stat(root).then((stats) => stats.isDirectory()).catch(() => false);
+    const isDirectory = await fs13.stat(root).then((stats) => stats.isDirectory()).catch(() => false);
     if (isDirectory) return root;
   }
   return null;
@@ -12370,20 +12594,20 @@ async function resolvePaperclipSkillsDir(moduleDir, additionalCandidates = []) {
 async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) {
   const allowed = new Set(Array.from(allowedSkillNames));
   try {
-    const entries = await fs12.readdir(skillsHome, { withFileTypes: true });
+    const entries = await fs13.readdir(skillsHome, { withFileTypes: true });
     const removed = [];
     for (const entry of entries) {
       if (allowed.has(entry.name)) continue;
-      const target = path14.join(skillsHome, entry.name);
-      const existing = await fs12.lstat(target).catch(() => null);
+      const target = path15.join(skillsHome, entry.name);
+      const existing = await fs13.lstat(target).catch(() => null);
       if (!existing?.isSymbolicLink()) continue;
-      const linkedPath = await fs12.readlink(target).catch(() => null);
+      const linkedPath = await fs13.readlink(target).catch(() => null);
       if (!linkedPath) continue;
-      const resolvedLinkedPath = path14.isAbsolute(linkedPath) ? linkedPath : path14.resolve(path14.dirname(target), linkedPath);
+      const resolvedLinkedPath = path15.isAbsolute(linkedPath) ? linkedPath : path15.resolve(path15.dirname(target), linkedPath);
       if (!isMaintainerOnlySkillTarget(linkedPath) && !isMaintainerOnlySkillTarget(resolvedLinkedPath)) {
         continue;
       }
-      await fs12.unlink(target);
+      await fs13.unlink(target);
       removed.push(entry.name);
     }
     return removed;
@@ -12393,20 +12617,20 @@ async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) 
 }
 
 // src/commands/client/agent.ts
-import fs13 from "node:fs/promises";
-import os2 from "node:os";
-import path15 from "node:path";
+import fs14 from "node:fs/promises";
+import os3 from "node:os";
+import path16 from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
-var __moduleDir = path15.dirname(fileURLToPath3(import.meta.url));
+var __moduleDir = path16.dirname(fileURLToPath3(import.meta.url));
 function codexSkillsHome() {
   const fromEnv = process.env.CODEX_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path15.join(os2.homedir(), ".codex");
-  return path15.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path16.join(os3.homedir(), ".codex");
+  return path16.join(base, "skills");
 }
 function claudeSkillsHome() {
   const fromEnv = process.env.CLAUDE_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path15.join(os2.homedir(), ".claude");
-  return path15.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path16.join(os3.homedir(), ".claude");
+  return path16.join(base, "skills");
 }
 async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
   const summary = {
@@ -12417,26 +12641,26 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
     skipped: [],
     failed: []
   };
-  await fs13.mkdir(targetSkillsDir, { recursive: true });
-  const entries = await fs13.readdir(sourceSkillsDir, { withFileTypes: true });
+  await fs14.mkdir(targetSkillsDir, { recursive: true });
+  const entries = await fs14.readdir(sourceSkillsDir, { withFileTypes: true });
   summary.removed = await removeMaintainerOnlySkillSymlinks(
     targetSkillsDir,
     entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name)
   );
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const source = path15.join(sourceSkillsDir, entry.name);
-    const target = path15.join(targetSkillsDir, entry.name);
-    const existing = await fs13.lstat(target).catch(() => null);
+    const source = path16.join(sourceSkillsDir, entry.name);
+    const target = path16.join(targetSkillsDir, entry.name);
+    const existing = await fs14.lstat(target).catch(() => null);
     if (existing) {
       if (existing.isSymbolicLink()) {
         let linkedPath = null;
         try {
-          linkedPath = await fs13.readlink(target);
+          linkedPath = await fs14.readlink(target);
         } catch (err) {
-          await fs13.unlink(target);
+          await fs14.unlink(target);
           try {
-            await fs13.symlink(source, target);
+            await fs14.symlink(source, target);
             summary.linked.push(entry.name);
             continue;
           } catch (linkErr) {
@@ -12447,10 +12671,10 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
             continue;
           }
         }
-        const resolvedLinkedPath = path15.isAbsolute(linkedPath) ? linkedPath : path15.resolve(path15.dirname(target), linkedPath);
-        const linkedTargetExists = await fs13.stat(resolvedLinkedPath).then(() => true).catch(() => false);
+        const resolvedLinkedPath = path16.isAbsolute(linkedPath) ? linkedPath : path16.resolve(path16.dirname(target), linkedPath);
+        const linkedTargetExists = await fs14.stat(resolvedLinkedPath).then(() => true).catch(() => false);
         if (!linkedTargetExists) {
-          await fs13.unlink(target);
+          await fs14.unlink(target);
         } else {
           summary.skipped.push(entry.name);
           continue;
@@ -12461,7 +12685,7 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
       }
     }
     try {
-      await fs13.symlink(source, target);
+      await fs14.symlink(source, target);
       summary.linked.push(entry.name);
     } catch (err) {
       summary.failed.push({
@@ -12550,7 +12774,7 @@ function registerAgentCommands(program2) {
         }
         const installSummaries = [];
         if (opts.installSkills !== false) {
-          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path15.resolve(process.cwd(), "skills")]);
+          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path16.resolve(process.cwd(), "skills")]);
           if (!skillsDir) {
             throw new Error(
               "Could not locate local Paperclip skills directory. Expected ./skills in the repo checkout."
@@ -12783,8 +13007,8 @@ function registerActivityCommands(program2) {
         if (opts.entityType) params.set("entityType", opts.entityType);
         if (opts.entityId) params.set("entityId", opts.entityId);
         const query = params.toString();
-        const path20 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path20) ?? [];
+        const path21 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path21) ?? [];
         if (ctx.json) {
           printOutput(rows, { json: true });
           return;
@@ -12833,11 +13057,11 @@ function registerDashboardCommands(program2) {
 
 // src/config/data-dir.ts
 init_home();
-import path16 from "node:path";
+import path17 from "node:path";
 function applyDataDirOverride(options, support = {}) {
   const rawDataDir = options.dataDir?.trim();
   if (!rawDataDir) return null;
-  const resolvedDataDir = path16.resolve(expandHomePrefix(rawDataDir));
+  const resolvedDataDir = path17.resolve(expandHomePrefix(rawDataDir));
   process.env.PAPERCLIP_HOME = resolvedDataDir;
   if (support.hasConfigOption) {
     const hasConfigOverride = Boolean(options.config?.trim()) || Boolean(process.env.PAPERCLIP_CONFIG?.trim());
@@ -12880,8 +13104,8 @@ import {
   symlinkSync,
   writeFileSync
 } from "node:fs";
-import os3 from "node:os";
-import path18 from "node:path";
+import os4 from "node:os";
+import path19 from "node:path";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:net";
 import { Readable } from "node:stream";
@@ -12892,7 +13116,7 @@ import { and as and2, eq as eq2, inArray, sql as sql3 } from "drizzle-orm";
 // src/commands/worktree-lib.ts
 init_home();
 import { randomInt } from "node:crypto";
-import path17 from "node:path";
+import path18 from "node:path";
 var DEFAULT_WORKTREE_HOME = "~/.paperclip-worktrees";
 var WORKTREE_SEED_MODES = ["minimal", "full"];
 var MINIMAL_WORKTREE_EXCLUDED_TABLES = [
@@ -12940,7 +13164,7 @@ function sanitizeWorktreeInstanceId(rawValue) {
   return normalized || "worktree";
 }
 function resolveSuggestedWorktreeName(cwd, explicitName) {
-  return nonEmpty(explicitName) ?? path17.basename(path17.resolve(cwd));
+  return nonEmpty(explicitName) ?? path18.basename(path18.resolve(cwd));
 }
 function hslComponentToHex(n) {
   return Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
@@ -12980,24 +13204,24 @@ function generateWorktreeColor() {
   return hslToHex(randomInt(0, 360), 68, 56);
 }
 function resolveWorktreeLocalPaths(opts) {
-  const cwd = path17.resolve(opts.cwd);
-  const homeDir = path17.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
-  const instanceRoot = path17.resolve(homeDir, "instances", opts.instanceId);
-  const repoConfigDir = path17.resolve(cwd, ".paperclip");
+  const cwd = path18.resolve(opts.cwd);
+  const homeDir = path18.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
+  const instanceRoot = path18.resolve(homeDir, "instances", opts.instanceId);
+  const repoConfigDir = path18.resolve(cwd, ".paperclip");
   return {
     cwd,
     repoConfigDir,
-    configPath: path17.resolve(repoConfigDir, "config.json"),
-    envPath: path17.resolve(repoConfigDir, ".env"),
+    configPath: path18.resolve(repoConfigDir, "config.json"),
+    envPath: path18.resolve(repoConfigDir, ".env"),
     homeDir,
     instanceId: opts.instanceId,
     instanceRoot,
-    contextPath: path17.resolve(homeDir, "context.json"),
-    embeddedPostgresDataDir: path17.resolve(instanceRoot, "db"),
-    backupDir: path17.resolve(instanceRoot, "data", "backups"),
-    logDir: path17.resolve(instanceRoot, "logs"),
-    secretsKeyFilePath: path17.resolve(instanceRoot, "secrets", "master.key"),
-    storageDir: path17.resolve(instanceRoot, "data", "storage")
+    contextPath: path18.resolve(homeDir, "context.json"),
+    embeddedPostgresDataDir: path18.resolve(instanceRoot, "db"),
+    backupDir: path18.resolve(instanceRoot, "data", "backups"),
+    logDir: path18.resolve(instanceRoot, "logs"),
+    secretsKeyFilePath: path18.resolve(instanceRoot, "secrets", "master.key"),
+    storageDir: path18.resolve(instanceRoot, "data", "storage")
   };
 }
 function rewriteLocalUrlPort(rawUrl, port) {
@@ -13521,7 +13745,7 @@ function isCurrentSourceConfigPath(sourceConfigPath) {
   if (!currentConfigPath || currentConfigPath.trim().length === 0) {
     return false;
   }
-  return path18.resolve(currentConfigPath) === path18.resolve(sourceConfigPath);
+  return path19.resolve(currentConfigPath) === path19.resolve(sourceConfigPath);
 }
 var WORKTREE_NAME_PREFIX = "paperclip-";
 function resolveWorktreeMakeName(name) {
@@ -13559,9 +13783,9 @@ function normalizeStorageObjectKey(objectKey) {
   return parts.join("/");
 }
 function resolveLocalStoragePath(baseDir, objectKey) {
-  const resolved = path18.resolve(baseDir, normalizeStorageObjectKey(objectKey));
-  const root = path18.resolve(baseDir);
-  if (resolved !== root && !resolved.startsWith(`${root}${path18.sep}`)) {
+  const resolved = path19.resolve(baseDir, normalizeStorageObjectKey(objectKey));
+  const root = path19.resolve(baseDir);
+  if (resolved !== root && !resolved.startsWith(`${root}${path19.sep}`)) {
     throw new Error("Invalid object key path.");
   }
   return resolved;
@@ -13612,7 +13836,7 @@ function createConfiguredStorageFromPaperclipConfig(config) {
       async putObject(companyId, objectKey, body) {
         assertStorageCompanyPrefix(companyId, objectKey);
         const filePath = resolveLocalStoragePath(baseDir, objectKey);
-        await fsPromises.mkdir(path18.dirname(filePath), { recursive: true });
+        await fsPromises.mkdir(path19.dirname(filePath), { recursive: true });
         await fsPromises.writeFile(filePath, body);
       }
     };
@@ -13696,7 +13920,7 @@ async function readSourceAttachmentBody(sourceStorages, companyId, objectKey) {
   return null;
 }
 function resolveWorktreeMakeTargetPath(name) {
-  return path18.resolve(os3.homedir(), resolveWorktreeMakeName(name));
+  return path19.resolve(os4.homedir(), resolveWorktreeMakeName(name));
 }
 function extractExecSyncErrorMessage(error) {
   if (!error || typeof error !== "object") {
@@ -13767,6 +13991,52 @@ async function findAvailablePort(preferredPort, reserved = /* @__PURE__ */ new S
   }
   return port;
 }
+function resolveRepoManagedWorktreesRoot(cwd) {
+  const normalized = path19.resolve(cwd);
+  const marker = `${path19.sep}.paperclip${path19.sep}worktrees${path19.sep}`;
+  const index55 = normalized.indexOf(marker);
+  if (index55 === -1) return null;
+  const repoRoot = normalized.slice(0, index55);
+  return path19.resolve(repoRoot, ".paperclip", "worktrees");
+}
+function collectClaimedWorktreePorts(homeDir, currentInstanceId, cwd) {
+  const serverPorts = /* @__PURE__ */ new Set();
+  const databasePorts = /* @__PURE__ */ new Set();
+  const configPaths = /* @__PURE__ */ new Set();
+  const instancesDir = path19.resolve(homeDir, "instances");
+  if (existsSync2(instancesDir)) {
+    for (const entry of readdirSync2(instancesDir, { withFileTypes: true })) {
+      if (!entry.isDirectory() || entry.name === currentInstanceId) continue;
+      const configPath = path19.resolve(instancesDir, entry.name, "config.json");
+      if (existsSync2(configPath)) {
+        configPaths.add(configPath);
+      }
+    }
+  }
+  const repoManagedWorktreesRoot = resolveRepoManagedWorktreesRoot(cwd);
+  if (repoManagedWorktreesRoot && existsSync2(repoManagedWorktreesRoot)) {
+    for (const entry of readdirSync2(repoManagedWorktreesRoot, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const configPath = path19.resolve(repoManagedWorktreesRoot, entry.name, ".paperclip", "config.json");
+      if (existsSync2(configPath)) {
+        configPaths.add(configPath);
+      }
+    }
+  }
+  for (const configPath of configPaths) {
+    try {
+      const config = readConfig(configPath);
+      if (config?.server.port) {
+        serverPorts.add(config.server.port);
+      }
+      if (config?.database.mode === "embedded-postgres") {
+        databasePorts.add(config.database.embeddedPostgresPort);
+      }
+    } catch {
+    }
+  }
+  return { serverPorts, databasePorts };
+}
 function detectGitBranchName(cwd) {
   try {
     const value = execFileSync("git", ["branch", "--show-current"], {
@@ -13802,10 +14072,10 @@ function detectGitWorkspaceInfo(cwd) {
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
     return {
-      root: path18.resolve(root),
-      commonDir: path18.resolve(root, commonDirRaw),
-      gitDir: path18.resolve(root, gitDirRaw),
-      hooksPath: path18.resolve(root, hooksPathRaw)
+      root: path19.resolve(root),
+      commonDir: path19.resolve(root, commonDirRaw),
+      gitDir: path19.resolve(root, gitDirRaw),
+      hooksPath: path19.resolve(root, hooksPathRaw)
     };
   } catch {
     return null;
@@ -13818,8 +14088,8 @@ function copyDirectoryContents(sourceDir, targetDir) {
   mkdirSync2(targetDir, { recursive: true });
   let copied = false;
   for (const entry of entries) {
-    const sourcePath = path18.resolve(sourceDir, entry.name);
-    const targetPath = path18.resolve(targetDir, entry.name);
+    const sourcePath = path19.resolve(sourceDir, entry.name);
+    const targetPath = path19.resolve(targetDir, entry.name);
     if (entry.isDirectory()) {
       mkdirSync2(targetPath, { recursive: true });
       copyDirectoryContents(sourcePath, targetPath);
@@ -13845,7 +14115,7 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   const workspace = detectGitWorkspaceInfo(cwd);
   if (!workspace) return null;
   const sourceHooksPath = workspace.hooksPath;
-  const targetHooksPath = path18.resolve(workspace.gitDir, "hooks");
+  const targetHooksPath = path19.resolve(workspace.gitDir, "hooks");
   if (sourceHooksPath === targetHooksPath) {
     return {
       sourceHooksPath,
@@ -13860,17 +14130,17 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   };
 }
 function rebindWorkspaceCwd(input) {
-  const sourceRepoRoot = path18.resolve(input.sourceRepoRoot);
-  const targetRepoRoot = path18.resolve(input.targetRepoRoot);
-  const workspaceCwd = path18.resolve(input.workspaceCwd);
-  const relative = path18.relative(sourceRepoRoot, workspaceCwd);
+  const sourceRepoRoot = path19.resolve(input.sourceRepoRoot);
+  const targetRepoRoot = path19.resolve(input.targetRepoRoot);
+  const workspaceCwd = path19.resolve(input.workspaceCwd);
+  const relative = path19.relative(sourceRepoRoot, workspaceCwd);
   if (!relative || relative === "") {
     return targetRepoRoot;
   }
-  if (relative.startsWith("..") || path18.isAbsolute(relative)) {
+  if (relative.startsWith("..") || path19.isAbsolute(relative)) {
     return null;
   }
-  return path18.resolve(targetRepoRoot, relative);
+  return path19.resolve(targetRepoRoot, relative);
 }
 async function rebindSeededProjectWorkspaces(input) {
   const targetRepo = detectGitWorkspaceInfo(input.currentCwd);
@@ -13896,7 +14166,7 @@ async function rebindSeededProjectWorkspaces(input) {
         workspaceCwd
       });
       if (!reboundCwd) continue;
-      const normalizedCurrent = path18.resolve(workspaceCwd);
+      const normalizedCurrent = path19.resolve(workspaceCwd);
       if (reboundCwd === normalizedCurrent) continue;
       if (!existsSync2(reboundCwd)) continue;
       await db.update(projectWorkspaces).set({
@@ -13915,14 +14185,14 @@ async function rebindSeededProjectWorkspaces(input) {
   }
 }
 function resolveSourceConfigPath(opts) {
-  if (opts.sourceConfigPathOverride) return path18.resolve(opts.sourceConfigPathOverride);
-  if (opts.fromConfig) return path18.resolve(opts.fromConfig);
+  if (opts.sourceConfigPathOverride) return path19.resolve(opts.sourceConfigPathOverride);
+  if (opts.fromConfig) return path19.resolve(opts.fromConfig);
   if (!opts.fromDataDir && !opts.fromInstance) {
     return resolveConfigPath();
   }
-  const sourceHome = path18.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
+  const sourceHome = path19.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
   const sourceInstanceId = sanitizeWorktreeInstanceId(opts.fromInstance ?? "default");
-  return path18.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
+  return path19.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
 }
 function resolveSourceConnectionString(config, envEntries, portOverride) {
   if (config.database.mode === "postgres") {
@@ -13941,7 +14211,7 @@ function copySeededSecretsKey(input) {
   if (input.sourceConfig.secrets.provider !== "local_encrypted") {
     return;
   }
-  mkdirSync2(path18.dirname(input.targetKeyFilePath), { recursive: true });
+  mkdirSync2(path19.dirname(input.targetKeyFilePath), { recursive: true });
   const allowProcessEnvFallback = isCurrentSourceConfigPath(input.sourceConfigPath);
   const sourceInlineMasterKey = nonEmpty2(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY) ?? (allowProcessEnvFallback ? nonEmpty2(process.env.PAPERCLIP_SECRETS_MASTER_KEY) : null);
   if (sourceInlineMasterKey) {
@@ -13980,7 +14250,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
       "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again."
     );
   }
-  const postmasterPidFile = path18.resolve(dataDir, "postmaster.pid");
+  const postmasterPidFile = path19.resolve(dataDir, "postmaster.pid");
   const runningPid = readRunningPostmasterPid(postmasterPidFile);
   if (runningPid) {
     return {
@@ -13991,6 +14261,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
     };
   }
   const port = await findAvailablePort(preferredPort);
+  const logBuffer = createEmbeddedPostgresLogBuffer();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
     user: "paperclip",
@@ -13998,18 +14269,30 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
     port,
     persistent: true,
     initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
-    onLog: () => {
-    },
-    onError: () => {
-    }
+    onLog: logBuffer.append,
+    onError: logBuffer.append
   });
-  if (!existsSync2(path18.resolve(dataDir, "PG_VERSION"))) {
-    await instance.initialise();
+  if (!existsSync2(path19.resolve(dataDir, "PG_VERSION"))) {
+    try {
+      await instance.initialise();
+    } catch (error) {
+      throw formatEmbeddedPostgresError2(error, {
+        fallbackMessage: `Failed to initialize embedded PostgreSQL cluster in ${dataDir} on port ${port}`,
+        recentLogs: logBuffer.getRecentLogs()
+      });
+    }
   }
   if (existsSync2(postmasterPidFile)) {
     rmSync(postmasterPidFile, { force: true });
   }
-  await instance.start();
+  try {
+    await instance.start();
+  } catch (error) {
+    throw formatEmbeddedPostgresError2(error, {
+      fallbackMessage: `Failed to start embedded PostgreSQL on port ${port}`,
+      recentLogs: logBuffer.getRecentLogs()
+    });
+  }
   return {
     port,
     startedByThisProcess: true,
@@ -14044,7 +14327,7 @@ async function seedWorktreeDatabase(input) {
     );
     const backup = await runDatabaseBackup({
       connectionString: sourceConnectionString,
-      backupDir: path18.resolve(input.targetPaths.backupDir, "seed"),
+      backupDir: path19.resolve(input.targetPaths.backupDir, "seed"),
       retentionDays: 7,
       filenamePrefix: `${input.instanceId}-seed`,
       includeMigrationJournal: true,
@@ -14111,10 +14394,14 @@ async function runWorktreeInit(opts) {
     rmSync(paths.repoConfigDir, { recursive: true, force: true });
     rmSync(paths.instanceRoot, { recursive: true, force: true });
   }
+  const claimedPorts = collectClaimedWorktreePorts(paths.homeDir, paths.instanceId, paths.cwd);
   const preferredServerPort = opts.serverPort ?? (sourceConfig?.server.port ?? 3100) + 1;
-  const serverPort = await findAvailablePort(preferredServerPort);
+  const serverPort = await findAvailablePort(preferredServerPort, claimedPorts.serverPorts);
   const preferredDbPort = opts.dbPort ?? (sourceConfig?.database.embeddedPostgresPort ?? 54329) + 1;
-  const databasePort = await findAvailablePort(preferredDbPort, /* @__PURE__ */ new Set([serverPort]));
+  const databasePort = await findAvailablePort(
+    preferredDbPort,
+    /* @__PURE__ */ new Set([...claimedPorts.databasePorts, serverPort])
+  );
   const targetConfig = buildWorktreeConfig({
     sourceConfig,
     paths,
@@ -14203,7 +14490,7 @@ async function worktreeMakeCommand(nameArg, opts) {
   if (existsSync2(targetPath)) {
     throw new Error(`Target path already exists: ${targetPath}`);
   }
-  mkdirSync2(path18.dirname(targetPath), { recursive: true });
+  mkdirSync2(path19.dirname(targetPath), { recursive: true });
   if (startPoint) {
     const [remote] = startPoint.split("/", 1);
     try {
@@ -14299,15 +14586,15 @@ function parseGitWorktreeList(cwd) {
   return entries;
 }
 function toMergeSourceChoices(cwd) {
-  const currentCwd = path18.resolve(cwd);
+  const currentCwd = path19.resolve(cwd);
   return parseGitWorktreeList(cwd).map((entry) => {
     const branchLabel = entry.branch?.replace(/^refs\/heads\//, "") ?? "(detached)";
-    const worktreePath = path18.resolve(entry.worktree);
+    const worktreePath = path19.resolve(entry.worktree);
     return {
       worktree: worktreePath,
       branch: entry.branch,
       branchLabel,
-      hasPaperclipConfig: existsSync2(path18.resolve(worktreePath, ".paperclip", "config.json")),
+      hasPaperclipConfig: existsSync2(path19.resolve(worktreePath, ".paperclip", "config.json")),
       isCurrent: worktreePath === currentCwd
     };
   });
@@ -14355,14 +14642,14 @@ async function worktreeCleanupCommand(nameArg, opts) {
   const sourceCwd = process.cwd();
   const targetPath = resolveWorktreeMakeTargetPath(name);
   const instanceId = sanitizeWorktreeInstanceId(opts.instance ?? name);
-  const homeDir = path18.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
-  const instanceRoot = path18.resolve(homeDir, "instances", instanceId);
+  const homeDir = path19.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
+  const instanceRoot = path19.resolve(homeDir, "instances", instanceId);
   const hasBranch = localBranchExists(sourceCwd, name);
   const hasTargetDir = existsSync2(targetPath);
   const hasInstanceData = existsSync2(instanceRoot);
   const worktrees = parseGitWorktreeList(sourceCwd);
   const linkedWorktree = worktrees.find(
-    (wt) => wt.branch === `refs/heads/${name}` || path18.resolve(wt.worktree) === path18.resolve(targetPath)
+    (wt) => wt.branch === `refs/heads/${name}` || path19.resolve(wt.worktree) === path19.resolve(targetPath)
   );
   if (!hasBranch && !hasTargetDir && !hasInstanceData && !linkedWorktree) {
     p16.log.info("Nothing to clean up \u2014 no branch, worktree directory, or instance data found.");
@@ -14480,7 +14767,7 @@ async function closeDb(db) {
 }
 function resolveCurrentEndpoint() {
   return {
-    rootPath: path18.resolve(process.cwd()),
+    rootPath: path19.resolve(process.cwd()),
     configPath: resolveConfigPath(),
     label: "current",
     isCurrent: true
@@ -14491,12 +14778,12 @@ function resolveAttachmentLookupStorages(input) {
     input.sourceEndpoint.configPath,
     resolveCurrentEndpoint().configPath,
     input.targetEndpoint.configPath,
-    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path18.resolve(choice.worktree, ".paperclip", "config.json"))
+    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path19.resolve(choice.worktree, ".paperclip", "config.json"))
   ];
   const seen = /* @__PURE__ */ new Set();
   const storages = [];
   for (const configPath of orderedConfigPaths) {
-    const resolved = path18.resolve(configPath);
+    const resolved = path19.resolve(configPath);
     if (seen.has(resolved) || !existsSync2(resolved)) continue;
     seen.add(resolved);
     storages.push(openConfiguredStorage(resolved));
@@ -14915,7 +15202,7 @@ function resolveEndpointFromChoice(choice) {
   }
   return {
     rootPath: choice.worktree,
-    configPath: path18.resolve(choice.worktree, ".paperclip", "config.json"),
+    configPath: path19.resolve(choice.worktree, ".paperclip", "config.json"),
     label: choice.branchLabel,
     isCurrent: false
   };
@@ -14931,24 +15218,24 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
     return currentEndpoint;
   }
   const choices = toMergeSourceChoices(process.cwd());
-  const directPath = path18.resolve(trimmed);
+  const directPath = path19.resolve(trimmed);
   if (existsSync2(directPath)) {
     if (allowCurrent && directPath === currentEndpoint.rootPath) {
       return currentEndpoint;
     }
-    const configPath = path18.resolve(directPath, ".paperclip", "config.json");
+    const configPath = path19.resolve(directPath, ".paperclip", "config.json");
     if (!existsSync2(configPath)) {
       throw new Error(`Resolved worktree path ${directPath} does not contain .paperclip/config.json.`);
     }
     return {
       rootPath: directPath,
       configPath,
-      label: path18.basename(directPath),
+      label: path19.basename(directPath),
       isCurrent: false
     };
   }
   const matched = choices.find(
-    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path18.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
+    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path19.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
   );
   if (!matched) {
     throw new Error(
@@ -14961,9 +15248,9 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
   return resolveEndpointFromChoice(matched);
 }
 async function promptForSourceEndpoint(excludeWorktreePath) {
-  const excluded = excludeWorktreePath ? path18.resolve(excludeWorktreePath) : null;
+  const excluded = excludeWorktreePath ? path19.resolve(excludeWorktreePath) : null;
   const currentEndpoint = resolveCurrentEndpoint();
-  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path18.resolve(choice.worktree) !== excluded).map((choice) => ({
+  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path19.resolve(choice.worktree) !== excluded).map((choice) => ({
     value: choice.isCurrent ? "__current__" : choice.worktree,
     label: choice.branchLabel,
     hint: `${choice.worktree}${choice.isCurrent ? " (current)" : ""}`
@@ -15287,7 +15574,7 @@ async function worktreeMergeHistoryCommand(sourceArg, opts) {
   }
   const targetEndpoint = opts.to ? resolveWorktreeEndpointFromSelector(opts.to, { allowCurrent: true }) : resolveCurrentEndpoint();
   const sourceEndpoint = opts.from ? resolveWorktreeEndpointFromSelector(opts.from, { allowCurrent: true }) : sourceArg ? resolveWorktreeEndpointFromSelector(sourceArg, { allowCurrent: true }) : await promptForSourceEndpoint(targetEndpoint.rootPath);
-  if (path18.resolve(sourceEndpoint.configPath) === path18.resolve(targetEndpoint.configPath)) {
+  if (path19.resolve(sourceEndpoint.configPath) === path19.resolve(targetEndpoint.configPath)) {
     throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to worktrees.");
   }
   const scopes = parseWorktreeMergeScopes(opts.scope);
@@ -15376,16 +15663,16 @@ function registerWorktreeCommands(program2) {
 }
 
 // src/commands/client/plugin.ts
-import path19 from "node:path";
+import path20 from "node:path";
 import pc24 from "picocolors";
 function resolvePackageArg(packageArg, isLocal) {
   if (!isLocal) return packageArg;
-  if (path19.isAbsolute(packageArg)) return packageArg;
+  if (path20.isAbsolute(packageArg)) return packageArg;
   if (packageArg.startsWith("~")) {
     const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-    return path19.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
+    return path20.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
   }
-  return path19.resolve(process.cwd(), packageArg);
+  return path20.resolve(process.cwd(), packageArg);
 }
 function formatPlugin(p17) {
   const statusColor = p17.status === "ready" ? pc24.green(p17.status) : p17.status === "error" ? pc24.red(p17.status) : p17.status === "disabled" ? pc24.dim(p17.status) : pc24.yellow(p17.status);

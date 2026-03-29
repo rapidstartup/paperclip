@@ -1,5 +1,5 @@
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
-import { activityLog, agents, assets, companies, companyMemberships, documents, goals, heartbeatRuns, executionWorkspaces, issueAttachments, issueLabels, issueComments, issueDocuments, issueReadStates, issues, labels, projectWorkspaces, projects, } from "@paperclipai/db";
+import { activityLog, agents, assets, companies, companyMemberships, documents, goals, heartbeatRuns, executionWorkspaces, issueAttachments, issueInboxArchives, issueLabels, issueComments, issueDocuments, issueReadStates, issues, labels, projectWorkspaces, projects, } from "@paperclipai/db";
 import { extractAgentMentionIds, extractProjectMentionIds } from "@paperclipai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { defaultIssueExecutionWorkspaceSettingsForProject, gateProjectExecutionWorkspacePolicy, parseProjectExecutionWorkspacePolicy, } from "./execution-workspace-policy.js";
@@ -128,6 +128,34 @@ function myLastTouchAtExpr(companyId, userId) {
     )
   `;
 }
+function lastExternalCommentAtExpr(companyId, userId) {
+    return sql `
+    (
+      SELECT MAX(${issueComments.createdAt})
+      FROM ${issueComments}
+      WHERE ${issueComments.issueId} = ${issues.id}
+        AND ${issueComments.companyId} = ${companyId}
+        AND (
+          ${issueComments.authorUserId} IS NULL
+          OR ${issueComments.authorUserId} <> ${userId}
+        )
+    )
+  `;
+}
+function issueLastActivityAtExpr(companyId, userId) {
+    const lastExternalCommentAt = lastExternalCommentAtExpr(companyId, userId);
+    const myLastTouchAt = myLastTouchAtExpr(companyId, userId);
+    return sql `
+    COALESCE(
+      ${lastExternalCommentAt},
+      CASE
+        WHEN ${issues.updatedAt} > COALESCE(${myLastTouchAt}, to_timestamp(0))
+        THEN ${issues.updatedAt}
+        ELSE to_timestamp(0)
+      END
+    )
+  `;
+}
 function unreadForUserCondition(companyId, userId) {
     const touchedCondition = touchedByUserCondition(companyId, userId);
     const myLastTouchAt = myLastTouchAtExpr(companyId, userId);
@@ -145,6 +173,19 @@ function unreadForUserCondition(companyId, userId) {
           )
           AND ${issueComments.createdAt} > ${myLastTouchAt}
       )
+    )
+  `;
+}
+function inboxVisibleForUserCondition(companyId, userId) {
+    const issueLastActivityAt = issueLastActivityAtExpr(companyId, userId);
+    return sql `
+    NOT EXISTS (
+      SELECT 1
+      FROM ${issueInboxArchives}
+      WHERE ${issueInboxArchives.issueId} = ${issues.id}
+        AND ${issueInboxArchives.companyId} = ${companyId}
+        AND ${issueInboxArchives.userId} = ${userId}
+        AND ${issueInboxArchives.archivedAt} >= ${issueLastActivityAt}
     )
   `;
 }
@@ -450,8 +491,9 @@ export function issueService(db) {
         list: async (companyId, filters) => {
             const conditions = [eq(issues.companyId, companyId)];
             const touchedByUserId = filters?.touchedByUserId?.trim() || undefined;
+            const inboxArchivedByUserId = filters?.inboxArchivedByUserId?.trim() || undefined;
             const unreadForUserId = filters?.unreadForUserId?.trim() || undefined;
-            const contextUserId = unreadForUserId ?? touchedByUserId;
+            const contextUserId = unreadForUserId ?? touchedByUserId ?? inboxArchivedByUserId;
             const rawSearch = filters?.q?.trim() ?? "";
             const hasSearch = rawSearch.length > 0;
             const escapedSearch = hasSearch ? escapeLikePattern(rawSearch) : "";
@@ -486,6 +528,9 @@ export function issueService(db) {
             }
             if (touchedByUserId) {
                 conditions.push(touchedByUserCondition(companyId, touchedByUserId));
+            }
+            if (inboxArchivedByUserId) {
+                conditions.push(inboxVisibleForUserCondition(companyId, inboxArchivedByUserId));
             }
             if (unreadForUserId) {
                 conditions.push(unreadForUserCondition(companyId, unreadForUserId));
@@ -616,6 +661,34 @@ export function issueService(db) {
             })
                 .returning();
             return row;
+        },
+        archiveInbox: async (companyId, issueId, userId, archivedAt = new Date()) => {
+            const now = new Date();
+            const [row] = await db
+                .insert(issueInboxArchives)
+                .values({
+                companyId,
+                issueId,
+                userId,
+                archivedAt,
+                updatedAt: now,
+            })
+                .onConflictDoUpdate({
+                target: [issueInboxArchives.companyId, issueInboxArchives.issueId, issueInboxArchives.userId],
+                set: {
+                    archivedAt,
+                    updatedAt: now,
+                },
+            })
+                .returning();
+            return row;
+        },
+        unarchiveInbox: async (companyId, issueId, userId) => {
+            const [row] = await db
+                .delete(issueInboxArchives)
+                .where(and(eq(issueInboxArchives.companyId, companyId), eq(issueInboxArchives.issueId, issueId), eq(issueInboxArchives.userId, userId)))
+                .returning();
+            return row ?? null;
         },
         getById: async (id) => {
             const row = await db

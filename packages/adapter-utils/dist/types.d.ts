@@ -233,6 +233,16 @@ export interface ServerAdapterModule {
      */
     getQuotaWindows?: () => Promise<ProviderQuotaResult>;
     /**
+     * Optional: detect the currently configured model from local config files.
+     * Returns the detected model/provider and the config source, or null if
+     * the adapter does not support detection or no config is found.
+     */
+    detectModel?: () => Promise<{
+        model: string;
+        provider: string;
+        source: string;
+    } | null>;
+    /**
      * Adapter-level default run timeout in seconds, applied when the agent config
      * does not set an explicit positive timeoutSec. Used by the orchestrator to
      * persist a timeout_at deadline on the run record so a server-side watchdog

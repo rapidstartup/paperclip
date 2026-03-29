@@ -1,5 +1,5 @@
 {
-  "id": "a91c75ea-e3be-4e7b-a16b-ae8e03cecb9f",
+  "id": "869b0102-2cb8-48e8-a6d8-cab88f0fa7a8",
   "prevId": "a7a034eb-984f-4884-b6e1-87c453404b4e",
   "version": "7",
   "dialect": "postgresql",
@@ -2929,12 +2929,6 @@
         },
         "brand_color": {
           "name": "brand_color",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "github_token": {
-          "name": "github_token",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -6765,6 +6759,162 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.issue_inbox_archives": {
+      "name": "issue_inbox_archives",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "company_id": {
+          "name": "company_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "issue_id": {
+          "name": "issue_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "issue_inbox_archives_company_issue_idx": {
+          "name": "issue_inbox_archives_company_issue_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "issue_inbox_archives_company_user_idx": {
+          "name": "issue_inbox_archives_company_user_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "issue_inbox_archives_company_issue_user_idx": {
+          "name": "issue_inbox_archives_company_issue_user_idx",
+          "columns": [
+            {
+              "expression": "company_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "issue_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "issue_inbox_archives_company_id_companies_id_fk": {
+          "name": "issue_inbox_archives_company_id_companies_id_fk",
+          "tableFrom": "issue_inbox_archives",
+          "tableTo": "companies",
+          "columnsFrom": [
+            "company_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "issue_inbox_archives_issue_id_issues_id_fk": {
+          "name": "issue_inbox_archives_issue_id_issues_id_fk",
+          "tableFrom": "issue_inbox_archives",
+          "tableTo": "issues",
+          "columnsFrom": [
+            "issue_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
           "onUpdate": "no action"
         }
       },
@@ -11048,236 +11198,6 @@
           "tableTo": "agents",
           "columnsFrom": [
             "updated_by_agent_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.vibedash_project_links": {
-      "name": "vibedash_project_links",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true,
-          "default": "gen_random_uuid()"
-        },
-        "company_id": {
-          "name": "company_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "project_id": {
-          "name": "project_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "pm_agent_id": {
-          "name": "pm_agent_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "vibedash_project_id": {
-          "name": "vibedash_project_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "vibedash_owner_user_id": {
-          "name": "vibedash_owner_user_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "vibedash_owner_email": {
-          "name": "vibedash_owner_email",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "github_repo_url": {
-          "name": "github_repo_url",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "github_repo_ref": {
-          "name": "github_repo_ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "github_provider": {
-          "name": "github_provider",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'github'"
-        },
-        "bootstrap_status": {
-          "name": "bootstrap_status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'provisioning'"
-        },
-        "last_synced_at": {
-          "name": "last_synced_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "metadata": {
-          "name": "metadata",
-          "type": "jsonb",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "vibedash_project_links_vibedash_project_id_idx": {
-          "name": "vibedash_project_links_vibedash_project_id_idx",
-          "columns": [
-            {
-              "expression": "vibedash_project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vibedash_project_links_company_id_idx": {
-          "name": "vibedash_project_links_company_id_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vibedash_project_links_company_status_idx": {
-          "name": "vibedash_project_links_company_status_idx",
-          "columns": [
-            {
-              "expression": "company_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "bootstrap_status",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vibedash_project_links_project_idx": {
-          "name": "vibedash_project_links_project_idx",
-          "columns": [
-            {
-              "expression": "project_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "vibedash_project_links_pm_agent_idx": {
-          "name": "vibedash_project_links_pm_agent_idx",
-          "columns": [
-            {
-              "expression": "pm_agent_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": false,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "vibedash_project_links_company_id_companies_id_fk": {
-          "name": "vibedash_project_links_company_id_companies_id_fk",
-          "tableFrom": "vibedash_project_links",
-          "tableTo": "companies",
-          "columnsFrom": [
-            "company_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        },
-        "vibedash_project_links_project_id_projects_id_fk": {
-          "name": "vibedash_project_links_project_id_projects_id_fk",
-          "tableFrom": "vibedash_project_links",
-          "tableTo": "projects",
-          "columnsFrom": [
-            "project_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "set null",
-          "onUpdate": "no action"
-        },
-        "vibedash_project_links_pm_agent_id_agents_id_fk": {
-          "name": "vibedash_project_links_pm_agent_id_agents_id_fk",
-          "tableFrom": "vibedash_project_links",
-          "tableTo": "agents",
-          "columnsFrom": [
-            "pm_agent_id"
           ],
           "columnsTo": [
             "id"

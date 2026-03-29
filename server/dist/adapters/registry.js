@@ -15,7 +15,7 @@ import { listCodexModels } from "./codex-models.js";
 import { listCursorModels } from "./cursor-models.js";
 import { execute as piExecute, listPiSkills, syncPiSkills, testEnvironment as piTestEnvironment, sessionCodec as piSessionCodec, listPiModels, } from "@paperclipai/adapter-pi-local/server";
 import { agentConfigurationDoc as piAgentConfigurationDoc, } from "@paperclipai/adapter-pi-local";
-import { execute as hermesExecute, testEnvironment as hermesTestEnvironment, sessionCodec as hermesSessionCodec, } from "hermes-paperclip-adapter/server";
+import { execute as hermesExecute, testEnvironment as hermesTestEnvironment, sessionCodec as hermesSessionCodec, listSkills as hermesListSkills, syncSkills as hermesSyncSkills, detectModel as detectModelFromHermes, } from "hermes-paperclip-adapter/server";
 import { agentConfigurationDoc as hermesAgentConfigurationDoc, models as hermesModels, } from "hermes-paperclip-adapter";
 import { execute as agentBrowserExecute, testEnvironment as agentBrowserTestEnvironment, sessionCodec as agentBrowserSessionCodec, } from "@paperclipai/adapter-agent-browser/server";
 import { agentConfigurationDoc as agentBrowserAgentConfigurationDoc, models as agentBrowserModels, } from "@paperclipai/adapter-agent-browser";
@@ -114,9 +114,12 @@ const hermesLocalAdapter = {
     execute: hermesExecute,
     testEnvironment: hermesTestEnvironment,
     sessionCodec: hermesSessionCodec,
+    listSkills: hermesListSkills,
+    syncSkills: hermesSyncSkills,
     models: hermesModels,
     supportsLocalAgentJwt: true,
     agentConfigurationDoc: hermesAgentConfigurationDoc,
+    detectModel: () => detectModelFromHermes(),
 };
 const agentBrowserAdapter = {
     type: "agent_browser",
@@ -162,6 +165,13 @@ export async function listAdapterModels(type) {
 }
 export function listServerAdapters() {
     return Array.from(adaptersByType.values());
+}
+export async function detectAdapterModel(type) {
+    const adapter = adaptersByType.get(type);
+    if (!adapter?.detectModel)
+        return null;
+    const detected = await adapter.detectModel();
+    return detected ? { model: detected.model, provider: detected.provider, source: detected.source } : null;
 }
 export function findServerAdapter(type) {
     return adaptersByType.get(type) ?? null;

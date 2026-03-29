@@ -6,7 +6,7 @@ import { createInterface } from "node:readline/promises";
 import { stdin, stdout } from "node:process";
 import { pathToFileURL } from "node:url";
 import { and, eq } from "drizzle-orm";
-import { createDb, ensurePostgresDatabase, getPostgresDataDirectory, inspectMigrations, applyPendingMigrations, reconcilePendingMigrationHistory, formatDatabaseBackupResult, runDatabaseBackup, authUsers, companies, companyMemberships, instanceUserRoles, } from "@paperclipai/db";
+import { createDb, ensurePostgresDatabase, formatEmbeddedPostgresError, getPostgresDataDirectory, inspectMigrations, applyPendingMigrations, createEmbeddedPostgresLogBuffer, reconcilePendingMigrationHistory, formatDatabaseBackupResult, runDatabaseBackup, authUsers, companies, companyMemberships, instanceUserRoles, } from "@paperclipai/db";
 import detectPort from "detect-port";
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
@@ -17,8 +17,9 @@ import { heartbeatService, reconcilePersistedRuntimeServicesOnStartup, routineSe
 import { createStorageServiceFromConfig } from "./storage/index.js";
 import { printStartupBanner } from "./startup-banner.js";
 import { getBoardClaimWarningUrl, initializeBoardClaimChallenge } from "./board-claim.js";
+import { maybePersistWorktreeRuntimePorts } from "./worktree-config.js";
 export async function startServer() {
-    const config = loadConfig();
+    let config = loadConfig();
     if (process.env.PAPERCLIP_SECRETS_PROVIDER === undefined) {
         process.env.PAPERCLIP_SECRETS_PROVIDER = config.secretsProvider;
     }
@@ -104,6 +105,20 @@ export async function startServer() {
         const normalized = host.trim().toLowerCase();
         return normalized === "127.0.0.1" || normalized === "localhost" || normalized === "::1";
     }
+    function rewriteLocalUrlPort(rawUrl, port) {
+        if (!rawUrl)
+            return undefined;
+        try {
+            const parsed = new URL(rawUrl);
+            if (!isLoopbackHost(parsed.hostname))
+                return rawUrl;
+            parsed.port = String(port);
+            return parsed.toString();
+        }
+        catch {
+            return rawUrl;
+        }
+    }
     const LOCAL_BOARD_USER_ID = "local-board";
     const LOCAL_BOARD_USER_EMAIL = "local@paperclip.local";
     const LOCAL_BOARD_USER_NAME = "Board";
@@ -159,6 +174,7 @@ export async function startServer() {
     let embeddedPostgresStartedByThisProcess = false;
     let migrationSummary = "skipped";
     let activeDatabaseConnectionString;
+    let resolvedEmbeddedPostgresPort = null;
     let startupDbInfo;
     if (config.databaseUrl) {
         migrationSummary = await ensureMigrations(config.databaseUrl, "PostgreSQL");
@@ -180,29 +196,31 @@ export async function startServer() {
         const dataDir = resolve(config.embeddedPostgresDataDir);
         const configuredPort = config.embeddedPostgresPort;
         let port = configuredPort;
-        const embeddedPostgresLogBuffer = [];
-        const EMBEDDED_POSTGRES_LOG_BUFFER_LIMIT = 120;
+        const logBuffer = createEmbeddedPostgresLogBuffer(120);
         const verboseEmbeddedPostgresLogs = process.env.PAPERCLIP_EMBEDDED_POSTGRES_VERBOSE === "true";
         const appendEmbeddedPostgresLog = (message) => {
-            const text = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
-            for (const lineRaw of text.split(/\r?\n/)) {
+            logBuffer.append(message);
+            if (!verboseEmbeddedPostgresLogs) {
+                return;
+            }
+            const lines = typeof message === "string"
+                ? message.split(/\r?\n/)
+                : message instanceof Error
+                    ? [message.message]
+                    : [String(message ?? "")];
+            for (const lineRaw of lines) {
                 const line = lineRaw.trim();
                 if (!line)
                     continue;
-                embeddedPostgresLogBuffer.push(line);
-                if (embeddedPostgresLogBuffer.length > EMBEDDED_POSTGRES_LOG_BUFFER_LIMIT) {
-                    embeddedPostgresLogBuffer.splice(0, embeddedPostgresLogBuffer.length - EMBEDDED_POSTGRES_LOG_BUFFER_LIMIT);
-                }
-                if (verboseEmbeddedPostgresLogs) {
-                    logger.info({ embeddedPostgresLog: line }, "embedded-postgres");
-                }
+                logger.info({ embeddedPostgresLog: line }, "embedded-postgres");
             }
         };
         const logEmbeddedPostgresFailure = (phase, err) => {
-            if (embeddedPostgresLogBuffer.length > 0) {
+            const recentLogs = logBuffer.getRecentLogs();
+            if (recentLogs.length > 0) {
                 logger.error({
                     phase,
-                    recentLogs: embeddedPostgresLogBuffer,
+                    recentLogs,
                     err,
                 }, "Embedded PostgreSQL failed; showing buffered startup logs");
             }
@@ -276,7 +294,10 @@ export async function startServer() {
                     }
                     catch (err) {
                         logEmbeddedPostgresFailure("initialise", err);
-                        throw err;
+                        throw formatEmbeddedPostgresError(err, {
+                            fallbackMessage: `Failed to initialize embedded PostgreSQL cluster in ${dataDir} on port ${port}`,
+                            recentLogs: logBuffer.getRecentLogs(),
+                        });
                     }
                 }
                 else {
@@ -291,7 +312,10 @@ export async function startServer() {
                 }
                 catch (err) {
                     logEmbeddedPostgresFailure("start", err);
-                    throw err;
+                    throw formatEmbeddedPostgresError(err, {
+                        fallbackMessage: `Failed to start embedded PostgreSQL on port ${port}`,
+                        recentLogs: logBuffer.getRecentLogs(),
+                    });
                 }
                 embeddedPostgresStartedByThisProcess = true;
             }
@@ -328,6 +352,7 @@ export async function startServer() {
         db = createDb(embeddedConnectionString);
         logger.info("Embedded PostgreSQL ready");
         activeDatabaseConnectionString = embeddedConnectionString;
+        resolvedEmbeddedPostgresPort = port;
         startupDbInfo = { mode: "embedded-postgres", dataDir, port };
     }
     if (config.deploymentMode === "local_trusted" && !isLoopbackHost(config.host)) {
@@ -386,6 +411,19 @@ export async function startServer() {
         authReady = true;
     }
     const listenPort = await detectPort(config.port);
+    if (listenPort !== config.port) {
+        config.port = listenPort;
+    }
+    if (resolvedEmbeddedPostgresPort !== null && resolvedEmbeddedPostgresPort !== config.embeddedPostgresPort) {
+        config.embeddedPostgresPort = resolvedEmbeddedPostgresPort;
+    }
+    if (config.authBaseUrlMode === "explicit" && config.authPublicBaseUrl) {
+        config.authPublicBaseUrl = rewriteLocalUrlPort(config.authPublicBaseUrl, listenPort);
+    }
+    maybePersistWorktreeRuntimePorts({
+        serverPort: listenPort,
+        databasePort: resolvedEmbeddedPostgresPort,
+    });
     const uiMode = config.uiDevMiddleware ? "vite-dev" : config.serveUi ? "static" : "none";
     const storageService = createStorageServiceFromConfig(config);
     const app = await createApp(db, {

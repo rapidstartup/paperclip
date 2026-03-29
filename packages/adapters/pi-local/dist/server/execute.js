@@ -261,8 +261,9 @@ export async function execute(ctx) {
     })();
     const buildArgs = (sessionFile) => {
         const args = [];
-        // Use RPC mode for proper lifecycle management (waits for agent completion)
-        args.push("--mode", "rpc");
+        // Use JSON mode for structured output with print mode (non-interactive)
+        args.push("--mode", "json");
+        args.push("-p"); // Non-interactive mode: process prompt and exit
         // Use --append-system-prompt to extend Pi's default system prompt
         args.push("--append-system-prompt", renderedSystemPromptExtension);
         if (provider)
@@ -277,15 +278,9 @@ export async function execute(ctx) {
         args.push("--skill", PI_AGENT_SKILLS_DIR);
         if (extraArgs.length > 0)
             args.push(...extraArgs);
+        // Add the user prompt as the last argument
+        args.push(userPrompt);
         return args;
-    };
-    const buildRpcStdin = () => {
-        // Send the prompt as an RPC command
-        const promptCommand = {
-            type: "prompt",
-            message: userPrompt,
-        };
-        return JSON.stringify(promptCommand) + "\n";
     };
     const runAttempt = async (sessionFile) => {
         const args = buildArgs(sessionFile);
@@ -329,7 +324,6 @@ export async function execute(ctx) {
             graceSec,
             onSpawn,
             onLog: bufferedOnLog,
-            stdin: buildRpcStdin(),
         });
         // Flush any remaining buffer content
         if (stdoutBuffer) {

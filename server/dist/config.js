@@ -3,6 +3,7 @@ import { existsSync, realpathSync } from "node:fs";
 import { resolve } from "node:path";
 import { config as loadDotenv } from "dotenv";
 import { resolvePaperclipEnvPath } from "./paths.js";
+import { maybeRepairLegacyWorktreeConfigAndEnvFiles } from "./worktree-config.js";
 import { AUTH_BASE_URL_MODES, DEPLOYMENT_EXPOSURES, DEPLOYMENT_MODES, SECRET_PROVIDERS, STORAGE_PROVIDERS, } from "@paperclipai/shared";
 import { resolveDefaultBackupDir, resolveDefaultEmbeddedPostgresDir, resolveDefaultSecretsKeyFilePath, resolveDefaultStorageDir, resolveHomeAwarePath, } from "./home-paths.js";
 const PAPERCLIP_ENV_FILE_PATH = resolvePaperclipEnvPath();
@@ -16,6 +17,7 @@ const isSameFile = existsSync(CWD_ENV_PATH) && existsSync(PAPERCLIP_ENV_FILE_PAT
 if (!isSameFile && existsSync(CWD_ENV_PATH)) {
     loadDotenv({ path: CWD_ENV_PATH, override: false, quiet: true });
 }
+maybeRepairLegacyWorktreeConfigAndEnvFiles();
 export function loadConfig() {
     const fileConfig = readConfigFile();
     const fileDatabaseMode = (fileConfig?.database.mode === "postgres" ? "postgres" : "embedded-postgres");

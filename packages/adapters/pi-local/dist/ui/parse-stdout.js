@@ -16,18 +16,34 @@ function asString(value, fallback = "") {
 }
 function extractTextContent(content) {
     if (typeof content === "string")
-        return content;
+        return { text: content, thinking: "" };
     if (!Array.isArray(content))
-        return "";
-    return content
-        .filter((c) => c.type === "text" && c.text)
-        .map((c) => c.text)
-        .join("");
+        return { text: "", thinking: "" };
+    let text = "";
+    let thinking = "";
+    for (const c of content) {
+        if (c.type === "text" && c.text) {
+            text += c.text;
+        }
+        if (c.type === "thinking" && c.thinking) {
+            thinking += c.thinking;
+        }
+    }
+    return { text, thinking };
+}
+// Track pending tool calls for proper toolUseId matching
+let pendingToolCalls = new Map();
+export function resetParserState() {
+    pendingToolCalls.clear();
 }
 export function parsePiStdoutLine(line, ts) {
     const parsed = asRecord(safeJsonParse(line));
     if (!parsed) {
-        return [{ kind: "stdout", ts, text: line }];
+        // Non-JSON line, treat as raw stdout
+        const trimmed = line.trim();
+        if (!trimmed)
+            return [];
+        return [{ kind: "stdout", ts, text: trimmed }];
     }
     const type = asString(parsed.type);
     // RPC protocol messages - filter these out (internal implementation detail)
@@ -36,14 +52,56 @@ export function parsePiStdoutLine(line, ts) {
     }
     // Agent lifecycle
     if (type === "agent_start") {
-        return [{ kind: "system", ts, text: "Pi agent started" }];
+        return [{ kind: "system", ts, text: "🚀 Pi agent started" }];
     }
     if (type === "agent_end") {
-        return [{ kind: "system", ts, text: "Pi agent finished" }];
+        const entries = [];
+        // Extract final message from messages array if available
+        const messages = parsed.messages;
+        if (messages && messages.length > 0) {
+            const lastMessage = messages[messages.length - 1];
+            if (lastMessage?.role === "assistant") {
+                const content = lastMessage.content;
+                const { text, thinking } = extractTextContent(content);
+                if (thinking) {
+                    entries.push({ kind: "thinking", ts, text: thinking });
+                }
+                if (text) {
+                    entries.push({ kind: "assistant", ts, text });
+                }
+                // Extract usage
+                const usage = asRecord(lastMessage.usage);
+                if (usage) {
+                    const inputTokens = (usage.inputTokens ?? usage.input ?? 0);
+                    const outputTokens = (usage.outputTokens ?? usage.output ?? 0);
+                    const cachedTokens = (usage.cacheRead ?? usage.cachedInputTokens ?? 0);
+                    const costRecord = asRecord(usage.cost);
+                    const costUsd = (costRecord?.total ?? usage.costUsd ?? 0);
+                    if (inputTokens > 0 || outputTokens > 0) {
+                        entries.push({
+                            kind: "result",
+                            ts,
+                            text: "Run completed",
+                            inputTokens,
+                            outputTokens,
+                            cachedTokens,
+                            costUsd,
+                            subtype: "end",
+                            isError: false,
+                            errors: [],
+                        });
+                    }
+                }
+            }
+        }
+        if (entries.length === 0) {
+            entries.push({ kind: "system", ts, text: "✅ Pi agent finished" });
+        }
+        return entries;
     }
     // Turn lifecycle
     if (type === "turn_start") {
-        return [{ kind: "system", ts, text: "Turn started" }];
+        return []; // Skip noisy lifecycle events
     }
     if (type === "turn_end") {
         const message = asRecord(parsed.message);
@@ -51,14 +109,18 @@ export function parsePiStdoutLine(line, ts) {
         const entries = [];
         if (message) {
             const content = message.content;
-            const text = extractTextContent(content);
+            const { text, thinking } = extractTextContent(content);
+            if (thinking) {
+                entries.push({ kind: "thinking", ts, text: thinking });
+            }
             if (text) {
                 entries.push({ kind: "assistant", ts, text });
             }
         }
-        // Process tool results
+        // Process tool results - match with pending tool calls
         if (toolResults) {
             for (const tr of toolResults) {
+                const toolCallId = asString(tr.toolCallId, `tool-${Date.now()}`);
                 const content = tr.content;
                 const isError = tr.isError === true;
                 // Extract text from Pi's content array format
@@ -67,22 +129,28 @@ export function parsePiStdoutLine(line, ts) {
                     contentStr = content;
                 }
                 else if (Array.isArray(content)) {
-                    contentStr = extractTextContent(content);
+                    const extracted = extractTextContent(content);
+                    contentStr = extracted.text || JSON.stringify(content);
                 }
                 else {
                     contentStr = JSON.stringify(content);
                 }
+                // Get tool name from pending calls if available
+                const pendingCall = pendingToolCalls.get(toolCallId);
+                const toolName = asString(tr.toolName, pendingCall?.toolName || "tool");
                 entries.push({
                     kind: "tool_result",
                     ts,
-                    toolUseId: asString(tr.toolCallId, "unknown"),
-                    toolName: asString(tr.toolName),
+                    toolUseId: toolCallId,
+                    toolName,
                     content: contentStr,
                     isError,
                 });
+                // Clean up pending call
+                pendingToolCalls.delete(toolCallId);
             }
         }
-        return entries.length > 0 ? entries : [{ kind: "system", ts, text: "Turn ended" }];
+        return entries;
     }
     // Message streaming
     if (type === "message_start") {
@@ -92,72 +160,112 @@ export function parsePiStdoutLine(line, ts) {
         const assistantEvent = asRecord(parsed.assistantMessageEvent);
         if (assistantEvent) {
             const msgType = asString(assistantEvent.type);
+            // Handle thinking deltas
+            if (msgType === "thinking_delta") {
+                const delta = asString(assistantEvent.delta);
+                if (delta) {
+                    return [{ kind: "thinking", ts, text: delta, delta: true }];
+                }
+            }
+            // Handle text deltas
             if (msgType === "text_delta") {
                 const delta = asString(assistantEvent.delta);
                 if (delta) {
                     return [{ kind: "assistant", ts, text: delta, delta: true }];
                 }
             }
+            // Handle thinking end - emit full thinking block
+            if (msgType === "thinking_end") {
+                const content = asString(assistantEvent.content);
+                if (content) {
+                    return [{ kind: "thinking", ts, text: content }];
+                }
+            }
+            // Handle text end - emit full text block
+            if (msgType === "text_end") {
+                const content = asString(assistantEvent.content);
+                if (content) {
+                    return [{ kind: "assistant", ts, text: content }];
+                }
+            }
         }
         return [];
     }
     if (type === "message_end") {
+        const message = asRecord(parsed.message);
+        if (message) {
+            const content = message.content;
+            const { text, thinking } = extractTextContent(content);
+            const entries = [];
+            // Emit final thinking block if present
+            if (thinking) {
+                entries.push({ kind: "thinking", ts, text: thinking });
+            }
+            // Emit final text block if present
+            if (text) {
+                entries.push({ kind: "assistant", ts, text });
+            }
+            return entries;
+        }
         return [];
     }
     // Tool execution
     if (type === "tool_execution_start") {
-        const toolName = asString(parsed.toolName);
+        const toolCallId = asString(parsed.toolCallId, `tool-${Date.now()}`);
+        const toolName = asString(parsed.toolName, "tool");
         const args = parsed.args;
-        if (toolName) {
-            return [{
-                    kind: "tool_call",
-                    ts,
-                    name: toolName,
-                    input: args,
-                }];
-        }
-        return [{ kind: "system", ts, text: `Tool started` }];
+        // Track this tool call for later matching
+        pendingToolCalls.set(toolCallId, { toolName, args });
+        return [{
+                kind: "tool_call",
+                ts,
+                name: toolName,
+                input: args,
+                toolUseId: toolCallId,
+            }];
     }
     if (type === "tool_execution_update") {
         return [];
     }
     if (type === "tool_execution_end") {
-        const toolCallId = asString(parsed.toolCallId);
-        const toolName = asString(parsed.toolName);
+        const toolCallId = asString(parsed.toolCallId, `tool-${Date.now()}`);
+        const toolName = asString(parsed.toolName, "tool");
         const result = parsed.result;
         const isError = parsed.isError === true;
         // Extract text from Pi's content array format
-        // Can be: {"content": [{"type": "text", "text": "..."}]} or [{"type": "text", "text": "..."}]
         let contentStr;
         if (typeof result === "string") {
             contentStr = result;
         }
         else if (Array.isArray(result)) {
-            // Direct array format: result is [{"type": "text", "text": "..."}]
-            contentStr = extractTextContent(result);
+            const extracted = extractTextContent(result);
+            contentStr = extracted.text || JSON.stringify(result);
         }
         else if (result && typeof result === "object") {
             const resultObj = result;
             if (Array.isArray(resultObj.content)) {
-                // Wrapped format: result is {"content": [{"type": "text", "text": "..."}]}
-                contentStr = extractTextContent(resultObj.content);
+                const extracted = extractTextContent(resultObj.content);
+                contentStr = extracted.text || JSON.stringify(result);
             }
             else {
                 contentStr = JSON.stringify(result);
             }
         }
         else {
-            contentStr = JSON.stringify(result);
+            contentStr = String(result);
         }
+        // Clean up pending call
+        pendingToolCalls.delete(toolCallId);
         return [{
                 kind: "tool_result",
                 ts,
-                toolUseId: toolCallId || "unknown",
+                toolUseId: toolCallId,
                 toolName,
                 content: contentStr,
                 isError,
             }];
     }
+    // Fallback for unknown event types
     return [{ kind: "stdout", ts, text: line }];
 }
 //# sourceMappingURL=parse-stdout.js.map

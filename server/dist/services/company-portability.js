@@ -1225,7 +1225,7 @@ function normalizePortableConfig(value) {
             key === "instructionsRootPath" ||
             key === "instructionsEntryFile" ||
             key === "promptTemplate" ||
-            key === "bootstrapPromptTemplate" ||
+            key === "bootstrapPromptTemplate" || // deprecated — kept for backward compat
             key === "paperclipSkillSync")
             continue;
         if (key === "env")
@@ -3411,7 +3411,7 @@ export function companyPortabilityService(db, storage) {
                 const desiredSkills = (manifestAgent.skills ?? []).map((skillRef) => desiredSkillRefMap.get(skillRef) ?? skillRef);
                 const adapterConfigWithSkills = writePaperclipSkillSyncPreference(baseAdapterConfig, desiredSkills);
                 delete adapterConfigWithSkills.promptTemplate;
-                delete adapterConfigWithSkills.bootstrapPromptTemplate;
+                delete adapterConfigWithSkills.bootstrapPromptTemplate; // deprecated
                 delete adapterConfigWithSkills.instructionsFilePath;
                 delete adapterConfigWithSkills.instructionsBundleMode;
                 delete adapterConfigWithSkills.instructionsRootPath;

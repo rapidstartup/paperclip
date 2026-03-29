@@ -1,7 +1,7 @@
-import { asString, asStringArray, parseObject, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
-import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable, OpenCodeMigratingError } from "./models.js";
+import { asBoolean, asString, asStringArray, parseObject, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { parseOpenCodeJsonl } from "./parse.js";
-import { ensureGstackCommandsInstalled } from "./gstack-install.js";
+import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 function summarizeStatus(checks) {
     if (checks.some((check) => check.level === "error"))
         return "fail";
@@ -70,91 +70,68 @@ export async function testEnvironment(ctx) {
             hint: "The OPENAI_API_KEY override is empty. Set a valid key or remove the override.",
         });
     }
-    const runtimeEnv = normalizeEnv(ensurePathInEnv({ ...process.env, ...env }));
-    const cwdInvalid = checks.some((check) => check.code === "opencode_cwd_invalid");
-    if (cwdInvalid) {
+    // Prevent OpenCode from writing an opencode.json into the working directory.
+    env.OPENCODE_DISABLE_PROJECT_CONFIG = "true";
+    const preparedRuntimeConfig = await prepareOpenCodeRuntimeConfig({ env, config });
+    if (asBoolean(config.dangerouslySkipPermissions, true)) {
         checks.push({
-            code: "opencode_command_skipped",
-            level: "warn",
-            message: "Skipped command check because working directory validation failed.",
-            detail: command,
+            code: "opencode_headless_permissions_enabled",
+            level: "info",
+            message: "Headless OpenCode external-directory permissions are auto-approved for unattended runs.",
         });
     }
-    else {
-        try {
-            await ensureCommandResolvable(command, cwd, runtimeEnv);
+    try {
+        const runtimeEnv = normalizeEnv(ensurePathInEnv({ ...process.env, ...preparedRuntimeConfig.env }));
+        const cwdInvalid = checks.some((check) => check.code === "opencode_cwd_invalid");
+        if (cwdInvalid) {
             checks.push({
-                code: "opencode_command_resolvable",
-                level: "info",
-                message: `Command is executable: ${command}`,
-            });
-        }
-        catch (err) {
-            checks.push({
-                code: "opencode_command_unresolvable",
-                level: "error",
-                message: err instanceof Error ? err.message : "Command is not executable",
+                code: "opencode_command_skipped",
+                level: "warn",
+                message: "Skipped command check because working directory validation failed.",
                 detail: command,
             });
         }
-    }
-    const canRunProbe = checks.every((check) => check.code !== "opencode_cwd_invalid" && check.code !== "opencode_command_unresolvable");
-    if (canRunProbe) {
-        try {
-            const gstackInstall = await ensureGstackCommandsInstalled({ env: runtimeEnv });
-            checks.push({
-                code: "opencode_gstack_commands_ready",
-                level: "info",
-                message: gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0
-                    ? `Synced gstack OpenCode commands in ${gstackInstall.targetDir}.`
-                    : `gstack OpenCode commands are available in ${gstackInstall.targetDir}.`,
-                detail: gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0
-                    ? `${gstackInstall.writtenFiles} updated, ${gstackInstall.removedFiles} removed, ${gstackInstall.unchangedFiles} unchanged.`
-                    : undefined,
-            });
-        }
-        catch (err) {
-            checks.push({
-                code: "opencode_gstack_commands_install_failed",
-                level: "warn",
-                message: "Unable to sync gstack OpenCode commands automatically.",
-                detail: err instanceof Error ? err.message : String(err),
-                hint: "Check GitHub reachability, then run `gstack-opencode-setup` manually in a terminal.",
-            });
-        }
-    }
-    let modelValidationPassed = false;
-    const configuredModel = asString(config.model, "").trim();
-    if (canRunProbe && configuredModel) {
-        try {
-            const discovered = await discoverOpenCodeModels({ command, cwd, env: runtimeEnv });
-            if (discovered.length > 0) {
+        else {
+            try {
+                await ensureCommandResolvable(command, cwd, runtimeEnv);
                 checks.push({
-                    code: "opencode_models_discovered",
+                    code: "opencode_command_resolvable",
                     level: "info",
-                    message: `Discovered ${discovered.length} model(s) from OpenCode providers.`,
+                    message: `Command is executable: ${command}`,
                 });
             }
-            else {
+            catch (err) {
                 checks.push({
-                    code: "opencode_models_empty",
+                    code: "opencode_command_unresolvable",
                     level: "error",
-                    message: "OpenCode returned no models.",
-                    hint: "Run `opencode models` and verify provider authentication.",
+                    message: err instanceof Error ? err.message : "Command is not executable",
+                    detail: command,
                 });
             }
         }
-        catch (err) {
-            if (err instanceof OpenCodeMigratingError) {
-                checks.push({
-                    code: "opencode_migrating",
-                    level: "warn",
-                    message: err.message,
-                    detail: err.detail || undefined,
-                    hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes (usually within a few minutes).",
-                });
+        const canRunProbe = checks.every((check) => check.code !== "opencode_cwd_invalid" && check.code !== "opencode_command_unresolvable");
+        let modelValidationPassed = false;
+        const configuredModel = asString(config.model, "").trim();
+        if (canRunProbe && configuredModel) {
+            try {
+                const discovered = await discoverOpenCodeModels({ command, cwd, env: runtimeEnv });
+                if (discovered.length > 0) {
+                    checks.push({
+                        code: "opencode_models_discovered",
+                        level: "info",
+                        message: `Discovered ${discovered.length} model(s) from OpenCode providers.`,
+                    });
+                }
+                else {
+                    checks.push({
+                        code: "opencode_models_empty",
+                        level: "error",
+                        message: "OpenCode returned no models.",
+                        hint: "Run `opencode models` and verify provider authentication.",
+                    });
+                }
             }
-            else {
+            catch (err) {
                 const errMsg = err instanceof Error ? err.message : String(err);
                 if (/ProviderModelNotFoundError/i.test(errMsg)) {
                     checks.push({
@@ -175,29 +152,18 @@ export async function testEnvironment(ctx) {
                 }
             }
         }
-    }
-    else if (canRunProbe && !configuredModel) {
-        try {
-            const discovered = await discoverOpenCodeModels({ command, cwd, env: runtimeEnv });
-            if (discovered.length > 0) {
-                checks.push({
-                    code: "opencode_models_discovered",
-                    level: "info",
-                    message: `Discovered ${discovered.length} model(s) from OpenCode providers.`,
-                });
+        else if (canRunProbe && !configuredModel) {
+            try {
+                const discovered = await discoverOpenCodeModels({ command, cwd, env: runtimeEnv });
+                if (discovered.length > 0) {
+                    checks.push({
+                        code: "opencode_models_discovered",
+                        level: "info",
+                        message: `Discovered ${discovered.length} model(s) from OpenCode providers.`,
+                    });
+                }
             }
-        }
-        catch (err) {
-            if (err instanceof OpenCodeMigratingError) {
-                checks.push({
-                    code: "opencode_migrating",
-                    level: "warn",
-                    message: err.message,
-                    detail: err.detail || undefined,
-                    hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes.",
-                });
-            }
-            else {
+            catch (err) {
                 const errMsg = err instanceof Error ? err.message : String(err);
                 if (/ProviderModelNotFoundError/i.test(errMsg)) {
                     checks.push({
@@ -218,18 +184,11 @@ export async function testEnvironment(ctx) {
                 }
             }
         }
-    }
-    const modelUnavailable = checks.some((check) => check.code === "opencode_hello_probe_model_unavailable");
-    if (!configuredModel && !modelUnavailable) {
-        // No model configured – skip model requirement if no model-related checks exist
-    }
-    else if (configuredModel && canRunProbe) {
-        const isMigrating = checks.some((c) => c.code === "opencode_migrating");
-        if (isMigrating) {
-            // Skip model validation while opencode is performing its one-time DB migration.
-            modelValidationPassed = true;
+        const modelUnavailable = checks.some((check) => check.code === "opencode_hello_probe_model_unavailable");
+        if (!configuredModel && !modelUnavailable) {
+            // No model configured – skip model requirement if no model-related checks exist
         }
-        else {
+        else if (configuredModel && canRunProbe) {
             try {
                 await ensureOpenCodeModelConfiguredAndAvailable({
                     model: configuredModel,
@@ -245,115 +204,107 @@ export async function testEnvironment(ctx) {
                 modelValidationPassed = true;
             }
             catch (err) {
-                if (err instanceof OpenCodeMigratingError) {
+                checks.push({
+                    code: "opencode_model_invalid",
+                    level: "error",
+                    message: err instanceof Error ? err.message : "Configured model is unavailable.",
+                    hint: "Run `opencode models` and choose a currently available provider/model ID.",
+                });
+            }
+        }
+        if (canRunProbe && modelValidationPassed) {
+            const extraArgs = (() => {
+                const fromExtraArgs = asStringArray(config.extraArgs);
+                if (fromExtraArgs.length > 0)
+                    return fromExtraArgs;
+                return asStringArray(config.args);
+            })();
+            const variant = asString(config.variant, "").trim();
+            const probeModel = configuredModel;
+            const args = ["run", "--format", "json"];
+            args.push("--model", probeModel);
+            if (variant)
+                args.push("--variant", variant);
+            if (extraArgs.length > 0)
+                args.push(...extraArgs);
+            try {
+                const probe = await runChildProcess(`opencode-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`, command, args, {
+                    cwd,
+                    env: runtimeEnv,
+                    timeoutSec: 60,
+                    graceSec: 5,
+                    stdin: "Respond with hello.",
+                    onLog: async () => { },
+                });
+                const parsed = parseOpenCodeJsonl(probe.stdout);
+                const detail = summarizeProbeDetail(probe.stdout, probe.stderr, parsed.errorMessage);
+                const authEvidence = `${parsed.errorMessage ?? ""}\n${probe.stdout}\n${probe.stderr}`.trim();
+                if (probe.timedOut) {
                     checks.push({
-                        code: "opencode_migrating",
+                        code: "opencode_hello_probe_timed_out",
                         level: "warn",
-                        message: err.message,
-                        hint: "opencode is initializing its database after a restart. Runs will start automatically once the migration completes.",
+                        message: "OpenCode hello probe timed out.",
+                        hint: "Retry the probe. If this persists, run OpenCode manually in this working directory.",
                     });
-                    modelValidationPassed = true;
+                }
+                else if ((probe.exitCode ?? 1) === 0 && !parsed.errorMessage) {
+                    const summary = parsed.summary.trim();
+                    const hasHello = /\bhello\b/i.test(summary);
+                    checks.push({
+                        code: hasHello ? "opencode_hello_probe_passed" : "opencode_hello_probe_unexpected_output",
+                        level: hasHello ? "info" : "warn",
+                        message: hasHello
+                            ? "OpenCode hello probe succeeded."
+                            : "OpenCode probe ran but did not return `hello` as expected.",
+                        ...(summary ? { detail: summary.replace(/\s+/g, " ").trim().slice(0, 240) } : {}),
+                        ...(hasHello
+                            ? {}
+                            : {
+                                hint: "Run `opencode run --format json` manually and prompt `Respond with hello` to inspect output.",
+                            }),
+                    });
+                }
+                else if (/ProviderModelNotFoundError/i.test(authEvidence)) {
+                    checks.push({
+                        code: "opencode_hello_probe_model_unavailable",
+                        level: "warn",
+                        message: "The configured model was not found by the provider.",
+                        ...(detail ? { detail } : {}),
+                        hint: "Run `opencode models` and choose an available provider/model ID.",
+                    });
+                }
+                else if (OPENCODE_AUTH_REQUIRED_RE.test(authEvidence)) {
+                    checks.push({
+                        code: "opencode_hello_probe_auth_required",
+                        level: "warn",
+                        message: "OpenCode is installed, but provider authentication is not ready.",
+                        ...(detail ? { detail } : {}),
+                        hint: "Run `opencode auth login` or set provider credentials, then retry the probe.",
+                    });
                 }
                 else {
                     checks.push({
-                        code: "opencode_model_invalid",
+                        code: "opencode_hello_probe_failed",
                         level: "error",
-                        message: err instanceof Error ? err.message : "Configured model is unavailable.",
-                        hint: "Run `opencode models` and choose a currently available provider/model ID.",
+                        message: "OpenCode hello probe failed.",
+                        ...(detail ? { detail } : {}),
+                        hint: "Run `opencode run --format json` manually in this working directory to debug.",
                     });
                 }
             }
-        }
-    }
-    if (canRunProbe && modelValidationPassed) {
-        const extraArgs = (() => {
-            const fromExtraArgs = asStringArray(config.extraArgs);
-            if (fromExtraArgs.length > 0)
-                return fromExtraArgs;
-            return asStringArray(config.args);
-        })();
-        const variant = asString(config.variant, "").trim();
-        const probeModel = configuredModel;
-        const args = ["run", "--format", "json"];
-        args.push("--model", probeModel);
-        if (variant)
-            args.push("--variant", variant);
-        if (extraArgs.length > 0)
-            args.push(...extraArgs);
-        try {
-            const probe = await runChildProcess(`opencode-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`, command, args, {
-                cwd,
-                env: runtimeEnv,
-                timeoutSec: 60,
-                graceSec: 5,
-                stdin: "Respond with hello.",
-                onLog: async () => { },
-            });
-            const parsed = parseOpenCodeJsonl(probe.stdout);
-            const detail = summarizeProbeDetail(probe.stdout, probe.stderr, parsed.errorMessage);
-            const authEvidence = `${parsed.errorMessage ?? ""}\n${probe.stdout}\n${probe.stderr}`.trim();
-            if (probe.timedOut) {
-                checks.push({
-                    code: "opencode_hello_probe_timed_out",
-                    level: "warn",
-                    message: "OpenCode hello probe timed out.",
-                    hint: "Retry the probe. If this persists, run OpenCode manually in this working directory.",
-                });
-            }
-            else if ((probe.exitCode ?? 1) === 0 && !parsed.errorMessage) {
-                const summary = parsed.summary.trim();
-                const hasHello = /\bhello\b/i.test(summary);
-                checks.push({
-                    code: hasHello ? "opencode_hello_probe_passed" : "opencode_hello_probe_unexpected_output",
-                    level: hasHello ? "info" : "warn",
-                    message: hasHello
-                        ? "OpenCode hello probe succeeded."
-                        : "OpenCode probe ran but did not return `hello` as expected.",
-                    ...(summary ? { detail: summary.replace(/\s+/g, " ").trim().slice(0, 240) } : {}),
-                    ...(hasHello
-                        ? {}
-                        : {
-                            hint: "Run `opencode run --format json` manually and prompt `Respond with hello` to inspect output.",
-                        }),
-                });
-            }
-            else if (/ProviderModelNotFoundError/i.test(authEvidence)) {
-                checks.push({
-                    code: "opencode_hello_probe_model_unavailable",
-                    level: "warn",
-                    message: "The configured model was not found by the provider.",
-                    ...(detail ? { detail } : {}),
-                    hint: "Run `opencode models` and choose an available provider/model ID.",
-                });
-            }
-            else if (OPENCODE_AUTH_REQUIRED_RE.test(authEvidence)) {
-                checks.push({
-                    code: "opencode_hello_probe_auth_required",
-                    level: "warn",
-                    message: "OpenCode is installed, but provider authentication is not ready.",
-                    ...(detail ? { detail } : {}),
-                    hint: "Run `opencode auth login` or set provider credentials, then retry the probe.",
-                });
-            }
-            else {
+            catch (err) {
                 checks.push({
                     code: "opencode_hello_probe_failed",
                     level: "error",
                     message: "OpenCode hello probe failed.",
-                    ...(detail ? { detail } : {}),
+                    detail: err instanceof Error ? err.message : String(err),
                     hint: "Run `opencode run --format json` manually in this working directory to debug.",
                 });
             }
         }
-        catch (err) {
-            checks.push({
-                code: "opencode_hello_probe_failed",
-                level: "error",
-                message: "OpenCode hello probe failed.",
-                detail: err instanceof Error ? err.message : String(err),
-                hint: "Run `opencode run --format json` manually in this working directory to debug.",
-            });
-        }
+    }
+    finally {
+        await preparedRuntimeConfig.cleanup();
     }
     return {
         adapterType: ctx.adapterType,

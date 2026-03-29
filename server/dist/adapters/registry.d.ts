@@ -5,5 +5,10 @@ export declare function listAdapterModels(type: string): Promise<{
     label: string;
 }[]>;
 export declare function listServerAdapters(): ServerAdapterModule[];
+export declare function detectAdapterModel(type: string): Promise<{
+    model: string;
+    provider: string;
+    source: string;
+} | null>;
 export declare function findServerAdapter(type: string): ServerAdapterModule | null;
 //# sourceMappingURL=registry.d.ts.map
