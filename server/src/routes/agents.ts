@@ -1914,6 +1914,39 @@ export function agentRoutes(db: Db) {
     res.json(agent);
   });
 
+  router.post("/agents/:id/reactivate", async (req, res) => {
+    assertBoard(req);
+    const id = req.params.id as string;
+    const existing = await svc.getById(id);
+    if (!existing) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+    if (existing.status !== "terminated") {
+      res.status(422).json({ error: "Only terminated agents can be reactivated" });
+      return;
+    }
+    await db
+      .update(agentsTable)
+      .set({ status: "idle", pauseReason: null, pausedAt: null, updatedAt: new Date() })
+      .where(eq(agentsTable.id, id));
+    const agent = await svc.getById(id);
+    if (!agent) {
+      res.status(404).json({ error: "Agent not found" });
+      return;
+    }
+    const actor = getActorInfo(req);
+    await logActivity(db, {
+      companyId: agent.companyId,
+      actorType: actor.actorType,
+      actorId: actor.actorId,
+      action: "agent.resumed",
+      entityType: "agent",
+      entityId: agent.id,
+    });
+    res.json(agent);
+  });
+
   router.post("/agents/:id/terminate", async (req, res) => {
     assertBoard(req);
     const id = req.params.id as string;
