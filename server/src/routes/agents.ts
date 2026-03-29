@@ -444,6 +444,22 @@ export function agentRoutes(db: Db) {
     return ensureGatewayDeviceKey(adapterType, next);
   }
 
+  async function injectDefaultEnvBindingsForOpenCode(
+    companyId: string,
+    adapterType: string | null | undefined,
+    adapterConfig: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    if (adapterType !== "opencode_local") return adapterConfig;
+    const existingEnv = asRecord(adapterConfig.env) ?? {};
+    if (existingEnv.OPENCODE_API_KEY !== undefined) return adapterConfig;
+    const secret = await secretsSvc.getByName(companyId, "OPENCODE_API_KEY");
+    if (!secret) return adapterConfig;
+    return {
+      ...adapterConfig,
+      env: { ...existingEnv, OPENCODE_API_KEY: { type: "secret_ref", secretId: secret.id } },
+    };
+  }
+
   async function assertAdapterConfigConstraints(
     companyId: string,
     adapterType: string | null | undefined,
@@ -1210,9 +1226,13 @@ export function agentRoutes(db: Db) {
       sourceIssueIds: _sourceIssueIds,
       ...hireInput
     } = req.body;
-    const requestedAdapterConfig = applyCreateDefaultsByAdapterType(
+    const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(
+      companyId,
       hireInput.adapterType,
-      ((hireInput.adapterConfig ?? {}) as Record<string, unknown>),
+      applyCreateDefaultsByAdapterType(
+        hireInput.adapterType,
+        ((hireInput.adapterConfig ?? {}) as Record<string, unknown>),
+      ),
     );
     const desiredSkillAssignment = await resolveDesiredSkillAssignment(
       companyId,
@@ -1370,9 +1390,13 @@ export function agentRoutes(db: Db) {
       desiredSkills: requestedDesiredSkills,
       ...createInput
     } = req.body;
-    const requestedAdapterConfig = applyCreateDefaultsByAdapterType(
+    const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(
+      companyId,
       createInput.adapterType,
-      ((createInput.adapterConfig ?? {}) as Record<string, unknown>),
+      applyCreateDefaultsByAdapterType(
+        createInput.adapterType,
+        ((createInput.adapterConfig ?? {}) as Record<string, unknown>),
+      ),
     );
     const desiredSkillAssignment = await resolveDesiredSkillAssignment(
       companyId,

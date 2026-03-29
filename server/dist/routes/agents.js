@@ -351,6 +351,20 @@ export function agentRoutes(db) {
         }
         return ensureGatewayDeviceKey(adapterType, next);
     }
+    async function injectDefaultEnvBindingsForOpenCode(companyId, adapterType, adapterConfig) {
+        if (adapterType !== "opencode_local")
+            return adapterConfig;
+        const existingEnv = asRecord(adapterConfig.env) ?? {};
+        if (existingEnv.OPENCODE_API_KEY !== undefined)
+            return adapterConfig;
+        const secret = await secretsSvc.getByName(companyId, "OPENCODE_API_KEY");
+        if (!secret)
+            return adapterConfig;
+        return {
+            ...adapterConfig,
+            env: { ...existingEnv, OPENCODE_API_KEY: { type: "secret_ref", secretId: secret.id } },
+        };
+    }
     async function assertAdapterConfigConstraints(companyId, adapterType, adapterConfig) {
         if (adapterType !== "opencode_local")
             return;
@@ -962,7 +976,7 @@ export function agentRoutes(db) {
         await assertCanCreateAgentsForCompany(req, companyId);
         const sourceIssueIds = parseSourceIssueIds(req.body);
         const { desiredSkills: requestedDesiredSkills, sourceIssueId: _sourceIssueId, sourceIssueIds: _sourceIssueIds, ...hireInput } = req.body;
-        const requestedAdapterConfig = applyCreateDefaultsByAdapterType(hireInput.adapterType, (hireInput.adapterConfig ?? {}));
+        const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(companyId, hireInput.adapterType, applyCreateDefaultsByAdapterType(hireInput.adapterType, (hireInput.adapterConfig ?? {})));
         const desiredSkillAssignment = await resolveDesiredSkillAssignment(companyId, hireInput.adapterType, requestedAdapterConfig, Array.isArray(requestedDesiredSkills) ? requestedDesiredSkills : undefined);
         const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(companyId, desiredSkillAssignment.adapterConfig, { strictMode: strictSecretsMode });
         await assertAdapterConfigConstraints(companyId, hireInput.adapterType, normalizedAdapterConfig);
@@ -1077,7 +1091,7 @@ export function agentRoutes(db) {
             assertBoard(req);
         }
         const { desiredSkills: requestedDesiredSkills, ...createInput } = req.body;
-        const requestedAdapterConfig = applyCreateDefaultsByAdapterType(createInput.adapterType, (createInput.adapterConfig ?? {}));
+        const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(companyId, createInput.adapterType, applyCreateDefaultsByAdapterType(createInput.adapterType, (createInput.adapterConfig ?? {})));
         const desiredSkillAssignment = await resolveDesiredSkillAssignment(companyId, createInput.adapterType, requestedAdapterConfig, Array.isArray(requestedDesiredSkills) ? requestedDesiredSkills : undefined);
         const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(companyId, desiredSkillAssignment.adapterConfig, { strictMode: strictSecretsMode });
         await assertAdapterConfigConstraints(companyId, createInput.adapterType, normalizedAdapterConfig);
