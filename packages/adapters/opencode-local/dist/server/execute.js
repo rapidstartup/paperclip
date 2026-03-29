@@ -6,6 +6,7 @@ import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
 import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, renderTemplate, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
+import { ensureGstackCommandsInstalled } from "./gstack-install.js";
 import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 function firstNonEmptyLine(text) {
@@ -142,6 +143,19 @@ export async function execute(ctx) {
         env.PAPERCLIP_API_KEY = authToken;
     }
     const runtimeEnv = Object.fromEntries(Object.entries(ensurePathInEnv({ ...process.env, ...env })).filter((entry) => typeof entry[1] === "string"));
+    try {
+        const gstackInstall = await ensureGstackCommandsInstalled({ env: runtimeEnv });
+        if (gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0) {
+            await onLog("stdout", `[paperclip] Synced ${gstackInstall.files.length} gstack OpenCode command files in ${gstackInstall.targetDir} (${gstackInstall.writtenFiles} updated, ${gstackInstall.removedFiles} removed).\n`);
+        }
+        else if (gstackInstall.usedFallbackManifest) {
+            await onLog("stdout", `[paperclip] Verified gstack OpenCode commands in ${gstackInstall.targetDir} using fallback manifest.\n`);
+        }
+    }
+    catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await onLog("stderr", `[paperclip] Warning: unable to sync gstack OpenCode commands: ${message}\n`);
+    }
     await ensureCommandResolvable(command, cwd, runtimeEnv);
     const availableModels = await ensureOpenCodeModelConfiguredAndAvailable({
         model,

@@ -959,6 +959,23 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        timeoutAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "timeout_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         retryOfRunId: import("drizzle-orm/pg-core").PgColumn<{
             name: "retry_of_run_id";
             tableName: "heartbeat_runs";
@@ -1076,6 +1093,7 @@ export declare function agentService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -1528,6 +1546,23 @@ export declare function agentService(db: Db): {
         }, {}, {}>;
         processStartedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "process_started_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        timeoutAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "timeout_at";
             tableName: "heartbeat_runs";
             dataType: "date";
             columnType: "PgTimestamp";

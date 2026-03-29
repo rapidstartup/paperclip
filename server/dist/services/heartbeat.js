@@ -1401,6 +1401,43 @@ export function heartbeatService(db) {
             }
             const tracksLocalChild = isTrackedLocalChildProcessAdapter(adapterType);
             if (tracksLocalChild && run.processPid && isProcessAlive(run.processPid)) {
+                // If a stored deadline exists and has passed, force-kill the detached process
+                const deadlineExceeded = run.timeoutAt && now >= new Date(run.timeoutAt);
+                if (deadlineExceeded) {
+                    try {
+                        process.kill(run.processPid, "SIGKILL");
+                    }
+                    catch {
+                        // ignore — process may have already exited between the liveness check and now
+                    }
+                    const timedOutMessage = `Timed out -- detached child pid ${run.processPid} killed after stored deadline`;
+                    let timedOutRun = await setRunStatus(run.id, "timed_out", {
+                        error: timedOutMessage,
+                        errorCode: "timeout",
+                        finishedAt: now,
+                    });
+                    await setWakeupStatus(run.wakeupRequestId, "failed", {
+                        finishedAt: now,
+                        error: timedOutMessage,
+                    });
+                    if (!timedOutRun)
+                        timedOutRun = await getRun(run.id);
+                    if (timedOutRun) {
+                        await appendRunEvent(timedOutRun, await nextRunEventSeq(timedOutRun.id), {
+                            eventType: "lifecycle",
+                            stream: "system",
+                            level: "error",
+                            message: timedOutMessage,
+                            payload: { processPid: run.processPid },
+                        });
+                        await releaseIssueExecutionAndPromote(timedOutRun);
+                    }
+                    await finalizeAgentStatus(run.agentId, "timed_out");
+                    await startNextQueuedRunForAgent(run.agentId);
+                    runningProcesses.delete(run.id);
+                    reaped.push(run.id);
+                    continue;
+                }
                 if (run.errorCode !== DETACHED_PROCESS_ERROR_CODE) {
                     const detachedMessage = `Lost in-memory process handle, but child pid ${run.processPid} is still alive`;
                     const detachedRun = await setRunStatus(run.id, "running", {
@@ -1936,10 +1973,21 @@ export function heartbeatService(db) {
             let stderrExcerpt = "";
             try {
                 const startedAt = run.startedAt ?? new Date();
+                const adapterDefaultTimeoutSec = getServerAdapter(agent.adapterType).defaultTimeoutSec ?? 0;
+                const configTimeoutRaw = resolvedConfig.timeoutSec;
+                const configTimeoutSec = typeof configTimeoutRaw === "number" &&
+                    Number.isFinite(configTimeoutRaw) &&
+                    configTimeoutRaw > 0
+                    ? Math.floor(configTimeoutRaw)
+                    : adapterDefaultTimeoutSec;
+                const timeoutAt = configTimeoutSec > 0
+                    ? new Date(startedAt.getTime() + configTimeoutSec * 1000)
+                    : null;
                 const runningWithSession = await db
                     .update(heartbeatRuns)
                     .set({
                     startedAt,
+                    timeoutAt,
                     sessionIdBefore: runtimeForAdapter.sessionDisplayId ?? runtimeForAdapter.sessionId,
                     contextSnapshot: context,
                     updatedAt: new Date(),

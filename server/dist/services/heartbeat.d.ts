@@ -126,6 +126,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -653,6 +654,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -687,6 +689,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -719,6 +722,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -767,6 +771,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;
@@ -803,6 +808,7 @@ export declare function heartbeatService(db: Db): {
         externalRunId: string | null;
         processPid: number | null;
         processStartedAt: Date | null;
+        timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
         contextSnapshot: Record<string, unknown> | null;

@@ -465,6 +465,23 @@ export declare const heartbeatRuns: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        timeoutAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "timeout_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         retryOfRunId: import("drizzle-orm/pg-core").PgColumn<{
             name: "retry_of_run_id";
             tableName: "heartbeat_runs";

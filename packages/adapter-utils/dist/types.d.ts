@@ -232,6 +232,14 @@ export interface ServerAdapterModule {
      * without knowing provider-specific credential paths or API shapes.
      */
     getQuotaWindows?: () => Promise<ProviderQuotaResult>;
+    /**
+     * Adapter-level default run timeout in seconds, applied when the agent config
+     * does not set an explicit positive timeoutSec. Used by the orchestrator to
+     * persist a timeout_at deadline on the run record so a server-side watchdog
+     * can enforce the limit even if the in-process timer is lost (e.g. on restart).
+     * 0 or omitted means no server-side deadline is stored.
+     */
+    defaultTimeoutSec?: number;
 }
 export type TranscriptEntry = {
     kind: "assistant";

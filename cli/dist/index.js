@@ -3879,6 +3879,7 @@ var init_heartbeat_runs = __esm({
         externalRunId: text25("external_run_id"),
         processPid: integer7("process_pid"),
         processStartedAt: timestamp21("process_started_at", { withTimezone: true }),
+        timeoutAt: timestamp21("timeout_at", { withTimezone: true }),
         retryOfRunId: uuid20("retry_of_run_id").references(() => heartbeatRuns.id, {
           onDelete: "set null"
         }),

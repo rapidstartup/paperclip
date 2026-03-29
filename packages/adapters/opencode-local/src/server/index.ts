@@ -64,6 +64,11 @@ export { execute } from "./execute.js";
 export { listOpenCodeSkills, syncOpenCodeSkills } from "./skills.js";
 export { testEnvironment } from "./test.js";
 export {
+  ensureGstackCommandsInstalled,
+  resetGstackInstallCacheForTests,
+  resolveOpenCodeGstackCommandsDir,
+} from "./gstack-install.js";
+export {
   listOpenCodeModels,
   discoverOpenCodeModels,
   ensureOpenCodeModelConfiguredAndAvailable,

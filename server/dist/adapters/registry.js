@@ -93,6 +93,8 @@ const openCodeLocalAdapter = {
     listModels: listOpenCodeModels,
     supportsLocalAgentJwt: true,
     agentConfigurationDoc: openCodeAgentConfigurationDoc,
+    // opencode_local defaults to 7200s when no explicit timeoutSec is configured
+    defaultTimeoutSec: 7200,
 };
 const piLocalAdapter = {
     type: "pi_local",
