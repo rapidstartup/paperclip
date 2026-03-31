@@ -24,6 +24,7 @@ import {
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
+import { ensureGstackCommandsInstalled } from "./gstack-install.js";
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -186,6 +187,26 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
         (entry): entry is [string, string] => typeof entry[1] === "string",
       ),
     );
+    try {
+      const gstackInstall = await ensureGstackCommandsInstalled({ env: runtimeEnv });
+      if (gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0) {
+        await onLog(
+          "stdout",
+          `[paperclip] Synced ${gstackInstall.files.length} gstack OpenCode command files in ${gstackInstall.targetDir} (${gstackInstall.writtenFiles} updated, ${gstackInstall.removedFiles} removed).\n`,
+        );
+      } else if (gstackInstall.usedFallbackManifest) {
+        await onLog(
+          "stdout",
+          `[paperclip] Verified gstack OpenCode commands in ${gstackInstall.targetDir} using fallback manifest.\n`,
+        );
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await onLog(
+        "stderr",
+        `[paperclip] Warning: unable to sync gstack OpenCode commands: ${message}\n`,
+      );
+    }
     await ensureCommandResolvable(command, cwd, runtimeEnv);
     const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
     const loggedEnv = buildInvocationEnvForLogs(preparedRuntimeConfig.env, {

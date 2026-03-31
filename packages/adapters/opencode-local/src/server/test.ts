@@ -15,6 +15,7 @@ import {
 } from "@paperclipai/adapter-utils/server-utils";
 import { discoverOpenCodeModels, ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { parseOpenCodeJsonl } from "./parse.js";
+import { ensureGstackCommandsInstalled } from "./gstack-install.js";
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 
 function summarizeStatus(checks: AdapterEnvironmentCheck[]): AdapterEnvironmentTestResult["status"] {
@@ -133,6 +134,32 @@ export async function testEnvironment(
 
     const canRunProbe =
       checks.every((check) => check.code !== "opencode_cwd_invalid" && check.code !== "opencode_command_unresolvable");
+
+    if (canRunProbe) {
+      try {
+        const gstackInstall = await ensureGstackCommandsInstalled({ env: runtimeEnv });
+        checks.push({
+          code: "opencode_gstack_commands_ready",
+          level: "info",
+          message:
+            gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0
+              ? `Synced gstack OpenCode commands in ${gstackInstall.targetDir}.`
+              : `gstack OpenCode commands are available in ${gstackInstall.targetDir}.`,
+          detail:
+            gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0
+              ? `${gstackInstall.writtenFiles} updated, ${gstackInstall.removedFiles} removed, ${gstackInstall.unchangedFiles} unchanged.`
+              : undefined,
+        });
+      } catch (err) {
+        checks.push({
+          code: "opencode_gstack_commands_install_failed",
+          level: "warn",
+          message: "Unable to sync gstack OpenCode commands automatically.",
+          detail: err instanceof Error ? err.message : String(err),
+          hint: "Check GitHub reachability, then run `gstack-opencode-setup` manually in a terminal.",
+        });
+      }
+    }
 
     let modelValidationPassed = false;
     const configuredModel = asString(config.model, "").trim();
