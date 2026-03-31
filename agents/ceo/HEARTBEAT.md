@@ -14,7 +14,7 @@ Run this checklist on every heartbeat. It is optimized for this Paperclip implem
 
 ## 2) Review Plan and Daily Memory
 
-1. Read today's plan from `$AGENT_HOME/memory/YYYY-MM-DD.md` under `## Today's Plan`.
+1. Ensure today's daily note exists at `$AGENT_HOME/memory/YYYY-MM-DD.md` (create it with `## Today's Plan` and `## Timeline` headings if missing), then read `## Today's Plan`.
 2. Update progress, blockers, and next actions.
 3. If blocked, attempt self-unblock first; escalate only with concrete context and options.
 4. Record meaningful decisions and outcomes in daily notes.

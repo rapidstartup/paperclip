@@ -55,6 +55,7 @@ import {
 } from "./execution-workspace-policy.js";
 import { instanceSettingsService } from "./instance-settings.js";
 import { redactCurrentUserText, redactCurrentUserValue } from "../log-redaction.js";
+import { ensureAgentHomeDailyMemoryFile } from "./agent-home-memory.js";
 import {
   hasSessionCompactionThresholds,
   resolveSessionCompactionPolicy,
@@ -2433,11 +2434,30 @@ export function heartbeatService(db: Db) {
         cwd: executionWorkspace.cwd,
       },
     });
+    const agentHome = resolveDefaultAgentWorkspaceDir(agent.id);
+    await fs.mkdir(agentHome, { recursive: true });
+    let agentHomeWarning: string | null = null;
+    try {
+      await ensureAgentHomeDailyMemoryFile(agentHome);
+    } catch (err) {
+      const detail = err instanceof Error ? err.message : String(err);
+      agentHomeWarning = `Unable to initialize AGENT_HOME daily memory file: ${detail}`;
+      logger.warn(
+        {
+          err,
+          runId: run.id,
+          agentId: agent.id,
+          agentHome,
+        },
+        "agent home daily memory scaffold failed",
+      );
+    }
     const runtimeSessionParams = runtimeSessionResolution.sessionParams;
     const runtimeWorkspaceWarnings = [
       ...resolvedWorkspace.warnings,
       ...executionWorkspace.warnings,
       ...(runtimeSessionResolution.warning ? [runtimeSessionResolution.warning] : []),
+      ...(agentHomeWarning ? [agentHomeWarning] : []),
       ...(resetTaskSession && sessionResetReason
         ? [
             taskKey
@@ -2457,11 +2477,7 @@ export function heartbeatService(db: Db) {
       repoRef: executionWorkspace.repoRef,
       branchName: executionWorkspace.branchName,
       worktreePath: executionWorkspace.worktreePath,
-      agentHome: await (async () => {
-        const home = resolveDefaultAgentWorkspaceDir(agent.id);
-        await fs.mkdir(home, { recursive: true });
-        return home;
-      })(),
+      agentHome,
     };
     context.paperclipWorkspaces = resolvedWorkspace.workspaceHints;
     const runtimeServiceIntents = (() => {

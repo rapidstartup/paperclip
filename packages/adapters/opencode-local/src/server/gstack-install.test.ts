@@ -122,6 +122,7 @@ describe('gstack OpenCode installer', () => {
       env: installEnv,
       fetchImpl: fetchMock,
       disableCache: true,
+      syncExisting: true,
     });
     expect(first.writtenFiles).toBe(3);
     expect(first.removedFiles).toBe(1);
@@ -135,13 +136,88 @@ describe('gstack OpenCode installer', () => {
       env: installEnv,
       fetchImpl: fetchMock,
       disableCache: true,
+      syncExisting: true,
     });
     expect(second.writtenFiles).toBe(0);
     expect(second.removedFiles).toBe(0);
     expect(second.unchangedFiles).toBe(3);
   });
 
-  it('returns cached results while cache entry is fresh', async () => {
+  it('treats existing local install as ready without fetching', async () => {
+    const home = await fs.mkdtemp(path.join(os.tmpdir(), 'paperclip-opencode-gstack-local-home-'));
+    cleanupDirs.add(home);
+
+    const installEnv = process.platform === 'win32' ? { USERPROFILE: home } : { HOME: home };
+    const targetDir = resolveOpenCodeGstackCommandsDir({ env: installEnv });
+    await fs.mkdir(targetDir, { recursive: true });
+    await fs.writeFile(path.resolve(targetDir, 'review.md'), '# review', 'utf8');
+
+    const calls: string[] = [];
+    const fetchMock: typeof fetch = (async (url: URL | RequestInfo) => {
+      calls.push(String(url));
+      return new Response('unexpected network', { status: 500 });
+    }) as typeof fetch;
+
+    const result = await ensureGstackCommandsInstalled({
+      env: installEnv,
+      fetchImpl: fetchMock,
+      disableCache: true,
+    });
+    expect(result.files).toEqual(['review.md']);
+    expect(result.writtenFiles).toBe(0);
+    expect(result.removedFiles).toBe(0);
+    expect(calls).toHaveLength(0);
+  });
+
+  it('skips missing markdown files when fallback manifest entries are stale', async () => {
+    const home = await fs.mkdtemp(path.join(os.tmpdir(), 'paperclip-opencode-gstack-fallback-home-'));
+    cleanupDirs.add(home);
+
+    const installEnv = process.platform === 'win32' ? { USERPROFILE: home } : { HOME: home };
+    const targetDir = resolveOpenCodeGstackCommandsDir({ env: installEnv });
+    const owner = 'rapidstartup';
+    const repo = 'gstack';
+    const ref = 'opencode-clean';
+    const commandsPath = 'opencode/commands/gstack';
+    const apiUrl =
+      `https://api.github.com/repos/${encodeURIComponent(owner)}` +
+      `/${encodeURIComponent(repo)}/contents/${commandsPath}` +
+      `?ref=${encodeURIComponent(ref)}`;
+    const rawBase =
+      `https://raw.githubusercontent.com/${encodeURIComponent(owner)}` +
+      `/${encodeURIComponent(repo)}/${encodeURIComponent(ref)}/${commandsPath}`;
+    const files: Record<string, string> = {
+      'office-hours.md': '# office-hours',
+      'ship.md': '# ship',
+      'README.md': '# readme',
+    };
+
+    const fetchMock: typeof fetch = (async (url: URL | RequestInfo) => {
+      const key = String(url);
+      if (key === apiUrl) {
+        return new Response('rate-limited', { status: 403, statusText: 'Forbidden' });
+      }
+      if (key.startsWith(`${rawBase}/`)) {
+        const fileName = decodeURIComponent(key.slice(`${rawBase}/`.length));
+        const content = files[fileName];
+        if (typeof content === 'string') return new Response(content, { status: 200 });
+        return new Response('missing', { status: 404, statusText: 'Not Found' });
+      }
+      return new Response('unexpected-url', { status: 404, statusText: 'Not Found' });
+    }) as typeof fetch;
+
+    const result = await ensureGstackCommandsInstalled({
+      env: installEnv,
+      fetchImpl: fetchMock,
+      disableCache: true,
+    });
+    expect(result.usedFallbackManifest).toBe(true);
+    expect(result.files).toEqual(['office-hours.md', 'ship.md', 'README.md']);
+    expect(result.writtenFiles).toBe(3);
+    await expect(fs.readFile(path.resolve(targetDir, 'ship.md'), 'utf8')).resolves.toBe('# ship');
+  });
+
+  it('does not refetch while local install already exists', async () => {
     const home = await fs.mkdtemp(path.join(os.tmpdir(), 'paperclip-opencode-gstack-cache-home-'));
     cleanupDirs.add(home);
 
@@ -177,7 +253,7 @@ describe('gstack OpenCode installer', () => {
       nowMs,
       successCacheTtlMs: 10_000,
     });
-    expect(second.fromCache).toBe(true);
+    expect(second.fromCache).toBe(false);
     expect(calls.length).toBe(callsAfterFirst);
   });
 });

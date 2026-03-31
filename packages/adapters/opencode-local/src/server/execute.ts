@@ -200,12 +200,8 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
           `[paperclip] Verified gstack OpenCode commands in ${gstackInstall.targetDir} using fallback manifest.\n`,
         );
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      await onLog(
-        "stderr",
-        `[paperclip] Warning: unable to sync gstack OpenCode commands: ${message}\n`,
-      );
+    } catch {
+      // Optional best-effort setup: command availability should not impact normal runs.
     }
     await ensureCommandResolvable(command, cwd, runtimeEnv);
     const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
