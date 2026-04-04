@@ -18,12 +18,12 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     pmAgent: z.ZodDefault<z.ZodObject<{
         name: z.ZodOptional<z.ZodString>;
         capabilities: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-        adapterType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["process", "http", "claude_local", "codex_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"]>>>;
+        adapterType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["process", "http", "claude_local", "codex_local", "gemini_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"]>>>;
         adapterConfig: z.ZodDefault<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         runtimeConfig: z.ZodDefault<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         model: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
-        adapterType: "process" | "http" | "claude_local" | "codex_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
+        adapterType: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
         adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         name?: string | undefined;
@@ -31,9 +31,9 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
         model?: string | null | undefined;
     }, {
         name?: string | undefined;
-        adapterType?: "process" | "http" | "claude_local" | "codex_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
-        capabilities?: string | null | undefined;
+        adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
         adapterConfig?: Record<string, unknown> | undefined;
+        capabilities?: string | null | undefined;
         runtimeConfig?: Record<string, unknown> | undefined;
         model?: string | null | undefined;
     }>>;
@@ -46,7 +46,7 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     vibedashApiKey: string;
     triggerInitialWakeup: boolean;
     pmAgent: {
-        adapterType: "process" | "http" | "claude_local" | "codex_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
+        adapterType: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
         adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         name?: string | undefined;
@@ -79,9 +79,9 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     triggerInitialWakeup?: boolean | undefined;
     pmAgent?: {
         name?: string | undefined;
-        adapterType?: "process" | "http" | "claude_local" | "codex_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
-        capabilities?: string | null | undefined;
+        adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
         adapterConfig?: Record<string, unknown> | undefined;
+        capabilities?: string | null | undefined;
         runtimeConfig?: Record<string, unknown> | undefined;
         model?: string | null | undefined;
     } | undefined;

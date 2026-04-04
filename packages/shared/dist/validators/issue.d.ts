@@ -1,4 +1,5 @@
 import { z } from "zod";
+export declare const ISSUE_EXECUTION_WORKSPACE_PREFERENCES: readonly ["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"];
 export declare const issueExecutionWorkspaceSettingsSchema: z.ZodObject<{
     mode: z.ZodOptional<z.ZodEnum<["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"]>>;
     workspaceStrategy: z.ZodNullable<z.ZodOptional<z.ZodObject<{
@@ -139,8 +140,19 @@ export declare const createIssueSchema: z.ZodObject<{
     requestDepth: number;
     description?: string | null | undefined;
     projectId?: string | null | undefined;
-    labelIds?: string[] | undefined;
+    projectWorkspaceId?: string | null | undefined;
+    goalId?: string | null | undefined;
+    parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
+    assigneeAgentId?: string | null | undefined;
+    assigneeUserId?: string | null | undefined;
     billingCode?: string | null | undefined;
+    assigneeAdapterOverrides?: {
+        adapterConfig?: Record<string, unknown> | undefined;
+        useProjectWorkspace?: boolean | undefined;
+    } | null | undefined;
+    executionWorkspaceId?: string | null | undefined;
+    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
@@ -153,26 +165,27 @@ export declare const createIssueSchema: z.ZodObject<{
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    assigneeAdapterOverrides?: {
-        adapterConfig?: Record<string, unknown> | undefined;
-        useProjectWorkspace?: boolean | undefined;
-    } | null | undefined;
-    goalId?: string | null | undefined;
-    projectWorkspaceId?: string | null | undefined;
-    parentId?: string | null | undefined;
-    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
-    assigneeAgentId?: string | null | undefined;
-    assigneeUserId?: string | null | undefined;
-    executionWorkspaceId?: string | null | undefined;
-    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
+    labelIds?: string[] | undefined;
 }, {
     title: string;
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
     description?: string | null | undefined;
     projectId?: string | null | undefined;
+    projectWorkspaceId?: string | null | undefined;
+    goalId?: string | null | undefined;
+    parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
-    labelIds?: string[] | undefined;
+    assigneeAgentId?: string | null | undefined;
+    assigneeUserId?: string | null | undefined;
+    requestDepth?: number | undefined;
     billingCode?: string | null | undefined;
+    assigneeAdapterOverrides?: {
+        adapterConfig?: Record<string, unknown> | undefined;
+        useProjectWorkspace?: boolean | undefined;
+    } | null | undefined;
+    executionWorkspaceId?: string | null | undefined;
+    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
@@ -185,19 +198,7 @@ export declare const createIssueSchema: z.ZodObject<{
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    assigneeAdapterOverrides?: {
-        adapterConfig?: Record<string, unknown> | undefined;
-        useProjectWorkspace?: boolean | undefined;
-    } | null | undefined;
-    goalId?: string | null | undefined;
-    projectWorkspaceId?: string | null | undefined;
-    parentId?: string | null | undefined;
-    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
-    assigneeAgentId?: string | null | undefined;
-    assigneeUserId?: string | null | undefined;
-    requestDepth?: number | undefined;
-    executionWorkspaceId?: string | null | undefined;
-    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
+    labelIds?: string[] | undefined;
 }>;
 export type CreateIssue = z.infer<typeof createIssueSchema>;
 export declare const createIssueLabelSchema: z.ZodObject<{
@@ -296,10 +297,22 @@ export declare const updateIssueSchema: z.ZodObject<{
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
     description?: string | null | undefined;
     projectId?: string | null | undefined;
+    projectWorkspaceId?: string | null | undefined;
+    goalId?: string | null | undefined;
+    parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
-    labelIds?: string[] | undefined;
+    assigneeAgentId?: string | null | undefined;
+    assigneeUserId?: string | null | undefined;
+    requestDepth?: number | undefined;
     billingCode?: string | null | undefined;
+    assigneeAdapterOverrides?: {
+        adapterConfig?: Record<string, unknown> | undefined;
+        useProjectWorkspace?: boolean | undefined;
+    } | null | undefined;
+    executionWorkspaceId?: string | null | undefined;
+    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
@@ -312,19 +325,7 @@ export declare const updateIssueSchema: z.ZodObject<{
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    assigneeAdapterOverrides?: {
-        adapterConfig?: Record<string, unknown> | undefined;
-        useProjectWorkspace?: boolean | undefined;
-    } | null | undefined;
-    goalId?: string | null | undefined;
-    projectWorkspaceId?: string | null | undefined;
-    parentId?: string | null | undefined;
-    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
-    assigneeAgentId?: string | null | undefined;
-    assigneeUserId?: string | null | undefined;
-    requestDepth?: number | undefined;
-    executionWorkspaceId?: string | null | undefined;
-    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
+    labelIds?: string[] | undefined;
     reopen?: boolean | undefined;
     interrupt?: boolean | undefined;
     hiddenAt?: string | null | undefined;
@@ -333,10 +334,22 @@ export declare const updateIssueSchema: z.ZodObject<{
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
     description?: string | null | undefined;
     projectId?: string | null | undefined;
+    projectWorkspaceId?: string | null | undefined;
+    goalId?: string | null | undefined;
+    parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
-    labelIds?: string[] | undefined;
+    assigneeAgentId?: string | null | undefined;
+    assigneeUserId?: string | null | undefined;
+    requestDepth?: number | undefined;
     billingCode?: string | null | undefined;
+    assigneeAdapterOverrides?: {
+        adapterConfig?: Record<string, unknown> | undefined;
+        useProjectWorkspace?: boolean | undefined;
+    } | null | undefined;
+    executionWorkspaceId?: string | null | undefined;
+    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
@@ -349,19 +362,7 @@ export declare const updateIssueSchema: z.ZodObject<{
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    assigneeAdapterOverrides?: {
-        adapterConfig?: Record<string, unknown> | undefined;
-        useProjectWorkspace?: boolean | undefined;
-    } | null | undefined;
-    goalId?: string | null | undefined;
-    projectWorkspaceId?: string | null | undefined;
-    parentId?: string | null | undefined;
-    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
-    assigneeAgentId?: string | null | undefined;
-    assigneeUserId?: string | null | undefined;
-    requestDepth?: number | undefined;
-    executionWorkspaceId?: string | null | undefined;
-    executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
+    labelIds?: string[] | undefined;
     reopen?: boolean | undefined;
     interrupt?: boolean | undefined;
     hiddenAt?: string | null | undefined;
@@ -431,6 +432,8 @@ export declare const upsertIssueDocumentSchema: z.ZodObject<{
     changeSummary?: string | null | undefined;
     baseRevisionId?: string | null | undefined;
 }>;
+export declare const restoreIssueDocumentRevisionSchema: z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>;
 export type IssueDocumentFormat = z.infer<typeof issueDocumentFormatSchema>;
 export type UpsertIssueDocument = z.infer<typeof upsertIssueDocumentSchema>;
+export type RestoreIssueDocumentRevision = z.infer<typeof restoreIssueDocumentRevisionSchema>;
 //# sourceMappingURL=issue.d.ts.map

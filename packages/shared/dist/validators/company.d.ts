@@ -21,6 +21,10 @@ export declare const updateCompanySchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodEnum<["active", "paused", "archived"]>>;
     spentMonthlyCents: z.ZodOptional<z.ZodNumber>;
     requireBoardApprovalForNewAgents: z.ZodOptional<z.ZodBoolean>;
+    feedbackDataSharingEnabled: z.ZodOptional<z.ZodBoolean>;
+    feedbackDataSharingConsentAt: z.ZodOptional<z.ZodNullable<z.ZodDate>>;
+    feedbackDataSharingConsentByUserId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
+    feedbackDataSharingTermsVersion: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     brandColor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logoAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     githubToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
@@ -31,6 +35,10 @@ export declare const updateCompanySchema: z.ZodObject<{
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
     requireBoardApprovalForNewAgents?: boolean | undefined;
+    feedbackDataSharingEnabled?: boolean | undefined;
+    feedbackDataSharingConsentAt?: Date | null | undefined;
+    feedbackDataSharingConsentByUserId?: string | null | undefined;
+    feedbackDataSharingTermsVersion?: string | null | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
     githubToken?: string | null | undefined;
@@ -41,6 +49,10 @@ export declare const updateCompanySchema: z.ZodObject<{
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
     requireBoardApprovalForNewAgents?: boolean | undefined;
+    feedbackDataSharingEnabled?: boolean | undefined;
+    feedbackDataSharingConsentAt?: Date | null | undefined;
+    feedbackDataSharingConsentByUserId?: string | null | undefined;
+    feedbackDataSharingTermsVersion?: string | null | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
     githubToken?: string | null | undefined;

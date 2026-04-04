@@ -7,16 +7,16 @@ export declare const executionWorkspaceConfigSchema: z.ZodObject<{
     workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
 }, "strict", z.ZodTypeAny, {
-    cleanupCommand?: string | null | undefined;
     provisionCommand?: string | null | undefined;
     teardownCommand?: string | null | undefined;
     workspaceRuntime?: Record<string, unknown> | null | undefined;
+    cleanupCommand?: string | null | undefined;
     desiredState?: "running" | "stopped" | null | undefined;
 }, {
-    cleanupCommand?: string | null | undefined;
     provisionCommand?: string | null | undefined;
     teardownCommand?: string | null | undefined;
     workspaceRuntime?: Record<string, unknown> | null | undefined;
+    cleanupCommand?: string | null | undefined;
     desiredState?: "running" | "stopped" | null | undefined;
 }>;
 export declare const executionWorkspaceCloseReadinessStateSchema: z.ZodEnum<["ready", "ready_with_warnings", "blocked"]>;
@@ -136,9 +136,9 @@ export declare const workspaceRuntimeServiceSchema: z.ZodObject<{
     scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
     scopeId: string | null;
     projectId: string | null;
-    cwd: string | null;
     projectWorkspaceId: string | null;
     executionWorkspaceId: string | null;
+    cwd: string | null;
     healthStatus: "unknown" | "healthy" | "unhealthy";
     command: string | null;
     issueId: string | null;
@@ -164,9 +164,9 @@ export declare const workspaceRuntimeServiceSchema: z.ZodObject<{
     scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
     scopeId: string | null;
     projectId: string | null;
-    cwd: string | null;
     projectWorkspaceId: string | null;
     executionWorkspaceId: string | null;
+    cwd: string | null;
     healthStatus: "unknown" | "healthy" | "unhealthy";
     command: string | null;
     issueId: string | null;
@@ -304,9 +304,9 @@ export declare const executionWorkspaceCloseReadinessSchema: z.ZodObject<{
         scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
         scopeId: string | null;
         projectId: string | null;
-        cwd: string | null;
         projectWorkspaceId: string | null;
         executionWorkspaceId: string | null;
+        cwd: string | null;
         healthStatus: "unknown" | "healthy" | "unhealthy";
         command: string | null;
         issueId: string | null;
@@ -332,9 +332,9 @@ export declare const executionWorkspaceCloseReadinessSchema: z.ZodObject<{
         scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
         scopeId: string | null;
         projectId: string | null;
-        cwd: string | null;
         projectWorkspaceId: string | null;
         executionWorkspaceId: string | null;
+        cwd: string | null;
         healthStatus: "unknown" | "healthy" | "unhealthy";
         command: string | null;
         issueId: string | null;
@@ -396,9 +396,9 @@ export declare const executionWorkspaceCloseReadinessSchema: z.ZodObject<{
         scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
         scopeId: string | null;
         projectId: string | null;
-        cwd: string | null;
         projectWorkspaceId: string | null;
         executionWorkspaceId: string | null;
+        cwd: string | null;
         healthStatus: "unknown" | "healthy" | "unhealthy";
         command: string | null;
         issueId: string | null;
@@ -460,9 +460,9 @@ export declare const executionWorkspaceCloseReadinessSchema: z.ZodObject<{
         scopeType: "agent" | "run" | "project_workspace" | "execution_workspace";
         scopeId: string | null;
         projectId: string | null;
-        cwd: string | null;
         projectWorkspaceId: string | null;
         executionWorkspaceId: string | null;
+        cwd: string | null;
         healthStatus: "unknown" | "healthy" | "unhealthy";
         command: string | null;
         issueId: string | null;
@@ -495,16 +495,16 @@ export declare const updateExecutionWorkspaceSchema: z.ZodObject<{
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
     }, "strict", z.ZodTypeAny, {
-        cleanupCommand?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        cleanupCommand?: string | null | undefined;
         desiredState?: "running" | "stopped" | null | undefined;
     }, {
-        cleanupCommand?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        cleanupCommand?: string | null | undefined;
         desiredState?: "running" | "stopped" | null | undefined;
     }>>>;
     metadata: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
@@ -512,36 +512,36 @@ export declare const updateExecutionWorkspaceSchema: z.ZodObject<{
     status?: "active" | "archived" | "idle" | "in_review" | "cleanup_failed" | undefined;
     name?: string | undefined;
     metadata?: Record<string, unknown> | null | undefined;
-    repoUrl?: string | null | undefined;
     baseRef?: string | null | undefined;
+    repoUrl?: string | null | undefined;
     cwd?: string | null | undefined;
     branchName?: string | null | undefined;
     providerRef?: string | null | undefined;
     cleanupEligibleAt?: string | null | undefined;
     cleanupReason?: string | null | undefined;
     config?: {
-        cleanupCommand?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        cleanupCommand?: string | null | undefined;
         desiredState?: "running" | "stopped" | null | undefined;
     } | null | undefined;
 }, {
     status?: "active" | "archived" | "idle" | "in_review" | "cleanup_failed" | undefined;
     name?: string | undefined;
     metadata?: Record<string, unknown> | null | undefined;
-    repoUrl?: string | null | undefined;
     baseRef?: string | null | undefined;
+    repoUrl?: string | null | undefined;
     cwd?: string | null | undefined;
     branchName?: string | null | undefined;
     providerRef?: string | null | undefined;
     cleanupEligibleAt?: string | null | undefined;
     cleanupReason?: string | null | undefined;
     config?: {
-        cleanupCommand?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        cleanupCommand?: string | null | undefined;
         desiredState?: "running" | "stopped" | null | undefined;
     } | null | undefined;
 }>;

@@ -16,6 +16,7 @@ export const AGENT_ADAPTER_TYPES = [
     "http",
     "claude_local",
     "codex_local",
+    "gemini_local",
     "opencode_local",
     "pi_local",
     "cursor",
@@ -126,6 +127,7 @@ export const ROUTINE_CONCURRENCY_POLICIES = ["coalesce_if_active", "always_enque
 export const ROUTINE_CATCH_UP_POLICIES = ["skip_missed", "enqueue_missed_with_cap"];
 export const ROUTINE_TRIGGER_KINDS = ["schedule", "webhook", "api"];
 export const ROUTINE_TRIGGER_SIGNING_MODES = ["bearer", "hmac_sha256"];
+export const ROUTINE_VARIABLE_TYPES = ["text", "textarea", "number", "boolean", "select"];
 export const ROUTINE_RUN_STATUSES = [
     "received",
     "coalesced",
@@ -341,6 +343,7 @@ export const PLUGIN_CAPABILITIES = [
     "agent.sessions.close",
     "activity.log.write",
     "metrics.write",
+    "telemetry.track",
     // Plugin State
     "plugin.state.read",
     "plugin.state.write",

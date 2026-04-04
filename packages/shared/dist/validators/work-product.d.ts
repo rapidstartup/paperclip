@@ -42,8 +42,8 @@ export declare const createIssueWorkProductSchema: z.ZodObject<{
     url?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     projectId?: string | null | undefined;
-    isPrimary?: boolean | undefined;
     executionWorkspaceId?: string | null | undefined;
+    isPrimary?: boolean | undefined;
     runtimeServiceId?: string | null | undefined;
     externalId?: string | null | undefined;
     reviewState?: "approved" | "none" | "changes_requested" | "needs_board_review" | undefined;
@@ -76,8 +76,8 @@ export declare const updateIssueWorkProductSchema: z.ZodObject<{
     metadata?: Record<string, unknown> | null | undefined;
     projectId?: string | null | undefined;
     title?: string | undefined;
-    isPrimary?: boolean | undefined;
     executionWorkspaceId?: string | null | undefined;
+    isPrimary?: boolean | undefined;
     runtimeServiceId?: string | null | undefined;
     externalId?: string | null | undefined;
     reviewState?: "approved" | "none" | "changes_requested" | "needs_board_review" | undefined;
@@ -92,8 +92,8 @@ export declare const updateIssueWorkProductSchema: z.ZodObject<{
     metadata?: Record<string, unknown> | null | undefined;
     projectId?: string | null | undefined;
     title?: string | undefined;
-    isPrimary?: boolean | undefined;
     executionWorkspaceId?: string | null | undefined;
+    isPrimary?: boolean | undefined;
     runtimeServiceId?: string | null | undefined;
     externalId?: string | null | undefined;
     reviewState?: "approved" | "none" | "changes_requested" | "needs_board_review" | undefined;

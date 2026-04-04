@@ -1,4 +1,6 @@
 FROM node:22-bookworm-slim AS production
+ARG USER_UID=1000
+ARG USER_GID=1000
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates gosu curl git wget ripgrep python3 \
   && mkdir -p -m 755 /etc/apt/keyrings \
@@ -12,10 +14,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
-# Modify the existing node user/group to have the specified UID/GID to match host user
-RUN usermod -u $USER_UID --non-unique node \
-  && groupmod -g $USER_GID --non-unique node \
-  && usermod -g $USER_GID -d /paperclip node
+# Modify node user/group to host IDs, fallback to 1000 if args are unset/empty
+RUN USER_UID_SAFE="${USER_UID:-1000}" \
+  && USER_GID_SAFE="${USER_GID:-1000}" \
+  && usermod -u "${USER_UID_SAFE}" --non-unique node \
+  && groupmod -g "${USER_GID_SAFE}" --non-unique node \
+  && usermod -g "${USER_GID_SAFE}" -d /paperclip node
 
 WORKDIR /app
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./

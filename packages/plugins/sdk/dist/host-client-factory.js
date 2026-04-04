@@ -95,6 +95,8 @@ const METHOD_CAPABILITY_MAP = {
     "activity.log": "activity.log.write",
     // Metrics
     "metrics.write": "metrics.write",
+    // Telemetry
+    "telemetry.track": "telemetry.track",
     // Logger — always allowed
     "log": null,
     // Companies
@@ -231,6 +233,10 @@ export function createHostClientHandlers(options) {
         // Metrics
         "metrics.write": gated("metrics.write", async (params) => {
             return services.metrics.write(params);
+        }),
+        // Telemetry
+        "telemetry.track": gated("telemetry.track", async (params) => {
+            return services.telemetry.track(params);
         }),
         // Logger
         "log": gated("log", async (params) => {

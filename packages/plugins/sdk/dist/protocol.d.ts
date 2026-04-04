@@ -433,6 +433,13 @@ export interface WorkerToHostMethods {
         },
         result: void
     ];
+    "telemetry.track": [
+        params: {
+            eventName: string;
+            dimensions?: Record<string, string | number | boolean>;
+        },
+        result: void
+    ];
     "log": [
         params: {
             level: "info" | "warn" | "error" | "debug";

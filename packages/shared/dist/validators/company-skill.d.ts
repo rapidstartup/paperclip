@@ -314,15 +314,15 @@ export declare const companySkillUpdateStatusSchema: z.ZodObject<{
     latestRef: z.ZodNullable<z.ZodString>;
     hasUpdate: z.ZodBoolean;
 }, "strip", z.ZodTypeAny, {
-    supported: boolean;
     reason: string | null;
+    supported: boolean;
     trackingRef: string | null;
     currentRef: string | null;
     latestRef: string | null;
     hasUpdate: boolean;
 }, {
-    supported: boolean;
     reason: string | null;
+    supported: boolean;
     trackingRef: string | null;
     currentRef: string | null;
     latestRef: string | null;
@@ -381,9 +381,9 @@ export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
     reason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
     path: string;
+    reason: string;
     key: string;
     slug: string;
-    reason: string;
     projectId: string;
     projectName: string;
     workspaceId: string;
@@ -393,9 +393,9 @@ export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
     existingSourceLocator: string | null;
 }, {
     path: string;
+    reason: string;
     key: string;
     slug: string;
-    reason: string;
     projectId: string;
     projectName: string;
     workspaceId: string;
@@ -578,9 +578,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         reason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
         path: string;
+        reason: string;
         key: string;
         slug: string;
-        reason: string;
         projectId: string;
         projectName: string;
         workspaceId: string;
@@ -590,9 +590,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         existingSourceLocator: string | null;
     }, {
         path: string;
+        reason: string;
         key: string;
         slug: string;
-        reason: string;
         projectId: string;
         projectName: string;
         workspaceId: string;
@@ -658,9 +658,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
     }[];
     conflicts: {
         path: string;
+        reason: string;
         key: string;
         slug: string;
-        reason: string;
         projectId: string;
         projectName: string;
         workspaceId: string;
@@ -726,9 +726,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
     }[];
     conflicts: {
         path: string;
+        reason: string;
         key: string;
         slug: string;
-        reason: string;
         projectId: string;
         projectName: string;
         workspaceId: string;

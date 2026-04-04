@@ -30,17 +30,17 @@ export declare const portabilityEnvInputSchema: z.ZodObject<{
     kind: "plain" | "secret";
     description: string | null;
     key: string;
+    defaultValue: string | null;
     agentSlug: string | null;
     requirement: "required" | "optional";
-    defaultValue: string | null;
     portability: "portable" | "system_dependent";
 }, {
     kind: "plain" | "secret";
     description: string | null;
     key: string;
+    defaultValue: string | null;
     agentSlug: string | null;
     requirement: "required" | "optional";
-    defaultValue: string | null;
     portability: "portable" | "system_dependent";
 }>;
 export declare const portabilityFileEntrySchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
@@ -63,11 +63,19 @@ export declare const portabilityCompanyManifestEntrySchema: z.ZodObject<{
     brandColor: z.ZodNullable<z.ZodString>;
     logoPath: z.ZodNullable<z.ZodString>;
     requireBoardApprovalForNewAgents: z.ZodBoolean;
+    feedbackDataSharingEnabled: z.ZodDefault<z.ZodBoolean>;
+    feedbackDataSharingConsentAt: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+    feedbackDataSharingConsentByUserId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+    feedbackDataSharingTermsVersion: z.ZodDefault<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     path: string;
     name: string;
     description: string | null;
     requireBoardApprovalForNewAgents: boolean;
+    feedbackDataSharingEnabled: boolean;
+    feedbackDataSharingConsentAt: string | null;
+    feedbackDataSharingConsentByUserId: string | null;
+    feedbackDataSharingTermsVersion: string | null;
     brandColor: string | null;
     logoPath: string | null;
 }, {
@@ -77,6 +85,10 @@ export declare const portabilityCompanyManifestEntrySchema: z.ZodObject<{
     requireBoardApprovalForNewAgents: boolean;
     brandColor: string | null;
     logoPath: string | null;
+    feedbackDataSharingEnabled?: boolean | undefined;
+    feedbackDataSharingConsentAt?: string | null | undefined;
+    feedbackDataSharingConsentByUserId?: string | null | undefined;
+    feedbackDataSharingTermsVersion?: string | null | undefined;
 }>;
 export declare const portabilitySidebarOrderSchema: z.ZodObject<{
     agents: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -111,13 +123,13 @@ export declare const portabilityAgentManifestEntrySchema: z.ZodObject<{
     slug: string;
     metadata: Record<string, unknown> | null;
     adapterType: string;
+    adapterConfig: Record<string, unknown>;
+    title: string | null;
     skills: string[];
     role: string;
-    title: string | null;
     icon: string | null;
     capabilities: string | null;
     reportsToSlug: string | null;
-    adapterConfig: Record<string, unknown>;
     runtimeConfig: Record<string, unknown>;
     permissions: Record<string, unknown>;
 }, {
@@ -127,12 +139,12 @@ export declare const portabilityAgentManifestEntrySchema: z.ZodObject<{
     slug: string;
     metadata: Record<string, unknown> | null;
     adapterType: string;
-    role: string;
+    adapterConfig: Record<string, unknown>;
     title: string | null;
+    role: string;
     icon: string | null;
     capabilities: string | null;
     reportsToSlug: string | null;
-    adapterConfig: Record<string, unknown>;
     runtimeConfig: Record<string, unknown>;
     permissions: Record<string, unknown>;
     skills?: string[] | undefined;
@@ -248,10 +260,10 @@ export declare const portabilityProjectManifestEntrySchema: z.ZodObject<{
     description: string | null;
     slug: string;
     metadata: Record<string, unknown> | null;
+    color: string | null;
     ownerAgentSlug: string | null;
     leadAgentSlug: string | null;
     targetDate: string | null;
-    color: string | null;
     executionWorkspacePolicy: Record<string, unknown> | null;
     workspaces: {
         name: string;
@@ -273,10 +285,10 @@ export declare const portabilityProjectManifestEntrySchema: z.ZodObject<{
     description: string | null;
     slug: string;
     metadata: Record<string, unknown> | null;
+    color: string | null;
     ownerAgentSlug: string | null;
     leadAgentSlug: string | null;
     targetDate: string | null;
-    color: string | null;
     executionWorkspacePolicy: Record<string, unknown> | null;
     workspaces?: {
         name: string;
@@ -320,6 +332,42 @@ export declare const portabilityIssueRoutineTriggerManifestEntrySchema: z.ZodObj
 export declare const portabilityIssueRoutineManifestEntrySchema: z.ZodObject<{
     concurrencyPolicy: z.ZodNullable<z.ZodString>;
     catchUpPolicy: z.ZodNullable<z.ZodString>;
+    variables: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodEffects<z.ZodObject<{
+        name: z.ZodString;
+        label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        type: z.ZodDefault<z.ZodOptional<z.ZodEnum<["text", "textarea", "number", "boolean", "select"]>>>;
+        defaultValue: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean]>>>;
+        required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+        options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
+    }, "strip", z.ZodTypeAny, {
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
+        required: boolean;
+        name: string;
+        label?: string | null | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }, {
+        name: string;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+        label?: string | null | undefined;
+        required?: boolean | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }>, {
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
+        required: boolean;
+        name: string;
+        label?: string | null | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }, {
+        name: string;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+        label?: string | null | undefined;
+        required?: boolean | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }>, "many">>>;
     triggers: z.ZodDefault<z.ZodArray<z.ZodObject<{
         kind: z.ZodString;
         label: z.ZodNullable<z.ZodString>;
@@ -357,9 +405,25 @@ export declare const portabilityIssueRoutineManifestEntrySchema: z.ZodObject<{
         signingMode: string | null;
         replayWindowSec: number | null;
     }[];
+    variables?: {
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
+        required: boolean;
+        name: string;
+        label?: string | null | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }[] | null | undefined;
 }, {
     concurrencyPolicy: string | null;
     catchUpPolicy: string | null;
+    variables?: {
+        name: string;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+        label?: string | null | undefined;
+        required?: boolean | undefined;
+        defaultValue?: string | number | boolean | null | undefined;
+    }[] | null | undefined;
     triggers?: {
         enabled: boolean;
         kind: string;
@@ -383,6 +447,42 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
     routine: z.ZodNullable<z.ZodObject<{
         concurrencyPolicy: z.ZodNullable<z.ZodString>;
         catchUpPolicy: z.ZodNullable<z.ZodString>;
+        variables: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodEffects<z.ZodObject<{
+            name: z.ZodString;
+            label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+            type: z.ZodDefault<z.ZodOptional<z.ZodEnum<["text", "textarea", "number", "boolean", "select"]>>>;
+            defaultValue: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean]>>>;
+            required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+            options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
+        }, "strip", z.ZodTypeAny, {
+            options: string[];
+            type: "number" | "boolean" | "text" | "textarea" | "select";
+            required: boolean;
+            name: string;
+            label?: string | null | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }, {
+            name: string;
+            options?: string[] | undefined;
+            type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+            label?: string | null | undefined;
+            required?: boolean | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }>, {
+            options: string[];
+            type: "number" | "boolean" | "text" | "textarea" | "select";
+            required: boolean;
+            name: string;
+            label?: string | null | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }, {
+            name: string;
+            options?: string[] | undefined;
+            type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+            label?: string | null | undefined;
+            required?: boolean | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }>, "many">>>;
         triggers: z.ZodDefault<z.ZodArray<z.ZodObject<{
             kind: z.ZodString;
             label: z.ZodNullable<z.ZodString>;
@@ -420,9 +520,25 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
             signingMode: string | null;
             replayWindowSec: number | null;
         }[];
+        variables?: {
+            options: string[];
+            type: "number" | "boolean" | "text" | "textarea" | "select";
+            required: boolean;
+            name: string;
+            label?: string | null | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }[] | null | undefined;
     }, {
         concurrencyPolicy: string | null;
         catchUpPolicy: string | null;
+        variables?: {
+            name: string;
+            options?: string[] | undefined;
+            type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+            label?: string | null | undefined;
+            required?: boolean | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }[] | null | undefined;
         triggers?: {
             enabled: boolean;
             kind: string;
@@ -448,6 +564,11 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
     slug: string;
     metadata: Record<string, unknown> | null;
     title: string;
+    priority: string | null;
+    billingCode: string | null;
+    assigneeAdapterOverrides: Record<string, unknown> | null;
+    executionWorkspaceSettings: Record<string, unknown> | null;
+    labelIds: string[];
     identifier: string | null;
     projectSlug: string | null;
     projectWorkspaceKey: string | null;
@@ -465,13 +586,16 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
             signingMode: string | null;
             replayWindowSec: number | null;
         }[];
+        variables?: {
+            options: string[];
+            type: "number" | "boolean" | "text" | "textarea" | "select";
+            required: boolean;
+            name: string;
+            label?: string | null | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }[] | null | undefined;
     } | null;
     legacyRecurrence: Record<string, unknown> | null;
-    priority: string | null;
-    labelIds: string[];
-    billingCode: string | null;
-    executionWorkspaceSettings: Record<string, unknown> | null;
-    assigneeAdapterOverrides: Record<string, unknown> | null;
 }, {
     status: string | null;
     path: string;
@@ -479,6 +603,10 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
     slug: string;
     metadata: Record<string, unknown> | null;
     title: string;
+    priority: string | null;
+    billingCode: string | null;
+    assigneeAdapterOverrides: Record<string, unknown> | null;
+    executionWorkspaceSettings: Record<string, unknown> | null;
     identifier: string | null;
     projectSlug: string | null;
     projectWorkspaceKey: string | null;
@@ -486,6 +614,14 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
     routine: {
         concurrencyPolicy: string | null;
         catchUpPolicy: string | null;
+        variables?: {
+            name: string;
+            options?: string[] | undefined;
+            type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+            label?: string | null | undefined;
+            required?: boolean | undefined;
+            defaultValue?: string | number | boolean | null | undefined;
+        }[] | null | undefined;
         triggers?: {
             enabled: boolean;
             kind: string;
@@ -497,12 +633,8 @@ export declare const portabilityIssueManifestEntrySchema: z.ZodObject<{
         }[] | undefined;
     } | null;
     legacyRecurrence: Record<string, unknown> | null;
-    priority: string | null;
-    billingCode: string | null;
-    executionWorkspaceSettings: Record<string, unknown> | null;
-    assigneeAdapterOverrides: Record<string, unknown> | null;
-    recurring?: boolean | undefined;
     labelIds?: string[] | undefined;
+    recurring?: boolean | undefined;
 }>;
 export declare const portabilityManifestSchema: z.ZodObject<{
     schemaVersion: z.ZodNumber;
@@ -543,11 +675,19 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         brandColor: z.ZodNullable<z.ZodString>;
         logoPath: z.ZodNullable<z.ZodString>;
         requireBoardApprovalForNewAgents: z.ZodBoolean;
+        feedbackDataSharingEnabled: z.ZodDefault<z.ZodBoolean>;
+        feedbackDataSharingConsentAt: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+        feedbackDataSharingConsentByUserId: z.ZodDefault<z.ZodNullable<z.ZodString>>;
+        feedbackDataSharingTermsVersion: z.ZodDefault<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         path: string;
         name: string;
         description: string | null;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: string | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         logoPath: string | null;
     }, {
@@ -557,6 +697,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
         logoPath: string | null;
+        feedbackDataSharingEnabled?: boolean | undefined;
+        feedbackDataSharingConsentAt?: string | null | undefined;
+        feedbackDataSharingConsentByUserId?: string | null | undefined;
+        feedbackDataSharingTermsVersion?: string | null | undefined;
     }>>;
     sidebar: z.ZodNullable<z.ZodObject<{
         agents: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -591,13 +735,13 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         adapterType: string;
+        adapterConfig: Record<string, unknown>;
+        title: string | null;
         skills: string[];
         role: string;
-        title: string | null;
         icon: string | null;
         capabilities: string | null;
         reportsToSlug: string | null;
-        adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         permissions: Record<string, unknown>;
     }, {
@@ -607,12 +751,12 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         adapterType: string;
-        role: string;
+        adapterConfig: Record<string, unknown>;
         title: string | null;
+        role: string;
         icon: string | null;
         capabilities: string | null;
         reportsToSlug: string | null;
-        adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         permissions: Record<string, unknown>;
         skills?: string[] | undefined;
@@ -728,10 +872,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         description: string | null;
         slug: string;
         metadata: Record<string, unknown> | null;
+        color: string | null;
         ownerAgentSlug: string | null;
         leadAgentSlug: string | null;
         targetDate: string | null;
-        color: string | null;
         executionWorkspacePolicy: Record<string, unknown> | null;
         workspaces: {
             name: string;
@@ -753,10 +897,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         description: string | null;
         slug: string;
         metadata: Record<string, unknown> | null;
+        color: string | null;
         ownerAgentSlug: string | null;
         leadAgentSlug: string | null;
         targetDate: string | null;
-        color: string | null;
         executionWorkspacePolicy: Record<string, unknown> | null;
         workspaces?: {
             name: string;
@@ -785,6 +929,42 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         routine: z.ZodNullable<z.ZodObject<{
             concurrencyPolicy: z.ZodNullable<z.ZodString>;
             catchUpPolicy: z.ZodNullable<z.ZodString>;
+            variables: z.ZodOptional<z.ZodNullable<z.ZodArray<z.ZodEffects<z.ZodObject<{
+                name: z.ZodString;
+                label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+                type: z.ZodDefault<z.ZodOptional<z.ZodEnum<["text", "textarea", "number", "boolean", "select"]>>>;
+                defaultValue: z.ZodNullable<z.ZodOptional<z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean]>>>;
+                required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+                options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
+            }, "strip", z.ZodTypeAny, {
+                options: string[];
+                type: "number" | "boolean" | "text" | "textarea" | "select";
+                required: boolean;
+                name: string;
+                label?: string | null | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }, {
+                name: string;
+                options?: string[] | undefined;
+                type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+                label?: string | null | undefined;
+                required?: boolean | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }>, {
+                options: string[];
+                type: "number" | "boolean" | "text" | "textarea" | "select";
+                required: boolean;
+                name: string;
+                label?: string | null | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }, {
+                name: string;
+                options?: string[] | undefined;
+                type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+                label?: string | null | undefined;
+                required?: boolean | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }>, "many">>>;
             triggers: z.ZodDefault<z.ZodArray<z.ZodObject<{
                 kind: z.ZodString;
                 label: z.ZodNullable<z.ZodString>;
@@ -822,9 +1002,25 @@ export declare const portabilityManifestSchema: z.ZodObject<{
                 signingMode: string | null;
                 replayWindowSec: number | null;
             }[];
+            variables?: {
+                options: string[];
+                type: "number" | "boolean" | "text" | "textarea" | "select";
+                required: boolean;
+                name: string;
+                label?: string | null | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
         }, {
             concurrencyPolicy: string | null;
             catchUpPolicy: string | null;
+            variables?: {
+                name: string;
+                options?: string[] | undefined;
+                type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+                label?: string | null | undefined;
+                required?: boolean | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
             triggers?: {
                 enabled: boolean;
                 kind: string;
@@ -850,6 +1046,11 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         title: string;
+        priority: string | null;
+        billingCode: string | null;
+        assigneeAdapterOverrides: Record<string, unknown> | null;
+        executionWorkspaceSettings: Record<string, unknown> | null;
+        labelIds: string[];
         identifier: string | null;
         projectSlug: string | null;
         projectWorkspaceKey: string | null;
@@ -867,13 +1068,16 @@ export declare const portabilityManifestSchema: z.ZodObject<{
                 signingMode: string | null;
                 replayWindowSec: number | null;
             }[];
+            variables?: {
+                options: string[];
+                type: "number" | "boolean" | "text" | "textarea" | "select";
+                required: boolean;
+                name: string;
+                label?: string | null | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
         } | null;
         legacyRecurrence: Record<string, unknown> | null;
-        priority: string | null;
-        labelIds: string[];
-        billingCode: string | null;
-        executionWorkspaceSettings: Record<string, unknown> | null;
-        assigneeAdapterOverrides: Record<string, unknown> | null;
     }, {
         status: string | null;
         path: string;
@@ -881,6 +1085,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         title: string;
+        priority: string | null;
+        billingCode: string | null;
+        assigneeAdapterOverrides: Record<string, unknown> | null;
+        executionWorkspaceSettings: Record<string, unknown> | null;
         identifier: string | null;
         projectSlug: string | null;
         projectWorkspaceKey: string | null;
@@ -888,6 +1096,14 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         routine: {
             concurrencyPolicy: string | null;
             catchUpPolicy: string | null;
+            variables?: {
+                name: string;
+                options?: string[] | undefined;
+                type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+                label?: string | null | undefined;
+                required?: boolean | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
             triggers?: {
                 enabled: boolean;
                 kind: string;
@@ -899,12 +1115,8 @@ export declare const portabilityManifestSchema: z.ZodObject<{
             }[] | undefined;
         } | null;
         legacyRecurrence: Record<string, unknown> | null;
-        priority: string | null;
-        billingCode: string | null;
-        executionWorkspaceSettings: Record<string, unknown> | null;
-        assigneeAdapterOverrides: Record<string, unknown> | null;
-        recurring?: boolean | undefined;
         labelIds?: string[] | undefined;
+        recurring?: boolean | undefined;
     }>, "many">>;
     envInputs: z.ZodDefault<z.ZodArray<z.ZodObject<{
         key: z.ZodString;
@@ -918,17 +1130,17 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         kind: "plain" | "secret";
         description: string | null;
         key: string;
+        defaultValue: string | null;
         agentSlug: string | null;
         requirement: "required" | "optional";
-        defaultValue: string | null;
         portability: "portable" | "system_dependent";
     }, {
         kind: "plain" | "secret";
         description: string | null;
         key: string;
+        defaultValue: string | null;
         agentSlug: string | null;
         requirement: "required" | "optional";
-        defaultValue: string | null;
         portability: "portable" | "system_dependent";
     }>, "many">>;
 }, "strip", z.ZodTypeAny, {
@@ -937,6 +1149,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         name: string;
         description: string | null;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: string | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         logoPath: string | null;
     } | null;
@@ -951,13 +1167,13 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         adapterType: string;
+        adapterConfig: Record<string, unknown>;
+        title: string | null;
         skills: string[];
         role: string;
-        title: string | null;
         icon: string | null;
         capabilities: string | null;
         reportsToSlug: string | null;
-        adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         permissions: Record<string, unknown>;
     }[];
@@ -968,10 +1184,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         description: string | null;
         slug: string;
         metadata: Record<string, unknown> | null;
+        color: string | null;
         ownerAgentSlug: string | null;
         leadAgentSlug: string | null;
         targetDate: string | null;
-        color: string | null;
         executionWorkspacePolicy: Record<string, unknown> | null;
         workspaces: {
             name: string;
@@ -994,6 +1210,11 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         title: string;
+        priority: string | null;
+        billingCode: string | null;
+        assigneeAdapterOverrides: Record<string, unknown> | null;
+        executionWorkspaceSettings: Record<string, unknown> | null;
+        labelIds: string[];
         identifier: string | null;
         projectSlug: string | null;
         projectWorkspaceKey: string | null;
@@ -1011,13 +1232,16 @@ export declare const portabilityManifestSchema: z.ZodObject<{
                 signingMode: string | null;
                 replayWindowSec: number | null;
             }[];
+            variables?: {
+                options: string[];
+                type: "number" | "boolean" | "text" | "textarea" | "select";
+                required: boolean;
+                name: string;
+                label?: string | null | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
         } | null;
         legacyRecurrence: Record<string, unknown> | null;
-        priority: string | null;
-        labelIds: string[];
-        billingCode: string | null;
-        executionWorkspaceSettings: Record<string, unknown> | null;
-        assigneeAdapterOverrides: Record<string, unknown> | null;
     }[];
     includes: {
         company: boolean;
@@ -1053,9 +1277,9 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         kind: "plain" | "secret";
         description: string | null;
         key: string;
+        defaultValue: string | null;
         agentSlug: string | null;
         requirement: "required" | "optional";
-        defaultValue: string | null;
         portability: "portable" | "system_dependent";
     }[];
 }, {
@@ -1066,6 +1290,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         requireBoardApprovalForNewAgents: boolean;
         brandColor: string | null;
         logoPath: string | null;
+        feedbackDataSharingEnabled?: boolean | undefined;
+        feedbackDataSharingConsentAt?: string | null | undefined;
+        feedbackDataSharingConsentByUserId?: string | null | undefined;
+        feedbackDataSharingTermsVersion?: string | null | undefined;
     } | null;
     sidebar: {
         agents?: string[] | undefined;
@@ -1078,12 +1306,12 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         adapterType: string;
-        role: string;
+        adapterConfig: Record<string, unknown>;
         title: string | null;
+        role: string;
         icon: string | null;
         capabilities: string | null;
         reportsToSlug: string | null;
-        adapterConfig: Record<string, unknown>;
         runtimeConfig: Record<string, unknown>;
         permissions: Record<string, unknown>;
         skills?: string[] | undefined;
@@ -1108,10 +1336,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         description: string | null;
         slug: string;
         metadata: Record<string, unknown> | null;
+        color: string | null;
         ownerAgentSlug: string | null;
         leadAgentSlug: string | null;
         targetDate: string | null;
-        color: string | null;
         executionWorkspacePolicy: Record<string, unknown> | null;
         workspaces?: {
             name: string;
@@ -1134,6 +1362,10 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         slug: string;
         metadata: Record<string, unknown> | null;
         title: string;
+        priority: string | null;
+        billingCode: string | null;
+        assigneeAdapterOverrides: Record<string, unknown> | null;
+        executionWorkspaceSettings: Record<string, unknown> | null;
         identifier: string | null;
         projectSlug: string | null;
         projectWorkspaceKey: string | null;
@@ -1141,6 +1373,14 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         routine: {
             concurrencyPolicy: string | null;
             catchUpPolicy: string | null;
+            variables?: {
+                name: string;
+                options?: string[] | undefined;
+                type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
+                label?: string | null | undefined;
+                required?: boolean | undefined;
+                defaultValue?: string | number | boolean | null | undefined;
+            }[] | null | undefined;
             triggers?: {
                 enabled: boolean;
                 kind: string;
@@ -1152,12 +1392,8 @@ export declare const portabilityManifestSchema: z.ZodObject<{
             }[] | undefined;
         } | null;
         legacyRecurrence: Record<string, unknown> | null;
-        priority: string | null;
-        billingCode: string | null;
-        executionWorkspaceSettings: Record<string, unknown> | null;
-        assigneeAdapterOverrides: Record<string, unknown> | null;
-        recurring?: boolean | undefined;
         labelIds?: string[] | undefined;
+        recurring?: boolean | undefined;
     }[] | undefined;
     skills?: {
         path: string;
@@ -1180,9 +1416,9 @@ export declare const portabilityManifestSchema: z.ZodObject<{
         kind: "plain" | "secret";
         description: string | null;
         key: string;
+        defaultValue: string | null;
         agentSlug: string | null;
         requirement: "required" | "optional";
-        defaultValue: string | null;
         portability: "portable" | "system_dependent";
     }[] | undefined;
 }>;

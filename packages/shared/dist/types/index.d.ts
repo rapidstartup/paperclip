@@ -1,4 +1,5 @@
 export type { Company } from "./company.js";
+export type { FeedbackVote, FeedbackDataSharingPreference, FeedbackTargetType, FeedbackVoteValue, FeedbackTrace, FeedbackTraceStatus, FeedbackTraceTargetSummary, FeedbackTraceBundleCaptureStatus, FeedbackTraceBundleFile, FeedbackTraceBundle, } from "./feedback.js";
 export type { InstanceExperimentalSettings, InstanceGeneralSettings, InstanceSettings } from "./instance.js";
 export type { CompanySkillSourceType, CompanySkillTrustLevel, CompanySkillCompatibility, CompanySkillSourceBadge, CompanySkillFileInventoryEntry, CompanySkill, CompanySkillListItem, CompanySkillUsageAgent, CompanySkillDetail, CompanySkillUpdateStatus, CompanySkillImportRequest, CompanySkillImportResult, CompanySkillProjectScanRequest, CompanySkillProjectScanSkipped, CompanySkillProjectScanConflict, CompanySkillProjectScanResult, CompanySkillCreateRequest, CompanySkillFileDetail, CompanySkillFileUpdateRequest, } from "./company-skill.js";
 export type { AgentSkillSyncMode, AgentSkillState, AgentSkillOrigin, AgentSkillEntry, AgentSkillSnapshot, AgentSkillSyncRequest, } from "./adapter-skills.js";
@@ -13,10 +14,10 @@ export type { Goal } from "./goal.js";
 export type { Approval, ApprovalComment } from "./approval.js";
 export type { BudgetPolicy, BudgetPolicySummary, BudgetIncident, BudgetOverview, BudgetPolicyUpsertInput, BudgetIncidentResolutionInput, } from "./budget.js";
 export type { SecretProvider, SecretVersionSelector, EnvPlainBinding, EnvSecretRefBinding, EnvBinding, AgentEnvConfig, CompanySecret, SecretProviderDescriptor, } from "./secrets.js";
-export type { Routine, RoutineTrigger, RoutineRun, RoutineTriggerSecretMaterial, RoutineDetail, RoutineRunSummary, RoutineExecutionIssueOrigin, RoutineListItem, } from "./routine.js";
+export type { Routine, RoutineVariable, RoutineVariableDefaultValue, RoutineTrigger, RoutineRun, RoutineTriggerSecretMaterial, RoutineDetail, RoutineRunSummary, RoutineExecutionIssueOrigin, RoutineListItem, } from "./routine.js";
 export type { CostEvent, CostSummary, CostByAgent, CostByProviderModel, CostByBiller, CostByAgentModel, CostWindowSpendRow, CostByProject } from "./cost.js";
 export type { FinanceEvent, FinanceSummary, FinanceByBiller, FinanceByKind } from "./finance.js";
-export type { HeartbeatRun, HeartbeatRunEvent, AgentRuntimeState, AgentTaskSession, AgentWakeupRequest, InstanceSchedulerHeartbeatAgent, } from "./heartbeat.js";
+export type { AgentWakeupResponse, AgentWakeupSkipped, HeartbeatRun, HeartbeatRunEvent, AgentRuntimeState, AgentTaskSession, AgentWakeupRequest, InstanceSchedulerHeartbeatAgent, } from "./heartbeat.js";
 export type { LiveEvent } from "./live.js";
 export type { DashboardSummary } from "./dashboard.js";
 export type { ActivityEvent } from "./activity.js";

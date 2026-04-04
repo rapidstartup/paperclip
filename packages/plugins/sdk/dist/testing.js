@@ -48,6 +48,7 @@ export function createTestHarness(options) {
     const logs = [];
     const activity = [];
     const metrics = [];
+    const telemetry = [];
     const state = new Map();
     const entities = new Map();
     const entityExternalIndex = new Map();
@@ -586,6 +587,12 @@ export function createTestHarness(options) {
                 metrics.push({ name, value, tags });
             },
         },
+        telemetry: {
+            async track(eventName, dimensions) {
+                requireCapability(manifest, capabilitySet, "telemetry.track");
+                telemetry.push({ eventName, dimensions });
+            },
+        },
         logger: {
             info(message, meta) {
                 logs.push({ level: "info", message, meta });
@@ -694,6 +701,7 @@ export function createTestHarness(options) {
         logs,
         activity,
         metrics,
+        telemetry,
     };
     return harness;
 }

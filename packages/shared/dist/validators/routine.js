@@ -1,5 +1,39 @@
 import { z } from "zod";
-import { ISSUE_PRIORITIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_STATUSES, ROUTINE_TRIGGER_SIGNING_MODES, } from "../constants.js";
+import { ISSUE_PRIORITIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_STATUSES, ROUTINE_TRIGGER_SIGNING_MODES, ROUTINE_VARIABLE_TYPES, } from "../constants.js";
+import { ISSUE_EXECUTION_WORKSPACE_PREFERENCES, issueExecutionWorkspaceSettingsSchema, } from "./issue.js";
+const routineVariableValueSchema = z.union([z.string(), z.number().finite(), z.boolean()]);
+export const routineVariableSchema = z.object({
+    name: z.string().trim().regex(/^[A-Za-z][A-Za-z0-9_]*$/),
+    label: z.string().trim().max(120).optional().nullable(),
+    type: z.enum(ROUTINE_VARIABLE_TYPES).optional().default("text"),
+    defaultValue: routineVariableValueSchema.optional().nullable(),
+    required: z.boolean().optional().default(true),
+    options: z.array(z.string().trim().min(1).max(120)).max(50).optional().default([]),
+}).superRefine((value, ctx) => {
+    if (value.type === "select" && value.options.length === 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["options"],
+            message: "Select variables require at least one option",
+        });
+    }
+    if (value.type !== "select" && value.options.length > 0) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["options"],
+            message: "Only select variables can define options",
+        });
+    }
+    if (value.type === "select" && value.defaultValue != null) {
+        if (typeof value.defaultValue !== "string" || !value.options.includes(value.defaultValue)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ["defaultValue"],
+                message: "Select variable defaults must match one of the allowed options",
+            });
+        }
+    }
+});
 export const createRoutineSchema = z.object({
     projectId: z.string().uuid(),
     goalId: z.string().uuid().optional().nullable(),
@@ -11,6 +45,7 @@ export const createRoutineSchema = z.object({
     status: z.enum(ROUTINE_STATUSES).optional().default("active"),
     concurrencyPolicy: z.enum(ROUTINE_CONCURRENCY_POLICIES).optional().default("coalesce_if_active"),
     catchUpPolicy: z.enum(ROUTINE_CATCH_UP_POLICIES).optional().default("skip_missed"),
+    variables: z.array(routineVariableSchema).optional().default([]),
 });
 export const updateRoutineSchema = createRoutineSchema.partial();
 const baseTriggerSchema = z.object({
@@ -43,8 +78,12 @@ export const updateRoutineTriggerSchema = z.object({
 export const runRoutineSchema = z.object({
     triggerId: z.string().uuid().optional().nullable(),
     payload: z.record(z.unknown()).optional().nullable(),
+    variables: z.record(routineVariableValueSchema).optional().nullable(),
     idempotencyKey: z.string().trim().max(255).optional().nullable(),
     source: z.enum(["manual", "api"]).optional().default("manual"),
+    executionWorkspaceId: z.string().uuid().optional().nullable(),
+    executionWorkspacePreference: z.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
+    executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable(),
 });
 export const rotateRoutineTriggerSecretSchema = z.object({});
 //# sourceMappingURL=routine.js.map

@@ -52,6 +52,10 @@ export interface TestHarness {
         value: number;
         tags?: Record<string, string>;
     }>;
+    telemetry: Array<{
+        eventName: string;
+        dimensions?: Record<string, string | number | boolean>;
+    }>;
 }
 /**
  * Create an in-memory host harness for plugin worker tests.

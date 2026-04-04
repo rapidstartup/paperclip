@@ -76,6 +76,9 @@ export const secretsConfigSchema = z.object({
         keyFilePath: "~/.paperclip/instances/default/secrets/master.key",
     }),
 });
+export const telemetryConfigSchema = z.object({
+    enabled: z.boolean().default(true),
+}).default({});
 export const paperclipConfigSchema = z
     .object({
     $meta: configMetaSchema,
@@ -83,6 +86,7 @@ export const paperclipConfigSchema = z
     database: databaseConfigSchema,
     logging: loggingConfigSchema,
     server: serverConfigSchema,
+    telemetry: telemetryConfigSchema,
     auth: authConfigSchema.default({
         baseUrlMode: "auto",
         disableSignUp: false,

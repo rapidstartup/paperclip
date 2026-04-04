@@ -33,9 +33,6 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
     cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
 }, "strict", z.ZodTypeAny, {
     enabled: boolean;
-    defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-    allowIssueOverride?: boolean | undefined;
-    defaultProjectWorkspaceId?: string | null | undefined;
     workspaceStrategy?: {
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
@@ -45,15 +42,15 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
         teardownCommand?: string | null | undefined;
     } | null | undefined;
     workspaceRuntime?: Record<string, unknown> | null | undefined;
+    defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+    allowIssueOverride?: boolean | undefined;
+    defaultProjectWorkspaceId?: string | null | undefined;
     branchPolicy?: Record<string, unknown> | null | undefined;
     pullRequestPolicy?: Record<string, unknown> | null | undefined;
     runtimePolicy?: Record<string, unknown> | null | undefined;
     cleanupPolicy?: Record<string, unknown> | null | undefined;
 }, {
     enabled: boolean;
-    defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-    allowIssueOverride?: boolean | undefined;
-    defaultProjectWorkspaceId?: string | null | undefined;
     workspaceStrategy?: {
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
@@ -63,6 +60,9 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
         teardownCommand?: string | null | undefined;
     } | null | undefined;
     workspaceRuntime?: Record<string, unknown> | null | undefined;
+    defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+    allowIssueOverride?: boolean | undefined;
+    defaultProjectWorkspaceId?: string | null | undefined;
     branchPolicy?: Record<string, unknown> | null | undefined;
     pullRequestPolicy?: Record<string, unknown> | null | undefined;
     runtimePolicy?: Record<string, unknown> | null | undefined;
@@ -392,9 +392,6 @@ export declare const createProjectSchema: z.ZodObject<{
         cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strict", z.ZodTypeAny, {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -404,15 +401,15 @@ export declare const createProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     }, {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -422,6 +419,9 @@ export declare const createProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
@@ -452,13 +452,11 @@ export declare const createProjectSchema: z.ZodObject<{
         sharedWorkspaceKey?: string | null | undefined;
     } | undefined;
     description?: string | null | undefined;
-    targetDate?: string | null | undefined;
+    goalId?: string | null | undefined;
     color?: string | null | undefined;
+    targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -468,12 +466,14 @@ export declare const createProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    goalId?: string | null | undefined;
     goalIds?: string[] | undefined;
     leadAgentId?: string | null | undefined;
     archivedAt?: string | null | undefined;
@@ -501,13 +501,11 @@ export declare const createProjectSchema: z.ZodObject<{
     } | undefined;
     status?: "backlog" | "in_progress" | "cancelled" | "planned" | "completed" | undefined;
     description?: string | null | undefined;
-    targetDate?: string | null | undefined;
+    goalId?: string | null | undefined;
     color?: string | null | undefined;
+    targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -517,12 +515,14 @@ export declare const createProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    goalId?: string | null | undefined;
     goalIds?: string[] | undefined;
     leadAgentId?: string | null | undefined;
     archivedAt?: string | null | undefined;
@@ -571,9 +571,6 @@ export declare const updateProjectSchema: z.ZodObject<{
         cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strict", z.ZodTypeAny, {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -583,15 +580,15 @@ export declare const updateProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     }, {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -601,6 +598,9 @@ export declare const updateProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
@@ -611,13 +611,11 @@ export declare const updateProjectSchema: z.ZodObject<{
     status?: "backlog" | "in_progress" | "cancelled" | "planned" | "completed" | undefined;
     name?: string | undefined;
     description?: string | null | undefined;
-    targetDate?: string | null | undefined;
+    goalId?: string | null | undefined;
     color?: string | null | undefined;
+    targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -627,12 +625,14 @@ export declare const updateProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    goalId?: string | null | undefined;
     goalIds?: string[] | undefined;
     leadAgentId?: string | null | undefined;
     archivedAt?: string | null | undefined;
@@ -640,13 +640,11 @@ export declare const updateProjectSchema: z.ZodObject<{
     status?: "backlog" | "in_progress" | "cancelled" | "planned" | "completed" | undefined;
     name?: string | undefined;
     description?: string | null | undefined;
-    targetDate?: string | null | undefined;
+    goalId?: string | null | undefined;
     color?: string | null | undefined;
+    targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
-        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
-        allowIssueOverride?: boolean | undefined;
-        defaultProjectWorkspaceId?: string | null | undefined;
         workspaceStrategy?: {
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
@@ -656,12 +654,14 @@ export declare const updateProjectSchema: z.ZodObject<{
             teardownCommand?: string | null | undefined;
         } | null | undefined;
         workspaceRuntime?: Record<string, unknown> | null | undefined;
+        defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
+        allowIssueOverride?: boolean | undefined;
+        defaultProjectWorkspaceId?: string | null | undefined;
         branchPolicy?: Record<string, unknown> | null | undefined;
         pullRequestPolicy?: Record<string, unknown> | null | undefined;
         runtimePolicy?: Record<string, unknown> | null | undefined;
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     } | null | undefined;
-    goalId?: string | null | undefined;
     goalIds?: string[] | undefined;
     leadAgentId?: string | null | undefined;
     archivedAt?: string | null | undefined;

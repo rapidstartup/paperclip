@@ -26,8 +26,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: number;
     occurredAt: string;
     projectId?: string | null | undefined;
-    billingCode?: string | null | undefined;
     goalId?: string | null | undefined;
+    billingCode?: string | null | undefined;
     issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
@@ -38,8 +38,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: number;
     occurredAt: string;
     projectId?: string | null | undefined;
-    billingCode?: string | null | undefined;
     goalId?: string | null | undefined;
+    billingCode?: string | null | undefined;
     issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
@@ -59,8 +59,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: number;
     occurredAt: string;
     projectId?: string | null | undefined;
-    billingCode?: string | null | undefined;
     goalId?: string | null | undefined;
+    billingCode?: string | null | undefined;
     issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
 }, {
@@ -70,8 +70,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: number;
     occurredAt: string;
     projectId?: string | null | undefined;
-    billingCode?: string | null | undefined;
     goalId?: string | null | undefined;
+    billingCode?: string | null | undefined;
     issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;

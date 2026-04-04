@@ -236,6 +236,13 @@ export declare const secretsConfigSchema: z.ZodObject<{
         keyFilePath?: string | undefined;
     } | undefined;
 }>;
+export declare const telemetryConfigSchema: z.ZodDefault<z.ZodObject<{
+    enabled: z.ZodDefault<z.ZodBoolean>;
+}, "strip", z.ZodTypeAny, {
+    enabled: boolean;
+}, {
+    enabled?: boolean | undefined;
+}>>;
 export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     $meta: z.ZodObject<{
         version: z.ZodLiteral<1>;
@@ -336,6 +343,13 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     }>;
+    telemetry: z.ZodDefault<z.ZodObject<{
+        enabled: z.ZodDefault<z.ZodBoolean>;
+    }, "strip", z.ZodTypeAny, {
+        enabled: boolean;
+    }, {
+        enabled?: boolean | undefined;
+    }>>;
     auth: z.ZodDefault<z.ZodObject<{
         baseUrlMode: z.ZodDefault<z.ZodEnum<["auto", "explicit"]>>;
         publicBaseUrl: z.ZodOptional<z.ZodString>;
@@ -455,6 +469,9 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         allowedHostnames: string[];
         serveUi: boolean;
     };
+    telemetry: {
+        enabled: boolean;
+    };
     auth: {
         baseUrlMode: "auto" | "explicit";
         disableSignUp: boolean;
@@ -517,6 +534,9 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     llm?: {
         provider: "claude" | "openai";
         apiKey?: string | undefined;
+    } | undefined;
+    telemetry?: {
+        enabled?: boolean | undefined;
     } | undefined;
     auth?: {
         baseUrlMode?: "auto" | "explicit" | undefined;
@@ -573,6 +593,9 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         allowedHostnames: string[];
         serveUi: boolean;
     };
+    telemetry: {
+        enabled: boolean;
+    };
     auth: {
         baseUrlMode: "auto" | "explicit";
         disableSignUp: boolean;
@@ -636,6 +659,9 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         provider: "claude" | "openai";
         apiKey?: string | undefined;
     } | undefined;
+    telemetry?: {
+        enabled?: boolean | undefined;
+    } | undefined;
     auth?: {
         baseUrlMode?: "auto" | "explicit" | undefined;
         publicBaseUrl?: string | undefined;
@@ -673,6 +699,7 @@ export type StorageS3Config = z.infer<typeof storageS3ConfigSchema>;
 export type SecretsConfig = z.infer<typeof secretsConfigSchema>;
 export type SecretsLocalEncryptedConfig = z.infer<typeof secretsLocalEncryptedConfigSchema>;
 export type AuthConfig = z.infer<typeof authConfigSchema>;
+export type TelemetryConfig = z.infer<typeof telemetryConfigSchema>;
 export type ConfigMeta = z.infer<typeof configMetaSchema>;
 export type DatabaseBackupConfig = z.infer<typeof databaseBackupConfigSchema>;
 //# sourceMappingURL=config-schema.d.ts.map

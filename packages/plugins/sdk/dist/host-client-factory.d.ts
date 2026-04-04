@@ -110,6 +110,10 @@ export interface HostServices {
     metrics: {
         write(params: WorkerToHostMethods["metrics.write"][0]): Promise<void>;
     };
+    /** Provides `telemetry.track`. */
+    telemetry: {
+        track(params: WorkerToHostMethods["telemetry.track"][0]): Promise<void>;
+    };
     /** Provides `log`. */
     logger: {
         log(params: WorkerToHostMethods["log"][0]): Promise<void>;

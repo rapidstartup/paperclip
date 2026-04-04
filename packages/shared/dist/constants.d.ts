@@ -8,7 +8,7 @@ export declare const AUTH_BASE_URL_MODES: readonly ["auto", "explicit"];
 export type AuthBaseUrlMode = (typeof AUTH_BASE_URL_MODES)[number];
 export declare const AGENT_STATUSES: readonly ["active", "paused", "idle", "running", "error", "pending_approval", "terminated"];
 export type AgentStatus = (typeof AGENT_STATUSES)[number];
-export declare const AGENT_ADAPTER_TYPES: readonly ["process", "http", "claude_local", "codex_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"];
+export declare const AGENT_ADAPTER_TYPES: readonly ["process", "http", "claude_local", "codex_local", "gemini_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"];
 export type AgentAdapterType = (typeof AGENT_ADAPTER_TYPES)[number];
 export declare const AGENT_ROLES: readonly ["ceo", "cto", "cmo", "cfo", "engineer", "designer", "pm", "qa", "devops", "researcher", "general"];
 export type AgentRole = (typeof AGENT_ROLES)[number];
@@ -39,6 +39,8 @@ export declare const ROUTINE_TRIGGER_KINDS: readonly ["schedule", "webhook", "ap
 export type RoutineTriggerKind = (typeof ROUTINE_TRIGGER_KINDS)[number];
 export declare const ROUTINE_TRIGGER_SIGNING_MODES: readonly ["bearer", "hmac_sha256"];
 export type RoutineTriggerSigningMode = (typeof ROUTINE_TRIGGER_SIGNING_MODES)[number];
+export declare const ROUTINE_VARIABLE_TYPES: readonly ["text", "textarea", "number", "boolean", "select"];
+export type RoutineVariableType = (typeof ROUTINE_VARIABLE_TYPES)[number];
 export declare const ROUTINE_RUN_STATUSES: readonly ["received", "coalesced", "skipped", "issue_created", "completed", "failed"];
 export type RoutineRunStatus = (typeof ROUTINE_RUN_STATUSES)[number];
 export declare const ROUTINE_RUN_SOURCES: readonly ["schedule", "manual", "api", "webhook"];
@@ -139,7 +141,7 @@ export type PluginCategory = (typeof PLUGIN_CATEGORIES)[number];
  *
  * @see PLUGIN_SPEC.md §15 — Capability Model
  */
-export declare const PLUGIN_CAPABILITIES: readonly ["companies.read", "projects.read", "project.workspaces.read", "issues.read", "issue.comments.read", "issue.documents.read", "agents.read", "goals.read", "goals.create", "goals.update", "activity.read", "costs.read", "issues.create", "issues.update", "issue.comments.create", "issue.documents.write", "agents.pause", "agents.resume", "agents.invoke", "agent.sessions.create", "agent.sessions.list", "agent.sessions.send", "agent.sessions.close", "activity.log.write", "metrics.write", "plugin.state.read", "plugin.state.write", "events.subscribe", "events.emit", "jobs.schedule", "webhooks.receive", "http.outbound", "secrets.read-ref", "agent.tools.register", "instance.settings.register", "ui.sidebar.register", "ui.page.register", "ui.detailTab.register", "ui.dashboardWidget.register", "ui.commentAnnotation.register", "ui.action.register"];
+export declare const PLUGIN_CAPABILITIES: readonly ["companies.read", "projects.read", "project.workspaces.read", "issues.read", "issue.comments.read", "issue.documents.read", "agents.read", "goals.read", "goals.create", "goals.update", "activity.read", "costs.read", "issues.create", "issues.update", "issue.comments.create", "issue.documents.write", "agents.pause", "agents.resume", "agents.invoke", "agent.sessions.create", "agent.sessions.list", "agent.sessions.send", "agent.sessions.close", "activity.log.write", "metrics.write", "telemetry.track", "plugin.state.read", "plugin.state.write", "events.subscribe", "events.emit", "jobs.schedule", "webhooks.receive", "http.outbound", "secrets.read-ref", "agent.tools.register", "instance.settings.register", "ui.sidebar.register", "ui.page.register", "ui.detailTab.register", "ui.dashboardWidget.register", "ui.commentAnnotation.register", "ui.action.register"];
 export type PluginCapability = (typeof PLUGIN_CAPABILITIES)[number];
 /**
  * UI extension slot types. Each slot type corresponds to a mount point in the

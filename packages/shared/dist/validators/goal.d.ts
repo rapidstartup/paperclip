@@ -32,15 +32,15 @@ export declare const updateGoalSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
-    title?: string | undefined;
     parentId?: string | null | undefined;
+    title?: string | undefined;
     ownerAgentId?: string | null | undefined;
     level?: "agent" | "company" | "team" | "task" | undefined;
 }, {
     status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
-    title?: string | undefined;
     parentId?: string | null | undefined;
+    title?: string | undefined;
     ownerAgentId?: string | null | undefined;
     level?: "agent" | "company" | "team" | "task" | undefined;
 }>;

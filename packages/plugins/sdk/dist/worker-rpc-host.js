@@ -577,6 +577,11 @@ export function startWorkerRpcHost(options) {
                     await callHost("metrics.write", { name, value, tags });
                 },
             },
+            telemetry: {
+                async track(eventName, dimensions) {
+                    await callHost("telemetry.track", { eventName, dimensions });
+                },
+            },
             logger: {
                 info(message, meta) {
                     notifyHost("log", { level: "info", message, meta });

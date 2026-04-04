@@ -1,5 +1,13 @@
 import { z } from "zod";
 import { ISSUE_PRIORITIES, ISSUE_STATUSES } from "../constants.js";
+export const ISSUE_EXECUTION_WORKSPACE_PREFERENCES = [
+    "inherit",
+    "shared_workspace",
+    "isolated_workspace",
+    "operator_branch",
+    "reuse_existing",
+    "agent_default",
+];
 const executionWorkspaceStrategySchema = z
     .object({
     type: z.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
@@ -12,7 +20,7 @@ const executionWorkspaceStrategySchema = z
     .strict();
 export const issueExecutionWorkspaceSettingsSchema = z
     .object({
-    mode: z.enum(["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"]).optional(),
+    mode: z.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional(),
     workspaceStrategy: executionWorkspaceStrategySchema.optional().nullable(),
     workspaceRuntime: z.record(z.unknown()).optional().nullable(),
 })
@@ -39,14 +47,7 @@ export const createIssueSchema = z.object({
     billingCode: z.string().optional().nullable(),
     assigneeAdapterOverrides: issueAssigneeAdapterOverridesSchema.optional().nullable(),
     executionWorkspaceId: z.string().uuid().optional().nullable(),
-    executionWorkspacePreference: z.enum([
-        "inherit",
-        "shared_workspace",
-        "isolated_workspace",
-        "operator_branch",
-        "reuse_existing",
-        "agent_default",
-    ]).optional().nullable(),
+    executionWorkspacePreference: z.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
     executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable(),
     labelIds: z.array(z.string().uuid()).optional(),
 });
@@ -90,4 +91,5 @@ export const upsertIssueDocumentSchema = z.object({
     changeSummary: z.string().trim().max(500).nullable().optional(),
     baseRevisionId: z.string().uuid().nullable().optional(),
 });
+export const restoreIssueDocumentRevisionSchema = z.object({});
 //# sourceMappingURL=issue.js.map
