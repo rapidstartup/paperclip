@@ -117,8 +117,7 @@ export function NewProjectDialog() {
   const isGitHubRepoUrl = (value: string) => {
     try {
       const parsed = new URL(value);
-      const host = parsed.hostname.toLowerCase();
-      if (host !== "github.com" && host !== "www.github.com") return false;
+      if (parsed.protocol !== "https:") return false;
       const segments = parsed.pathname.split("/").filter(Boolean);
       return segments.length >= 2;
     } catch {
