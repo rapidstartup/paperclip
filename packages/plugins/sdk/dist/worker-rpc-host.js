@@ -407,6 +407,7 @@ export function startWorkerRpcHost(options) {
                         projectId: input.projectId,
                         goalId: input.goalId,
                         parentId: input.parentId,
+                        inheritExecutionWorkspaceFromIssueId: input.inheritExecutionWorkspaceFromIssueId,
                         title: input.title,
                         description: input.description,
                         priority: input.priority,

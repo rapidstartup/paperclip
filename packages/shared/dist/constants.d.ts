@@ -17,6 +17,8 @@ export declare const AGENT_ICON_NAMES: readonly ["bot", "cpu", "brain", "zap", "
 export type AgentIconName = (typeof AGENT_ICON_NAMES)[number];
 export declare const ISSUE_STATUSES: readonly ["backlog", "todo", "in_progress", "in_review", "done", "blocked", "cancelled"];
 export type IssueStatus = (typeof ISSUE_STATUSES)[number];
+export declare const INBOX_MINE_ISSUE_STATUSES: readonly ["backlog", "todo", "in_progress", "in_review", "blocked", "done"];
+export declare const INBOX_MINE_ISSUE_STATUS_FILTER: string;
 export declare const ISSUE_PRIORITIES: readonly ["critical", "high", "medium", "low"];
 export type IssuePriority = (typeof ISSUE_PRIORITIES)[number];
 export declare const ISSUE_ORIGIN_KINDS: readonly ["manual", "routine_execution"];

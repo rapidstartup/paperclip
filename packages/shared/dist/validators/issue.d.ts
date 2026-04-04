@@ -62,6 +62,7 @@ export declare const createIssueSchema: z.ZodObject<{
     projectWorkspaceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     goalId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     parentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    inheritExecutionWorkspaceFromIssueId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     title: z.ZodString;
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     status: z.ZodDefault<z.ZodOptional<z.ZodEnum<["backlog", "todo", "in_progress", "in_review", "done", "blocked", "cancelled"]>>>;
@@ -159,6 +160,7 @@ export declare const createIssueSchema: z.ZodObject<{
     goalId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
     parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     assigneeAgentId?: string | null | undefined;
     assigneeUserId?: string | null | undefined;
     executionWorkspaceId?: string | null | undefined;
@@ -190,6 +192,7 @@ export declare const createIssueSchema: z.ZodObject<{
     goalId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
     parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     assigneeAgentId?: string | null | undefined;
     assigneeUserId?: string | null | undefined;
     requestDepth?: number | undefined;
@@ -213,6 +216,7 @@ export declare const updateIssueSchema: z.ZodObject<{
     projectWorkspaceId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     goalId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     parentId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
+    inheritExecutionWorkspaceFromIssueId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     title: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     status: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<["backlog", "todo", "in_progress", "in_review", "done", "blocked", "cancelled"]>>>>;
@@ -285,6 +289,7 @@ export declare const updateIssueSchema: z.ZodObject<{
 } & {
     comment: z.ZodOptional<z.ZodString>;
     reopen: z.ZodOptional<z.ZodBoolean>;
+    interrupt: z.ZodOptional<z.ZodBoolean>;
     hiddenAt: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     comment?: string | undefined;
@@ -314,12 +319,14 @@ export declare const updateIssueSchema: z.ZodObject<{
     goalId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
     parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     assigneeAgentId?: string | null | undefined;
     assigneeUserId?: string | null | undefined;
     requestDepth?: number | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     reopen?: boolean | undefined;
+    interrupt?: boolean | undefined;
     hiddenAt?: string | null | undefined;
 }, {
     comment?: string | undefined;
@@ -349,12 +356,14 @@ export declare const updateIssueSchema: z.ZodObject<{
     goalId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
     parentId?: string | null | undefined;
+    inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     assigneeAgentId?: string | null | undefined;
     assigneeUserId?: string | null | undefined;
     requestDepth?: number | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     reopen?: boolean | undefined;
+    interrupt?: boolean | undefined;
     hiddenAt?: string | null | undefined;
 }>;
 export type UpdateIssue = z.infer<typeof updateIssueSchema>;

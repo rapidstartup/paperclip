@@ -68,6 +68,16 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
     runtimePolicy?: Record<string, unknown> | null | undefined;
     cleanupPolicy?: Record<string, unknown> | null | undefined;
 }>;
+export declare const projectWorkspaceRuntimeConfigSchema: z.ZodObject<{
+    workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+    desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+}, "strict", z.ZodTypeAny, {
+    workspaceRuntime?: Record<string, unknown> | null | undefined;
+    desiredState?: "running" | "stopped" | null | undefined;
+}, {
+    workspaceRuntime?: Record<string, unknown> | null | undefined;
+    desiredState?: "running" | "stopped" | null | undefined;
+}>;
 export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     isPrimary: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     name: z.ZodOptional<z.ZodString>;
@@ -83,11 +93,25 @@ export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     remoteWorkspaceRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     sharedWorkspaceKey: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     metadata: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+    runtimeConfig: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+    }, "strict", z.ZodTypeAny, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    }, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    }>>>;
 }, "strip", z.ZodTypeAny, {
     isPrimary: boolean;
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -102,6 +126,10 @@ export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -118,6 +146,10 @@ export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -132,6 +164,10 @@ export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -160,10 +196,24 @@ export declare const updateProjectWorkspaceSchema: z.ZodObject<{
     remoteWorkspaceRef: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     sharedWorkspaceKey: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     metadata: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>>;
+    runtimeConfig: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+    }, "strict", z.ZodTypeAny, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    }, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    }>>>>;
 }, "strip", z.ZodTypeAny, {
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -179,6 +229,10 @@ export declare const updateProjectWorkspaceSchema: z.ZodObject<{
     name?: string | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     metadata?: Record<string, unknown> | null | undefined;
+    runtimeConfig?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
+        desiredState?: "running" | "stopped" | null | undefined;
+    } | null | undefined;
     repoUrl?: string | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
@@ -208,11 +262,25 @@ export declare const createProjectSchema: z.ZodObject<{
         remoteWorkspaceRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         sharedWorkspaceKey: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         metadata: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+        runtimeConfig: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+            workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+            desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+        }, "strict", z.ZodTypeAny, {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        }, {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        }>>>;
     }, "strip", z.ZodTypeAny, {
         isPrimary: boolean;
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
@@ -227,6 +295,10 @@ export declare const createProjectSchema: z.ZodObject<{
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
@@ -243,6 +315,10 @@ export declare const createProjectSchema: z.ZodObject<{
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
@@ -257,6 +333,10 @@ export declare const createProjectSchema: z.ZodObject<{
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
@@ -356,6 +436,10 @@ export declare const createProjectSchema: z.ZodObject<{
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
@@ -399,6 +483,10 @@ export declare const createProjectSchema: z.ZodObject<{
         name?: string | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         metadata?: Record<string, unknown> | null | undefined;
+        runtimeConfig?: {
+            workspaceRuntime?: Record<string, unknown> | null | undefined;
+            desiredState?: "running" | "stopped" | null | undefined;
+        } | null | undefined;
         repoUrl?: string | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;

@@ -318,12 +318,14 @@ export async function runClaudeLogin(input: {
     context: input.context ?? {},
     authToken: input.authToken,
   });
+  const runAsUser = resolveClaudeRunAsUser(input.config);
 
   const proc = await runChildProcess(input.runId, runtime.command, ["login"], {
     cwd: runtime.cwd,
     env: runtime.env,
     timeoutSec: runtime.timeoutSec,
     graceSec: runtime.graceSec,
+    runAsUser: runAsUser ?? undefined,
     onLog,
   });
 

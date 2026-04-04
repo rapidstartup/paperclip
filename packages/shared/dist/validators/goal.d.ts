@@ -18,8 +18,8 @@ export declare const createGoalSchema: z.ZodObject<{
     status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
     parentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
     ownerAgentId?: string | null | undefined;
+    level?: "agent" | "company" | "team" | "task" | undefined;
 }>;
 export type CreateGoal = z.infer<typeof createGoalSchema>;
 export declare const updateGoalSchema: z.ZodObject<{
@@ -34,15 +34,15 @@ export declare const updateGoalSchema: z.ZodObject<{
     description?: string | null | undefined;
     title?: string | undefined;
     parentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
     ownerAgentId?: string | null | undefined;
+    level?: "agent" | "company" | "team" | "task" | undefined;
 }, {
     status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
     title?: string | undefined;
     parentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
     ownerAgentId?: string | null | undefined;
+    level?: "agent" | "company" | "team" | "task" | undefined;
 }>;
 export type UpdateGoal = z.infer<typeof updateGoalSchema>;
 //# sourceMappingURL=goal.d.ts.map

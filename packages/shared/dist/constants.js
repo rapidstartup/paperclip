@@ -101,6 +101,15 @@ export const ISSUE_STATUSES = [
     "blocked",
     "cancelled",
 ];
+export const INBOX_MINE_ISSUE_STATUSES = [
+    "backlog",
+    "todo",
+    "in_progress",
+    "in_review",
+    "blocked",
+    "done",
+];
+export const INBOX_MINE_ISSUE_STATUS_FILTER = INBOX_MINE_ISSUE_STATUSES.join(",");
 export const ISSUE_PRIORITIES = ["critical", "high", "medium", "low"];
 export const ISSUE_ORIGIN_KINDS = ["manual", "routine_execution"];
 export const GOAL_LEVELS = ["company", "team", "agent", "task"];

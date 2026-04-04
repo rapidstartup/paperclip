@@ -226,6 +226,17 @@ export declare const createAgentKeySchema: z.ZodObject<{
     name?: string | undefined;
 }>;
 export type CreateAgentKey = z.infer<typeof createAgentKeySchema>;
+export declare const agentMineInboxQuerySchema: z.ZodObject<{
+    userId: z.ZodString;
+    status: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    status: string;
+    userId: string;
+}, {
+    userId: string;
+    status?: string | undefined;
+}>;
+export type AgentMineInboxQuery = z.infer<typeof agentMineInboxQuerySchema>;
 export declare const wakeAgentSchema: z.ZodObject<{
     source: z.ZodDefault<z.ZodOptional<z.ZodEnum<["timer", "assignment", "on_demand", "automation"]>>>;
     triggerDetail: z.ZodOptional<z.ZodEnum<["manual", "ping", "callback", "system"]>>;
