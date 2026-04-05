@@ -226,7 +226,8 @@ export async function ensureOpenCodeModelConfiguredAndAvailable(input: {
 export async function listOpenCodeModels(): Promise<AdapterModel[]> {
   try {
     return await discoverOpenCodeModelsCached();
-  } catch {
+  } catch (err) {
+    console.error("[opencode-local] Failed to discover models:", err instanceof Error ? err.message : String(err));
     return [];
   }
 }
