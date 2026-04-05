@@ -87,6 +87,27 @@ export function CompanySettings() {
     }
   });
 
+  const feedbackSharingMutation = useMutation({
+    mutationFn: (enabled: boolean) =>
+      companiesApi.update(selectedCompanyId!, {
+        feedbackDataSharingEnabled: enabled
+      }),
+    onSuccess: (_data, enabled) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.companies.all });
+      pushToast({
+        title: enabled ? "Feedback sharing enabled" : "Feedback sharing disabled",
+        tone: "success",
+      });
+    },
+    onError: (err) => {
+      pushToast({
+        title: "Failed to update feedback sharing",
+        body: err instanceof Error ? err.message : undefined,
+        tone: "error",
+      });
+    },
+  });
+
   const githubTokenMutation = useMutation({
     mutationFn: (token: string | null) =>
       companiesApi.update(selectedCompanyId!, { githubToken: token }),

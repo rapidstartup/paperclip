@@ -240,9 +240,84 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     setOverlay({ ...emptyOverlay });
   }, []);
 
+  useEffect(() => {
+    if (!isCreate) {
+      props.onDirtyChange?.(isDirty);
+      props.onCancelActionChange?.(handleCancel);
+    }
+  }, [isCreate, isDirty, props.onDirtyChange, props.onCancelActionChange, handleCancel]);
+
+  useEffect(() => {
+    if (isCreate) return;
+    return () => {
+      props.onCancelActionChange?.(null);
+      props.onDirtyChange?.(false);
+    };
+  }, [isCreate, props.onDirtyChange, props.onCancelActionChange]);
+
+  // ---- Resolve values ----
+  const config = !isCreate ? ((props.agent.adapterConfig ?? {}) as Record<string, unknown>) : {};
+  const runtimeConfig = !isCreate ? ((props.agent.runtimeConfig ?? {}) as Record<string, unknown>) : {};
+  const heartbeat = !isCreate ? ((runtimeConfig.heartbeat ?? {}) as Record<string, unknown>) : {};
+
+  const adapterType = isCreate
+    ? props.values.adapterType
+    : overlay.adapterType ?? props.agent.adapterType;
+  const isLocal =
+    adapterType === "claude_local" ||
+    adapterType === "codex_local" ||
+    adapterType === "gemini_local" ||
+    adapterType === "hermes_local" ||
+    adapterType === "opencode_local" ||
+    adapterType === "pi_local" ||
+    adapterType === "cursor" ||
+    adapterType === "agent_browser";
+  const isHermesLocal = adapterType === "hermes_local";
+  const showLegacyWorkingDirectoryField =
+    isLocal && shouldShowLegacyWorkingDirectoryField({ isCreate, adapterConfig: config });
+  const uiAdapter = useMemo(() => getUIAdapter(adapterType), [adapterType]);
+
+  // Fetch adapter models for the effective adapter type
+  const {
+    data: fetchedModels,
+    error: fetchedModelsError,
+  } = useQuery({
+    queryKey: selectedCompanyId
+      ? queryKeys.agents.adapterModels(selectedCompanyId, adapterType)
+      : ["agents", "none", "adapter-models", adapterType],
+    queryFn: () => agentsApi.adapterModels(selectedCompanyId!, adapterType),
+    enabled: Boolean(selectedCompanyId),
+  });
+  const models = fetchedModels ?? externalModels ?? [];
+
   const handleSave = useCallback(() => {
     if (isCreate || !isDirty) return;
     const agent = props.agent;
+
+    // Determine the effective adapter type and model
+    const effectiveAdapterType = overlay.adapterType ?? agent.adapterType;
+    const effectiveAdapterConfig = overlay.adapterType !== undefined
+      ? { ...overlay.adapterConfig }
+      : { ...(agent.adapterConfig ?? {}), ...overlay.adapterConfig };
+    const effectiveModel = String((effectiveAdapterConfig as Record<string, unknown>).model ?? "").trim();
+
+    // OpenCode validation
+    if (effectiveAdapterType === "opencode_local") {
+      if (!effectiveModel) {
+        alert("OpenCode requires an explicit model in provider/model format.");
+        return;
+      }
+      if (models.length === 0) {
+        alert("No OpenCode models discovered. Run `opencode models` and authenticate providers.");
+        return;
+      }
+      if (!models.some((m) => m.id === effectiveModel)) {
+        const sample = models.slice(0, 5).map((m) => m.id).join(", ");
+        alert(`Configured OpenCode model is unavailable: ${effectiveModel}. Available: ${sample}${models.length > 5 ? "..." : ""}`);
+        return;
+      }
+    }
+
     const patch: Record<string, unknown> = {};
 
     if (Object.keys(overlay.identity).length > 0) {
@@ -284,59 +359,14 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
     }
 
     props.onSave(patch);
-  }, [isCreate, isDirty, overlay, props]);
+  }, [isCreate, isDirty, overlay, props, models]);
 
   useEffect(() => {
     if (!isCreate) {
-      props.onDirtyChange?.(isDirty);
       props.onSaveActionChange?.(handleSave);
-      props.onCancelActionChange?.(handleCancel);
     }
-  }, [isCreate, isDirty, props.onDirtyChange, props.onSaveActionChange, props.onCancelActionChange, handleSave, handleCancel]);
+  }, [isCreate, props.onSaveActionChange, handleSave]);
 
-  useEffect(() => {
-    if (isCreate) return;
-    return () => {
-      props.onSaveActionChange?.(null);
-      props.onCancelActionChange?.(null);
-      props.onDirtyChange?.(false);
-    };
-  }, [isCreate, props.onDirtyChange, props.onSaveActionChange, props.onCancelActionChange]);
-
-  // ---- Resolve values ----
-  const config = !isCreate ? ((props.agent.adapterConfig ?? {}) as Record<string, unknown>) : {};
-  const runtimeConfig = !isCreate ? ((props.agent.runtimeConfig ?? {}) as Record<string, unknown>) : {};
-  const heartbeat = !isCreate ? ((runtimeConfig.heartbeat ?? {}) as Record<string, unknown>) : {};
-
-  const adapterType = isCreate
-    ? props.values.adapterType
-    : overlay.adapterType ?? props.agent.adapterType;
-  const isLocal =
-    adapterType === "claude_local" ||
-    adapterType === "codex_local" ||
-    adapterType === "gemini_local" ||
-    adapterType === "hermes_local" ||
-    adapterType === "opencode_local" ||
-    adapterType === "pi_local" ||
-    adapterType === "cursor" ||
-    adapterType === "agent_browser";
-  const isHermesLocal = adapterType === "hermes_local";
-  const showLegacyWorkingDirectoryField =
-    isLocal && shouldShowLegacyWorkingDirectoryField({ isCreate, adapterConfig: config });
-  const uiAdapter = useMemo(() => getUIAdapter(adapterType), [adapterType]);
-
-  // Fetch adapter models for the effective adapter type
-  const {
-    data: fetchedModels,
-    error: fetchedModelsError,
-  } = useQuery({
-    queryKey: selectedCompanyId
-      ? queryKeys.agents.adapterModels(selectedCompanyId, adapterType)
-      : ["agents", "none", "adapter-models", adapterType],
-    queryFn: () => agentsApi.adapterModels(selectedCompanyId!, adapterType),
-    enabled: Boolean(selectedCompanyId),
-  });
-  const models = fetchedModels ?? externalModels ?? [];
   const {
     data: detectedModelData,
     refetch: refetchDetectedModel,
