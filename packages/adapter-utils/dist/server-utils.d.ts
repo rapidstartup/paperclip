@@ -51,11 +51,18 @@ export declare function resolvePathValue(obj: Record<string, unknown>, dottedPat
 export declare function renderTemplate(template: string, data: Record<string, unknown>): string;
 export declare function joinPromptSections(sections: Array<string | null | undefined>, separator?: string): string;
 export declare function redactEnvForLogs(env: Record<string, string>): Record<string, string>;
+export declare function buildInvocationEnvForLogs(env: Record<string, string>, options?: {
+    runtimeEnv?: NodeJS.ProcessEnv | Record<string, string>;
+    includeRuntimeKeys?: string[];
+    resolvedCommand?: string | null;
+    resolvedCommandEnvKey?: string;
+}): Record<string, string>;
 export declare function buildPaperclipEnv(agent: {
     id: string;
     companyId: string;
 }): Record<string, string>;
 export declare function defaultPathForPlatform(): "C:\\Windows\\System32;C:\\Windows;C:\\Windows\\System32\\Wbem" | "/usr/local/bin:/opt/homebrew/bin:/usr/local/sbin:/usr/bin:/bin:/usr/sbin:/sbin";
+export declare function resolveCommandForLogs(command: string, cwd: string, env: NodeJS.ProcessEnv): Promise<string>;
 export declare function ensurePathInEnv(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
 export declare function ensureAbsoluteDirectory(cwd: string, opts?: {
     createIfMissing?: boolean;

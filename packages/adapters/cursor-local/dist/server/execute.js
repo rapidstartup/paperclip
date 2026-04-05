@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "../index.js";
 import { parseCursorJsonl, isCursorUnknownSessionError } from "./parse.js";
 import { normalizeCursorStreamLine } from "../shared/stream.js";
@@ -205,6 +205,12 @@ export async function execute(ctx) {
     const billingType = resolveCursorBillingType(effectiveEnv);
     const runtimeEnv = ensurePathInEnv(effectiveEnv);
     await ensureCommandResolvable(command, cwd, runtimeEnv);
+    const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+    const loggedEnv = buildInvocationEnvForLogs(env, {
+        runtimeEnv,
+        includeRuntimeKeys: ["HOME"],
+        resolvedCommand,
+    });
     const timeoutSec = asNumber(config.timeoutSec, 0);
     const graceSec = asNumber(config.graceSec, 20);
     const extraArgs = (() => {
@@ -306,11 +312,11 @@ export async function execute(ctx) {
         if (onMeta) {
             await onMeta({
                 adapterType: "cursor",
-                command,
+                command: resolvedCommand,
                 cwd,
                 commandNotes,
                 commandArgs: args,
-                env: redactEnvForLogs(env),
+                env: loggedEnv,
                 prompt,
                 promptMetrics,
                 context,

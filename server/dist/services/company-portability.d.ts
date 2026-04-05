@@ -7,6 +7,7 @@ type ImportBehaviorOptions = {
     sourceCompanyId?: string | null;
 };
 export declare function parseGitHubSourceUrl(rawUrl: string): {
+    hostname: string;
     owner: string;
     repo: string;
     ref: string;

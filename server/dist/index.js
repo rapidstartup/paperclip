@@ -13,13 +13,16 @@ import { loadConfig } from "./config.js";
 import { createDatabaseBackupOffloader } from "./database-backup-offloader.js";
 import { logger } from "./middleware/logger.js";
 import { setupLiveEventsWebSocketServer } from "./realtime/live-events-ws.js";
-import { heartbeatService, reconcilePersistedRuntimeServicesOnStartup, routineService } from "./services/index.js";
+import { feedbackService, heartbeatService, reconcilePersistedRuntimeServicesOnStartup, routineService, } from "./services/index.js";
+import { createFeedbackTraceShareClientFromConfig } from "./services/feedback-share-client.js";
 import { createStorageServiceFromConfig } from "./storage/index.js";
 import { printStartupBanner } from "./startup-banner.js";
 import { getBoardClaimWarningUrl, initializeBoardClaimChallenge } from "./board-claim.js";
 import { maybePersistWorktreeRuntimePorts } from "./worktree-config.js";
+import { initTelemetry, getTelemetryClient } from "./telemetry.js";
 export async function startServer() {
     let config = loadConfig();
+    initTelemetry({ enabled: config.telemetryEnabled });
     if (process.env.PAPERCLIP_SECRETS_PROVIDER === undefined) {
         process.env.PAPERCLIP_SECRETS_PROVIDER = config.secretsProvider;
     }
@@ -426,10 +429,14 @@ export async function startServer() {
     });
     const uiMode = config.uiDevMiddleware ? "vite-dev" : config.serveUi ? "static" : "none";
     const storageService = createStorageServiceFromConfig(config);
+    const feedback = feedbackService(db, {
+        shareClient: createFeedbackTraceShareClientFromConfig(config),
+    });
     const app = await createApp(db, {
         uiMode,
         serverPort: listenPort,
         storageService,
+        feedbackExportService: feedback,
         deploymentMode: config.deploymentMode,
         deploymentExposure: config.deploymentExposure,
         allowedHostnames: config.allowedHostnames,
@@ -621,18 +628,23 @@ export async function startServer() {
             resolveListen();
         });
     });
-    if (embeddedPostgres && embeddedPostgresStartedByThisProcess) {
+    {
         const shutdown = async (signal) => {
-            logger.info({ signal }, "Stopping embedded PostgreSQL");
-            try {
-                await embeddedPostgres?.stop();
+            const telemetryClient = getTelemetryClient();
+            if (telemetryClient) {
+                telemetryClient.stop();
+                await telemetryClient.flush();
             }
-            catch (err) {
-                logger.error({ err }, "Failed to stop embedded PostgreSQL cleanly");
+            if (embeddedPostgres && embeddedPostgresStartedByThisProcess) {
+                logger.info({ signal }, "Stopping embedded PostgreSQL");
+                try {
+                    await embeddedPostgres?.stop();
+                }
+                catch (err) {
+                    logger.error({ err }, "Failed to stop embedded PostgreSQL cleanly");
+                }
             }
-            finally {
-                process.exit(0);
-            }
+            process.exit(0);
         };
         process.once("SIGINT", () => {
             void shutdown("SIGINT");

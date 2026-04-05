@@ -1,6 +1,6 @@
 import type { Db } from "@paperclipai/db";
 import { projects } from "@paperclipai/db";
-import { type ProjectCodebase, type ProjectExecutionWorkspacePolicy, type ProjectGoalRef, type ProjectWorkspace } from "@paperclipai/shared";
+import { type ProjectCodebase, type ProjectExecutionWorkspacePolicy, type ProjectGoalRef, type ProjectWorkspaceRuntimeConfig, type ProjectWorkspace } from "@paperclipai/shared";
 type ProjectRow = typeof projects.$inferSelect;
 type CreateWorkspaceInput = {
     name?: string | null;
@@ -16,6 +16,7 @@ type CreateWorkspaceInput = {
     remoteWorkspaceRef?: string | null;
     sharedWorkspaceKey?: string | null;
     metadata?: Record<string, unknown> | null;
+    runtimeConfig?: Partial<ProjectWorkspaceRuntimeConfig> | null;
     isPrimary?: boolean;
 };
 type UpdateWorkspaceInput = Partial<CreateWorkspaceInput>;

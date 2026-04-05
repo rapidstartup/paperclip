@@ -38,6 +38,7 @@ const OPERATION_CAPABILITIES = {
     "issue.comments.create": ["issue.comments.create"],
     "activity.log": ["activity.log.write"],
     "metrics.write": ["metrics.write"],
+    "telemetry.track": ["telemetry.track"],
     // Plugin state operations
     "plugin.state.get": ["plugin.state.read"],
     "plugin.state.list": ["plugin.state.read"],

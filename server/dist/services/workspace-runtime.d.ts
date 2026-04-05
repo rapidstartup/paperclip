@@ -1,6 +1,7 @@
 import type { AdapterRuntimeServiceReport } from "@paperclipai/adapter-utils";
 import type { Db } from "@paperclipai/db";
 import type { WorkspaceOperationRecorder } from "./workspace-operations.js";
+export declare function resolveShell(): string;
 export interface ExecutionWorkspaceInput {
     baseCwd: string;
     source: "project_primary" | "task_session" | "agent_home";
@@ -15,7 +16,7 @@ export interface ExecutionWorkspaceIssueRef {
     title: string | null;
 }
 export interface ExecutionWorkspaceAgentRef {
-    id: string;
+    id: string | null;
     name: string;
     companyId: string;
 }
@@ -55,6 +56,7 @@ export interface RuntimeServiceRef {
     healthStatus: "unknown" | "healthy" | "unhealthy";
     reused: boolean;
 }
+export declare function resetRuntimeServicesForTests(): Promise<void>;
 export declare function sanitizeRuntimeServiceBaseEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
 export declare function realizeExecutionWorkspace(input: {
     base: ExecutionWorkspaceInput;
@@ -81,6 +83,7 @@ export declare function cleanupExecutionWorkspaceArtifacts(input: {
         cwd: string | null;
         cleanupCommand: string | null;
     } | null;
+    cleanupCommand?: string | null;
     teardownCommand?: string | null;
     recorder?: WorkspaceOperationRecorder | null;
 }): Promise<{
@@ -109,11 +112,26 @@ export declare function ensureRuntimeServicesForRun(input: {
     adapterEnv: Record<string, string>;
     onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
 }): Promise<RuntimeServiceRef[]>;
+export declare function startRuntimeServicesForWorkspaceControl(input: {
+    db?: Db;
+    invocationId?: string;
+    actor: ExecutionWorkspaceAgentRef;
+    issue: ExecutionWorkspaceIssueRef | null;
+    workspace: RealizedExecutionWorkspace;
+    executionWorkspaceId?: string | null;
+    config: Record<string, unknown>;
+    adapterEnv: Record<string, string>;
+    onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
+}): Promise<RuntimeServiceRef[]>;
 export declare function releaseRuntimeServicesForRun(runId: string): Promise<void>;
 export declare function stopRuntimeServicesForExecutionWorkspace(input: {
     db?: Db;
     executionWorkspaceId: string;
     workspaceCwd?: string | null;
+}): Promise<void>;
+export declare function stopRuntimeServicesForProjectWorkspace(input: {
+    db?: Db;
+    projectWorkspaceId: string;
 }): Promise<void>;
 export declare function listWorkspaceRuntimeServicesForProjectWorkspaces(db: Db, companyId: string, projectWorkspaceIds: string[]): Promise<Map<string, {
     id: string;
@@ -146,6 +164,12 @@ export declare function listWorkspaceRuntimeServicesForProjectWorkspaces(db: Db,
 }[]>>;
 export declare function reconcilePersistedRuntimeServicesOnStartup(db: Db): Promise<{
     reconciled: number;
+    adopted: number;
+    stopped: number;
+}>;
+export declare function restartDesiredRuntimeServicesOnStartup(db: Db): Promise<{
+    restarted: number;
+    failed: number;
 }>;
 export declare function persistAdapterManagedRuntimeServices(input: {
     db: Db;

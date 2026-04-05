@@ -36,6 +36,7 @@ export declare function normalizeAgentDefaultsForJoin(input: {
     fatalErrors: string[];
 };
 export declare function buildInviteOnboardingTextDocument(req: Request, token: string, invite: typeof invites.$inferSelect, opts: {
+    companyName?: string | null;
     deploymentMode: DeploymentMode;
     deploymentExposure: DeploymentExposure;
     bindHost: string;

@@ -1,8 +1,11 @@
 import crypto from "node:crypto";
 import { and, asc, desc, eq, inArray, isNotNull, isNull, lte, sql } from "drizzle-orm";
 import { agents, companySecrets, goals, heartbeatRuns, issues, projects, routineRuns, routines, routineTriggers, } from "@paperclipai/db";
+import { interpolateRoutineTemplate, stringifyRoutineVariableValue, syncRoutineVariablesWithTemplate, } from "@paperclipai/shared";
+import { trackRoutineRun } from "@paperclipai/shared/telemetry";
 import { conflict, forbidden, notFound, unauthorized, unprocessable } from "../errors.js";
 import { logger } from "../middleware/logger.js";
+import { getTelemetryClient } from "../telemetry.js";
 import { issueService } from "./issues.js";
 import { secretService } from "./secrets.js";
 import { parseCron, validateCron } from "./cron.js";
@@ -106,6 +109,132 @@ function normalizeWebhookTimestampMs(rawTimestamp) {
     if (!Number.isFinite(parsed))
         return null;
     return parsed > 1e12 ? parsed : parsed * 1000;
+}
+function isPlainRecord(value) {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+function parseBooleanVariableValue(name, raw) {
+    if (typeof raw === "boolean")
+        return raw;
+    if (typeof raw === "number" && (raw === 0 || raw === 1))
+        return raw === 1;
+    if (typeof raw === "string") {
+        const normalized = raw.trim().toLowerCase();
+        if (["true", "1", "yes", "y", "on"].includes(normalized))
+            return true;
+        if (["false", "0", "no", "n", "off"].includes(normalized))
+            return false;
+    }
+    throw unprocessable(`Variable "${name}" must be a boolean`);
+}
+function parseNumberVariableValue(name, raw) {
+    if (typeof raw === "number" && Number.isFinite(raw))
+        return raw;
+    if (typeof raw === "string" && raw.trim().length > 0) {
+        const parsed = Number(raw);
+        if (Number.isFinite(parsed))
+            return parsed;
+    }
+    throw unprocessable(`Variable "${name}" must be a number`);
+}
+function normalizeRoutineVariableValue(variable, raw) {
+    if (raw == null)
+        return null;
+    if (variable.type === "boolean")
+        return parseBooleanVariableValue(variable.name, raw);
+    if (variable.type === "number")
+        return parseNumberVariableValue(variable.name, raw);
+    const normalized = stringifyRoutineVariableValue(raw);
+    if (variable.type === "select") {
+        if (!variable.options.includes(normalized)) {
+            throw unprocessable(`Variable "${variable.name}" must match one of: ${variable.options.join(", ")}`);
+        }
+    }
+    return normalized;
+}
+function isMissingRoutineVariableValue(value) {
+    return value == null || (typeof value === "string" && value.trim().length === 0);
+}
+function assertRoutineVariableDefinitions(variables) {
+    for (const variable of variables) {
+        if (variable.defaultValue != null) {
+            normalizeRoutineVariableValue(variable, variable.defaultValue);
+        }
+        if (variable.type === "select" && variable.options.length === 0) {
+            throw unprocessable(`Variable "${variable.name}" must define at least one option`);
+        }
+    }
+}
+function sanitizeRoutineVariableInputs(variables) {
+    return (variables ?? []).map((variable) => ({
+        name: variable.name,
+        label: variable.label ?? null,
+        type: variable.type ?? "text",
+        defaultValue: variable.defaultValue ?? null,
+        required: variable.required ?? true,
+        options: variable.options ?? [],
+    }));
+}
+function assertScheduleCompatibleVariables(variables) {
+    const missingDefaults = variables
+        .filter((variable) => variable.required)
+        .filter((variable) => {
+        try {
+            return isMissingRoutineVariableValue(normalizeRoutineVariableValue(variable, variable.defaultValue));
+        }
+        catch {
+            return true;
+        }
+    })
+        .map((variable) => variable.name);
+    if (missingDefaults.length > 0) {
+        throw unprocessable(`Scheduled routines require defaults for required variables: ${missingDefaults.join(", ")}`);
+    }
+}
+function collectProvidedRoutineVariables(source, payload, variables) {
+    const nestedVariables = isPlainRecord(payload) && isPlainRecord(payload.variables) ? payload.variables : {};
+    const provided = {
+        ...(source === "webhook" && payload ? payload : {}),
+        ...nestedVariables,
+        ...(variables ?? {}),
+    };
+    delete provided.variables;
+    return provided;
+}
+function resolveRoutineVariableValues(variables, input) {
+    if (variables.length === 0)
+        return {};
+    const provided = collectProvidedRoutineVariables(input.source, input.payload, input.variables);
+    const resolved = {};
+    const missing = [];
+    for (const variable of variables) {
+        const candidate = provided[variable.name] !== undefined ? provided[variable.name] : variable.defaultValue;
+        const normalized = normalizeRoutineVariableValue(variable, candidate);
+        if (normalized == null || (typeof normalized === "string" && normalized.trim().length === 0)) {
+            if (variable.required)
+                missing.push(variable.name);
+            continue;
+        }
+        resolved[variable.name] = normalized;
+    }
+    if (missing.length > 0) {
+        throw unprocessable(`Missing routine variables: ${missing.join(", ")}`);
+    }
+    return resolved;
+}
+function mergeRoutineRunPayload(payload, variables) {
+    if (Object.keys(variables).length === 0)
+        return payload ?? null;
+    if (!payload)
+        return { variables };
+    const existingVariables = isPlainRecord(payload.variables) ? payload.variables : {};
+    return {
+        ...payload,
+        variables: {
+            ...existingVariables,
+            ...variables,
+        },
+    };
 }
 export function routineService(db, deps = {}) {
     const issueSvc = issueService(db);
@@ -405,6 +534,9 @@ export function routineService(db, deps = {}) {
         return value;
     }
     async function dispatchRoutineRun(input) {
+        const resolvedVariables = resolveRoutineVariableValues(input.routine.variables ?? [], input);
+        const description = interpolateRoutineTemplate(input.routine.description, resolvedVariables);
+        const triggerPayload = mergeRoutineRunPayload(input.payload, resolvedVariables);
         const run = await db.transaction(async (tx) => {
             const txDb = tx;
             await tx.execute(sql `select id from ${routines} where ${routines.id} = ${input.routine.id} and ${routines.companyId} = ${input.routine.companyId} for update`);
@@ -430,7 +562,7 @@ export function routineService(db, deps = {}) {
                 status: "received",
                 triggeredAt,
                 idempotencyKey: input.idempotencyKey ?? null,
-                triggerPayload: input.payload ?? null,
+                triggerPayload,
             })
                 .returning();
             const nextRunAt = input.trigger?.kind === "schedule" && input.trigger.cronExpression && input.trigger.timezone
@@ -463,13 +595,16 @@ export function routineService(db, deps = {}) {
                         goalId: input.routine.goalId,
                         parentId: input.routine.parentIssueId,
                         title: input.routine.title,
-                        description: input.routine.description,
+                        description,
                         status: "todo",
                         priority: input.routine.priority,
                         assigneeAgentId: input.routine.assigneeAgentId,
                         originKind: "routine_execution",
                         originId: input.routine.id,
                         originRunId: createdRun.id,
+                        executionWorkspaceId: input.executionWorkspaceId ?? null,
+                        executionWorkspacePreference: input.executionWorkspacePreference ?? null,
+                        executionWorkspaceSettings: input.executionWorkspaceSettings ?? null,
                     });
                 }
                 catch (error) {
@@ -567,6 +702,13 @@ export function routineService(db, deps = {}) {
             catch (err) {
                 logger.warn({ err, routineId: input.routine.id, runId: run.id }, "failed to log automated routine run");
             }
+        }
+        const telemetryClient = getTelemetryClient();
+        if (telemetryClient) {
+            trackRoutineRun(telemetryClient, {
+                source: run.source,
+                status: run.status,
+            });
         }
         return run;
     }
@@ -693,6 +835,8 @@ export function routineService(db, deps = {}) {
                 await assertGoal(companyId, input.goalId);
             if (input.parentIssueId)
                 await assertParentIssue(companyId, input.parentIssueId);
+            const variables = syncRoutineVariablesWithTemplate(input.description, sanitizeRoutineVariableInputs(input.variables));
+            assertRoutineVariableDefinitions(variables);
             const [created] = await db
                 .insert(routines)
                 .values({
@@ -707,6 +851,7 @@ export function routineService(db, deps = {}) {
                 status: input.status,
                 concurrencyPolicy: input.concurrencyPolicy,
                 catchUpPolicy: input.catchUpPolicy,
+                variables,
                 createdByAgentId: actor.agentId ?? null,
                 createdByUserId: actor.userId ?? null,
                 updatedByAgentId: actor.agentId ?? null,
@@ -721,6 +866,8 @@ export function routineService(db, deps = {}) {
                 return null;
             const nextProjectId = patch.projectId ?? existing.projectId;
             const nextAssigneeAgentId = patch.assigneeAgentId ?? existing.assigneeAgentId;
+            const nextDescription = patch.description === undefined ? existing.description : patch.description;
+            const nextVariables = syncRoutineVariablesWithTemplate(nextDescription, patch.variables === undefined ? existing.variables : sanitizeRoutineVariableInputs(patch.variables));
             if (patch.projectId)
                 await assertProject(existing.companyId, nextProjectId);
             if (patch.assigneeAgentId)
@@ -729,6 +876,16 @@ export function routineService(db, deps = {}) {
                 await assertGoal(existing.companyId, patch.goalId);
             if (patch.parentIssueId)
                 await assertParentIssue(existing.companyId, patch.parentIssueId);
+            assertRoutineVariableDefinitions(nextVariables);
+            const enabledScheduleTriggers = await db
+                .select({ id: routineTriggers.id })
+                .from(routineTriggers)
+                .where(and(eq(routineTriggers.routineId, existing.id), eq(routineTriggers.kind, "schedule"), eq(routineTriggers.enabled, true)))
+                .limit(1)
+                .then((rows) => rows.length > 0);
+            if (enabledScheduleTriggers) {
+                assertScheduleCompatibleVariables(nextVariables);
+            }
             const [updated] = await db
                 .update(routines)
                 .set({
@@ -736,12 +893,13 @@ export function routineService(db, deps = {}) {
                 goalId: patch.goalId === undefined ? existing.goalId : patch.goalId,
                 parentIssueId: patch.parentIssueId === undefined ? existing.parentIssueId : patch.parentIssueId,
                 title: patch.title ?? existing.title,
-                description: patch.description === undefined ? existing.description : patch.description,
+                description: nextDescription,
                 assigneeAgentId: nextAssigneeAgentId,
                 priority: patch.priority ?? existing.priority,
                 status: patch.status ?? existing.status,
                 concurrencyPolicy: patch.concurrencyPolicy ?? existing.concurrencyPolicy,
                 catchUpPolicy: patch.catchUpPolicy ?? existing.catchUpPolicy,
+                variables: nextVariables,
                 updatedByAgentId: actor.agentId ?? null,
                 updatedByUserId: actor.userId ?? null,
                 updatedAt: new Date(),
@@ -759,6 +917,7 @@ export function routineService(db, deps = {}) {
             let publicId = null;
             let nextRunAt = null;
             if (input.kind === "schedule") {
+                assertScheduleCompatibleVariables(routine.variables ?? []);
                 const timeZone = input.timezone || "UTC";
                 assertTimeZone(timeZone);
                 const error = validateCron(input.cronExpression);
@@ -810,6 +969,9 @@ export function routineService(db, deps = {}) {
             let cronExpression = existing.cronExpression;
             let timezone = existing.timezone;
             if (existing.kind === "schedule") {
+                const routine = await getRoutineById(existing.routineId);
+                if (!routine)
+                    throw notFound("Routine not found");
                 if (patch.cronExpression !== undefined) {
                     if (patch.cronExpression == null)
                         throw unprocessable("Scheduled triggers require cronExpression");
@@ -826,6 +988,9 @@ export function routineService(db, deps = {}) {
                 }
                 if (cronExpression && timezone) {
                     nextRunAt = nextCronTickInTimeZone(cronExpression, timezone, new Date());
+                }
+                if ((patch.enabled ?? existing.enabled) === true) {
+                    assertScheduleCompatibleVariables(routine.variables ?? []);
                 }
             }
             const [updated] = await db
@@ -896,7 +1061,11 @@ export function routineService(db, deps = {}) {
                 trigger,
                 source: input.source,
                 payload: input.payload,
+                variables: input.variables,
                 idempotencyKey: input.idempotencyKey,
+                executionWorkspaceId: input.executionWorkspaceId ?? null,
+                executionWorkspacePreference: input.executionWorkspacePreference ?? null,
+                executionWorkspaceSettings: input.executionWorkspaceSettings ?? null,
             });
         },
         firePublicTrigger: async (publicId, input) => {
@@ -954,6 +1123,9 @@ export function routineService(db, deps = {}) {
                 trigger,
                 source: "webhook",
                 payload: input.payload,
+                variables: isPlainRecord(input.payload) && isPlainRecord(input.payload.variables)
+                    ? input.payload.variables
+                    : null,
                 idempotencyKey: input.idempotencyKey,
             });
         },

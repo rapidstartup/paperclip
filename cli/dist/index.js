@@ -10,7 +10,7 @@ var __export = (target, all) => {
 };
 
 // ../packages/shared/src/constants.ts
-var COMPANY_STATUSES, DEPLOYMENT_MODES, DEPLOYMENT_EXPOSURES, AUTH_BASE_URL_MODES, AGENT_STATUSES, AGENT_ADAPTER_TYPES, AGENT_ROLES, AGENT_ICON_NAMES, ISSUE_STATUSES, ISSUE_PRIORITIES, GOAL_LEVELS, GOAL_STATUSES, PROJECT_STATUSES, ROUTINE_STATUSES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_TRIGGER_SIGNING_MODES, APPROVAL_TYPES, SECRET_PROVIDERS, STORAGE_PROVIDERS, BILLING_TYPES, FINANCE_EVENT_KINDS, FINANCE_DIRECTIONS, FINANCE_UNITS, BUDGET_SCOPE_TYPES, BUDGET_METRICS, BUDGET_WINDOW_KINDS, BUDGET_INCIDENT_RESOLUTION_ACTIONS, INVITE_JOIN_TYPES, JOIN_REQUEST_TYPES, JOIN_REQUEST_STATUSES, PERMISSION_KEYS, PLUGIN_STATUSES, PLUGIN_CATEGORIES, PLUGIN_CAPABILITIES, PLUGIN_UI_SLOT_TYPES, PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS, PLUGIN_LAUNCHER_PLACEMENT_ZONES, PLUGIN_LAUNCHER_ACTIONS, PLUGIN_LAUNCHER_BOUNDS, PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS, PLUGIN_UI_SLOT_ENTITY_TYPES, PLUGIN_STATE_SCOPE_KINDS;
+var COMPANY_STATUSES, DEPLOYMENT_MODES, DEPLOYMENT_EXPOSURES, AUTH_BASE_URL_MODES, AGENT_STATUSES, AGENT_ADAPTER_TYPES, AGENT_ROLES, AGENT_ICON_NAMES, ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUS_FILTER, ISSUE_PRIORITIES, GOAL_LEVELS, GOAL_STATUSES, PROJECT_STATUSES, ROUTINE_STATUSES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_TRIGGER_SIGNING_MODES, ROUTINE_VARIABLE_TYPES, APPROVAL_TYPES, SECRET_PROVIDERS, STORAGE_PROVIDERS, BILLING_TYPES, FINANCE_EVENT_KINDS, FINANCE_DIRECTIONS, FINANCE_UNITS, BUDGET_SCOPE_TYPES, BUDGET_METRICS, BUDGET_WINDOW_KINDS, BUDGET_INCIDENT_RESOLUTION_ACTIONS, INVITE_JOIN_TYPES, JOIN_REQUEST_TYPES, JOIN_REQUEST_STATUSES, PERMISSION_KEYS, PLUGIN_STATUSES, PLUGIN_CATEGORIES, PLUGIN_CAPABILITIES, PLUGIN_UI_SLOT_TYPES, PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS, PLUGIN_LAUNCHER_PLACEMENT_ZONES, PLUGIN_LAUNCHER_ACTIONS, PLUGIN_LAUNCHER_BOUNDS, PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS, PLUGIN_UI_SLOT_ENTITY_TYPES, PLUGIN_STATE_SCOPE_KINDS;
 var init_constants = __esm({
   "../packages/shared/src/constants.ts"() {
     "use strict";
@@ -32,6 +32,7 @@ var init_constants = __esm({
       "http",
       "claude_local",
       "codex_local",
+      "gemini_local",
       "opencode_local",
       "pi_local",
       "cursor",
@@ -104,6 +105,15 @@ var init_constants = __esm({
       "blocked",
       "cancelled"
     ];
+    INBOX_MINE_ISSUE_STATUSES = [
+      "backlog",
+      "todo",
+      "in_progress",
+      "in_review",
+      "blocked",
+      "done"
+    ];
+    INBOX_MINE_ISSUE_STATUS_FILTER = INBOX_MINE_ISSUE_STATUSES.join(",");
     ISSUE_PRIORITIES = ["critical", "high", "medium", "low"];
     GOAL_LEVELS = ["company", "team", "agent", "task"];
     GOAL_STATUSES = ["planned", "active", "achieved", "cancelled"];
@@ -118,6 +128,7 @@ var init_constants = __esm({
     ROUTINE_CONCURRENCY_POLICIES = ["coalesce_if_active", "always_enqueue", "skip_if_active"];
     ROUTINE_CATCH_UP_POLICIES = ["skip_missed", "enqueue_missed_with_cap"];
     ROUTINE_TRIGGER_SIGNING_MODES = ["bearer", "hmac_sha256"];
+    ROUTINE_VARIABLE_TYPES = ["text", "textarea", "number", "boolean", "select"];
     APPROVAL_TYPES = ["hire_agent", "approve_ceo_strategy", "budget_override_required"];
     SECRET_PROVIDERS = [
       "local_encrypted",
@@ -224,6 +235,7 @@ var init_constants = __esm({
       "agent.sessions.close",
       "activity.log.write",
       "metrics.write",
+      "telemetry.track",
       // Plugin State
       "plugin.state.read",
       "plugin.state.write",
@@ -337,50 +349,90 @@ var init_constants = __esm({
   }
 });
 
-// ../packages/shared/src/validators/instance.ts
+// ../packages/shared/src/types/feedback.ts
+var FEEDBACK_TARGET_TYPES, FEEDBACK_VOTE_VALUES, FEEDBACK_DATA_SHARING_PREFERENCES, DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE, FEEDBACK_TRACE_STATUSES;
+var init_feedback = __esm({
+  "../packages/shared/src/types/feedback.ts"() {
+    "use strict";
+    FEEDBACK_TARGET_TYPES = ["issue_comment", "issue_document_revision"];
+    FEEDBACK_VOTE_VALUES = ["up", "down"];
+    FEEDBACK_DATA_SHARING_PREFERENCES = ["allowed", "not_allowed", "prompt"];
+    DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE = "prompt";
+    FEEDBACK_TRACE_STATUSES = ["local_only", "pending", "sent", "failed"];
+  }
+});
+
+// ../packages/shared/src/validators/feedback.ts
 import { z } from "zod";
+var feedbackTargetTypeSchema, feedbackTraceStatusSchema, feedbackVoteValueSchema, feedbackDataSharingPreferenceSchema, upsertIssueFeedbackVoteSchema;
+var init_feedback2 = __esm({
+  "../packages/shared/src/validators/feedback.ts"() {
+    "use strict";
+    init_feedback();
+    feedbackTargetTypeSchema = z.enum(FEEDBACK_TARGET_TYPES);
+    feedbackTraceStatusSchema = z.enum(FEEDBACK_TRACE_STATUSES);
+    feedbackVoteValueSchema = z.enum(FEEDBACK_VOTE_VALUES);
+    feedbackDataSharingPreferenceSchema = z.enum(FEEDBACK_DATA_SHARING_PREFERENCES);
+    upsertIssueFeedbackVoteSchema = z.object({
+      targetType: feedbackTargetTypeSchema,
+      targetId: z.string().uuid(),
+      vote: feedbackVoteValueSchema,
+      reason: z.string().trim().max(1e3).optional(),
+      allowSharing: z.boolean().optional()
+    });
+  }
+});
+
+// ../packages/shared/src/validators/instance.ts
+import { z as z2 } from "zod";
 var instanceGeneralSettingsSchema, patchInstanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, patchInstanceExperimentalSettingsSchema;
 var init_instance = __esm({
   "../packages/shared/src/validators/instance.ts"() {
     "use strict";
-    instanceGeneralSettingsSchema = z.object({
-      censorUsernameInLogs: z.boolean().default(false)
+    init_feedback();
+    init_feedback2();
+    instanceGeneralSettingsSchema = z2.object({
+      censorUsernameInLogs: z2.boolean().default(false),
+      keyboardShortcuts: z2.boolean().default(false),
+      feedbackDataSharingPreference: feedbackDataSharingPreferenceSchema.default(
+        DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE
+      )
     }).strict();
     patchInstanceGeneralSettingsSchema = instanceGeneralSettingsSchema.partial();
-    instanceExperimentalSettingsSchema = z.object({
-      enableIsolatedWorkspaces: z.boolean().default(false),
-      autoRestartDevServerWhenIdle: z.boolean().default(false)
+    instanceExperimentalSettingsSchema = z2.object({
+      enableIsolatedWorkspaces: z2.boolean().default(false),
+      autoRestartDevServerWhenIdle: z2.boolean().default(false)
     }).strict();
     patchInstanceExperimentalSettingsSchema = instanceExperimentalSettingsSchema.partial();
   }
 });
 
 // ../packages/shared/src/validators/budget.ts
-import { z as z2 } from "zod";
+import { z as z3 } from "zod";
 var upsertBudgetPolicySchema, resolveBudgetIncidentSchema;
 var init_budget = __esm({
   "../packages/shared/src/validators/budget.ts"() {
     "use strict";
     init_constants();
-    upsertBudgetPolicySchema = z2.object({
-      scopeType: z2.enum(BUDGET_SCOPE_TYPES),
-      scopeId: z2.string().uuid(),
-      metric: z2.enum(BUDGET_METRICS).optional().default("billed_cents"),
-      windowKind: z2.enum(BUDGET_WINDOW_KINDS).optional().default("calendar_month_utc"),
-      amount: z2.number().int().nonnegative(),
-      warnPercent: z2.number().int().min(1).max(99).optional().default(80),
-      hardStopEnabled: z2.boolean().optional().default(true),
-      notifyEnabled: z2.boolean().optional().default(true),
-      isActive: z2.boolean().optional().default(true)
+    upsertBudgetPolicySchema = z3.object({
+      scopeType: z3.enum(BUDGET_SCOPE_TYPES),
+      scopeId: z3.string().uuid(),
+      metric: z3.enum(BUDGET_METRICS).optional().default("billed_cents"),
+      windowKind: z3.enum(BUDGET_WINDOW_KINDS).optional().default("calendar_month_utc"),
+      amount: z3.number().int().nonnegative(),
+      warnPercent: z3.number().int().min(1).max(99).optional().default(80),
+      hardStopEnabled: z3.boolean().optional().default(true),
+      notifyEnabled: z3.boolean().optional().default(true),
+      isActive: z3.boolean().optional().default(true)
     });
-    resolveBudgetIncidentSchema = z2.object({
-      action: z2.enum(BUDGET_INCIDENT_RESOLUTION_ACTIONS),
-      amount: z2.number().int().nonnegative().optional(),
-      decisionNote: z2.string().optional().nullable()
+    resolveBudgetIncidentSchema = z3.object({
+      action: z3.enum(BUDGET_INCIDENT_RESOLUTION_ACTIONS),
+      amount: z3.number().int().nonnegative().optional(),
+      decisionNote: z3.string().optional().nullable()
     }).superRefine((value, ctx) => {
       if (value.action === "raise_budget_and_resume" && typeof value.amount !== "number") {
         ctx.addIssue({
-          code: z2.ZodIssueCode.custom,
+          code: z3.ZodIssueCode.custom,
           message: "amount is required when raising a budget",
           path: ["amount"]
         });
@@ -390,30 +442,35 @@ var init_budget = __esm({
 });
 
 // ../packages/shared/src/validators/company.ts
-import { z as z3 } from "zod";
-var logoAssetIdSchema, brandColorSchema, createCompanySchema, updateCompanySchema, updateCompanyBrandingSchema;
+import { z as z4 } from "zod";
+var logoAssetIdSchema, brandColorSchema, feedbackDataSharingTermsVersionSchema, createCompanySchema, updateCompanySchema, updateCompanyBrandingSchema;
 var init_company = __esm({
   "../packages/shared/src/validators/company.ts"() {
     "use strict";
     init_constants();
-    logoAssetIdSchema = z3.string().uuid().nullable().optional();
-    brandColorSchema = z3.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
-    createCompanySchema = z3.object({
-      name: z3.string().min(1),
-      description: z3.string().optional().nullable(),
-      budgetMonthlyCents: z3.number().int().nonnegative().optional().default(0)
+    logoAssetIdSchema = z4.string().uuid().nullable().optional();
+    brandColorSchema = z4.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
+    feedbackDataSharingTermsVersionSchema = z4.string().min(1).nullable().optional();
+    createCompanySchema = z4.object({
+      name: z4.string().min(1),
+      description: z4.string().optional().nullable(),
+      budgetMonthlyCents: z4.number().int().nonnegative().optional().default(0)
     });
     updateCompanySchema = createCompanySchema.partial().extend({
-      status: z3.enum(COMPANY_STATUSES).optional(),
-      spentMonthlyCents: z3.number().int().nonnegative().optional(),
-      requireBoardApprovalForNewAgents: z3.boolean().optional(),
+      status: z4.enum(COMPANY_STATUSES).optional(),
+      spentMonthlyCents: z4.number().int().nonnegative().optional(),
+      requireBoardApprovalForNewAgents: z4.boolean().optional(),
+      feedbackDataSharingEnabled: z4.boolean().optional(),
+      feedbackDataSharingConsentAt: z4.coerce.date().nullable().optional(),
+      feedbackDataSharingConsentByUserId: z4.string().min(1).nullable().optional(),
+      feedbackDataSharingTermsVersion: feedbackDataSharingTermsVersionSchema,
       brandColor: brandColorSchema,
       logoAssetId: logoAssetIdSchema,
-      githubToken: z3.string().nullable().optional()
+      githubToken: z4.string().nullable().optional()
     });
-    updateCompanyBrandingSchema = z3.object({
-      name: z3.string().min(1).optional(),
-      description: z3.string().nullable().optional(),
+    updateCompanyBrandingSchema = z4.object({
+      name: z4.string().min(1).optional(),
+      description: z4.string().nullable().optional(),
       brandColor: brandColorSchema,
       logoAssetId: logoAssetIdSchema
     }).strict().refine(
@@ -424,135 +481,135 @@ var init_company = __esm({
 });
 
 // ../packages/shared/src/validators/company-skill.ts
-import { z as z4 } from "zod";
+import { z as z5 } from "zod";
 var companySkillSourceTypeSchema, companySkillTrustLevelSchema, companySkillCompatibilitySchema, companySkillSourceBadgeSchema, companySkillFileInventoryEntrySchema, companySkillSchema, companySkillListItemSchema, companySkillUsageAgentSchema, companySkillDetailSchema, companySkillUpdateStatusSchema, companySkillImportSchema, companySkillProjectScanRequestSchema, companySkillProjectScanSkippedSchema, companySkillProjectScanConflictSchema, companySkillProjectScanResultSchema, companySkillCreateSchema, companySkillFileDetailSchema, companySkillFileUpdateSchema;
 var init_company_skill = __esm({
   "../packages/shared/src/validators/company-skill.ts"() {
     "use strict";
-    companySkillSourceTypeSchema = z4.enum(["local_path", "github", "url", "catalog", "skills_sh"]);
-    companySkillTrustLevelSchema = z4.enum(["markdown_only", "assets", "scripts_executables"]);
-    companySkillCompatibilitySchema = z4.enum(["compatible", "unknown", "invalid"]);
-    companySkillSourceBadgeSchema = z4.enum(["paperclip", "github", "local", "url", "catalog", "skills_sh"]);
-    companySkillFileInventoryEntrySchema = z4.object({
-      path: z4.string().min(1),
-      kind: z4.enum(["skill", "markdown", "reference", "script", "asset", "other"])
+    companySkillSourceTypeSchema = z5.enum(["local_path", "github", "url", "catalog", "skills_sh"]);
+    companySkillTrustLevelSchema = z5.enum(["markdown_only", "assets", "scripts_executables"]);
+    companySkillCompatibilitySchema = z5.enum(["compatible", "unknown", "invalid"]);
+    companySkillSourceBadgeSchema = z5.enum(["paperclip", "github", "local", "url", "catalog", "skills_sh"]);
+    companySkillFileInventoryEntrySchema = z5.object({
+      path: z5.string().min(1),
+      kind: z5.enum(["skill", "markdown", "reference", "script", "asset", "other"])
     });
-    companySkillSchema = z4.object({
-      id: z4.string().uuid(),
-      companyId: z4.string().uuid(),
-      key: z4.string().min(1),
-      slug: z4.string().min(1),
-      name: z4.string().min(1),
-      description: z4.string().nullable(),
-      markdown: z4.string(),
+    companySkillSchema = z5.object({
+      id: z5.string().uuid(),
+      companyId: z5.string().uuid(),
+      key: z5.string().min(1),
+      slug: z5.string().min(1),
+      name: z5.string().min(1),
+      description: z5.string().nullable(),
+      markdown: z5.string(),
       sourceType: companySkillSourceTypeSchema,
-      sourceLocator: z4.string().nullable(),
-      sourceRef: z4.string().nullable(),
+      sourceLocator: z5.string().nullable(),
+      sourceRef: z5.string().nullable(),
       trustLevel: companySkillTrustLevelSchema,
       compatibility: companySkillCompatibilitySchema,
-      fileInventory: z4.array(companySkillFileInventoryEntrySchema).default([]),
-      metadata: z4.record(z4.unknown()).nullable(),
-      createdAt: z4.coerce.date(),
-      updatedAt: z4.coerce.date()
+      fileInventory: z5.array(companySkillFileInventoryEntrySchema).default([]),
+      metadata: z5.record(z5.unknown()).nullable(),
+      createdAt: z5.coerce.date(),
+      updatedAt: z5.coerce.date()
     });
     companySkillListItemSchema = companySkillSchema.extend({
-      attachedAgentCount: z4.number().int().nonnegative(),
-      editable: z4.boolean(),
-      editableReason: z4.string().nullable(),
-      sourceLabel: z4.string().nullable(),
+      attachedAgentCount: z5.number().int().nonnegative(),
+      editable: z5.boolean(),
+      editableReason: z5.string().nullable(),
+      sourceLabel: z5.string().nullable(),
       sourceBadge: companySkillSourceBadgeSchema
     });
-    companySkillUsageAgentSchema = z4.object({
-      id: z4.string().uuid(),
-      name: z4.string().min(1),
-      urlKey: z4.string().min(1),
-      adapterType: z4.string().min(1),
-      desired: z4.boolean(),
-      actualState: z4.string().nullable()
+    companySkillUsageAgentSchema = z5.object({
+      id: z5.string().uuid(),
+      name: z5.string().min(1),
+      urlKey: z5.string().min(1),
+      adapterType: z5.string().min(1),
+      desired: z5.boolean(),
+      actualState: z5.string().nullable()
     });
     companySkillDetailSchema = companySkillSchema.extend({
-      attachedAgentCount: z4.number().int().nonnegative(),
-      usedByAgents: z4.array(companySkillUsageAgentSchema).default([]),
-      editable: z4.boolean(),
-      editableReason: z4.string().nullable(),
-      sourceLabel: z4.string().nullable(),
+      attachedAgentCount: z5.number().int().nonnegative(),
+      usedByAgents: z5.array(companySkillUsageAgentSchema).default([]),
+      editable: z5.boolean(),
+      editableReason: z5.string().nullable(),
+      sourceLabel: z5.string().nullable(),
       sourceBadge: companySkillSourceBadgeSchema
     });
-    companySkillUpdateStatusSchema = z4.object({
-      supported: z4.boolean(),
-      reason: z4.string().nullable(),
-      trackingRef: z4.string().nullable(),
-      currentRef: z4.string().nullable(),
-      latestRef: z4.string().nullable(),
-      hasUpdate: z4.boolean()
+    companySkillUpdateStatusSchema = z5.object({
+      supported: z5.boolean(),
+      reason: z5.string().nullable(),
+      trackingRef: z5.string().nullable(),
+      currentRef: z5.string().nullable(),
+      latestRef: z5.string().nullable(),
+      hasUpdate: z5.boolean()
     });
-    companySkillImportSchema = z4.object({
-      source: z4.string().min(1)
+    companySkillImportSchema = z5.object({
+      source: z5.string().min(1)
     });
-    companySkillProjectScanRequestSchema = z4.object({
-      projectIds: z4.array(z4.string().uuid()).optional(),
-      workspaceIds: z4.array(z4.string().uuid()).optional()
+    companySkillProjectScanRequestSchema = z5.object({
+      projectIds: z5.array(z5.string().uuid()).optional(),
+      workspaceIds: z5.array(z5.string().uuid()).optional()
     });
-    companySkillProjectScanSkippedSchema = z4.object({
-      projectId: z4.string().uuid(),
-      projectName: z4.string().min(1),
-      workspaceId: z4.string().uuid().nullable(),
-      workspaceName: z4.string().nullable(),
-      path: z4.string().nullable(),
-      reason: z4.string().min(1)
+    companySkillProjectScanSkippedSchema = z5.object({
+      projectId: z5.string().uuid(),
+      projectName: z5.string().min(1),
+      workspaceId: z5.string().uuid().nullable(),
+      workspaceName: z5.string().nullable(),
+      path: z5.string().nullable(),
+      reason: z5.string().min(1)
     });
-    companySkillProjectScanConflictSchema = z4.object({
-      slug: z4.string().min(1),
-      key: z4.string().min(1),
-      projectId: z4.string().uuid(),
-      projectName: z4.string().min(1),
-      workspaceId: z4.string().uuid(),
-      workspaceName: z4.string().min(1),
-      path: z4.string().min(1),
-      existingSkillId: z4.string().uuid(),
-      existingSkillKey: z4.string().min(1),
-      existingSourceLocator: z4.string().nullable(),
-      reason: z4.string().min(1)
+    companySkillProjectScanConflictSchema = z5.object({
+      slug: z5.string().min(1),
+      key: z5.string().min(1),
+      projectId: z5.string().uuid(),
+      projectName: z5.string().min(1),
+      workspaceId: z5.string().uuid(),
+      workspaceName: z5.string().min(1),
+      path: z5.string().min(1),
+      existingSkillId: z5.string().uuid(),
+      existingSkillKey: z5.string().min(1),
+      existingSourceLocator: z5.string().nullable(),
+      reason: z5.string().min(1)
     });
-    companySkillProjectScanResultSchema = z4.object({
-      scannedProjects: z4.number().int().nonnegative(),
-      scannedWorkspaces: z4.number().int().nonnegative(),
-      discovered: z4.number().int().nonnegative(),
-      imported: z4.array(companySkillSchema),
-      updated: z4.array(companySkillSchema),
-      skipped: z4.array(companySkillProjectScanSkippedSchema),
-      conflicts: z4.array(companySkillProjectScanConflictSchema),
-      warnings: z4.array(z4.string())
+    companySkillProjectScanResultSchema = z5.object({
+      scannedProjects: z5.number().int().nonnegative(),
+      scannedWorkspaces: z5.number().int().nonnegative(),
+      discovered: z5.number().int().nonnegative(),
+      imported: z5.array(companySkillSchema),
+      updated: z5.array(companySkillSchema),
+      skipped: z5.array(companySkillProjectScanSkippedSchema),
+      conflicts: z5.array(companySkillProjectScanConflictSchema),
+      warnings: z5.array(z5.string())
     });
-    companySkillCreateSchema = z4.object({
-      name: z4.string().min(1),
-      slug: z4.string().min(1).nullable().optional(),
-      description: z4.string().nullable().optional(),
-      markdown: z4.string().nullable().optional()
+    companySkillCreateSchema = z5.object({
+      name: z5.string().min(1),
+      slug: z5.string().min(1).nullable().optional(),
+      description: z5.string().nullable().optional(),
+      markdown: z5.string().nullable().optional()
     });
-    companySkillFileDetailSchema = z4.object({
-      skillId: z4.string().uuid(),
-      path: z4.string().min(1),
-      kind: z4.enum(["skill", "markdown", "reference", "script", "asset", "other"]),
-      content: z4.string(),
-      language: z4.string().nullable(),
-      markdown: z4.boolean(),
-      editable: z4.boolean()
+    companySkillFileDetailSchema = z5.object({
+      skillId: z5.string().uuid(),
+      path: z5.string().min(1),
+      kind: z5.enum(["skill", "markdown", "reference", "script", "asset", "other"]),
+      content: z5.string(),
+      language: z5.string().nullable(),
+      markdown: z5.boolean(),
+      editable: z5.boolean()
     });
-    companySkillFileUpdateSchema = z4.object({
-      path: z4.string().min(1),
-      content: z4.string()
+    companySkillFileUpdateSchema = z5.object({
+      path: z5.string().min(1),
+      content: z5.string()
     });
   }
 });
 
 // ../packages/shared/src/validators/adapter-skills.ts
-import { z as z5 } from "zod";
+import { z as z6 } from "zod";
 var agentSkillStateSchema, agentSkillOriginSchema, agentSkillSyncModeSchema, agentSkillEntrySchema, agentSkillSnapshotSchema, agentSkillSyncSchema;
 var init_adapter_skills = __esm({
   "../packages/shared/src/validators/adapter-skills.ts"() {
     "use strict";
-    agentSkillStateSchema = z5.enum([
+    agentSkillStateSchema = z6.enum([
       "available",
       "configured",
       "installed",
@@ -560,395 +617,592 @@ var init_adapter_skills = __esm({
       "stale",
       "external"
     ]);
-    agentSkillOriginSchema = z5.enum([
+    agentSkillOriginSchema = z6.enum([
       "company_managed",
       "paperclip_required",
       "user_installed",
       "external_unknown"
     ]);
-    agentSkillSyncModeSchema = z5.enum([
+    agentSkillSyncModeSchema = z6.enum([
       "unsupported",
       "persistent",
       "ephemeral"
     ]);
-    agentSkillEntrySchema = z5.object({
-      key: z5.string().min(1),
-      runtimeName: z5.string().min(1).nullable(),
-      desired: z5.boolean(),
-      managed: z5.boolean(),
-      required: z5.boolean().optional(),
-      requiredReason: z5.string().nullable().optional(),
+    agentSkillEntrySchema = z6.object({
+      key: z6.string().min(1),
+      runtimeName: z6.string().min(1).nullable(),
+      desired: z6.boolean(),
+      managed: z6.boolean(),
+      required: z6.boolean().optional(),
+      requiredReason: z6.string().nullable().optional(),
       state: agentSkillStateSchema,
       origin: agentSkillOriginSchema.optional(),
-      originLabel: z5.string().nullable().optional(),
-      locationLabel: z5.string().nullable().optional(),
-      readOnly: z5.boolean().optional(),
-      sourcePath: z5.string().nullable().optional(),
-      targetPath: z5.string().nullable().optional(),
-      detail: z5.string().nullable().optional()
+      originLabel: z6.string().nullable().optional(),
+      locationLabel: z6.string().nullable().optional(),
+      readOnly: z6.boolean().optional(),
+      sourcePath: z6.string().nullable().optional(),
+      targetPath: z6.string().nullable().optional(),
+      detail: z6.string().nullable().optional()
     });
-    agentSkillSnapshotSchema = z5.object({
-      adapterType: z5.string().min(1),
-      supported: z5.boolean(),
+    agentSkillSnapshotSchema = z6.object({
+      adapterType: z6.string().min(1),
+      supported: z6.boolean(),
       mode: agentSkillSyncModeSchema,
-      desiredSkills: z5.array(z5.string().min(1)),
-      entries: z5.array(agentSkillEntrySchema),
-      warnings: z5.array(z5.string())
+      desiredSkills: z6.array(z6.string().min(1)),
+      entries: z6.array(agentSkillEntrySchema),
+      warnings: z6.array(z6.string())
     });
-    agentSkillSyncSchema = z5.object({
-      desiredSkills: z5.array(z5.string().min(1))
+    agentSkillSyncSchema = z6.object({
+      desiredSkills: z6.array(z6.string().min(1))
     });
   }
 });
 
+// ../packages/shared/src/validators/issue.ts
+import { z as z7 } from "zod";
+var ISSUE_EXECUTION_WORKSPACE_PREFERENCES, executionWorkspaceStrategySchema, issueExecutionWorkspaceSettingsSchema, issueAssigneeAdapterOverridesSchema, createIssueSchema, createIssueLabelSchema, updateIssueSchema, checkoutIssueSchema, addIssueCommentSchema, linkIssueApprovalSchema, createIssueAttachmentMetadataSchema, ISSUE_DOCUMENT_FORMATS, issueDocumentFormatSchema, issueDocumentKeySchema, upsertIssueDocumentSchema, restoreIssueDocumentRevisionSchema;
+var init_issue = __esm({
+  "../packages/shared/src/validators/issue.ts"() {
+    "use strict";
+    init_constants();
+    ISSUE_EXECUTION_WORKSPACE_PREFERENCES = [
+      "inherit",
+      "shared_workspace",
+      "isolated_workspace",
+      "operator_branch",
+      "reuse_existing",
+      "agent_default"
+    ];
+    executionWorkspaceStrategySchema = z7.object({
+      type: z7.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
+      baseRef: z7.string().optional().nullable(),
+      branchTemplate: z7.string().optional().nullable(),
+      worktreeParentDir: z7.string().optional().nullable(),
+      provisionCommand: z7.string().optional().nullable(),
+      teardownCommand: z7.string().optional().nullable()
+    }).strict();
+    issueExecutionWorkspaceSettingsSchema = z7.object({
+      mode: z7.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional(),
+      workspaceStrategy: executionWorkspaceStrategySchema.optional().nullable(),
+      workspaceRuntime: z7.record(z7.unknown()).optional().nullable()
+    }).strict();
+    issueAssigneeAdapterOverridesSchema = z7.object({
+      adapterConfig: z7.record(z7.unknown()).optional(),
+      useProjectWorkspace: z7.boolean().optional()
+    }).strict();
+    createIssueSchema = z7.object({
+      projectId: z7.string().uuid().optional().nullable(),
+      projectWorkspaceId: z7.string().uuid().optional().nullable(),
+      goalId: z7.string().uuid().optional().nullable(),
+      parentId: z7.string().uuid().optional().nullable(),
+      inheritExecutionWorkspaceFromIssueId: z7.string().uuid().optional().nullable(),
+      title: z7.string().min(1),
+      description: z7.string().optional().nullable(),
+      status: z7.enum(ISSUE_STATUSES).optional().default("backlog"),
+      priority: z7.enum(ISSUE_PRIORITIES).optional().default("medium"),
+      assigneeAgentId: z7.string().uuid().optional().nullable(),
+      assigneeUserId: z7.string().optional().nullable(),
+      requestDepth: z7.number().int().nonnegative().optional().default(0),
+      billingCode: z7.string().optional().nullable(),
+      assigneeAdapterOverrides: issueAssigneeAdapterOverridesSchema.optional().nullable(),
+      executionWorkspaceId: z7.string().uuid().optional().nullable(),
+      executionWorkspacePreference: z7.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
+      executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable(),
+      labelIds: z7.array(z7.string().uuid()).optional()
+    });
+    createIssueLabelSchema = z7.object({
+      name: z7.string().trim().min(1).max(48),
+      color: z7.string().regex(/^#(?:[0-9a-fA-F]{6})$/, "Color must be a 6-digit hex value")
+    });
+    updateIssueSchema = createIssueSchema.partial().extend({
+      comment: z7.string().min(1).optional(),
+      reopen: z7.boolean().optional(),
+      interrupt: z7.boolean().optional(),
+      hiddenAt: z7.string().datetime().nullable().optional()
+    });
+    checkoutIssueSchema = z7.object({
+      agentId: z7.string().uuid(),
+      expectedStatuses: z7.array(z7.enum(ISSUE_STATUSES)).nonempty()
+    });
+    addIssueCommentSchema = z7.object({
+      body: z7.string().min(1),
+      reopen: z7.boolean().optional(),
+      interrupt: z7.boolean().optional()
+    });
+    linkIssueApprovalSchema = z7.object({
+      approvalId: z7.string().uuid()
+    });
+    createIssueAttachmentMetadataSchema = z7.object({
+      issueCommentId: z7.string().uuid().optional().nullable()
+    });
+    ISSUE_DOCUMENT_FORMATS = ["markdown"];
+    issueDocumentFormatSchema = z7.enum(ISSUE_DOCUMENT_FORMATS);
+    issueDocumentKeySchema = z7.string().trim().min(1).max(64).regex(/^[a-z0-9][a-z0-9_-]*$/, "Document key must be lowercase letters, numbers, _ or -");
+    upsertIssueDocumentSchema = z7.object({
+      title: z7.string().trim().max(200).nullable().optional(),
+      format: issueDocumentFormatSchema,
+      body: z7.string().max(524288),
+      changeSummary: z7.string().trim().max(500).nullable().optional(),
+      baseRevisionId: z7.string().uuid().nullable().optional()
+    });
+    restoreIssueDocumentRevisionSchema = z7.object({});
+  }
+});
+
+// ../packages/shared/src/validators/routine.ts
+import { z as z8 } from "zod";
+var routineVariableValueSchema, routineVariableSchema, createRoutineSchema, updateRoutineSchema, baseTriggerSchema, createRoutineTriggerSchema, updateRoutineTriggerSchema, runRoutineSchema, rotateRoutineTriggerSecretSchema;
+var init_routine = __esm({
+  "../packages/shared/src/validators/routine.ts"() {
+    "use strict";
+    init_constants();
+    init_issue();
+    routineVariableValueSchema = z8.union([z8.string(), z8.number().finite(), z8.boolean()]);
+    routineVariableSchema = z8.object({
+      name: z8.string().trim().regex(/^[A-Za-z][A-Za-z0-9_]*$/),
+      label: z8.string().trim().max(120).optional().nullable(),
+      type: z8.enum(ROUTINE_VARIABLE_TYPES).optional().default("text"),
+      defaultValue: routineVariableValueSchema.optional().nullable(),
+      required: z8.boolean().optional().default(true),
+      options: z8.array(z8.string().trim().min(1).max(120)).max(50).optional().default([])
+    }).superRefine((value, ctx) => {
+      if (value.type === "select" && value.options.length === 0) {
+        ctx.addIssue({
+          code: z8.ZodIssueCode.custom,
+          path: ["options"],
+          message: "Select variables require at least one option"
+        });
+      }
+      if (value.type !== "select" && value.options.length > 0) {
+        ctx.addIssue({
+          code: z8.ZodIssueCode.custom,
+          path: ["options"],
+          message: "Only select variables can define options"
+        });
+      }
+      if (value.type === "select" && value.defaultValue != null) {
+        if (typeof value.defaultValue !== "string" || !value.options.includes(value.defaultValue)) {
+          ctx.addIssue({
+            code: z8.ZodIssueCode.custom,
+            path: ["defaultValue"],
+            message: "Select variable defaults must match one of the allowed options"
+          });
+        }
+      }
+    });
+    createRoutineSchema = z8.object({
+      projectId: z8.string().uuid(),
+      goalId: z8.string().uuid().optional().nullable(),
+      parentIssueId: z8.string().uuid().optional().nullable(),
+      title: z8.string().trim().min(1).max(200),
+      description: z8.string().optional().nullable(),
+      assigneeAgentId: z8.string().uuid(),
+      priority: z8.enum(ISSUE_PRIORITIES).optional().default("medium"),
+      status: z8.enum(ROUTINE_STATUSES).optional().default("active"),
+      concurrencyPolicy: z8.enum(ROUTINE_CONCURRENCY_POLICIES).optional().default("coalesce_if_active"),
+      catchUpPolicy: z8.enum(ROUTINE_CATCH_UP_POLICIES).optional().default("skip_missed"),
+      variables: z8.array(routineVariableSchema).optional().default([])
+    });
+    updateRoutineSchema = createRoutineSchema.partial();
+    baseTriggerSchema = z8.object({
+      label: z8.string().trim().max(120).optional().nullable(),
+      enabled: z8.boolean().optional().default(true)
+    });
+    createRoutineTriggerSchema = z8.discriminatedUnion("kind", [
+      baseTriggerSchema.extend({
+        kind: z8.literal("schedule"),
+        cronExpression: z8.string().trim().min(1),
+        timezone: z8.string().trim().min(1).default("UTC")
+      }),
+      baseTriggerSchema.extend({
+        kind: z8.literal("webhook"),
+        signingMode: z8.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().default("bearer"),
+        replayWindowSec: z8.number().int().min(30).max(86400).optional().default(300)
+      }),
+      baseTriggerSchema.extend({
+        kind: z8.literal("api")
+      })
+    ]);
+    updateRoutineTriggerSchema = z8.object({
+      label: z8.string().trim().max(120).optional().nullable(),
+      enabled: z8.boolean().optional(),
+      cronExpression: z8.string().trim().min(1).optional().nullable(),
+      timezone: z8.string().trim().min(1).optional().nullable(),
+      signingMode: z8.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().nullable(),
+      replayWindowSec: z8.number().int().min(30).max(86400).optional().nullable()
+    });
+    runRoutineSchema = z8.object({
+      triggerId: z8.string().uuid().optional().nullable(),
+      payload: z8.record(z8.unknown()).optional().nullable(),
+      variables: z8.record(routineVariableValueSchema).optional().nullable(),
+      idempotencyKey: z8.string().trim().max(255).optional().nullable(),
+      source: z8.enum(["manual", "api"]).optional().default("manual"),
+      executionWorkspaceId: z8.string().uuid().optional().nullable(),
+      executionWorkspacePreference: z8.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
+      executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable()
+    });
+    rotateRoutineTriggerSecretSchema = z8.object({});
+  }
+});
+
 // ../packages/shared/src/validators/company-portability.ts
-import { z as z6 } from "zod";
+import { z as z9 } from "zod";
 var portabilityIncludeSchema, portabilityEnvInputSchema, portabilityFileEntrySchema, portabilityCompanyManifestEntrySchema, portabilitySidebarOrderSchema, portabilityAgentManifestEntrySchema, portabilitySkillManifestEntrySchema, portabilityProjectManifestEntrySchema, portabilityIssueRoutineTriggerManifestEntrySchema, portabilityIssueRoutineManifestEntrySchema, portabilityIssueManifestEntrySchema, portabilityManifestSchema, portabilitySourceSchema, portabilityTargetSchema, portabilityAgentSelectionSchema, portabilityCollisionStrategySchema, companyPortabilityExportSchema, companyPortabilityPreviewSchema, portabilityAdapterOverrideSchema, companyPortabilityImportSchema;
 var init_company_portability = __esm({
   "../packages/shared/src/validators/company-portability.ts"() {
     "use strict";
-    portabilityIncludeSchema = z6.object({
-      company: z6.boolean().optional(),
-      agents: z6.boolean().optional(),
-      projects: z6.boolean().optional(),
-      issues: z6.boolean().optional(),
-      skills: z6.boolean().optional()
+    init_routine();
+    portabilityIncludeSchema = z9.object({
+      company: z9.boolean().optional(),
+      agents: z9.boolean().optional(),
+      projects: z9.boolean().optional(),
+      issues: z9.boolean().optional(),
+      skills: z9.boolean().optional()
     }).partial();
-    portabilityEnvInputSchema = z6.object({
-      key: z6.string().min(1),
-      description: z6.string().nullable(),
-      agentSlug: z6.string().min(1).nullable(),
-      kind: z6.enum(["secret", "plain"]),
-      requirement: z6.enum(["required", "optional"]),
-      defaultValue: z6.string().nullable(),
-      portability: z6.enum(["portable", "system_dependent"])
+    portabilityEnvInputSchema = z9.object({
+      key: z9.string().min(1),
+      description: z9.string().nullable(),
+      agentSlug: z9.string().min(1).nullable(),
+      kind: z9.enum(["secret", "plain"]),
+      requirement: z9.enum(["required", "optional"]),
+      defaultValue: z9.string().nullable(),
+      portability: z9.enum(["portable", "system_dependent"])
     });
-    portabilityFileEntrySchema = z6.union([
-      z6.string(),
-      z6.object({
-        encoding: z6.literal("base64"),
-        data: z6.string(),
-        contentType: z6.string().min(1).optional().nullable()
+    portabilityFileEntrySchema = z9.union([
+      z9.string(),
+      z9.object({
+        encoding: z9.literal("base64"),
+        data: z9.string(),
+        contentType: z9.string().min(1).optional().nullable()
       })
     ]);
-    portabilityCompanyManifestEntrySchema = z6.object({
-      path: z6.string().min(1),
-      name: z6.string().min(1),
-      description: z6.string().nullable(),
-      brandColor: z6.string().nullable(),
-      logoPath: z6.string().nullable(),
-      requireBoardApprovalForNewAgents: z6.boolean()
+    portabilityCompanyManifestEntrySchema = z9.object({
+      path: z9.string().min(1),
+      name: z9.string().min(1),
+      description: z9.string().nullable(),
+      brandColor: z9.string().nullable(),
+      logoPath: z9.string().nullable(),
+      requireBoardApprovalForNewAgents: z9.boolean(),
+      feedbackDataSharingEnabled: z9.boolean().default(false),
+      feedbackDataSharingConsentAt: z9.string().datetime().nullable().default(null),
+      feedbackDataSharingConsentByUserId: z9.string().nullable().default(null),
+      feedbackDataSharingTermsVersion: z9.string().nullable().default(null)
     });
-    portabilitySidebarOrderSchema = z6.object({
-      agents: z6.array(z6.string().min(1)).default([]),
-      projects: z6.array(z6.string().min(1)).default([])
+    portabilitySidebarOrderSchema = z9.object({
+      agents: z9.array(z9.string().min(1)).default([]),
+      projects: z9.array(z9.string().min(1)).default([])
     });
-    portabilityAgentManifestEntrySchema = z6.object({
-      slug: z6.string().min(1),
-      name: z6.string().min(1),
-      path: z6.string().min(1),
-      skills: z6.array(z6.string().min(1)).default([]),
-      role: z6.string().min(1),
-      title: z6.string().nullable(),
-      icon: z6.string().nullable(),
-      capabilities: z6.string().nullable(),
-      reportsToSlug: z6.string().min(1).nullable(),
-      adapterType: z6.string().min(1),
-      adapterConfig: z6.record(z6.unknown()),
-      runtimeConfig: z6.record(z6.unknown()),
-      permissions: z6.record(z6.unknown()),
-      budgetMonthlyCents: z6.number().int().nonnegative(),
-      metadata: z6.record(z6.unknown()).nullable()
+    portabilityAgentManifestEntrySchema = z9.object({
+      slug: z9.string().min(1),
+      name: z9.string().min(1),
+      path: z9.string().min(1),
+      skills: z9.array(z9.string().min(1)).default([]),
+      role: z9.string().min(1),
+      title: z9.string().nullable(),
+      icon: z9.string().nullable(),
+      capabilities: z9.string().nullable(),
+      reportsToSlug: z9.string().min(1).nullable(),
+      adapterType: z9.string().min(1),
+      adapterConfig: z9.record(z9.unknown()),
+      runtimeConfig: z9.record(z9.unknown()),
+      permissions: z9.record(z9.unknown()),
+      budgetMonthlyCents: z9.number().int().nonnegative(),
+      metadata: z9.record(z9.unknown()).nullable()
     });
-    portabilitySkillManifestEntrySchema = z6.object({
-      key: z6.string().min(1),
-      slug: z6.string().min(1),
-      name: z6.string().min(1),
-      path: z6.string().min(1),
-      description: z6.string().nullable(),
-      sourceType: z6.string().min(1),
-      sourceLocator: z6.string().nullable(),
-      sourceRef: z6.string().nullable(),
-      trustLevel: z6.string().nullable(),
-      compatibility: z6.string().nullable(),
-      metadata: z6.record(z6.unknown()).nullable(),
-      fileInventory: z6.array(z6.object({
-        path: z6.string().min(1),
-        kind: z6.string().min(1)
+    portabilitySkillManifestEntrySchema = z9.object({
+      key: z9.string().min(1),
+      slug: z9.string().min(1),
+      name: z9.string().min(1),
+      path: z9.string().min(1),
+      description: z9.string().nullable(),
+      sourceType: z9.string().min(1),
+      sourceLocator: z9.string().nullable(),
+      sourceRef: z9.string().nullable(),
+      trustLevel: z9.string().nullable(),
+      compatibility: z9.string().nullable(),
+      metadata: z9.record(z9.unknown()).nullable(),
+      fileInventory: z9.array(z9.object({
+        path: z9.string().min(1),
+        kind: z9.string().min(1)
       })).default([])
     });
-    portabilityProjectManifestEntrySchema = z6.object({
-      slug: z6.string().min(1),
-      name: z6.string().min(1),
-      path: z6.string().min(1),
-      description: z6.string().nullable(),
-      ownerAgentSlug: z6.string().min(1).nullable(),
-      leadAgentSlug: z6.string().min(1).nullable(),
-      targetDate: z6.string().nullable(),
-      color: z6.string().nullable(),
-      status: z6.string().nullable(),
-      executionWorkspacePolicy: z6.record(z6.unknown()).nullable(),
-      workspaces: z6.array(z6.object({
-        key: z6.string().min(1),
-        name: z6.string().min(1),
-        sourceType: z6.string().nullable(),
-        repoUrl: z6.string().nullable(),
-        repoRef: z6.string().nullable(),
-        defaultRef: z6.string().nullable(),
-        visibility: z6.string().nullable(),
-        setupCommand: z6.string().nullable(),
-        cleanupCommand: z6.string().nullable(),
-        metadata: z6.record(z6.unknown()).nullable(),
-        isPrimary: z6.boolean()
+    portabilityProjectManifestEntrySchema = z9.object({
+      slug: z9.string().min(1),
+      name: z9.string().min(1),
+      path: z9.string().min(1),
+      description: z9.string().nullable(),
+      ownerAgentSlug: z9.string().min(1).nullable(),
+      leadAgentSlug: z9.string().min(1).nullable(),
+      targetDate: z9.string().nullable(),
+      color: z9.string().nullable(),
+      status: z9.string().nullable(),
+      executionWorkspacePolicy: z9.record(z9.unknown()).nullable(),
+      workspaces: z9.array(z9.object({
+        key: z9.string().min(1),
+        name: z9.string().min(1),
+        sourceType: z9.string().nullable(),
+        repoUrl: z9.string().nullable(),
+        repoRef: z9.string().nullable(),
+        defaultRef: z9.string().nullable(),
+        visibility: z9.string().nullable(),
+        setupCommand: z9.string().nullable(),
+        cleanupCommand: z9.string().nullable(),
+        metadata: z9.record(z9.unknown()).nullable(),
+        isPrimary: z9.boolean()
       })).default([]),
-      metadata: z6.record(z6.unknown()).nullable()
+      metadata: z9.record(z9.unknown()).nullable()
     });
-    portabilityIssueRoutineTriggerManifestEntrySchema = z6.object({
-      kind: z6.string().min(1),
-      label: z6.string().nullable(),
-      enabled: z6.boolean(),
-      cronExpression: z6.string().nullable(),
-      timezone: z6.string().nullable(),
-      signingMode: z6.string().nullable(),
-      replayWindowSec: z6.number().int().nullable()
+    portabilityIssueRoutineTriggerManifestEntrySchema = z9.object({
+      kind: z9.string().min(1),
+      label: z9.string().nullable(),
+      enabled: z9.boolean(),
+      cronExpression: z9.string().nullable(),
+      timezone: z9.string().nullable(),
+      signingMode: z9.string().nullable(),
+      replayWindowSec: z9.number().int().nullable()
     });
-    portabilityIssueRoutineManifestEntrySchema = z6.object({
-      concurrencyPolicy: z6.string().nullable(),
-      catchUpPolicy: z6.string().nullable(),
-      triggers: z6.array(portabilityIssueRoutineTriggerManifestEntrySchema).default([])
+    portabilityIssueRoutineManifestEntrySchema = z9.object({
+      concurrencyPolicy: z9.string().nullable(),
+      catchUpPolicy: z9.string().nullable(),
+      variables: z9.array(routineVariableSchema).nullable().optional(),
+      triggers: z9.array(portabilityIssueRoutineTriggerManifestEntrySchema).default([])
     });
-    portabilityIssueManifestEntrySchema = z6.object({
-      slug: z6.string().min(1),
-      identifier: z6.string().min(1).nullable(),
-      title: z6.string().min(1),
-      path: z6.string().min(1),
-      projectSlug: z6.string().min(1).nullable(),
-      projectWorkspaceKey: z6.string().min(1).nullable(),
-      assigneeAgentSlug: z6.string().min(1).nullable(),
-      description: z6.string().nullable(),
-      recurring: z6.boolean().default(false),
+    portabilityIssueManifestEntrySchema = z9.object({
+      slug: z9.string().min(1),
+      identifier: z9.string().min(1).nullable(),
+      title: z9.string().min(1),
+      path: z9.string().min(1),
+      projectSlug: z9.string().min(1).nullable(),
+      projectWorkspaceKey: z9.string().min(1).nullable(),
+      assigneeAgentSlug: z9.string().min(1).nullable(),
+      description: z9.string().nullable(),
+      recurring: z9.boolean().default(false),
       routine: portabilityIssueRoutineManifestEntrySchema.nullable(),
-      legacyRecurrence: z6.record(z6.unknown()).nullable(),
-      status: z6.string().nullable(),
-      priority: z6.string().nullable(),
-      labelIds: z6.array(z6.string().min(1)).default([]),
-      billingCode: z6.string().nullable(),
-      executionWorkspaceSettings: z6.record(z6.unknown()).nullable(),
-      assigneeAdapterOverrides: z6.record(z6.unknown()).nullable(),
-      metadata: z6.record(z6.unknown()).nullable()
+      legacyRecurrence: z9.record(z9.unknown()).nullable(),
+      status: z9.string().nullable(),
+      priority: z9.string().nullable(),
+      labelIds: z9.array(z9.string().min(1)).default([]),
+      billingCode: z9.string().nullable(),
+      executionWorkspaceSettings: z9.record(z9.unknown()).nullable(),
+      assigneeAdapterOverrides: z9.record(z9.unknown()).nullable(),
+      metadata: z9.record(z9.unknown()).nullable()
     });
-    portabilityManifestSchema = z6.object({
-      schemaVersion: z6.number().int().positive(),
-      generatedAt: z6.string().datetime(),
-      source: z6.object({
-        companyId: z6.string().uuid(),
-        companyName: z6.string().min(1)
+    portabilityManifestSchema = z9.object({
+      schemaVersion: z9.number().int().positive(),
+      generatedAt: z9.string().datetime(),
+      source: z9.object({
+        companyId: z9.string().uuid(),
+        companyName: z9.string().min(1)
       }).nullable(),
-      includes: z6.object({
-        company: z6.boolean(),
-        agents: z6.boolean(),
-        projects: z6.boolean(),
-        issues: z6.boolean(),
-        skills: z6.boolean()
+      includes: z9.object({
+        company: z9.boolean(),
+        agents: z9.boolean(),
+        projects: z9.boolean(),
+        issues: z9.boolean(),
+        skills: z9.boolean()
       }),
       company: portabilityCompanyManifestEntrySchema.nullable(),
       sidebar: portabilitySidebarOrderSchema.nullable(),
-      agents: z6.array(portabilityAgentManifestEntrySchema),
-      skills: z6.array(portabilitySkillManifestEntrySchema).default([]),
-      projects: z6.array(portabilityProjectManifestEntrySchema).default([]),
-      issues: z6.array(portabilityIssueManifestEntrySchema).default([]),
-      envInputs: z6.array(portabilityEnvInputSchema).default([])
+      agents: z9.array(portabilityAgentManifestEntrySchema),
+      skills: z9.array(portabilitySkillManifestEntrySchema).default([]),
+      projects: z9.array(portabilityProjectManifestEntrySchema).default([]),
+      issues: z9.array(portabilityIssueManifestEntrySchema).default([]),
+      envInputs: z9.array(portabilityEnvInputSchema).default([])
     });
-    portabilitySourceSchema = z6.discriminatedUnion("type", [
-      z6.object({
-        type: z6.literal("inline"),
-        rootPath: z6.string().min(1).optional().nullable(),
-        files: z6.record(portabilityFileEntrySchema)
+    portabilitySourceSchema = z9.discriminatedUnion("type", [
+      z9.object({
+        type: z9.literal("inline"),
+        rootPath: z9.string().min(1).optional().nullable(),
+        files: z9.record(portabilityFileEntrySchema)
       }),
-      z6.object({
-        type: z6.literal("github"),
-        url: z6.string().url()
+      z9.object({
+        type: z9.literal("github"),
+        url: z9.string().url()
       })
     ]);
-    portabilityTargetSchema = z6.discriminatedUnion("mode", [
-      z6.object({
-        mode: z6.literal("new_company"),
-        newCompanyName: z6.string().min(1).optional().nullable()
+    portabilityTargetSchema = z9.discriminatedUnion("mode", [
+      z9.object({
+        mode: z9.literal("new_company"),
+        newCompanyName: z9.string().min(1).optional().nullable()
       }),
-      z6.object({
-        mode: z6.literal("existing_company"),
-        companyId: z6.string().uuid()
+      z9.object({
+        mode: z9.literal("existing_company"),
+        companyId: z9.string().uuid()
       })
     ]);
-    portabilityAgentSelectionSchema = z6.union([
-      z6.literal("all"),
-      z6.array(z6.string().min(1))
+    portabilityAgentSelectionSchema = z9.union([
+      z9.literal("all"),
+      z9.array(z9.string().min(1))
     ]);
-    portabilityCollisionStrategySchema = z6.enum(["rename", "skip", "replace"]);
-    companyPortabilityExportSchema = z6.object({
+    portabilityCollisionStrategySchema = z9.enum(["rename", "skip", "replace"]);
+    companyPortabilityExportSchema = z9.object({
       include: portabilityIncludeSchema.optional(),
-      agents: z6.array(z6.string().min(1)).optional(),
-      skills: z6.array(z6.string().min(1)).optional(),
-      projects: z6.array(z6.string().min(1)).optional(),
-      issues: z6.array(z6.string().min(1)).optional(),
-      projectIssues: z6.array(z6.string().min(1)).optional(),
-      selectedFiles: z6.array(z6.string().min(1)).optional(),
-      expandReferencedSkills: z6.boolean().optional(),
+      agents: z9.array(z9.string().min(1)).optional(),
+      skills: z9.array(z9.string().min(1)).optional(),
+      projects: z9.array(z9.string().min(1)).optional(),
+      issues: z9.array(z9.string().min(1)).optional(),
+      projectIssues: z9.array(z9.string().min(1)).optional(),
+      selectedFiles: z9.array(z9.string().min(1)).optional(),
+      expandReferencedSkills: z9.boolean().optional(),
       sidebarOrder: portabilitySidebarOrderSchema.partial().optional()
     });
-    companyPortabilityPreviewSchema = z6.object({
+    companyPortabilityPreviewSchema = z9.object({
       source: portabilitySourceSchema,
       include: portabilityIncludeSchema.optional(),
       target: portabilityTargetSchema,
       agents: portabilityAgentSelectionSchema.optional(),
       collisionStrategy: portabilityCollisionStrategySchema.optional(),
-      nameOverrides: z6.record(z6.string().min(1), z6.string().min(1)).optional(),
-      selectedFiles: z6.array(z6.string().min(1)).optional()
+      nameOverrides: z9.record(z9.string().min(1), z9.string().min(1)).optional(),
+      selectedFiles: z9.array(z9.string().min(1)).optional()
     });
-    portabilityAdapterOverrideSchema = z6.object({
-      adapterType: z6.string().min(1),
-      adapterConfig: z6.record(z6.unknown()).optional()
+    portabilityAdapterOverrideSchema = z9.object({
+      adapterType: z9.string().min(1),
+      adapterConfig: z9.record(z9.unknown()).optional()
     });
     companyPortabilityImportSchema = companyPortabilityPreviewSchema.extend({
-      adapterOverrides: z6.record(z6.string().min(1), portabilityAdapterOverrideSchema).optional()
+      adapterOverrides: z9.record(z9.string().min(1), portabilityAdapterOverrideSchema).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/secret.ts
-import { z as z7 } from "zod";
+import { z as z10 } from "zod";
 var envBindingPlainSchema, envBindingSecretRefSchema, envBindingSchema, envConfigSchema, createSecretSchema, rotateSecretSchema, updateSecretSchema;
 var init_secret = __esm({
   "../packages/shared/src/validators/secret.ts"() {
     "use strict";
     init_constants();
-    envBindingPlainSchema = z7.object({
-      type: z7.literal("plain"),
-      value: z7.string()
+    envBindingPlainSchema = z10.object({
+      type: z10.literal("plain"),
+      value: z10.string()
     });
-    envBindingSecretRefSchema = z7.object({
-      type: z7.literal("secret_ref"),
-      secretId: z7.string().uuid(),
-      version: z7.union([z7.literal("latest"), z7.number().int().positive()]).optional()
+    envBindingSecretRefSchema = z10.object({
+      type: z10.literal("secret_ref"),
+      secretId: z10.string().uuid(),
+      version: z10.union([z10.literal("latest"), z10.number().int().positive()]).optional()
     });
-    envBindingSchema = z7.union([
-      z7.string(),
+    envBindingSchema = z10.union([
+      z10.string(),
       envBindingPlainSchema,
       envBindingSecretRefSchema
     ]);
-    envConfigSchema = z7.record(envBindingSchema);
-    createSecretSchema = z7.object({
-      name: z7.string().min(1),
-      provider: z7.enum(SECRET_PROVIDERS).optional(),
-      value: z7.string().min(1),
-      description: z7.string().optional().nullable(),
-      externalRef: z7.string().optional().nullable()
+    envConfigSchema = z10.record(envBindingSchema);
+    createSecretSchema = z10.object({
+      name: z10.string().min(1),
+      provider: z10.enum(SECRET_PROVIDERS).optional(),
+      value: z10.string().min(1),
+      description: z10.string().optional().nullable(),
+      externalRef: z10.string().optional().nullable()
     });
-    rotateSecretSchema = z7.object({
-      value: z7.string().min(1),
-      externalRef: z7.string().optional().nullable()
+    rotateSecretSchema = z10.object({
+      value: z10.string().min(1),
+      externalRef: z10.string().optional().nullable()
     });
-    updateSecretSchema = z7.object({
-      name: z7.string().min(1).optional(),
-      description: z7.string().optional().nullable(),
-      externalRef: z7.string().optional().nullable()
+    updateSecretSchema = z10.object({
+      name: z10.string().min(1).optional(),
+      description: z10.string().optional().nullable(),
+      externalRef: z10.string().optional().nullable()
     });
   }
 });
 
 // ../packages/shared/src/validators/agent.ts
-import { z as z8 } from "zod";
-var agentPermissionsSchema, agentInstructionsBundleModeSchema, updateAgentInstructionsBundleSchema, upsertAgentInstructionsFileSchema, adapterConfigSchema, createAgentSchema, createAgentHireSchema, updateAgentSchema, updateAgentInstructionsPathSchema, createAgentKeySchema, wakeAgentSchema, resetAgentSessionSchema, testAdapterEnvironmentSchema, updateAgentPermissionsSchema;
+import { z as z11 } from "zod";
+var agentPermissionsSchema, agentInstructionsBundleModeSchema, updateAgentInstructionsBundleSchema, upsertAgentInstructionsFileSchema, adapterConfigSchema, createAgentSchema, createAgentHireSchema, updateAgentSchema, updateAgentInstructionsPathSchema, createAgentKeySchema, agentMineInboxQuerySchema, wakeAgentSchema, resetAgentSessionSchema, testAdapterEnvironmentSchema, updateAgentPermissionsSchema;
 var init_agent = __esm({
   "../packages/shared/src/validators/agent.ts"() {
     "use strict";
     init_constants();
     init_secret();
-    agentPermissionsSchema = z8.object({
-      canCreateAgents: z8.boolean().optional().default(false)
+    agentPermissionsSchema = z11.object({
+      canCreateAgents: z11.boolean().optional().default(false)
     });
-    agentInstructionsBundleModeSchema = z8.enum(["managed", "external"]);
-    updateAgentInstructionsBundleSchema = z8.object({
+    agentInstructionsBundleModeSchema = z11.enum(["managed", "external"]);
+    updateAgentInstructionsBundleSchema = z11.object({
       mode: agentInstructionsBundleModeSchema.optional(),
-      rootPath: z8.string().trim().min(1).nullable().optional(),
-      entryFile: z8.string().trim().min(1).optional(),
-      clearLegacyPromptTemplate: z8.boolean().optional().default(false)
+      rootPath: z11.string().trim().min(1).nullable().optional(),
+      entryFile: z11.string().trim().min(1).optional(),
+      clearLegacyPromptTemplate: z11.boolean().optional().default(false)
     });
-    upsertAgentInstructionsFileSchema = z8.object({
-      path: z8.string().trim().min(1),
-      content: z8.string(),
-      clearLegacyPromptTemplate: z8.boolean().optional().default(false)
+    upsertAgentInstructionsFileSchema = z11.object({
+      path: z11.string().trim().min(1),
+      content: z11.string(),
+      clearLegacyPromptTemplate: z11.boolean().optional().default(false)
     });
-    adapterConfigSchema = z8.record(z8.unknown()).superRefine((value, ctx) => {
+    adapterConfigSchema = z11.record(z11.unknown()).superRefine((value, ctx) => {
       const envValue = value.env;
       if (envValue === void 0) return;
       const parsed = envConfigSchema.safeParse(envValue);
       if (!parsed.success) {
         ctx.addIssue({
-          code: z8.ZodIssueCode.custom,
+          code: z11.ZodIssueCode.custom,
           message: "adapterConfig.env must be a map of valid env bindings",
           path: ["env"]
         });
       }
     });
-    createAgentSchema = z8.object({
-      name: z8.string().min(1),
-      role: z8.enum(AGENT_ROLES).optional().default("general"),
-      title: z8.string().optional().nullable(),
-      icon: z8.enum(AGENT_ICON_NAMES).optional().nullable(),
-      reportsTo: z8.string().uuid().optional().nullable(),
-      capabilities: z8.string().optional().nullable(),
-      desiredSkills: z8.array(z8.string().min(1)).optional(),
-      adapterType: z8.enum(AGENT_ADAPTER_TYPES).optional().default("process"),
+    createAgentSchema = z11.object({
+      name: z11.string().min(1),
+      role: z11.enum(AGENT_ROLES).optional().default("general"),
+      title: z11.string().optional().nullable(),
+      icon: z11.enum(AGENT_ICON_NAMES).optional().nullable(),
+      reportsTo: z11.string().uuid().optional().nullable(),
+      capabilities: z11.string().optional().nullable(),
+      desiredSkills: z11.array(z11.string().min(1)).optional(),
+      adapterType: z11.enum(AGENT_ADAPTER_TYPES).optional().default("process"),
       adapterConfig: adapterConfigSchema.optional().default({}),
-      runtimeConfig: z8.record(z8.unknown()).optional().default({}),
-      budgetMonthlyCents: z8.number().int().nonnegative().optional().default(0),
+      runtimeConfig: z11.record(z11.unknown()).optional().default({}),
+      budgetMonthlyCents: z11.number().int().nonnegative().optional().default(0),
       permissions: agentPermissionsSchema.optional(),
-      metadata: z8.record(z8.unknown()).optional().nullable()
+      metadata: z11.record(z11.unknown()).optional().nullable()
     });
     createAgentHireSchema = createAgentSchema.extend({
-      sourceIssueId: z8.string().uuid().optional().nullable(),
-      sourceIssueIds: z8.array(z8.string().uuid()).optional()
+      sourceIssueId: z11.string().uuid().optional().nullable(),
+      sourceIssueIds: z11.array(z11.string().uuid()).optional()
     });
     updateAgentSchema = createAgentSchema.omit({ permissions: true }).partial().extend({
-      permissions: z8.never().optional(),
-      replaceAdapterConfig: z8.boolean().optional(),
-      status: z8.enum(AGENT_STATUSES).optional(),
-      spentMonthlyCents: z8.number().int().nonnegative().optional()
+      permissions: z11.never().optional(),
+      replaceAdapterConfig: z11.boolean().optional(),
+      status: z11.enum(AGENT_STATUSES).optional(),
+      spentMonthlyCents: z11.number().int().nonnegative().optional()
     });
-    updateAgentInstructionsPathSchema = z8.object({
-      path: z8.string().trim().min(1).nullable(),
-      adapterConfigKey: z8.string().trim().min(1).optional()
+    updateAgentInstructionsPathSchema = z11.object({
+      path: z11.string().trim().min(1).nullable(),
+      adapterConfigKey: z11.string().trim().min(1).optional()
     });
-    createAgentKeySchema = z8.object({
-      name: z8.string().min(1).default("default")
+    createAgentKeySchema = z11.object({
+      name: z11.string().min(1).default("default")
     });
-    wakeAgentSchema = z8.object({
-      source: z8.enum(["timer", "assignment", "on_demand", "automation"]).optional().default("on_demand"),
-      triggerDetail: z8.enum(["manual", "ping", "callback", "system"]).optional(),
-      reason: z8.string().optional().nullable(),
-      payload: z8.record(z8.unknown()).optional().nullable(),
-      idempotencyKey: z8.string().optional().nullable(),
-      forceFreshSession: z8.preprocess(
+    agentMineInboxQuerySchema = z11.object({
+      userId: z11.string().trim().min(1),
+      status: z11.string().trim().min(1).optional().default(INBOX_MINE_ISSUE_STATUS_FILTER)
+    });
+    wakeAgentSchema = z11.object({
+      source: z11.enum(["timer", "assignment", "on_demand", "automation"]).optional().default("on_demand"),
+      triggerDetail: z11.enum(["manual", "ping", "callback", "system"]).optional(),
+      reason: z11.string().optional().nullable(),
+      payload: z11.record(z11.unknown()).optional().nullable(),
+      idempotencyKey: z11.string().optional().nullable(),
+      forceFreshSession: z11.preprocess(
         (value) => value === null ? void 0 : value,
-        z8.boolean().optional().default(false)
+        z11.boolean().optional().default(false)
       )
     });
-    resetAgentSessionSchema = z8.object({
-      taskKey: z8.string().min(1).optional().nullable()
+    resetAgentSessionSchema = z11.object({
+      taskKey: z11.string().min(1).optional().nullable()
     });
-    testAdapterEnvironmentSchema = z8.object({
+    testAdapterEnvironmentSchema = z11.object({
       adapterConfig: adapterConfigSchema.optional().default({})
     });
-    updateAgentPermissionsSchema = z8.object({
-      canCreateAgents: z8.boolean(),
-      canAssignTasks: z8.boolean()
+    updateAgentPermissionsSchema = z11.object({
+      canCreateAgents: z11.boolean(),
+      canAssignTasks: z11.boolean()
     });
   }
 });
 
 // ../packages/shared/src/validators/project.ts
-import { z as z9 } from "zod";
+import { z as z12 } from "zod";
 function validateProjectWorkspace(value, ctx) {
   const sourceType = value.sourceType ?? "local_path";
   const hasCwd = typeof value.cwd === "string" && value.cwd.trim().length > 0;
@@ -957,7 +1211,7 @@ function validateProjectWorkspace(value, ctx) {
   if (sourceType === "remote_managed") {
     if (!hasRemoteRef && !hasRepo) {
       ctx.addIssue({
-        code: z9.ZodIssueCode.custom,
+        code: z12.ZodIssueCode.custom,
         message: "Remote-managed workspace requires remoteWorkspaceRef or repoUrl.",
         path: ["remoteWorkspaceRef"]
       });
@@ -966,177 +1220,95 @@ function validateProjectWorkspace(value, ctx) {
   }
   if (!hasCwd && !hasRepo) {
     ctx.addIssue({
-      code: z9.ZodIssueCode.custom,
+      code: z12.ZodIssueCode.custom,
       message: "Workspace requires at least one of cwd or repoUrl.",
       path: ["cwd"]
     });
   }
 }
-var executionWorkspaceStrategySchema, projectExecutionWorkspacePolicySchema, projectWorkspaceSourceTypeSchema, projectWorkspaceVisibilitySchema, projectWorkspaceFields, createProjectWorkspaceSchema, updateProjectWorkspaceSchema, projectFields, createProjectSchema, updateProjectSchema;
+var executionWorkspaceStrategySchema2, projectExecutionWorkspacePolicySchema, projectWorkspaceRuntimeConfigSchema, projectWorkspaceSourceTypeSchema, projectWorkspaceVisibilitySchema, projectWorkspaceFields, createProjectWorkspaceSchema, updateProjectWorkspaceSchema, projectFields, createProjectSchema, updateProjectSchema;
 var init_project = __esm({
   "../packages/shared/src/validators/project.ts"() {
     "use strict";
     init_constants();
-    executionWorkspaceStrategySchema = z9.object({
-      type: z9.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
-      baseRef: z9.string().optional().nullable(),
-      branchTemplate: z9.string().optional().nullable(),
-      worktreeParentDir: z9.string().optional().nullable(),
-      provisionCommand: z9.string().optional().nullable(),
-      teardownCommand: z9.string().optional().nullable()
+    executionWorkspaceStrategySchema2 = z12.object({
+      type: z12.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
+      baseRef: z12.string().optional().nullable(),
+      branchTemplate: z12.string().optional().nullable(),
+      worktreeParentDir: z12.string().optional().nullable(),
+      provisionCommand: z12.string().optional().nullable(),
+      teardownCommand: z12.string().optional().nullable()
     }).strict();
-    projectExecutionWorkspacePolicySchema = z9.object({
-      enabled: z9.boolean(),
-      defaultMode: z9.enum(["shared_workspace", "isolated_workspace", "operator_branch", "adapter_default"]).optional(),
-      allowIssueOverride: z9.boolean().optional(),
-      defaultProjectWorkspaceId: z9.string().uuid().optional().nullable(),
-      workspaceStrategy: executionWorkspaceStrategySchema.optional().nullable(),
-      workspaceRuntime: z9.record(z9.unknown()).optional().nullable(),
-      branchPolicy: z9.record(z9.unknown()).optional().nullable(),
-      pullRequestPolicy: z9.record(z9.unknown()).optional().nullable(),
-      runtimePolicy: z9.record(z9.unknown()).optional().nullable(),
-      cleanupPolicy: z9.record(z9.unknown()).optional().nullable()
+    projectExecutionWorkspacePolicySchema = z12.object({
+      enabled: z12.boolean(),
+      defaultMode: z12.enum(["shared_workspace", "isolated_workspace", "operator_branch", "adapter_default"]).optional(),
+      allowIssueOverride: z12.boolean().optional(),
+      defaultProjectWorkspaceId: z12.string().uuid().optional().nullable(),
+      workspaceStrategy: executionWorkspaceStrategySchema2.optional().nullable(),
+      workspaceRuntime: z12.record(z12.unknown()).optional().nullable(),
+      branchPolicy: z12.record(z12.unknown()).optional().nullable(),
+      pullRequestPolicy: z12.record(z12.unknown()).optional().nullable(),
+      runtimePolicy: z12.record(z12.unknown()).optional().nullable(),
+      cleanupPolicy: z12.record(z12.unknown()).optional().nullable()
     }).strict();
-    projectWorkspaceSourceTypeSchema = z9.enum(["local_path", "git_repo", "remote_managed", "non_git_path"]);
-    projectWorkspaceVisibilitySchema = z9.enum(["default", "advanced"]);
+    projectWorkspaceRuntimeConfigSchema = z12.object({
+      workspaceRuntime: z12.record(z12.unknown()).optional().nullable(),
+      desiredState: z12.enum(["running", "stopped"]).optional().nullable()
+    }).strict();
+    projectWorkspaceSourceTypeSchema = z12.enum(["local_path", "git_repo", "remote_managed", "non_git_path"]);
+    projectWorkspaceVisibilitySchema = z12.enum(["default", "advanced"]);
     projectWorkspaceFields = {
-      name: z9.string().min(1).optional(),
+      name: z12.string().min(1).optional(),
       sourceType: projectWorkspaceSourceTypeSchema.optional(),
-      cwd: z9.string().min(1).optional().nullable(),
-      repoUrl: z9.string().url().optional().nullable(),
-      repoRef: z9.string().optional().nullable(),
-      defaultRef: z9.string().optional().nullable(),
+      cwd: z12.string().min(1).optional().nullable(),
+      repoUrl: z12.string().url().optional().nullable(),
+      repoRef: z12.string().optional().nullable(),
+      defaultRef: z12.string().optional().nullable(),
       visibility: projectWorkspaceVisibilitySchema.optional(),
-      setupCommand: z9.string().optional().nullable(),
-      cleanupCommand: z9.string().optional().nullable(),
-      remoteProvider: z9.string().optional().nullable(),
-      remoteWorkspaceRef: z9.string().optional().nullable(),
-      sharedWorkspaceKey: z9.string().optional().nullable(),
-      metadata: z9.record(z9.unknown()).optional().nullable()
+      setupCommand: z12.string().optional().nullable(),
+      cleanupCommand: z12.string().optional().nullable(),
+      remoteProvider: z12.string().optional().nullable(),
+      remoteWorkspaceRef: z12.string().optional().nullable(),
+      sharedWorkspaceKey: z12.string().optional().nullable(),
+      metadata: z12.record(z12.unknown()).optional().nullable(),
+      runtimeConfig: projectWorkspaceRuntimeConfigSchema.optional().nullable()
     };
-    createProjectWorkspaceSchema = z9.object({
+    createProjectWorkspaceSchema = z12.object({
       ...projectWorkspaceFields,
-      isPrimary: z9.boolean().optional().default(false)
+      isPrimary: z12.boolean().optional().default(false)
     }).superRefine(validateProjectWorkspace);
-    updateProjectWorkspaceSchema = z9.object({
+    updateProjectWorkspaceSchema = z12.object({
       ...projectWorkspaceFields,
-      isPrimary: z9.boolean().optional()
+      isPrimary: z12.boolean().optional()
     }).partial();
     projectFields = {
       /** @deprecated Use goalIds instead */
-      goalId: z9.string().uuid().optional().nullable(),
-      goalIds: z9.array(z9.string().uuid()).optional(),
-      name: z9.string().min(1),
-      description: z9.string().optional().nullable(),
-      status: z9.enum(PROJECT_STATUSES).optional().default("backlog"),
-      leadAgentId: z9.string().uuid().optional().nullable(),
-      targetDate: z9.string().optional().nullable(),
-      color: z9.string().optional().nullable(),
+      goalId: z12.string().uuid().optional().nullable(),
+      goalIds: z12.array(z12.string().uuid()).optional(),
+      name: z12.string().min(1),
+      description: z12.string().optional().nullable(),
+      status: z12.enum(PROJECT_STATUSES).optional().default("backlog"),
+      leadAgentId: z12.string().uuid().optional().nullable(),
+      targetDate: z12.string().optional().nullable(),
+      color: z12.string().optional().nullable(),
       executionWorkspacePolicy: projectExecutionWorkspacePolicySchema.optional().nullable(),
-      archivedAt: z9.string().datetime().optional().nullable()
+      archivedAt: z12.string().datetime().optional().nullable()
     };
-    createProjectSchema = z9.object({
+    createProjectSchema = z12.object({
       ...projectFields,
       workspace: createProjectWorkspaceSchema.optional()
     });
-    updateProjectSchema = z9.object(projectFields).partial();
-  }
-});
-
-// ../packages/shared/src/validators/issue.ts
-import { z as z10 } from "zod";
-var executionWorkspaceStrategySchema2, issueExecutionWorkspaceSettingsSchema, issueAssigneeAdapterOverridesSchema, createIssueSchema, createIssueLabelSchema, updateIssueSchema, checkoutIssueSchema, addIssueCommentSchema, linkIssueApprovalSchema, createIssueAttachmentMetadataSchema, ISSUE_DOCUMENT_FORMATS, issueDocumentFormatSchema, issueDocumentKeySchema, upsertIssueDocumentSchema;
-var init_issue = __esm({
-  "../packages/shared/src/validators/issue.ts"() {
-    "use strict";
-    init_constants();
-    executionWorkspaceStrategySchema2 = z10.object({
-      type: z10.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
-      baseRef: z10.string().optional().nullable(),
-      branchTemplate: z10.string().optional().nullable(),
-      worktreeParentDir: z10.string().optional().nullable(),
-      provisionCommand: z10.string().optional().nullable(),
-      teardownCommand: z10.string().optional().nullable()
-    }).strict();
-    issueExecutionWorkspaceSettingsSchema = z10.object({
-      mode: z10.enum(["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"]).optional(),
-      workspaceStrategy: executionWorkspaceStrategySchema2.optional().nullable(),
-      workspaceRuntime: z10.record(z10.unknown()).optional().nullable()
-    }).strict();
-    issueAssigneeAdapterOverridesSchema = z10.object({
-      adapterConfig: z10.record(z10.unknown()).optional(),
-      useProjectWorkspace: z10.boolean().optional()
-    }).strict();
-    createIssueSchema = z10.object({
-      projectId: z10.string().uuid().optional().nullable(),
-      projectWorkspaceId: z10.string().uuid().optional().nullable(),
-      goalId: z10.string().uuid().optional().nullable(),
-      parentId: z10.string().uuid().optional().nullable(),
-      title: z10.string().min(1),
-      description: z10.string().optional().nullable(),
-      status: z10.enum(ISSUE_STATUSES).optional().default("backlog"),
-      priority: z10.enum(ISSUE_PRIORITIES).optional().default("medium"),
-      assigneeAgentId: z10.string().uuid().optional().nullable(),
-      assigneeUserId: z10.string().optional().nullable(),
-      requestDepth: z10.number().int().nonnegative().optional().default(0),
-      billingCode: z10.string().optional().nullable(),
-      assigneeAdapterOverrides: issueAssigneeAdapterOverridesSchema.optional().nullable(),
-      executionWorkspaceId: z10.string().uuid().optional().nullable(),
-      executionWorkspacePreference: z10.enum([
-        "inherit",
-        "shared_workspace",
-        "isolated_workspace",
-        "operator_branch",
-        "reuse_existing",
-        "agent_default"
-      ]).optional().nullable(),
-      executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable(),
-      labelIds: z10.array(z10.string().uuid()).optional()
-    });
-    createIssueLabelSchema = z10.object({
-      name: z10.string().trim().min(1).max(48),
-      color: z10.string().regex(/^#(?:[0-9a-fA-F]{6})$/, "Color must be a 6-digit hex value")
-    });
-    updateIssueSchema = createIssueSchema.partial().extend({
-      comment: z10.string().min(1).optional(),
-      reopen: z10.boolean().optional(),
-      hiddenAt: z10.string().datetime().nullable().optional()
-    });
-    checkoutIssueSchema = z10.object({
-      agentId: z10.string().uuid(),
-      expectedStatuses: z10.array(z10.enum(ISSUE_STATUSES)).nonempty()
-    });
-    addIssueCommentSchema = z10.object({
-      body: z10.string().min(1),
-      reopen: z10.boolean().optional(),
-      interrupt: z10.boolean().optional()
-    });
-    linkIssueApprovalSchema = z10.object({
-      approvalId: z10.string().uuid()
-    });
-    createIssueAttachmentMetadataSchema = z10.object({
-      issueCommentId: z10.string().uuid().optional().nullable()
-    });
-    ISSUE_DOCUMENT_FORMATS = ["markdown"];
-    issueDocumentFormatSchema = z10.enum(ISSUE_DOCUMENT_FORMATS);
-    issueDocumentKeySchema = z10.string().trim().min(1).max(64).regex(/^[a-z0-9][a-z0-9_-]*$/, "Document key must be lowercase letters, numbers, _ or -");
-    upsertIssueDocumentSchema = z10.object({
-      title: z10.string().trim().max(200).nullable().optional(),
-      format: issueDocumentFormatSchema,
-      body: z10.string().max(524288),
-      changeSummary: z10.string().trim().max(500).nullable().optional(),
-      baseRevisionId: z10.string().uuid().nullable().optional()
-    });
+    updateProjectSchema = z12.object(projectFields).partial();
   }
 });
 
 // ../packages/shared/src/validators/work-product.ts
-import { z as z11 } from "zod";
+import { z as z13 } from "zod";
 var issueWorkProductTypeSchema, issueWorkProductStatusSchema, issueWorkProductReviewStateSchema, createIssueWorkProductSchema, updateIssueWorkProductSchema;
 var init_work_product = __esm({
   "../packages/shared/src/validators/work-product.ts"() {
     "use strict";
-    issueWorkProductTypeSchema = z11.enum([
+    issueWorkProductTypeSchema = z13.enum([
       "preview_url",
       "runtime_service",
       "pull_request",
@@ -1145,7 +1317,7 @@ var init_work_product = __esm({
       "artifact",
       "document"
     ]);
-    issueWorkProductStatusSchema = z11.enum([
+    issueWorkProductStatusSchema = z13.enum([
       "active",
       "ready_for_review",
       "approved",
@@ -1156,226 +1328,266 @@ var init_work_product = __esm({
       "archived",
       "draft"
     ]);
-    issueWorkProductReviewStateSchema = z11.enum([
+    issueWorkProductReviewStateSchema = z13.enum([
       "none",
       "needs_board_review",
       "approved",
       "changes_requested"
     ]);
-    createIssueWorkProductSchema = z11.object({
-      projectId: z11.string().uuid().optional().nullable(),
-      executionWorkspaceId: z11.string().uuid().optional().nullable(),
-      runtimeServiceId: z11.string().uuid().optional().nullable(),
+    createIssueWorkProductSchema = z13.object({
+      projectId: z13.string().uuid().optional().nullable(),
+      executionWorkspaceId: z13.string().uuid().optional().nullable(),
+      runtimeServiceId: z13.string().uuid().optional().nullable(),
       type: issueWorkProductTypeSchema,
-      provider: z11.string().min(1),
-      externalId: z11.string().optional().nullable(),
-      title: z11.string().min(1),
-      url: z11.string().url().optional().nullable(),
+      provider: z13.string().min(1),
+      externalId: z13.string().optional().nullable(),
+      title: z13.string().min(1),
+      url: z13.string().url().optional().nullable(),
       status: issueWorkProductStatusSchema.default("active"),
       reviewState: issueWorkProductReviewStateSchema.optional().default("none"),
-      isPrimary: z11.boolean().optional().default(false),
-      healthStatus: z11.enum(["unknown", "healthy", "unhealthy"]).optional().default("unknown"),
-      summary: z11.string().optional().nullable(),
-      metadata: z11.record(z11.unknown()).optional().nullable(),
-      createdByRunId: z11.string().uuid().optional().nullable()
+      isPrimary: z13.boolean().optional().default(false),
+      healthStatus: z13.enum(["unknown", "healthy", "unhealthy"]).optional().default("unknown"),
+      summary: z13.string().optional().nullable(),
+      metadata: z13.record(z13.unknown()).optional().nullable(),
+      createdByRunId: z13.string().uuid().optional().nullable()
     });
     updateIssueWorkProductSchema = createIssueWorkProductSchema.partial();
   }
 });
 
 // ../packages/shared/src/validators/execution-workspace.ts
-import { z as z12 } from "zod";
-var executionWorkspaceStatusSchema, updateExecutionWorkspaceSchema;
+import { z as z14 } from "zod";
+var executionWorkspaceStatusSchema, executionWorkspaceConfigSchema, executionWorkspaceCloseReadinessStateSchema, executionWorkspaceCloseActionKindSchema, executionWorkspaceCloseActionSchema, executionWorkspaceCloseLinkedIssueSchema, executionWorkspaceCloseGitReadinessSchema, workspaceRuntimeServiceSchema, executionWorkspaceCloseReadinessSchema, updateExecutionWorkspaceSchema;
 var init_execution_workspace = __esm({
   "../packages/shared/src/validators/execution-workspace.ts"() {
     "use strict";
-    executionWorkspaceStatusSchema = z12.enum([
+    executionWorkspaceStatusSchema = z14.enum([
       "active",
       "idle",
       "in_review",
       "archived",
       "cleanup_failed"
     ]);
-    updateExecutionWorkspaceSchema = z12.object({
+    executionWorkspaceConfigSchema = z14.object({
+      provisionCommand: z14.string().optional().nullable(),
+      teardownCommand: z14.string().optional().nullable(),
+      cleanupCommand: z14.string().optional().nullable(),
+      workspaceRuntime: z14.record(z14.unknown()).optional().nullable(),
+      desiredState: z14.enum(["running", "stopped"]).optional().nullable()
+    }).strict();
+    executionWorkspaceCloseReadinessStateSchema = z14.enum([
+      "ready",
+      "ready_with_warnings",
+      "blocked"
+    ]);
+    executionWorkspaceCloseActionKindSchema = z14.enum([
+      "archive_record",
+      "stop_runtime_services",
+      "cleanup_command",
+      "teardown_command",
+      "git_worktree_remove",
+      "git_branch_delete",
+      "remove_local_directory"
+    ]);
+    executionWorkspaceCloseActionSchema = z14.object({
+      kind: executionWorkspaceCloseActionKindSchema,
+      label: z14.string(),
+      description: z14.string(),
+      command: z14.string().nullable()
+    }).strict();
+    executionWorkspaceCloseLinkedIssueSchema = z14.object({
+      id: z14.string().uuid(),
+      identifier: z14.string().nullable(),
+      title: z14.string(),
+      status: z14.string(),
+      isTerminal: z14.boolean()
+    }).strict();
+    executionWorkspaceCloseGitReadinessSchema = z14.object({
+      repoRoot: z14.string().nullable(),
+      workspacePath: z14.string().nullable(),
+      branchName: z14.string().nullable(),
+      baseRef: z14.string().nullable(),
+      hasDirtyTrackedFiles: z14.boolean(),
+      hasUntrackedFiles: z14.boolean(),
+      dirtyEntryCount: z14.number().int().nonnegative(),
+      untrackedEntryCount: z14.number().int().nonnegative(),
+      aheadCount: z14.number().int().nonnegative().nullable(),
+      behindCount: z14.number().int().nonnegative().nullable(),
+      isMergedIntoBase: z14.boolean().nullable(),
+      createdByRuntime: z14.boolean()
+    }).strict();
+    workspaceRuntimeServiceSchema = z14.object({
+      id: z14.string(),
+      companyId: z14.string().uuid(),
+      projectId: z14.string().uuid().nullable(),
+      projectWorkspaceId: z14.string().uuid().nullable(),
+      executionWorkspaceId: z14.string().uuid().nullable(),
+      issueId: z14.string().uuid().nullable(),
+      scopeType: z14.enum(["project_workspace", "execution_workspace", "run", "agent"]),
+      scopeId: z14.string().nullable(),
+      serviceName: z14.string(),
+      status: z14.enum(["starting", "running", "stopped", "failed"]),
+      lifecycle: z14.enum(["shared", "ephemeral"]),
+      reuseKey: z14.string().nullable(),
+      command: z14.string().nullable(),
+      cwd: z14.string().nullable(),
+      port: z14.number().int().nullable(),
+      url: z14.string().nullable(),
+      provider: z14.enum(["local_process", "adapter_managed"]),
+      providerRef: z14.string().nullable(),
+      ownerAgentId: z14.string().uuid().nullable(),
+      startedByRunId: z14.string().uuid().nullable(),
+      lastUsedAt: z14.coerce.date(),
+      startedAt: z14.coerce.date(),
+      stoppedAt: z14.coerce.date().nullable(),
+      stopPolicy: z14.record(z14.unknown()).nullable(),
+      healthStatus: z14.enum(["unknown", "healthy", "unhealthy"]),
+      createdAt: z14.coerce.date(),
+      updatedAt: z14.coerce.date()
+    }).strict();
+    executionWorkspaceCloseReadinessSchema = z14.object({
+      workspaceId: z14.string().uuid(),
+      state: executionWorkspaceCloseReadinessStateSchema,
+      blockingReasons: z14.array(z14.string()),
+      warnings: z14.array(z14.string()),
+      linkedIssues: z14.array(executionWorkspaceCloseLinkedIssueSchema),
+      plannedActions: z14.array(executionWorkspaceCloseActionSchema),
+      isDestructiveCloseAllowed: z14.boolean(),
+      isSharedWorkspace: z14.boolean(),
+      isProjectPrimaryWorkspace: z14.boolean(),
+      git: executionWorkspaceCloseGitReadinessSchema.nullable(),
+      runtimeServices: z14.array(workspaceRuntimeServiceSchema)
+    }).strict();
+    updateExecutionWorkspaceSchema = z14.object({
+      name: z14.string().min(1).optional(),
+      cwd: z14.string().optional().nullable(),
+      repoUrl: z14.string().optional().nullable(),
+      baseRef: z14.string().optional().nullable(),
+      branchName: z14.string().optional().nullable(),
+      providerRef: z14.string().optional().nullable(),
       status: executionWorkspaceStatusSchema.optional(),
-      cleanupEligibleAt: z12.string().datetime().optional().nullable(),
-      cleanupReason: z12.string().optional().nullable(),
-      metadata: z12.record(z12.unknown()).optional().nullable()
+      cleanupEligibleAt: z14.string().datetime().optional().nullable(),
+      cleanupReason: z14.string().optional().nullable(),
+      config: executionWorkspaceConfigSchema.optional().nullable(),
+      metadata: z14.record(z14.unknown()).optional().nullable()
     }).strict();
   }
 });
 
 // ../packages/shared/src/validators/goal.ts
-import { z as z13 } from "zod";
+import { z as z15 } from "zod";
 var createGoalSchema, updateGoalSchema;
 var init_goal = __esm({
   "../packages/shared/src/validators/goal.ts"() {
     "use strict";
     init_constants();
-    createGoalSchema = z13.object({
-      title: z13.string().min(1),
-      description: z13.string().optional().nullable(),
-      level: z13.enum(GOAL_LEVELS).optional().default("task"),
-      status: z13.enum(GOAL_STATUSES).optional().default("planned"),
-      parentId: z13.string().uuid().optional().nullable(),
-      ownerAgentId: z13.string().uuid().optional().nullable()
+    createGoalSchema = z15.object({
+      title: z15.string().min(1),
+      description: z15.string().optional().nullable(),
+      level: z15.enum(GOAL_LEVELS).optional().default("task"),
+      status: z15.enum(GOAL_STATUSES).optional().default("planned"),
+      parentId: z15.string().uuid().optional().nullable(),
+      ownerAgentId: z15.string().uuid().optional().nullable()
     });
     updateGoalSchema = createGoalSchema.partial();
   }
 });
 
 // ../packages/shared/src/validators/approval.ts
-import { z as z14 } from "zod";
+import { z as z16 } from "zod";
 var createApprovalSchema, resolveApprovalSchema, requestApprovalRevisionSchema, resubmitApprovalSchema, addApprovalCommentSchema;
 var init_approval = __esm({
   "../packages/shared/src/validators/approval.ts"() {
     "use strict";
     init_constants();
-    createApprovalSchema = z14.object({
-      type: z14.enum(APPROVAL_TYPES),
-      requestedByAgentId: z14.string().uuid().optional().nullable(),
-      payload: z14.record(z14.unknown()),
-      issueIds: z14.array(z14.string().uuid()).optional()
+    createApprovalSchema = z16.object({
+      type: z16.enum(APPROVAL_TYPES),
+      requestedByAgentId: z16.string().uuid().optional().nullable(),
+      payload: z16.record(z16.unknown()),
+      issueIds: z16.array(z16.string().uuid()).optional()
     });
-    resolveApprovalSchema = z14.object({
-      decisionNote: z14.string().optional().nullable(),
-      decidedByUserId: z14.string().optional().default("board")
+    resolveApprovalSchema = z16.object({
+      decisionNote: z16.string().optional().nullable(),
+      decidedByUserId: z16.string().optional().default("board")
     });
-    requestApprovalRevisionSchema = z14.object({
-      decisionNote: z14.string().optional().nullable(),
-      decidedByUserId: z14.string().optional().default("board")
+    requestApprovalRevisionSchema = z16.object({
+      decisionNote: z16.string().optional().nullable(),
+      decidedByUserId: z16.string().optional().default("board")
     });
-    resubmitApprovalSchema = z14.object({
-      payload: z14.record(z14.unknown()).optional()
+    resubmitApprovalSchema = z16.object({
+      payload: z16.record(z16.unknown()).optional()
     });
-    addApprovalCommentSchema = z14.object({
-      body: z14.string().min(1)
+    addApprovalCommentSchema = z16.object({
+      body: z16.string().min(1)
     });
-  }
-});
-
-// ../packages/shared/src/validators/routine.ts
-import { z as z15 } from "zod";
-var createRoutineSchema, updateRoutineSchema, baseTriggerSchema, createRoutineTriggerSchema, updateRoutineTriggerSchema, runRoutineSchema, rotateRoutineTriggerSecretSchema;
-var init_routine = __esm({
-  "../packages/shared/src/validators/routine.ts"() {
-    "use strict";
-    init_constants();
-    createRoutineSchema = z15.object({
-      projectId: z15.string().uuid(),
-      goalId: z15.string().uuid().optional().nullable(),
-      parentIssueId: z15.string().uuid().optional().nullable(),
-      title: z15.string().trim().min(1).max(200),
-      description: z15.string().optional().nullable(),
-      assigneeAgentId: z15.string().uuid(),
-      priority: z15.enum(ISSUE_PRIORITIES).optional().default("medium"),
-      status: z15.enum(ROUTINE_STATUSES).optional().default("active"),
-      concurrencyPolicy: z15.enum(ROUTINE_CONCURRENCY_POLICIES).optional().default("coalesce_if_active"),
-      catchUpPolicy: z15.enum(ROUTINE_CATCH_UP_POLICIES).optional().default("skip_missed")
-    });
-    updateRoutineSchema = createRoutineSchema.partial();
-    baseTriggerSchema = z15.object({
-      label: z15.string().trim().max(120).optional().nullable(),
-      enabled: z15.boolean().optional().default(true)
-    });
-    createRoutineTriggerSchema = z15.discriminatedUnion("kind", [
-      baseTriggerSchema.extend({
-        kind: z15.literal("schedule"),
-        cronExpression: z15.string().trim().min(1),
-        timezone: z15.string().trim().min(1).default("UTC")
-      }),
-      baseTriggerSchema.extend({
-        kind: z15.literal("webhook"),
-        signingMode: z15.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().default("bearer"),
-        replayWindowSec: z15.number().int().min(30).max(86400).optional().default(300)
-      }),
-      baseTriggerSchema.extend({
-        kind: z15.literal("api")
-      })
-    ]);
-    updateRoutineTriggerSchema = z15.object({
-      label: z15.string().trim().max(120).optional().nullable(),
-      enabled: z15.boolean().optional(),
-      cronExpression: z15.string().trim().min(1).optional().nullable(),
-      timezone: z15.string().trim().min(1).optional().nullable(),
-      signingMode: z15.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().nullable(),
-      replayWindowSec: z15.number().int().min(30).max(86400).optional().nullable()
-    });
-    runRoutineSchema = z15.object({
-      triggerId: z15.string().uuid().optional().nullable(),
-      payload: z15.record(z15.unknown()).optional().nullable(),
-      idempotencyKey: z15.string().trim().max(255).optional().nullable(),
-      source: z15.enum(["manual", "api"]).optional().default("manual")
-    });
-    rotateRoutineTriggerSecretSchema = z15.object({});
   }
 });
 
 // ../packages/shared/src/validators/cost.ts
-import { z as z16 } from "zod";
+import { z as z17 } from "zod";
 var createCostEventSchema, updateBudgetSchema;
 var init_cost = __esm({
   "../packages/shared/src/validators/cost.ts"() {
     "use strict";
     init_constants();
-    createCostEventSchema = z16.object({
-      agentId: z16.string().uuid(),
-      issueId: z16.string().uuid().optional().nullable(),
-      projectId: z16.string().uuid().optional().nullable(),
-      goalId: z16.string().uuid().optional().nullable(),
-      heartbeatRunId: z16.string().uuid().optional().nullable(),
-      billingCode: z16.string().optional().nullable(),
-      provider: z16.string().min(1),
-      biller: z16.string().min(1).optional(),
-      billingType: z16.enum(BILLING_TYPES).optional().default("unknown"),
-      model: z16.string().min(1),
-      inputTokens: z16.number().int().nonnegative().optional().default(0),
-      cachedInputTokens: z16.number().int().nonnegative().optional().default(0),
-      outputTokens: z16.number().int().nonnegative().optional().default(0),
-      costCents: z16.number().int().nonnegative(),
-      occurredAt: z16.string().datetime()
+    createCostEventSchema = z17.object({
+      agentId: z17.string().uuid(),
+      issueId: z17.string().uuid().optional().nullable(),
+      projectId: z17.string().uuid().optional().nullable(),
+      goalId: z17.string().uuid().optional().nullable(),
+      heartbeatRunId: z17.string().uuid().optional().nullable(),
+      billingCode: z17.string().optional().nullable(),
+      provider: z17.string().min(1),
+      biller: z17.string().min(1).optional(),
+      billingType: z17.enum(BILLING_TYPES).optional().default("unknown"),
+      model: z17.string().min(1),
+      inputTokens: z17.number().int().nonnegative().optional().default(0),
+      cachedInputTokens: z17.number().int().nonnegative().optional().default(0),
+      outputTokens: z17.number().int().nonnegative().optional().default(0),
+      costCents: z17.number().int().nonnegative(),
+      occurredAt: z17.string().datetime()
     }).transform((value) => ({
       ...value,
       biller: value.biller ?? value.provider
     }));
-    updateBudgetSchema = z16.object({
-      budgetMonthlyCents: z16.number().int().nonnegative()
+    updateBudgetSchema = z17.object({
+      budgetMonthlyCents: z17.number().int().nonnegative()
     });
   }
 });
 
 // ../packages/shared/src/validators/finance.ts
-import { z as z17 } from "zod";
+import { z as z18 } from "zod";
 var createFinanceEventSchema;
 var init_finance = __esm({
   "../packages/shared/src/validators/finance.ts"() {
     "use strict";
     init_constants();
-    createFinanceEventSchema = z17.object({
-      agentId: z17.string().uuid().optional().nullable(),
-      issueId: z17.string().uuid().optional().nullable(),
-      projectId: z17.string().uuid().optional().nullable(),
-      goalId: z17.string().uuid().optional().nullable(),
-      heartbeatRunId: z17.string().uuid().optional().nullable(),
-      costEventId: z17.string().uuid().optional().nullable(),
-      billingCode: z17.string().optional().nullable(),
-      description: z17.string().max(500).optional().nullable(),
-      eventKind: z17.enum(FINANCE_EVENT_KINDS),
-      direction: z17.enum(FINANCE_DIRECTIONS).optional().default("debit"),
-      biller: z17.string().min(1),
-      provider: z17.string().min(1).optional().nullable(),
-      executionAdapterType: z17.enum(AGENT_ADAPTER_TYPES).optional().nullable(),
-      pricingTier: z17.string().min(1).optional().nullable(),
-      region: z17.string().min(1).optional().nullable(),
-      model: z17.string().min(1).optional().nullable(),
-      quantity: z17.number().int().nonnegative().optional().nullable(),
-      unit: z17.enum(FINANCE_UNITS).optional().nullable(),
-      amountCents: z17.number().int().nonnegative(),
-      currency: z17.string().length(3).optional().default("USD"),
-      estimated: z17.boolean().optional().default(false),
-      externalInvoiceId: z17.string().optional().nullable(),
-      metadataJson: z17.record(z17.string(), z17.unknown()).optional().nullable(),
-      occurredAt: z17.string().datetime()
+    createFinanceEventSchema = z18.object({
+      agentId: z18.string().uuid().optional().nullable(),
+      issueId: z18.string().uuid().optional().nullable(),
+      projectId: z18.string().uuid().optional().nullable(),
+      goalId: z18.string().uuid().optional().nullable(),
+      heartbeatRunId: z18.string().uuid().optional().nullable(),
+      costEventId: z18.string().uuid().optional().nullable(),
+      billingCode: z18.string().optional().nullable(),
+      description: z18.string().max(500).optional().nullable(),
+      eventKind: z18.enum(FINANCE_EVENT_KINDS),
+      direction: z18.enum(FINANCE_DIRECTIONS).optional().default("debit"),
+      biller: z18.string().min(1),
+      provider: z18.string().min(1).optional().nullable(),
+      executionAdapterType: z18.enum(AGENT_ADAPTER_TYPES).optional().nullable(),
+      pricingTier: z18.string().min(1).optional().nullable(),
+      region: z18.string().min(1).optional().nullable(),
+      model: z18.string().min(1).optional().nullable(),
+      quantity: z18.number().int().nonnegative().optional().nullable(),
+      unit: z18.enum(FINANCE_UNITS).optional().nullable(),
+      amountCents: z18.number().int().nonnegative(),
+      currency: z18.string().length(3).optional().default("USD"),
+      estimated: z18.boolean().optional().default(false),
+      externalInvoiceId: z18.string().optional().nullable(),
+      metadataJson: z18.record(z18.string(), z18.unknown()).optional().nullable(),
+      occurredAt: z18.string().datetime()
     }).transform((value) => ({
       ...value,
       currency: value.currency.toUpperCase()
@@ -1384,81 +1596,81 @@ var init_finance = __esm({
 });
 
 // ../packages/shared/src/validators/asset.ts
-import { z as z18 } from "zod";
+import { z as z19 } from "zod";
 var createAssetImageMetadataSchema;
 var init_asset = __esm({
   "../packages/shared/src/validators/asset.ts"() {
     "use strict";
-    createAssetImageMetadataSchema = z18.object({
-      namespace: z18.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9/_-]+$/).optional()
+    createAssetImageMetadataSchema = z19.object({
+      namespace: z19.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9/_-]+$/).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/access.ts
-import { z as z19 } from "zod";
+import { z as z20 } from "zod";
 var createCompanyInviteSchema, createOpenClawInvitePromptSchema, acceptInviteSchema, listJoinRequestsQuerySchema, claimJoinRequestApiKeySchema, boardCliAuthAccessLevelSchema, createCliAuthChallengeSchema, resolveCliAuthChallengeSchema, updateMemberPermissionsSchema, updateUserCompanyAccessSchema;
 var init_access = __esm({
   "../packages/shared/src/validators/access.ts"() {
     "use strict";
     init_constants();
-    createCompanyInviteSchema = z19.object({
-      allowedJoinTypes: z19.enum(INVITE_JOIN_TYPES).default("both"),
-      defaultsPayload: z19.record(z19.string(), z19.unknown()).optional().nullable(),
-      agentMessage: z19.string().max(4e3).optional().nullable()
+    createCompanyInviteSchema = z20.object({
+      allowedJoinTypes: z20.enum(INVITE_JOIN_TYPES).default("both"),
+      defaultsPayload: z20.record(z20.string(), z20.unknown()).optional().nullable(),
+      agentMessage: z20.string().max(4e3).optional().nullable()
     });
-    createOpenClawInvitePromptSchema = z19.object({
-      agentMessage: z19.string().max(4e3).optional().nullable()
+    createOpenClawInvitePromptSchema = z20.object({
+      agentMessage: z20.string().max(4e3).optional().nullable()
     });
-    acceptInviteSchema = z19.object({
-      requestType: z19.enum(JOIN_REQUEST_TYPES),
-      agentName: z19.string().min(1).max(120).optional(),
-      adapterType: z19.enum(AGENT_ADAPTER_TYPES).optional(),
-      capabilities: z19.string().max(4e3).optional().nullable(),
-      agentDefaultsPayload: z19.record(z19.string(), z19.unknown()).optional().nullable(),
+    acceptInviteSchema = z20.object({
+      requestType: z20.enum(JOIN_REQUEST_TYPES),
+      agentName: z20.string().min(1).max(120).optional(),
+      adapterType: z20.enum(AGENT_ADAPTER_TYPES).optional(),
+      capabilities: z20.string().max(4e3).optional().nullable(),
+      agentDefaultsPayload: z20.record(z20.string(), z20.unknown()).optional().nullable(),
       // OpenClaw join compatibility fields accepted at top level.
-      responsesWebhookUrl: z19.string().max(4e3).optional().nullable(),
-      responsesWebhookMethod: z19.string().max(32).optional().nullable(),
-      responsesWebhookHeaders: z19.record(z19.string(), z19.unknown()).optional().nullable(),
-      paperclipApiUrl: z19.string().max(4e3).optional().nullable(),
-      webhookAuthHeader: z19.string().max(4e3).optional().nullable()
+      responsesWebhookUrl: z20.string().max(4e3).optional().nullable(),
+      responsesWebhookMethod: z20.string().max(32).optional().nullable(),
+      responsesWebhookHeaders: z20.record(z20.string(), z20.unknown()).optional().nullable(),
+      paperclipApiUrl: z20.string().max(4e3).optional().nullable(),
+      webhookAuthHeader: z20.string().max(4e3).optional().nullable()
     });
-    listJoinRequestsQuerySchema = z19.object({
-      status: z19.enum(JOIN_REQUEST_STATUSES).optional(),
-      requestType: z19.enum(JOIN_REQUEST_TYPES).optional()
+    listJoinRequestsQuerySchema = z20.object({
+      status: z20.enum(JOIN_REQUEST_STATUSES).optional(),
+      requestType: z20.enum(JOIN_REQUEST_TYPES).optional()
     });
-    claimJoinRequestApiKeySchema = z19.object({
-      claimSecret: z19.string().min(16).max(256)
+    claimJoinRequestApiKeySchema = z20.object({
+      claimSecret: z20.string().min(16).max(256)
     });
-    boardCliAuthAccessLevelSchema = z19.enum([
+    boardCliAuthAccessLevelSchema = z20.enum([
       "board",
       "instance_admin_required"
     ]);
-    createCliAuthChallengeSchema = z19.object({
-      command: z19.string().min(1).max(240),
-      clientName: z19.string().max(120).optional().nullable(),
+    createCliAuthChallengeSchema = z20.object({
+      command: z20.string().min(1).max(240),
+      clientName: z20.string().max(120).optional().nullable(),
       requestedAccess: boardCliAuthAccessLevelSchema.default("board"),
-      requestedCompanyId: z19.string().uuid().optional().nullable()
+      requestedCompanyId: z20.string().uuid().optional().nullable()
     });
-    resolveCliAuthChallengeSchema = z19.object({
-      token: z19.string().min(16).max(256)
+    resolveCliAuthChallengeSchema = z20.object({
+      token: z20.string().min(16).max(256)
     });
-    updateMemberPermissionsSchema = z19.object({
-      grants: z19.array(
-        z19.object({
-          permissionKey: z19.enum(PERMISSION_KEYS),
-          scope: z19.record(z19.string(), z19.unknown()).optional().nullable()
+    updateMemberPermissionsSchema = z20.object({
+      grants: z20.array(
+        z20.object({
+          permissionKey: z20.enum(PERMISSION_KEYS),
+          scope: z20.record(z20.string(), z20.unknown()).optional().nullable()
         })
       )
     });
-    updateUserCompanyAccessSchema = z19.object({
-      companyIds: z19.array(z19.string().uuid()).default([])
+    updateUserCompanyAccessSchema = z20.object({
+      companyIds: z20.array(z20.string().uuid()).default([])
     });
   }
 });
 
 // ../packages/shared/src/validators/plugin.ts
-import { z as z20 } from "zod";
+import { z as z21 } from "zod";
 function isValidCronExpression(expression) {
   const trimmed = expression.trim();
   if (!trimmed) return false;
@@ -1471,7 +1683,7 @@ var init_plugin = __esm({
   "../packages/shared/src/validators/plugin.ts"() {
     "use strict";
     init_constants();
-    jsonSchemaSchema = z20.record(z20.unknown()).refine(
+    jsonSchemaSchema = z21.record(z21.unknown()).refine(
       (val) => {
         if (Object.keys(val).length === 0) return true;
         return typeof val.type === "string" || val.$ref !== void 0 || val.oneOf !== void 0 || val.anyOf !== void 0 || val.allOf !== void 0;
@@ -1479,76 +1691,76 @@ var init_plugin = __esm({
       { message: "Must be a valid JSON Schema object (requires at least a 'type', '$ref', or composition keyword)" }
     );
     CRON_FIELD_PATTERN = /^(\*(?:\/[0-9]+)?|[0-9]+(?:-[0-9]+)?(?:\/[0-9]+)?)(?:,(\*(?:\/[0-9]+)?|[0-9]+(?:-[0-9]+)?(?:\/[0-9]+)?))*$/;
-    pluginJobDeclarationSchema = z20.object({
-      jobKey: z20.string().min(1),
-      displayName: z20.string().min(1),
-      description: z20.string().optional(),
-      schedule: z20.string().refine(
+    pluginJobDeclarationSchema = z21.object({
+      jobKey: z21.string().min(1),
+      displayName: z21.string().min(1),
+      description: z21.string().optional(),
+      schedule: z21.string().refine(
         (val) => isValidCronExpression(val),
         { message: "schedule must be a valid 5-field cron expression (e.g. '*/15 * * * *')" }
       ).optional()
     });
-    pluginWebhookDeclarationSchema = z20.object({
-      endpointKey: z20.string().min(1),
-      displayName: z20.string().min(1),
-      description: z20.string().optional()
+    pluginWebhookDeclarationSchema = z21.object({
+      endpointKey: z21.string().min(1),
+      displayName: z21.string().min(1),
+      description: z21.string().optional()
     });
-    pluginToolDeclarationSchema = z20.object({
-      name: z20.string().min(1),
-      displayName: z20.string().min(1),
-      description: z20.string().min(1),
+    pluginToolDeclarationSchema = z21.object({
+      name: z21.string().min(1),
+      displayName: z21.string().min(1),
+      description: z21.string().min(1),
       parametersSchema: jsonSchemaSchema
     });
-    pluginUiSlotDeclarationSchema = z20.object({
-      type: z20.enum(PLUGIN_UI_SLOT_TYPES),
-      id: z20.string().min(1),
-      displayName: z20.string().min(1),
-      exportName: z20.string().min(1),
-      entityTypes: z20.array(z20.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
-      routePath: z20.string().regex(/^[a-z0-9][a-z0-9-]*$/, {
+    pluginUiSlotDeclarationSchema = z21.object({
+      type: z21.enum(PLUGIN_UI_SLOT_TYPES),
+      id: z21.string().min(1),
+      displayName: z21.string().min(1),
+      exportName: z21.string().min(1),
+      entityTypes: z21.array(z21.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
+      routePath: z21.string().regex(/^[a-z0-9][a-z0-9-]*$/, {
         message: "routePath must be a lowercase single-segment slug (letters, numbers, hyphens)"
       }).optional(),
-      order: z20.number().int().optional()
+      order: z21.number().int().optional()
     }).superRefine((value, ctx) => {
       const entityScopedTypes = ["detailTab", "taskDetailView", "contextMenuItem", "commentAnnotation", "commentContextMenuItem", "projectSidebarItem"];
       if (entityScopedTypes.includes(value.type) && (!value.entityTypes || value.entityTypes.length === 0)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: `${value.type} slots require at least one entityType`,
           path: ["entityTypes"]
         });
       }
       if (value.type === "projectSidebarItem" && value.entityTypes && !value.entityTypes.includes("project")) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: 'projectSidebarItem slots require entityTypes to include "project"',
           path: ["entityTypes"]
         });
       }
       if (value.type === "commentAnnotation" && value.entityTypes && !value.entityTypes.includes("comment")) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: 'commentAnnotation slots require entityTypes to include "comment"',
           path: ["entityTypes"]
         });
       }
       if (value.type === "commentContextMenuItem" && value.entityTypes && !value.entityTypes.includes("comment")) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: 'commentContextMenuItem slots require entityTypes to include "comment"',
           path: ["entityTypes"]
         });
       }
       if (value.routePath && value.type !== "page") {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "routePath is only supported for page slots",
           path: ["routePath"]
         });
       }
       if (value.routePath && PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS.includes(value.routePath)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: `routePath "${value.routePath}" is reserved by the host`,
           path: ["routePath"]
         });
@@ -1569,29 +1781,29 @@ var init_plugin = __esm({
       external: [],
       iframe: ["compact", "default", "wide", "full"]
     };
-    pluginLauncherActionDeclarationSchema = z20.object({
-      type: z20.enum(PLUGIN_LAUNCHER_ACTIONS),
-      target: z20.string().min(1),
-      params: z20.record(z20.unknown()).optional()
+    pluginLauncherActionDeclarationSchema = z21.object({
+      type: z21.enum(PLUGIN_LAUNCHER_ACTIONS),
+      target: z21.string().min(1),
+      params: z21.record(z21.unknown()).optional()
     }).superRefine((value, ctx) => {
       if (value.type === "performAction" && value.target.includes("/")) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "performAction launchers must target an action key, not a route or URL",
           path: ["target"]
         });
       }
       if (value.type === "navigate" && /^https?:\/\//.test(value.target)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "navigate launchers must target a host route, not an absolute URL",
           path: ["target"]
         });
       }
     });
-    pluginLauncherRenderDeclarationSchema = z20.object({
-      environment: z20.enum(PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS),
-      bounds: z20.enum(PLUGIN_LAUNCHER_BOUNDS).optional()
+    pluginLauncherRenderDeclarationSchema = z21.object({
+      environment: z21.enum(PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS),
+      bounds: z21.enum(PLUGIN_LAUNCHER_BOUNDS).optional()
     }).superRefine((value, ctx) => {
       if (!value.bounds) {
         return;
@@ -1599,122 +1811,122 @@ var init_plugin = __esm({
       const supportedBounds = launcherBoundsByEnvironment[value.environment];
       if (!supportedBounds.includes(value.bounds)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: `bounds "${value.bounds}" is not supported for render environment "${value.environment}"`,
           path: ["bounds"]
         });
       }
     });
-    pluginLauncherDeclarationSchema = z20.object({
-      id: z20.string().min(1),
-      displayName: z20.string().min(1),
-      description: z20.string().optional(),
-      placementZone: z20.enum(PLUGIN_LAUNCHER_PLACEMENT_ZONES),
-      exportName: z20.string().min(1).optional(),
-      entityTypes: z20.array(z20.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
-      order: z20.number().int().optional(),
+    pluginLauncherDeclarationSchema = z21.object({
+      id: z21.string().min(1),
+      displayName: z21.string().min(1),
+      description: z21.string().optional(),
+      placementZone: z21.enum(PLUGIN_LAUNCHER_PLACEMENT_ZONES),
+      exportName: z21.string().min(1).optional(),
+      entityTypes: z21.array(z21.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
+      order: z21.number().int().optional(),
       action: pluginLauncherActionDeclarationSchema,
       render: pluginLauncherRenderDeclarationSchema.optional()
     }).superRefine((value, ctx) => {
       if (entityScopedLauncherPlacementZones.some((zone) => zone === value.placementZone) && (!value.entityTypes || value.entityTypes.length === 0)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: `${value.placementZone} launchers require at least one entityType`,
           path: ["entityTypes"]
         });
       }
       if (value.placementZone === "projectSidebarItem" && value.entityTypes && !value.entityTypes.includes("project")) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: 'projectSidebarItem launchers require entityTypes to include "project"',
           path: ["entityTypes"]
         });
       }
       if (value.action.type === "performAction" && value.render) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "performAction launchers cannot declare render hints",
           path: ["render"]
         });
       }
       if (["openModal", "openDrawer", "openPopover"].includes(value.action.type) && !value.render) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: `${value.action.type} launchers require render metadata`,
           path: ["render"]
         });
       }
       if (value.action.type === "openModal" && value.render?.environment === "hostInline") {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "openModal launchers cannot use the hostInline render environment",
           path: ["render", "environment"]
         });
       }
       if (value.action.type === "openDrawer" && value.render && !["hostOverlay", "iframe"].includes(value.render.environment)) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "openDrawer launchers must use hostOverlay or iframe render environments",
           path: ["render", "environment"]
         });
       }
       if (value.action.type === "openPopover" && value.render?.environment === "hostRoute") {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "openPopover launchers cannot use the hostRoute render environment",
           path: ["render", "environment"]
         });
       }
     });
-    pluginManifestV1Schema = z20.object({
-      id: z20.string().min(1).regex(
+    pluginManifestV1Schema = z21.object({
+      id: z21.string().min(1).regex(
         /^[a-z0-9][a-z0-9._-]*$/,
         "Plugin id must start with a lowercase alphanumeric and contain only lowercase letters, digits, dots, hyphens, or underscores"
       ),
-      apiVersion: z20.literal(1),
-      version: z20.string().min(1).regex(
+      apiVersion: z21.literal(1),
+      version: z21.string().min(1).regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "Version must follow semver (e.g. 1.0.0 or 1.0.0-beta.1)"
       ),
-      displayName: z20.string().min(1).max(100),
-      description: z20.string().min(1).max(500),
-      author: z20.string().min(1).max(200),
-      categories: z20.array(z20.enum(PLUGIN_CATEGORIES)).min(1),
-      minimumHostVersion: z20.string().regex(
+      displayName: z21.string().min(1).max(100),
+      description: z21.string().min(1).max(500),
+      author: z21.string().min(1).max(200),
+      categories: z21.array(z21.enum(PLUGIN_CATEGORIES)).min(1),
+      minimumHostVersion: z21.string().regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "minimumHostVersion must follow semver (e.g. 1.0.0)"
       ).optional(),
-      minimumPaperclipVersion: z20.string().regex(
+      minimumPaperclipVersion: z21.string().regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "minimumPaperclipVersion must follow semver (e.g. 1.0.0)"
       ).optional(),
-      capabilities: z20.array(z20.enum(PLUGIN_CAPABILITIES)).min(1),
-      entrypoints: z20.object({
-        worker: z20.string().min(1),
-        ui: z20.string().min(1).optional()
+      capabilities: z21.array(z21.enum(PLUGIN_CAPABILITIES)).min(1),
+      entrypoints: z21.object({
+        worker: z21.string().min(1),
+        ui: z21.string().min(1).optional()
       }),
       instanceConfigSchema: jsonSchemaSchema.optional(),
-      jobs: z20.array(pluginJobDeclarationSchema).optional(),
-      webhooks: z20.array(pluginWebhookDeclarationSchema).optional(),
-      tools: z20.array(pluginToolDeclarationSchema).optional(),
-      launchers: z20.array(pluginLauncherDeclarationSchema).optional(),
-      ui: z20.object({
-        slots: z20.array(pluginUiSlotDeclarationSchema).min(1).optional(),
-        launchers: z20.array(pluginLauncherDeclarationSchema).optional()
+      jobs: z21.array(pluginJobDeclarationSchema).optional(),
+      webhooks: z21.array(pluginWebhookDeclarationSchema).optional(),
+      tools: z21.array(pluginToolDeclarationSchema).optional(),
+      launchers: z21.array(pluginLauncherDeclarationSchema).optional(),
+      ui: z21.object({
+        slots: z21.array(pluginUiSlotDeclarationSchema).min(1).optional(),
+        launchers: z21.array(pluginLauncherDeclarationSchema).optional()
       }).optional()
     }).superRefine((manifest, ctx) => {
       const hasUiSlots = (manifest.ui?.slots?.length ?? 0) > 0;
       const hasUiLaunchers = (manifest.ui?.launchers?.length ?? 0) > 0;
       if ((hasUiSlots || hasUiLaunchers) && !manifest.entrypoints.ui) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "entrypoints.ui is required when ui.slots or ui.launchers are declared",
           path: ["entrypoints", "ui"]
         });
       }
       if (manifest.minimumHostVersion && manifest.minimumPaperclipVersion && manifest.minimumHostVersion !== manifest.minimumPaperclipVersion) {
         ctx.addIssue({
-          code: z20.ZodIssueCode.custom,
+          code: z21.ZodIssueCode.custom,
           message: "minimumHostVersion and minimumPaperclipVersion must match when both are declared",
           path: ["minimumHostVersion"]
         });
@@ -1722,7 +1934,7 @@ var init_plugin = __esm({
       if (manifest.tools && manifest.tools.length > 0) {
         if (!manifest.capabilities.includes("agent.tools.register")) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: "Capability 'agent.tools.register' is required when tools are declared",
             path: ["capabilities"]
           });
@@ -1731,7 +1943,7 @@ var init_plugin = __esm({
       if (manifest.jobs && manifest.jobs.length > 0) {
         if (!manifest.capabilities.includes("jobs.schedule")) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: "Capability 'jobs.schedule' is required when jobs are declared",
             path: ["capabilities"]
           });
@@ -1740,7 +1952,7 @@ var init_plugin = __esm({
       if (manifest.webhooks && manifest.webhooks.length > 0) {
         if (!manifest.capabilities.includes("webhooks.receive")) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: "Capability 'webhooks.receive' is required when webhooks are declared",
             path: ["capabilities"]
           });
@@ -1751,7 +1963,7 @@ var init_plugin = __esm({
         const duplicates = jobKeys.filter((key, i) => jobKeys.indexOf(key) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: `Duplicate job keys: ${[...new Set(duplicates)].join(", ")}`,
             path: ["jobs"]
           });
@@ -1762,7 +1974,7 @@ var init_plugin = __esm({
         const duplicates = endpointKeys.filter((key, i) => endpointKeys.indexOf(key) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: `Duplicate webhook endpoint keys: ${[...new Set(duplicates)].join(", ")}`,
             path: ["webhooks"]
           });
@@ -1773,7 +1985,7 @@ var init_plugin = __esm({
         const duplicates = toolNames.filter((name, i) => toolNames.indexOf(name) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: `Duplicate tool names: ${[...new Set(duplicates)].join(", ")}`,
             path: ["tools"]
           });
@@ -1785,7 +1997,7 @@ var init_plugin = __esm({
           const duplicates = slotIds.filter((id, i) => slotIds.indexOf(id) !== i);
           if (duplicates.length > 0) {
             ctx.addIssue({
-              code: z20.ZodIssueCode.custom,
+              code: z21.ZodIssueCode.custom,
               message: `Duplicate UI slot ids: ${[...new Set(duplicates)].join(", ")}`,
               path: ["ui", "slots"]
             });
@@ -1801,86 +2013,86 @@ var init_plugin = __esm({
         const duplicates = launcherIds.filter((id, i) => launcherIds.indexOf(id) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z20.ZodIssueCode.custom,
+            code: z21.ZodIssueCode.custom,
             message: `Duplicate launcher ids: ${[...new Set(duplicates)].join(", ")}`,
             path: manifest.ui?.launchers ? ["ui", "launchers"] : ["launchers"]
           });
         }
       }
     });
-    installPluginSchema = z20.object({
-      packageName: z20.string().min(1),
-      version: z20.string().min(1).optional(),
+    installPluginSchema = z21.object({
+      packageName: z21.string().min(1),
+      version: z21.string().min(1).optional(),
       /** Set by loader for local-path installs so the worker can be resolved. */
-      packagePath: z20.string().min(1).optional()
+      packagePath: z21.string().min(1).optional()
     });
-    upsertPluginConfigSchema = z20.object({
-      configJson: z20.record(z20.unknown())
+    upsertPluginConfigSchema = z21.object({
+      configJson: z21.record(z21.unknown())
     });
-    patchPluginConfigSchema = z20.object({
-      configJson: z20.record(z20.unknown())
+    patchPluginConfigSchema = z21.object({
+      configJson: z21.record(z21.unknown())
     });
-    updatePluginStatusSchema = z20.object({
-      status: z20.enum(PLUGIN_STATUSES),
-      lastError: z20.string().nullable().optional()
+    updatePluginStatusSchema = z21.object({
+      status: z21.enum(PLUGIN_STATUSES),
+      lastError: z21.string().nullable().optional()
     });
-    uninstallPluginSchema = z20.object({
-      removeData: z20.boolean().optional().default(false)
+    uninstallPluginSchema = z21.object({
+      removeData: z21.boolean().optional().default(false)
     });
-    pluginStateScopeKeySchema = z20.object({
-      scopeKind: z20.enum(PLUGIN_STATE_SCOPE_KINDS),
-      scopeId: z20.string().min(1).optional(),
-      namespace: z20.string().min(1).optional(),
-      stateKey: z20.string().min(1)
+    pluginStateScopeKeySchema = z21.object({
+      scopeKind: z21.enum(PLUGIN_STATE_SCOPE_KINDS),
+      scopeId: z21.string().min(1).optional(),
+      namespace: z21.string().min(1).optional(),
+      stateKey: z21.string().min(1)
     });
-    setPluginStateSchema = z20.object({
-      scopeKind: z20.enum(PLUGIN_STATE_SCOPE_KINDS),
-      scopeId: z20.string().min(1).optional(),
-      namespace: z20.string().min(1).optional(),
-      stateKey: z20.string().min(1),
+    setPluginStateSchema = z21.object({
+      scopeKind: z21.enum(PLUGIN_STATE_SCOPE_KINDS),
+      scopeId: z21.string().min(1).optional(),
+      namespace: z21.string().min(1).optional(),
+      stateKey: z21.string().min(1),
       /** JSON-serializable value to store. */
-      value: z20.unknown()
+      value: z21.unknown()
     });
-    listPluginStateSchema = z20.object({
-      scopeKind: z20.enum(PLUGIN_STATE_SCOPE_KINDS).optional(),
-      scopeId: z20.string().min(1).optional(),
-      namespace: z20.string().min(1).optional()
+    listPluginStateSchema = z21.object({
+      scopeKind: z21.enum(PLUGIN_STATE_SCOPE_KINDS).optional(),
+      scopeId: z21.string().min(1).optional(),
+      namespace: z21.string().min(1).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/vibedash.ts
-import { z as z21 } from "zod";
+import { z as z22 } from "zod";
 var nonEmptyTrimmedString, pmAgentTemplateSchema, createVibedashProjectBootstrapSchema;
 var init_vibedash = __esm({
   "../packages/shared/src/validators/vibedash.ts"() {
     "use strict";
     init_constants();
-    nonEmptyTrimmedString = z21.string().trim().min(1);
-    pmAgentTemplateSchema = z21.object({
+    nonEmptyTrimmedString = z22.string().trim().min(1);
+    pmAgentTemplateSchema = z22.object({
       name: nonEmptyTrimmedString.max(120).optional(),
-      capabilities: z21.string().trim().max(4e3).optional().nullable(),
-      adapterType: z21.enum(AGENT_ADAPTER_TYPES).optional().default("opencode_local"),
-      adapterConfig: z21.record(z21.unknown()).optional().default({}),
-      runtimeConfig: z21.record(z21.unknown()).optional().default({}),
+      capabilities: z22.string().trim().max(4e3).optional().nullable(),
+      adapterType: z22.enum(AGENT_ADAPTER_TYPES).optional().default("opencode_local"),
+      adapterConfig: z22.record(z22.unknown()).optional().default({}),
+      runtimeConfig: z22.record(z22.unknown()).optional().default({}),
       model: nonEmptyTrimmedString.max(200).optional().nullable()
     }).default({});
-    createVibedashProjectBootstrapSchema = z21.object({
+    createVibedashProjectBootstrapSchema = z22.object({
       vibedashProjectId: nonEmptyTrimmedString.max(128),
       vibedashProjectName: nonEmptyTrimmedString.max(200),
-      vibedashProjectDescription: z21.string().trim().max(8e3).optional().nullable(),
+      vibedashProjectDescription: z22.string().trim().max(8e3).optional().nullable(),
       vibedashOwnerUserId: nonEmptyTrimmedString.max(256),
-      vibedashOwnerEmail: z21.string().email().optional().nullable(),
+      vibedashOwnerEmail: z22.string().email().optional().nullable(),
       customerBoardUserId: nonEmptyTrimmedString.max(256).optional().nullable(),
-      customerBoardGrants: z21.array(z21.enum(PERMISSION_KEYS)).optional(),
-      githubRepoUrl: z21.string().url(),
-      githubRepoRef: z21.string().trim().max(512).optional().nullable(),
+      customerBoardGrants: z22.array(z22.enum(PERMISSION_KEYS)).optional(),
+      githubRepoUrl: z22.string().url(),
+      githubRepoRef: z22.string().trim().max(512).optional().nullable(),
       githubToken: nonEmptyTrimmedString.max(8192).optional().nullable(),
       vibedashApiKey: nonEmptyTrimmedString.max(8192),
-      vibedashApiUrl: z21.string().url().optional().nullable(),
-      workspaceRootHint: z21.string().trim().min(1).max(1024).optional().nullable(),
-      triggerInitialWakeup: z21.boolean().optional().default(true),
-      requireBoardApprovalForNewAgents: z21.boolean().optional().default(false),
+      vibedashApiUrl: z22.string().url().optional().nullable(),
+      workspaceRootHint: z22.string().trim().min(1).max(1024).optional().nullable(),
+      triggerInitialWakeup: z22.boolean().optional().default(true),
+      requireBoardApprovalForNewAgents: z22.boolean().optional().default(false),
       pmAgent: pmAgentTemplateSchema
     });
   }
@@ -1893,6 +2105,7 @@ var init_validators = __esm({
     init_instance();
     init_budget();
     init_company();
+    init_feedback2();
     init_company_skill();
     init_adapter_skills();
     init_company_portability();
@@ -1962,33 +2175,40 @@ var init_project_mentions = __esm({
   }
 });
 
+// ../packages/shared/src/routine-variables.ts
+var init_routine_variables = __esm({
+  "../packages/shared/src/routine-variables.ts"() {
+    "use strict";
+  }
+});
+
 // ../packages/shared/src/config-schema.ts
-import { z as z22 } from "zod";
-var configMetaSchema, llmConfigSchema, databaseBackupConfigSchema, databaseConfigSchema, loggingConfigSchema, serverConfigSchema, authConfigSchema, storageLocalDiskConfigSchema, storageS3ConfigSchema, storageConfigSchema, secretsLocalEncryptedConfigSchema, secretsConfigSchema, paperclipConfigSchema;
+import { z as z23 } from "zod";
+var configMetaSchema, llmConfigSchema, databaseBackupConfigSchema, databaseConfigSchema, loggingConfigSchema, serverConfigSchema, authConfigSchema, storageLocalDiskConfigSchema, storageS3ConfigSchema, storageConfigSchema, secretsLocalEncryptedConfigSchema, secretsConfigSchema, telemetryConfigSchema, paperclipConfigSchema;
 var init_config_schema = __esm({
   "../packages/shared/src/config-schema.ts"() {
     "use strict";
     init_constants();
-    configMetaSchema = z22.object({
-      version: z22.literal(1),
-      updatedAt: z22.string(),
-      source: z22.enum(["onboard", "configure", "doctor"])
+    configMetaSchema = z23.object({
+      version: z23.literal(1),
+      updatedAt: z23.string(),
+      source: z23.enum(["onboard", "configure", "doctor"])
     });
-    llmConfigSchema = z22.object({
-      provider: z22.enum(["claude", "openai"]),
-      apiKey: z22.string().optional()
+    llmConfigSchema = z23.object({
+      provider: z23.enum(["claude", "openai"]),
+      apiKey: z23.string().optional()
     });
-    databaseBackupConfigSchema = z22.object({
-      enabled: z22.boolean().default(true),
-      intervalMinutes: z22.number().int().min(1).max(7 * 24 * 60).default(60),
-      retentionDays: z22.number().int().min(1).max(3650).default(30),
-      dir: z22.string().default("~/.paperclip/instances/default/data/backups")
+    databaseBackupConfigSchema = z23.object({
+      enabled: z23.boolean().default(true),
+      intervalMinutes: z23.number().int().min(1).max(7 * 24 * 60).default(60),
+      retentionDays: z23.number().int().min(1).max(3650).default(30),
+      dir: z23.string().default("~/.paperclip/instances/default/data/backups")
     });
-    databaseConfigSchema = z22.object({
-      mode: z22.enum(["embedded-postgres", "postgres"]).default("embedded-postgres"),
-      connectionString: z22.string().optional(),
-      embeddedPostgresDataDir: z22.string().default("~/.paperclip/instances/default/db"),
-      embeddedPostgresPort: z22.number().int().min(1).max(65535).default(54329),
+    databaseConfigSchema = z23.object({
+      mode: z23.enum(["embedded-postgres", "postgres"]).default("embedded-postgres"),
+      connectionString: z23.string().optional(),
+      embeddedPostgresDataDir: z23.string().default("~/.paperclip/instances/default/db"),
+      embeddedPostgresPort: z23.number().int().min(1).max(65535).default(54329),
       backup: databaseBackupConfigSchema.default({
         enabled: true,
         intervalMinutes: 60,
@@ -1996,35 +2216,35 @@ var init_config_schema = __esm({
         dir: "~/.paperclip/instances/default/data/backups"
       })
     });
-    loggingConfigSchema = z22.object({
-      mode: z22.enum(["file", "cloud"]),
-      logDir: z22.string().default("~/.paperclip/instances/default/logs")
+    loggingConfigSchema = z23.object({
+      mode: z23.enum(["file", "cloud"]),
+      logDir: z23.string().default("~/.paperclip/instances/default/logs")
     });
-    serverConfigSchema = z22.object({
-      deploymentMode: z22.enum(DEPLOYMENT_MODES).default("local_trusted"),
-      exposure: z22.enum(DEPLOYMENT_EXPOSURES).default("private"),
-      host: z22.string().default("127.0.0.1"),
-      port: z22.number().int().min(1).max(65535).default(3100),
-      allowedHostnames: z22.array(z22.string().min(1)).default([]),
-      serveUi: z22.boolean().default(true)
+    serverConfigSchema = z23.object({
+      deploymentMode: z23.enum(DEPLOYMENT_MODES).default("local_trusted"),
+      exposure: z23.enum(DEPLOYMENT_EXPOSURES).default("private"),
+      host: z23.string().default("127.0.0.1"),
+      port: z23.number().int().min(1).max(65535).default(3100),
+      allowedHostnames: z23.array(z23.string().min(1)).default([]),
+      serveUi: z23.boolean().default(true)
     });
-    authConfigSchema = z22.object({
-      baseUrlMode: z22.enum(AUTH_BASE_URL_MODES).default("auto"),
-      publicBaseUrl: z22.string().url().optional(),
-      disableSignUp: z22.boolean().default(false)
+    authConfigSchema = z23.object({
+      baseUrlMode: z23.enum(AUTH_BASE_URL_MODES).default("auto"),
+      publicBaseUrl: z23.string().url().optional(),
+      disableSignUp: z23.boolean().default(false)
     });
-    storageLocalDiskConfigSchema = z22.object({
-      baseDir: z22.string().default("~/.paperclip/instances/default/data/storage")
+    storageLocalDiskConfigSchema = z23.object({
+      baseDir: z23.string().default("~/.paperclip/instances/default/data/storage")
     });
-    storageS3ConfigSchema = z22.object({
-      bucket: z22.string().min(1).default("paperclip"),
-      region: z22.string().min(1).default("us-east-1"),
-      endpoint: z22.string().optional(),
-      prefix: z22.string().default(""),
-      forcePathStyle: z22.boolean().default(false)
+    storageS3ConfigSchema = z23.object({
+      bucket: z23.string().min(1).default("paperclip"),
+      region: z23.string().min(1).default("us-east-1"),
+      endpoint: z23.string().optional(),
+      prefix: z23.string().default(""),
+      forcePathStyle: z23.boolean().default(false)
     });
-    storageConfigSchema = z22.object({
-      provider: z22.enum(STORAGE_PROVIDERS).default("local_disk"),
+    storageConfigSchema = z23.object({
+      provider: z23.enum(STORAGE_PROVIDERS).default("local_disk"),
       localDisk: storageLocalDiskConfigSchema.default({
         baseDir: "~/.paperclip/instances/default/data/storage"
       }),
@@ -2035,22 +2255,26 @@ var init_config_schema = __esm({
         forcePathStyle: false
       })
     });
-    secretsLocalEncryptedConfigSchema = z22.object({
-      keyFilePath: z22.string().default("~/.paperclip/instances/default/secrets/master.key")
+    secretsLocalEncryptedConfigSchema = z23.object({
+      keyFilePath: z23.string().default("~/.paperclip/instances/default/secrets/master.key")
     });
-    secretsConfigSchema = z22.object({
-      provider: z22.enum(SECRET_PROVIDERS).default("local_encrypted"),
-      strictMode: z22.boolean().default(false),
+    secretsConfigSchema = z23.object({
+      provider: z23.enum(SECRET_PROVIDERS).default("local_encrypted"),
+      strictMode: z23.boolean().default(false),
       localEncrypted: secretsLocalEncryptedConfigSchema.default({
         keyFilePath: "~/.paperclip/instances/default/secrets/master.key"
       })
     });
-    paperclipConfigSchema = z22.object({
+    telemetryConfigSchema = z23.object({
+      enabled: z23.boolean().default(true)
+    }).default({});
+    paperclipConfigSchema = z23.object({
       $meta: configMetaSchema,
       llm: llmConfigSchema.optional(),
       database: databaseConfigSchema,
       logging: loggingConfigSchema,
       server: serverConfigSchema,
+      telemetry: telemetryConfigSchema,
       auth: authConfigSchema.default({
         baseUrlMode: "auto",
         disableSignUp: false
@@ -2078,7 +2302,7 @@ var init_config_schema = __esm({
       if (value.server.deploymentMode === "local_trusted") {
         if (value.server.exposure !== "private") {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: "server.exposure must be private when deploymentMode is local_trusted",
             path: ["server", "exposure"]
           });
@@ -2087,21 +2311,21 @@ var init_config_schema = __esm({
       }
       if (value.auth.baseUrlMode === "explicit" && !value.auth.publicBaseUrl) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "auth.publicBaseUrl is required when auth.baseUrlMode is explicit",
           path: ["auth", "publicBaseUrl"]
         });
       }
       if (value.server.exposure === "public" && value.auth.baseUrlMode !== "explicit") {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "auth.baseUrlMode must be explicit when deploymentMode=authenticated and exposure=public",
           path: ["auth", "baseUrlMode"]
         });
       }
       if (value.server.exposure === "public" && !value.auth.publicBaseUrl) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "auth.publicBaseUrl is required when deploymentMode=authenticated and exposure=public",
           path: ["auth", "publicBaseUrl"]
         });
@@ -2115,12 +2339,14 @@ var init_src = __esm({
   "../packages/shared/src/index.ts"() {
     "use strict";
     init_constants();
+    init_feedback();
     init_validators();
     init_validators();
     init_api();
     init_agent_url_key();
     init_project_url_key();
     init_project_mentions();
+    init_routine_variables();
     init_config_schema();
   }
 });
@@ -2129,7 +2355,7 @@ var init_src = __esm({
 var init_schema = __esm({
   "src/config/schema.ts"() {
     "use strict";
-    init_src();
+    init_config_schema();
   }
 });
 
@@ -3127,6 +3353,10 @@ var init_companies = __esm({
         budgetMonthlyCents: integer("budget_monthly_cents").notNull().default(0),
         spentMonthlyCents: integer("spent_monthly_cents").notNull().default(0),
         requireBoardApprovalForNewAgents: boolean("require_board_approval_for_new_agents").notNull().default(true),
+        feedbackDataSharingEnabled: boolean("feedback_data_sharing_enabled").notNull().default(false),
+        feedbackDataSharingConsentAt: timestamp("feedback_data_sharing_consent_at", { withTimezone: true }),
+        feedbackDataSharingConsentByUserId: text6("feedback_data_sharing_consent_by_user_id"),
+        feedbackDataSharingTermsVersion: text6("feedback_data_sharing_terms_version"),
         brandColor: text6("brand_color"),
         githubToken: text6("github_token"),
         createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -4470,6 +4700,7 @@ var init_routines = __esm({
         status: text35("status").notNull().default("active"),
         concurrencyPolicy: text35("concurrency_policy").notNull().default("coalesce_if_active"),
         catchUpPolicy: text35("catch_up_policy").notNull().default("skip_missed"),
+        variables: jsonb18("variables").$type().notNull().default([]),
         createdByAgentId: uuid31("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
         createdByUserId: text35("created_by_user_id"),
         updatedByAgentId: uuid31("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
@@ -4708,6 +4939,7 @@ var init_issue_comments = __esm({
     init_companies();
     init_issues();
     init_agents();
+    init_heartbeat_runs();
     issueComments = pgTable37(
       "issue_comments",
       {
@@ -4716,6 +4948,7 @@ var init_issue_comments = __esm({
         issueId: uuid36("issue_id").notNull().references(() => issues.id),
         authorAgentId: uuid36("author_agent_id").references(() => agents.id),
         authorUserId: text39("author_user_id"),
+        createdByRunId: uuid36("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
         body: text39("body").notNull(),
         createdAt: timestamp37("created_at", { withTimezone: true }).notNull().defaultNow(),
         updatedAt: timestamp37("updated_at", { withTimezone: true }).notNull().defaultNow()
@@ -4771,29 +5004,122 @@ var init_issue_inbox_archives = __esm({
   }
 });
 
+// ../packages/db/src/schema/feedback_votes.ts
+import { boolean as boolean9, index as index35, jsonb as jsonb20, pgTable as pgTable39, text as text41, timestamp as timestamp39, uniqueIndex as uniqueIndex20, uuid as uuid38 } from "drizzle-orm/pg-core";
+var feedbackVotes;
+var init_feedback_votes = __esm({
+  "../packages/db/src/schema/feedback_votes.ts"() {
+    "use strict";
+    init_companies();
+    init_issues();
+    feedbackVotes = pgTable39(
+      "feedback_votes",
+      {
+        id: uuid38("id").primaryKey().defaultRandom(),
+        companyId: uuid38("company_id").notNull().references(() => companies.id),
+        issueId: uuid38("issue_id").notNull().references(() => issues.id),
+        targetType: text41("target_type").notNull(),
+        targetId: text41("target_id").notNull(),
+        authorUserId: text41("author_user_id").notNull(),
+        vote: text41("vote").notNull(),
+        reason: text41("reason"),
+        sharedWithLabs: boolean9("shared_with_labs").notNull().default(false),
+        sharedAt: timestamp39("shared_at", { withTimezone: true }),
+        consentVersion: text41("consent_version"),
+        redactionSummary: jsonb20("redaction_summary"),
+        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp39("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        companyIssueIdx: index35("feedback_votes_company_issue_idx").on(table.companyId, table.issueId),
+        issueTargetIdx: index35("feedback_votes_issue_target_idx").on(table.issueId, table.targetType, table.targetId),
+        authorIdx: index35("feedback_votes_author_idx").on(table.authorUserId, table.createdAt),
+        companyTargetAuthorUniqueIdx: uniqueIndex20("feedback_votes_company_target_author_idx").on(
+          table.companyId,
+          table.targetType,
+          table.targetId,
+          table.authorUserId
+        )
+      })
+    );
+  }
+});
+
+// ../packages/db/src/schema/feedback_exports.ts
+import { index as index36, integer as integer13, jsonb as jsonb21, pgTable as pgTable40, text as text42, timestamp as timestamp40, uniqueIndex as uniqueIndex21, uuid as uuid39 } from "drizzle-orm/pg-core";
+var feedbackExports;
+var init_feedback_exports = __esm({
+  "../packages/db/src/schema/feedback_exports.ts"() {
+    "use strict";
+    init_companies();
+    init_feedback_votes();
+    init_issues();
+    init_projects();
+    feedbackExports = pgTable40(
+      "feedback_exports",
+      {
+        id: uuid39("id").primaryKey().defaultRandom(),
+        companyId: uuid39("company_id").notNull().references(() => companies.id),
+        feedbackVoteId: uuid39("feedback_vote_id").notNull().references(() => feedbackVotes.id, { onDelete: "cascade" }),
+        issueId: uuid39("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        projectId: uuid39("project_id").references(() => projects.id, { onDelete: "set null" }),
+        authorUserId: text42("author_user_id").notNull(),
+        targetType: text42("target_type").notNull(),
+        targetId: text42("target_id").notNull(),
+        vote: text42("vote").notNull(),
+        status: text42("status").notNull().default("local_only"),
+        destination: text42("destination"),
+        exportId: text42("export_id"),
+        consentVersion: text42("consent_version"),
+        schemaVersion: text42("schema_version").notNull().default("paperclip-feedback-envelope-v2"),
+        bundleVersion: text42("bundle_version").notNull().default("paperclip-feedback-bundle-v2"),
+        payloadVersion: text42("payload_version").notNull().default("paperclip-feedback-v1"),
+        payloadDigest: text42("payload_digest"),
+        payloadSnapshot: jsonb21("payload_snapshot"),
+        targetSummary: jsonb21("target_summary").notNull(),
+        redactionSummary: jsonb21("redaction_summary"),
+        attemptCount: integer13("attempt_count").notNull().default(0),
+        lastAttemptedAt: timestamp40("last_attempted_at", { withTimezone: true }),
+        exportedAt: timestamp40("exported_at", { withTimezone: true }),
+        failureReason: text42("failure_reason"),
+        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp40("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        voteUniqueIdx: uniqueIndex21("feedback_exports_feedback_vote_idx").on(table.feedbackVoteId),
+        companyCreatedIdx: index36("feedback_exports_company_created_idx").on(table.companyId, table.createdAt),
+        companyStatusIdx: index36("feedback_exports_company_status_idx").on(table.companyId, table.status, table.createdAt),
+        companyIssueIdx: index36("feedback_exports_company_issue_idx").on(table.companyId, table.issueId, table.createdAt),
+        companyProjectIdx: index36("feedback_exports_company_project_idx").on(table.companyId, table.projectId, table.createdAt),
+        companyAuthorIdx: index36("feedback_exports_company_author_idx").on(table.companyId, table.authorUserId, table.createdAt)
+      })
+    );
+  }
+});
+
 // ../packages/db/src/schema/issue_read_states.ts
-import { pgTable as pgTable39, uuid as uuid38, text as text41, timestamp as timestamp39, index as index35, uniqueIndex as uniqueIndex20 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable41, uuid as uuid40, text as text43, timestamp as timestamp41, index as index37, uniqueIndex as uniqueIndex22 } from "drizzle-orm/pg-core";
 var issueReadStates;
 var init_issue_read_states = __esm({
   "../packages/db/src/schema/issue_read_states.ts"() {
     "use strict";
     init_companies();
     init_issues();
-    issueReadStates = pgTable39(
+    issueReadStates = pgTable41(
       "issue_read_states",
       {
-        id: uuid38("id").primaryKey().defaultRandom(),
-        companyId: uuid38("company_id").notNull().references(() => companies.id),
-        issueId: uuid38("issue_id").notNull().references(() => issues.id),
-        userId: text41("user_id").notNull(),
-        lastReadAt: timestamp39("last_read_at", { withTimezone: true }).notNull().defaultNow(),
-        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp39("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid40("id").primaryKey().defaultRandom(),
+        companyId: uuid40("company_id").notNull().references(() => companies.id),
+        issueId: uuid40("issue_id").notNull().references(() => issues.id),
+        userId: text43("user_id").notNull(),
+        lastReadAt: timestamp41("last_read_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp41("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index35("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
-        companyUserIdx: index35("issue_read_states_company_user_idx").on(table.companyId, table.userId),
-        companyIssueUserUnique: uniqueIndex20("issue_read_states_company_issue_user_idx").on(
+        companyIssueIdx: index37("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
+        companyUserIdx: index37("issue_read_states_company_user_idx").on(table.companyId, table.userId),
+        companyIssueUserUnique: uniqueIndex22("issue_read_states_company_issue_user_idx").on(
           table.companyId,
           table.issueId,
           table.userId
@@ -4804,7 +5130,7 @@ var init_issue_read_states = __esm({
 });
 
 // ../packages/db/src/schema/issue_attachments.ts
-import { pgTable as pgTable40, uuid as uuid39, timestamp as timestamp40, index as index36, uniqueIndex as uniqueIndex21 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable42, uuid as uuid41, timestamp as timestamp42, index as index38, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
 var issueAttachments;
 var init_issue_attachments = __esm({
   "../packages/db/src/schema/issue_attachments.ts"() {
@@ -4813,61 +5139,61 @@ var init_issue_attachments = __esm({
     init_issues();
     init_assets();
     init_issue_comments();
-    issueAttachments = pgTable40(
+    issueAttachments = pgTable42(
       "issue_attachments",
       {
-        id: uuid39("id").primaryKey().defaultRandom(),
-        companyId: uuid39("company_id").notNull().references(() => companies.id),
-        issueId: uuid39("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        assetId: uuid39("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
-        issueCommentId: uuid39("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
-        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp40("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid41("id").primaryKey().defaultRandom(),
+        companyId: uuid41("company_id").notNull().references(() => companies.id),
+        issueId: uuid41("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        assetId: uuid41("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
+        issueCommentId: uuid41("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
+        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp42("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index36("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
-        issueCommentIdx: index36("issue_attachments_issue_comment_idx").on(table.issueCommentId),
-        assetUq: uniqueIndex21("issue_attachments_asset_uq").on(table.assetId)
+        companyIssueIdx: index38("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
+        issueCommentIdx: index38("issue_attachments_issue_comment_idx").on(table.issueCommentId),
+        assetUq: uniqueIndex23("issue_attachments_asset_uq").on(table.assetId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/documents.ts
-import { pgTable as pgTable41, uuid as uuid40, text as text42, integer as integer13, timestamp as timestamp41, index as index37 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable43, uuid as uuid42, text as text44, integer as integer14, timestamp as timestamp43, index as index39 } from "drizzle-orm/pg-core";
 var documents;
 var init_documents = __esm({
   "../packages/db/src/schema/documents.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    documents = pgTable41(
+    documents = pgTable43(
       "documents",
       {
-        id: uuid40("id").primaryKey().defaultRandom(),
-        companyId: uuid40("company_id").notNull().references(() => companies.id),
-        title: text42("title"),
-        format: text42("format").notNull().default("markdown"),
-        latestBody: text42("latest_body").notNull(),
-        latestRevisionId: uuid40("latest_revision_id"),
-        latestRevisionNumber: integer13("latest_revision_number").notNull().default(1),
-        createdByAgentId: uuid40("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text42("created_by_user_id"),
-        updatedByAgentId: uuid40("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        updatedByUserId: text42("updated_by_user_id"),
-        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp41("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid42("id").primaryKey().defaultRandom(),
+        companyId: uuid42("company_id").notNull().references(() => companies.id),
+        title: text44("title"),
+        format: text44("format").notNull().default("markdown"),
+        latestBody: text44("latest_body").notNull(),
+        latestRevisionId: uuid42("latest_revision_id"),
+        latestRevisionNumber: integer14("latest_revision_number").notNull().default(1),
+        createdByAgentId: uuid42("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text44("created_by_user_id"),
+        updatedByAgentId: uuid42("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        updatedByUserId: text44("updated_by_user_id"),
+        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp43("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyUpdatedIdx: index37("documents_company_updated_idx").on(table.companyId, table.updatedAt),
-        companyCreatedIdx: index37("documents_company_created_idx").on(table.companyId, table.createdAt)
+        companyUpdatedIdx: index39("documents_company_updated_idx").on(table.companyId, table.updatedAt),
+        companyCreatedIdx: index39("documents_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/document_revisions.ts
-import { pgTable as pgTable42, uuid as uuid41, text as text43, integer as integer14, timestamp as timestamp42, index as index38, uniqueIndex as uniqueIndex22 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable44, uuid as uuid43, text as text45, integer as integer15, timestamp as timestamp44, index as index40, uniqueIndex as uniqueIndex24 } from "drizzle-orm/pg-core";
 var documentRevisions;
 var init_document_revisions = __esm({
   "../packages/db/src/schema/document_revisions.ts"() {
@@ -4875,25 +5201,29 @@ var init_document_revisions = __esm({
     init_companies();
     init_agents();
     init_documents();
-    documentRevisions = pgTable42(
+    init_heartbeat_runs();
+    documentRevisions = pgTable44(
       "document_revisions",
       {
-        id: uuid41("id").primaryKey().defaultRandom(),
-        companyId: uuid41("company_id").notNull().references(() => companies.id),
-        documentId: uuid41("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
-        revisionNumber: integer14("revision_number").notNull(),
-        body: text43("body").notNull(),
-        changeSummary: text43("change_summary"),
-        createdByAgentId: uuid41("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text43("created_by_user_id"),
-        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid43("id").primaryKey().defaultRandom(),
+        companyId: uuid43("company_id").notNull().references(() => companies.id),
+        documentId: uuid43("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        revisionNumber: integer15("revision_number").notNull(),
+        title: text45("title"),
+        format: text45("format").notNull().default("markdown"),
+        body: text45("body").notNull(),
+        changeSummary: text45("change_summary"),
+        createdByAgentId: uuid43("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text45("created_by_user_id"),
+        createdByRunId: uuid43("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        documentRevisionUq: uniqueIndex22("document_revisions_document_revision_uq").on(
+        documentRevisionUq: uniqueIndex24("document_revisions_document_revision_uq").on(
           table.documentId,
           table.revisionNumber
         ),
-        companyDocumentCreatedIdx: index38("document_revisions_company_document_created_idx").on(
+        companyDocumentCreatedIdx: index40("document_revisions_company_document_created_idx").on(
           table.companyId,
           table.documentId,
           table.createdAt
@@ -4904,7 +5234,7 @@ var init_document_revisions = __esm({
 });
 
 // ../packages/db/src/schema/issue_documents.ts
-import { pgTable as pgTable43, uuid as uuid42, text as text44, timestamp as timestamp43, index as index39, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable45, uuid as uuid44, text as text46, timestamp as timestamp45, index as index41, uniqueIndex as uniqueIndex25 } from "drizzle-orm/pg-core";
 var issueDocuments;
 var init_issue_documents = __esm({
   "../packages/db/src/schema/issue_documents.ts"() {
@@ -4912,25 +5242,25 @@ var init_issue_documents = __esm({
     init_companies();
     init_issues();
     init_documents();
-    issueDocuments = pgTable43(
+    issueDocuments = pgTable45(
       "issue_documents",
       {
-        id: uuid42("id").primaryKey().defaultRandom(),
-        companyId: uuid42("company_id").notNull().references(() => companies.id),
-        issueId: uuid42("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        documentId: uuid42("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
-        key: text44("key").notNull(),
-        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp43("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid44("id").primaryKey().defaultRandom(),
+        companyId: uuid44("company_id").notNull().references(() => companies.id),
+        issueId: uuid44("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        documentId: uuid44("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        key: text46("key").notNull(),
+        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp45("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueKeyUq: uniqueIndex23("issue_documents_company_issue_key_uq").on(
+        companyIssueKeyUq: uniqueIndex25("issue_documents_company_issue_key_uq").on(
           table.companyId,
           table.issueId,
           table.key
         ),
-        documentUq: uniqueIndex23("issue_documents_document_uq").on(table.documentId),
-        companyIssueUpdatedIdx: index39("issue_documents_company_issue_updated_idx").on(
+        documentUq: uniqueIndex25("issue_documents_document_uq").on(table.documentId),
+        companyIssueUpdatedIdx: index41("issue_documents_company_issue_updated_idx").on(
           table.companyId,
           table.issueId,
           table.updatedAt
@@ -4941,7 +5271,7 @@ var init_issue_documents = __esm({
 });
 
 // ../packages/db/src/schema/heartbeat_run_events.ts
-import { pgTable as pgTable44, uuid as uuid43, text as text45, timestamp as timestamp44, integer as integer15, jsonb as jsonb20, index as index40, bigserial } from "drizzle-orm/pg-core";
+import { pgTable as pgTable46, uuid as uuid45, text as text47, timestamp as timestamp46, integer as integer16, jsonb as jsonb22, index as index42, bigserial } from "drizzle-orm/pg-core";
 var heartbeatRunEvents;
 var init_heartbeat_run_events = __esm({
   "../packages/db/src/schema/heartbeat_run_events.ts"() {
@@ -4949,33 +5279,33 @@ var init_heartbeat_run_events = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    heartbeatRunEvents = pgTable44(
+    heartbeatRunEvents = pgTable46(
       "heartbeat_run_events",
       {
         id: bigserial("id", { mode: "number" }).primaryKey(),
-        companyId: uuid43("company_id").notNull().references(() => companies.id),
-        runId: uuid43("run_id").notNull().references(() => heartbeatRuns.id),
-        agentId: uuid43("agent_id").notNull().references(() => agents.id),
-        seq: integer15("seq").notNull(),
-        eventType: text45("event_type").notNull(),
-        stream: text45("stream"),
-        level: text45("level"),
-        color: text45("color"),
-        message: text45("message"),
-        payload: jsonb20("payload").$type(),
-        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow()
+        companyId: uuid45("company_id").notNull().references(() => companies.id),
+        runId: uuid45("run_id").notNull().references(() => heartbeatRuns.id),
+        agentId: uuid45("agent_id").notNull().references(() => agents.id),
+        seq: integer16("seq").notNull(),
+        eventType: text47("event_type").notNull(),
+        stream: text47("stream"),
+        level: text47("level"),
+        color: text47("color"),
+        message: text47("message"),
+        payload: jsonb22("payload").$type(),
+        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        runSeqIdx: index40("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
-        companyRunIdx: index40("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
-        companyCreatedIdx: index40("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
+        runSeqIdx: index42("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
+        companyRunIdx: index42("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
+        companyCreatedIdx: index42("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/cost_events.ts
-import { pgTable as pgTable45, uuid as uuid44, text as text46, timestamp as timestamp45, integer as integer16, index as index41 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable47, uuid as uuid46, text as text48, timestamp as timestamp47, integer as integer17, index as index43 } from "drizzle-orm/pg-core";
 var costEvents;
 var init_cost_events = __esm({
   "../packages/db/src/schema/cost_events.ts"() {
@@ -4986,46 +5316,46 @@ var init_cost_events = __esm({
     init_projects();
     init_goals();
     init_heartbeat_runs();
-    costEvents = pgTable45(
+    costEvents = pgTable47(
       "cost_events",
       {
-        id: uuid44("id").primaryKey().defaultRandom(),
-        companyId: uuid44("company_id").notNull().references(() => companies.id),
-        agentId: uuid44("agent_id").notNull().references(() => agents.id),
-        issueId: uuid44("issue_id").references(() => issues.id),
-        projectId: uuid44("project_id").references(() => projects.id),
-        goalId: uuid44("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid44("heartbeat_run_id").references(() => heartbeatRuns.id),
-        billingCode: text46("billing_code"),
-        provider: text46("provider").notNull(),
-        biller: text46("biller").notNull().default("unknown"),
-        billingType: text46("billing_type").notNull().default("unknown"),
-        model: text46("model").notNull(),
-        inputTokens: integer16("input_tokens").notNull().default(0),
-        cachedInputTokens: integer16("cached_input_tokens").notNull().default(0),
-        outputTokens: integer16("output_tokens").notNull().default(0),
-        costCents: integer16("cost_cents").notNull(),
-        occurredAt: timestamp45("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid46("id").primaryKey().defaultRandom(),
+        companyId: uuid46("company_id").notNull().references(() => companies.id),
+        agentId: uuid46("agent_id").notNull().references(() => agents.id),
+        issueId: uuid46("issue_id").references(() => issues.id),
+        projectId: uuid46("project_id").references(() => projects.id),
+        goalId: uuid46("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid46("heartbeat_run_id").references(() => heartbeatRuns.id),
+        billingCode: text48("billing_code"),
+        provider: text48("provider").notNull(),
+        biller: text48("biller").notNull().default("unknown"),
+        billingType: text48("billing_type").notNull().default("unknown"),
+        model: text48("model").notNull(),
+        inputTokens: integer17("input_tokens").notNull().default(0),
+        cachedInputTokens: integer17("cached_input_tokens").notNull().default(0),
+        outputTokens: integer17("output_tokens").notNull().default(0),
+        costCents: integer17("cost_cents").notNull(),
+        occurredAt: timestamp47("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index41("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyAgentOccurredIdx: index41("cost_events_company_agent_occurred_idx").on(
+        companyOccurredIdx: index43("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyAgentOccurredIdx: index43("cost_events_company_agent_occurred_idx").on(
           table.companyId,
           table.agentId,
           table.occurredAt
         ),
-        companyProviderOccurredIdx: index41("cost_events_company_provider_occurred_idx").on(
+        companyProviderOccurredIdx: index43("cost_events_company_provider_occurred_idx").on(
           table.companyId,
           table.provider,
           table.occurredAt
         ),
-        companyBillerOccurredIdx: index41("cost_events_company_biller_occurred_idx").on(
+        companyBillerOccurredIdx: index43("cost_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index41("cost_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index43("cost_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         )
@@ -5035,7 +5365,7 @@ var init_cost_events = __esm({
 });
 
 // ../packages/db/src/schema/finance_events.ts
-import { pgTable as pgTable46, uuid as uuid45, text as text47, timestamp as timestamp46, integer as integer17, index as index42, boolean as boolean9, jsonb as jsonb21 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable48, uuid as uuid47, text as text49, timestamp as timestamp48, integer as integer18, index as index44, boolean as boolean10, jsonb as jsonb23 } from "drizzle-orm/pg-core";
 var financeEvents;
 var init_finance_events = __esm({
   "../packages/db/src/schema/finance_events.ts"() {
@@ -5047,59 +5377,59 @@ var init_finance_events = __esm({
     init_goals();
     init_heartbeat_runs();
     init_cost_events();
-    financeEvents = pgTable46(
+    financeEvents = pgTable48(
       "finance_events",
       {
-        id: uuid45("id").primaryKey().defaultRandom(),
-        companyId: uuid45("company_id").notNull().references(() => companies.id),
-        agentId: uuid45("agent_id").references(() => agents.id),
-        issueId: uuid45("issue_id").references(() => issues.id),
-        projectId: uuid45("project_id").references(() => projects.id),
-        goalId: uuid45("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid45("heartbeat_run_id").references(() => heartbeatRuns.id),
-        costEventId: uuid45("cost_event_id").references(() => costEvents.id),
-        billingCode: text47("billing_code"),
-        description: text47("description"),
-        eventKind: text47("event_kind").notNull(),
-        direction: text47("direction").notNull().default("debit"),
-        biller: text47("biller").notNull(),
-        provider: text47("provider"),
-        executionAdapterType: text47("execution_adapter_type"),
-        pricingTier: text47("pricing_tier"),
-        region: text47("region"),
-        model: text47("model"),
-        quantity: integer17("quantity"),
-        unit: text47("unit"),
-        amountCents: integer17("amount_cents").notNull(),
-        currency: text47("currency").notNull().default("USD"),
-        estimated: boolean9("estimated").notNull().default(false),
-        externalInvoiceId: text47("external_invoice_id"),
-        metadataJson: jsonb21("metadata_json").$type(),
-        occurredAt: timestamp46("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid47("id").primaryKey().defaultRandom(),
+        companyId: uuid47("company_id").notNull().references(() => companies.id),
+        agentId: uuid47("agent_id").references(() => agents.id),
+        issueId: uuid47("issue_id").references(() => issues.id),
+        projectId: uuid47("project_id").references(() => projects.id),
+        goalId: uuid47("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid47("heartbeat_run_id").references(() => heartbeatRuns.id),
+        costEventId: uuid47("cost_event_id").references(() => costEvents.id),
+        billingCode: text49("billing_code"),
+        description: text49("description"),
+        eventKind: text49("event_kind").notNull(),
+        direction: text49("direction").notNull().default("debit"),
+        biller: text49("biller").notNull(),
+        provider: text49("provider"),
+        executionAdapterType: text49("execution_adapter_type"),
+        pricingTier: text49("pricing_tier"),
+        region: text49("region"),
+        model: text49("model"),
+        quantity: integer18("quantity"),
+        unit: text49("unit"),
+        amountCents: integer18("amount_cents").notNull(),
+        currency: text49("currency").notNull().default("USD"),
+        estimated: boolean10("estimated").notNull().default(false),
+        externalInvoiceId: text49("external_invoice_id"),
+        metadataJson: jsonb23("metadata_json").$type(),
+        occurredAt: timestamp48("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index42("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyBillerOccurredIdx: index42("finance_events_company_biller_occurred_idx").on(
+        companyOccurredIdx: index44("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyBillerOccurredIdx: index44("finance_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyKindOccurredIdx: index42("finance_events_company_kind_occurred_idx").on(
+        companyKindOccurredIdx: index44("finance_events_company_kind_occurred_idx").on(
           table.companyId,
           table.eventKind,
           table.occurredAt
         ),
-        companyDirectionOccurredIdx: index42("finance_events_company_direction_occurred_idx").on(
+        companyDirectionOccurredIdx: index44("finance_events_company_direction_occurred_idx").on(
           table.companyId,
           table.direction,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index42("finance_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index44("finance_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         ),
-        companyCostEventIdx: index42("finance_events_company_cost_event_idx").on(
+        companyCostEventIdx: index44("finance_events_company_cost_event_idx").on(
           table.companyId,
           table.costEventId
         )
@@ -5109,7 +5439,7 @@ var init_finance_events = __esm({
 });
 
 // ../packages/db/src/schema/approval_comments.ts
-import { pgTable as pgTable47, uuid as uuid46, text as text48, timestamp as timestamp47, index as index43 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable49, uuid as uuid48, text as text50, timestamp as timestamp49, index as index45 } from "drizzle-orm/pg-core";
 var approvalComments;
 var init_approval_comments = __esm({
   "../packages/db/src/schema/approval_comments.ts"() {
@@ -5117,22 +5447,22 @@ var init_approval_comments = __esm({
     init_companies();
     init_approvals();
     init_agents();
-    approvalComments = pgTable47(
+    approvalComments = pgTable49(
       "approval_comments",
       {
-        id: uuid46("id").primaryKey().defaultRandom(),
-        companyId: uuid46("company_id").notNull().references(() => companies.id),
-        approvalId: uuid46("approval_id").notNull().references(() => approvals.id),
-        authorAgentId: uuid46("author_agent_id").references(() => agents.id),
-        authorUserId: text48("author_user_id"),
-        body: text48("body").notNull(),
-        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp47("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid48("id").primaryKey().defaultRandom(),
+        companyId: uuid48("company_id").notNull().references(() => companies.id),
+        approvalId: uuid48("approval_id").notNull().references(() => approvals.id),
+        authorAgentId: uuid48("author_agent_id").references(() => agents.id),
+        authorUserId: text50("author_user_id"),
+        body: text50("body").notNull(),
+        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp49("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index43("approval_comments_company_idx").on(table.companyId),
-        approvalIdx: index43("approval_comments_approval_idx").on(table.approvalId),
-        approvalCreatedIdx: index43("approval_comments_approval_created_idx").on(
+        companyIdx: index45("approval_comments_company_idx").on(table.companyId),
+        approvalIdx: index45("approval_comments_approval_idx").on(table.approvalId),
+        approvalCreatedIdx: index45("approval_comments_approval_created_idx").on(
           table.approvalId,
           table.createdAt
         )
@@ -5142,7 +5472,7 @@ var init_approval_comments = __esm({
 });
 
 // ../packages/db/src/schema/activity_log.ts
-import { pgTable as pgTable48, uuid as uuid47, text as text49, timestamp as timestamp48, jsonb as jsonb22, index as index44 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable50, uuid as uuid49, text as text51, timestamp as timestamp50, jsonb as jsonb24, index as index46 } from "drizzle-orm/pg-core";
 var activityLog;
 var init_activity_log = __esm({
   "../packages/db/src/schema/activity_log.ts"() {
@@ -5150,55 +5480,55 @@ var init_activity_log = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    activityLog = pgTable48(
+    activityLog = pgTable50(
       "activity_log",
       {
-        id: uuid47("id").primaryKey().defaultRandom(),
-        companyId: uuid47("company_id").notNull().references(() => companies.id),
-        actorType: text49("actor_type").notNull().default("system"),
-        actorId: text49("actor_id").notNull(),
-        action: text49("action").notNull(),
-        entityType: text49("entity_type").notNull(),
-        entityId: text49("entity_id").notNull(),
-        agentId: uuid47("agent_id").references(() => agents.id),
-        runId: uuid47("run_id").references(() => heartbeatRuns.id),
-        details: jsonb22("details").$type(),
-        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid49("id").primaryKey().defaultRandom(),
+        companyId: uuid49("company_id").notNull().references(() => companies.id),
+        actorType: text51("actor_type").notNull().default("system"),
+        actorId: text51("actor_id").notNull(),
+        action: text51("action").notNull(),
+        entityType: text51("entity_type").notNull(),
+        entityId: text51("entity_id").notNull(),
+        agentId: uuid49("agent_id").references(() => agents.id),
+        runId: uuid49("run_id").references(() => heartbeatRuns.id),
+        details: jsonb24("details").$type(),
+        createdAt: timestamp50("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyCreatedIdx: index44("activity_log_company_created_idx").on(table.companyId, table.createdAt),
-        runIdIdx: index44("activity_log_run_id_idx").on(table.runId),
-        entityIdx: index44("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
+        companyCreatedIdx: index46("activity_log_company_created_idx").on(table.companyId, table.createdAt),
+        runIdIdx: index46("activity_log_run_id_idx").on(table.runId),
+        entityIdx: index46("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/company_secret_versions.ts
-import { pgTable as pgTable49, uuid as uuid48, text as text50, timestamp as timestamp49, integer as integer18, jsonb as jsonb23, index as index45, uniqueIndex as uniqueIndex24 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable51, uuid as uuid50, text as text52, timestamp as timestamp51, integer as integer19, jsonb as jsonb25, index as index47, uniqueIndex as uniqueIndex26 } from "drizzle-orm/pg-core";
 var companySecretVersions;
 var init_company_secret_versions = __esm({
   "../packages/db/src/schema/company_secret_versions.ts"() {
     "use strict";
     init_agents();
     init_company_secrets();
-    companySecretVersions = pgTable49(
+    companySecretVersions = pgTable51(
       "company_secret_versions",
       {
-        id: uuid48("id").primaryKey().defaultRandom(),
-        secretId: uuid48("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
-        version: integer18("version").notNull(),
-        material: jsonb23("material").$type().notNull(),
-        valueSha256: text50("value_sha256").notNull(),
-        createdByAgentId: uuid48("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text50("created_by_user_id"),
-        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow(),
-        revokedAt: timestamp49("revoked_at", { withTimezone: true })
+        id: uuid50("id").primaryKey().defaultRandom(),
+        secretId: uuid50("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
+        version: integer19("version").notNull(),
+        material: jsonb25("material").$type().notNull(),
+        valueSha256: text52("value_sha256").notNull(),
+        createdByAgentId: uuid50("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text52("created_by_user_id"),
+        createdAt: timestamp51("created_at", { withTimezone: true }).notNull().defaultNow(),
+        revokedAt: timestamp51("revoked_at", { withTimezone: true })
       },
       (table) => ({
-        secretIdx: index45("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
-        valueHashIdx: index45("company_secret_versions_value_sha256_idx").on(table.valueSha256),
-        secretVersionUq: uniqueIndex24("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
+        secretIdx: index47("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
+        valueHashIdx: index47("company_secret_versions_value_sha256_idx").on(table.valueSha256),
+        secretVersionUq: uniqueIndex26("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
       })
     );
   }
@@ -5206,42 +5536,42 @@ var init_company_secret_versions = __esm({
 
 // ../packages/db/src/schema/company_skills.ts
 import {
-  pgTable as pgTable50,
-  uuid as uuid49,
-  text as text51,
-  timestamp as timestamp50,
-  jsonb as jsonb24,
-  index as index46,
-  uniqueIndex as uniqueIndex25
+  pgTable as pgTable52,
+  uuid as uuid51,
+  text as text53,
+  timestamp as timestamp52,
+  jsonb as jsonb26,
+  index as index48,
+  uniqueIndex as uniqueIndex27
 } from "drizzle-orm/pg-core";
 var companySkills;
 var init_company_skills = __esm({
   "../packages/db/src/schema/company_skills.ts"() {
     "use strict";
     init_companies();
-    companySkills = pgTable50(
+    companySkills = pgTable52(
       "company_skills",
       {
-        id: uuid49("id").primaryKey().defaultRandom(),
-        companyId: uuid49("company_id").notNull().references(() => companies.id),
-        key: text51("key").notNull(),
-        slug: text51("slug").notNull(),
-        name: text51("name").notNull(),
-        description: text51("description"),
-        markdown: text51("markdown").notNull(),
-        sourceType: text51("source_type").notNull().default("local_path"),
-        sourceLocator: text51("source_locator"),
-        sourceRef: text51("source_ref"),
-        trustLevel: text51("trust_level").notNull().default("markdown_only"),
-        compatibility: text51("compatibility").notNull().default("compatible"),
-        fileInventory: jsonb24("file_inventory").$type().notNull().default([]),
-        metadata: jsonb24("metadata").$type(),
-        createdAt: timestamp50("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp50("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid51("id").primaryKey().defaultRandom(),
+        companyId: uuid51("company_id").notNull().references(() => companies.id),
+        key: text53("key").notNull(),
+        slug: text53("slug").notNull(),
+        name: text53("name").notNull(),
+        description: text53("description"),
+        markdown: text53("markdown").notNull(),
+        sourceType: text53("source_type").notNull().default("local_path"),
+        sourceLocator: text53("source_locator"),
+        sourceRef: text53("source_ref"),
+        trustLevel: text53("trust_level").notNull().default("markdown_only"),
+        compatibility: text53("compatibility").notNull().default("compatible"),
+        fileInventory: jsonb26("file_inventory").$type().notNull().default([]),
+        metadata: jsonb26("metadata").$type(),
+        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp52("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyKeyUniqueIdx: uniqueIndex25("company_skills_company_key_idx").on(table.companyId, table.key),
-        companyNameIdx: index46("company_skills_company_name_idx").on(table.companyId, table.name)
+        companyKeyUniqueIdx: uniqueIndex27("company_skills_company_key_idx").on(table.companyId, table.key),
+        companyNameIdx: index48("company_skills_company_name_idx").on(table.companyId, table.name)
       })
     );
   }
@@ -5249,93 +5579,93 @@ var init_company_skills = __esm({
 
 // ../packages/db/src/schema/plugins.ts
 import {
-  pgTable as pgTable51,
-  uuid as uuid50,
-  text as text52,
-  integer as integer19,
-  timestamp as timestamp51,
-  jsonb as jsonb25,
-  index as index47,
-  uniqueIndex as uniqueIndex26
+  pgTable as pgTable53,
+  uuid as uuid52,
+  text as text54,
+  integer as integer20,
+  timestamp as timestamp53,
+  jsonb as jsonb27,
+  index as index49,
+  uniqueIndex as uniqueIndex28
 } from "drizzle-orm/pg-core";
 var plugins;
 var init_plugins = __esm({
   "../packages/db/src/schema/plugins.ts"() {
     "use strict";
-    plugins = pgTable51(
+    plugins = pgTable53(
       "plugins",
       {
-        id: uuid50("id").primaryKey().defaultRandom(),
-        pluginKey: text52("plugin_key").notNull(),
-        packageName: text52("package_name").notNull(),
-        version: text52("version").notNull(),
-        apiVersion: integer19("api_version").notNull().default(1),
-        categories: jsonb25("categories").$type().notNull().default([]),
-        manifestJson: jsonb25("manifest_json").$type().notNull(),
-        status: text52("status").$type().notNull().default("installed"),
-        installOrder: integer19("install_order"),
+        id: uuid52("id").primaryKey().defaultRandom(),
+        pluginKey: text54("plugin_key").notNull(),
+        packageName: text54("package_name").notNull(),
+        version: text54("version").notNull(),
+        apiVersion: integer20("api_version").notNull().default(1),
+        categories: jsonb27("categories").$type().notNull().default([]),
+        manifestJson: jsonb27("manifest_json").$type().notNull(),
+        status: text54("status").$type().notNull().default("installed"),
+        installOrder: integer20("install_order"),
         /** Resolved package path for local-path installs; used to find worker entrypoint. */
-        packagePath: text52("package_path"),
-        lastError: text52("last_error"),
-        installedAt: timestamp51("installed_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp51("updated_at", { withTimezone: true }).notNull().defaultNow()
+        packagePath: text54("package_path"),
+        lastError: text54("last_error"),
+        installedAt: timestamp53("installed_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp53("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginKeyIdx: uniqueIndex26("plugins_plugin_key_idx").on(table.pluginKey),
-        statusIdx: index47("plugins_status_idx").on(table.status)
+        pluginKeyIdx: uniqueIndex28("plugins_plugin_key_idx").on(table.pluginKey),
+        statusIdx: index49("plugins_status_idx").on(table.status)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_config.ts
-import { pgTable as pgTable52, uuid as uuid51, text as text53, timestamp as timestamp52, jsonb as jsonb26, uniqueIndex as uniqueIndex27 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable54, uuid as uuid53, text as text55, timestamp as timestamp54, jsonb as jsonb28, uniqueIndex as uniqueIndex29 } from "drizzle-orm/pg-core";
 var pluginConfig;
 var init_plugin_config = __esm({
   "../packages/db/src/schema/plugin_config.ts"() {
     "use strict";
     init_plugins();
-    pluginConfig = pgTable52(
+    pluginConfig = pgTable54(
       "plugin_config",
       {
-        id: uuid51("id").primaryKey().defaultRandom(),
-        pluginId: uuid51("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        configJson: jsonb26("config_json").$type().notNull().default({}),
-        lastError: text53("last_error"),
-        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp52("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid53("id").primaryKey().defaultRandom(),
+        pluginId: uuid53("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        configJson: jsonb28("config_json").$type().notNull().default({}),
+        lastError: text55("last_error"),
+        createdAt: timestamp54("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp54("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdIdx: uniqueIndex27("plugin_config_plugin_id_idx").on(table.pluginId)
+        pluginIdIdx: uniqueIndex29("plugin_config_plugin_id_idx").on(table.pluginId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_company_settings.ts
-import { pgTable as pgTable53, uuid as uuid52, text as text54, timestamp as timestamp53, jsonb as jsonb27, index as index48, uniqueIndex as uniqueIndex28, boolean as boolean10 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable55, uuid as uuid54, text as text56, timestamp as timestamp55, jsonb as jsonb29, index as index50, uniqueIndex as uniqueIndex30, boolean as boolean11 } from "drizzle-orm/pg-core";
 var pluginCompanySettings;
 var init_plugin_company_settings = __esm({
   "../packages/db/src/schema/plugin_company_settings.ts"() {
     "use strict";
     init_companies();
     init_plugins();
-    pluginCompanySettings = pgTable53(
+    pluginCompanySettings = pgTable55(
       "plugin_company_settings",
       {
-        id: uuid52("id").primaryKey().defaultRandom(),
-        companyId: uuid52("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        pluginId: uuid52("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        enabled: boolean10("enabled").notNull().default(true),
-        settingsJson: jsonb27("settings_json").$type().notNull().default({}),
-        lastError: text54("last_error"),
-        createdAt: timestamp53("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp53("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid54("id").primaryKey().defaultRandom(),
+        companyId: uuid54("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        pluginId: uuid54("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        enabled: boolean11("enabled").notNull().default(true),
+        settingsJson: jsonb29("settings_json").$type().notNull().default({}),
+        lastError: text56("last_error"),
+        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp55("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index48("plugin_company_settings_company_idx").on(table.companyId),
-        pluginIdx: index48("plugin_company_settings_plugin_idx").on(table.pluginId),
-        companyPluginUq: uniqueIndex28("plugin_company_settings_company_plugin_uq").on(
+        companyIdx: index50("plugin_company_settings_company_idx").on(table.companyId),
+        pluginIdx: index50("plugin_company_settings_plugin_idx").on(table.pluginId),
+        companyPluginUq: uniqueIndex30("plugin_company_settings_company_plugin_uq").on(
           table.companyId,
           table.pluginId
         )
@@ -5346,12 +5676,12 @@ var init_plugin_company_settings = __esm({
 
 // ../packages/db/src/schema/plugin_state.ts
 import {
-  pgTable as pgTable54,
-  uuid as uuid53,
-  text as text55,
-  timestamp as timestamp54,
-  jsonb as jsonb28,
-  index as index49,
+  pgTable as pgTable56,
+  uuid as uuid55,
+  text as text57,
+  timestamp as timestamp56,
+  jsonb as jsonb30,
+  index as index51,
   unique as unique2
 } from "drizzle-orm/pg-core";
 var pluginState;
@@ -5359,30 +5689,30 @@ var init_plugin_state = __esm({
   "../packages/db/src/schema/plugin_state.ts"() {
     "use strict";
     init_plugins();
-    pluginState = pgTable54(
+    pluginState = pgTable56(
       "plugin_state",
       {
-        id: uuid53("id").primaryKey().defaultRandom(),
+        id: uuid55("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid53("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Granularity of the scope (e.g. `"instance"`, `"project"`, `"issue"`). */
-        scopeKind: text55("scope_kind").$type().notNull(),
+        scopeKind: text57("scope_kind").$type().notNull(),
         /**
          * UUID or text identifier for the scoped object.
          * Null for `instance` scope (which has no associated entity).
          */
-        scopeId: text55("scope_id"),
+        scopeId: text57("scope_id"),
         /**
          * Sub-namespace to avoid key collisions within a scope.
          * Defaults to `"default"` if the plugin does not specify one.
          */
-        namespace: text55("namespace").notNull().default("default"),
+        namespace: text57("namespace").notNull().default("default"),
         /** The key identifying this state entry within the namespace. */
-        stateKey: text55("state_key").notNull(),
+        stateKey: text57("state_key").notNull(),
         /** JSON-serializable value stored by the plugin. */
-        valueJson: jsonb28("value_json").notNull(),
+        valueJson: jsonb30("value_json").notNull(),
         /** Timestamp of the most recent write. */
-        updatedAt: timestamp54("updated_at", { withTimezone: true }).notNull().defaultNow()
+        updatedAt: timestamp56("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         /**
@@ -5404,7 +5734,7 @@ var init_plugin_state = __esm({
           table.stateKey
         ).nullsNotDistinct(),
         /** Speed up lookups by plugin + scope kind (most common access pattern). */
-        pluginScopeIdx: index49("plugin_state_plugin_scope_idx").on(
+        pluginScopeIdx: index51("plugin_state_plugin_scope_idx").on(
           table.pluginId,
           table.scopeKind
         )
@@ -5415,41 +5745,41 @@ var init_plugin_state = __esm({
 
 // ../packages/db/src/schema/plugin_entities.ts
 import {
-  pgTable as pgTable55,
-  uuid as uuid54,
-  text as text56,
-  timestamp as timestamp55,
-  jsonb as jsonb29,
-  index as index50,
-  uniqueIndex as uniqueIndex29
+  pgTable as pgTable57,
+  uuid as uuid56,
+  text as text58,
+  timestamp as timestamp57,
+  jsonb as jsonb31,
+  index as index52,
+  uniqueIndex as uniqueIndex31
 } from "drizzle-orm/pg-core";
 var pluginEntities;
 var init_plugin_entities = __esm({
   "../packages/db/src/schema/plugin_entities.ts"() {
     "use strict";
     init_plugins();
-    pluginEntities = pgTable55(
+    pluginEntities = pgTable57(
       "plugin_entities",
       {
-        id: uuid54("id").primaryKey().defaultRandom(),
-        pluginId: uuid54("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        entityType: text56("entity_type").notNull(),
-        scopeKind: text56("scope_kind").$type().notNull(),
-        scopeId: text56("scope_id"),
+        id: uuid56("id").primaryKey().defaultRandom(),
+        pluginId: uuid56("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        entityType: text58("entity_type").notNull(),
+        scopeKind: text58("scope_kind").$type().notNull(),
+        scopeId: text58("scope_id"),
         // NULL for global scope (text to match plugin_state.scope_id)
-        externalId: text56("external_id"),
+        externalId: text58("external_id"),
         // ID in the external system
-        title: text56("title"),
-        status: text56("status"),
-        data: jsonb29("data").$type().notNull().default({}),
-        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp55("updated_at", { withTimezone: true }).notNull().defaultNow()
+        title: text58("title"),
+        status: text58("status"),
+        data: jsonb31("data").$type().notNull().default({}),
+        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp57("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index50("plugin_entities_plugin_idx").on(table.pluginId),
-        typeIdx: index50("plugin_entities_type_idx").on(table.entityType),
-        scopeIdx: index50("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
-        externalIdx: uniqueIndex29("plugin_entities_external_idx").on(
+        pluginIdx: index52("plugin_entities_plugin_idx").on(table.pluginId),
+        typeIdx: index52("plugin_entities_type_idx").on(table.entityType),
+        scopeIdx: index52("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
+        externalIdx: uniqueIndex31("plugin_entities_external_idx").on(
           table.pluginId,
           table.entityType,
           table.externalId
@@ -5461,71 +5791,71 @@ var init_plugin_entities = __esm({
 
 // ../packages/db/src/schema/plugin_jobs.ts
 import {
-  pgTable as pgTable56,
-  uuid as uuid55,
-  text as text57,
-  integer as integer20,
-  timestamp as timestamp56,
-  jsonb as jsonb30,
-  index as index51,
-  uniqueIndex as uniqueIndex30
+  pgTable as pgTable58,
+  uuid as uuid57,
+  text as text59,
+  integer as integer21,
+  timestamp as timestamp58,
+  jsonb as jsonb32,
+  index as index53,
+  uniqueIndex as uniqueIndex32
 } from "drizzle-orm/pg-core";
 var pluginJobs, pluginJobRuns;
 var init_plugin_jobs = __esm({
   "../packages/db/src/schema/plugin_jobs.ts"() {
     "use strict";
     init_plugins();
-    pluginJobs = pgTable56(
+    pluginJobs = pgTable58(
       "plugin_jobs",
       {
-        id: uuid55("id").primaryKey().defaultRandom(),
+        id: uuid57("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid57("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `jobs` array. */
-        jobKey: text57("job_key").notNull(),
+        jobKey: text59("job_key").notNull(),
         /** Cron expression (e.g. `"0 * * * *"`) or interval string. */
-        schedule: text57("schedule").notNull(),
+        schedule: text59("schedule").notNull(),
         /** Current scheduling state. */
-        status: text57("status").$type().notNull().default("active"),
+        status: text59("status").$type().notNull().default("active"),
         /** Timestamp of the most recent successful execution. */
-        lastRunAt: timestamp56("last_run_at", { withTimezone: true }),
+        lastRunAt: timestamp58("last_run_at", { withTimezone: true }),
         /** Pre-computed timestamp of the next scheduled execution. */
-        nextRunAt: timestamp56("next_run_at", { withTimezone: true }),
-        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp56("updated_at", { withTimezone: true }).notNull().defaultNow()
+        nextRunAt: timestamp58("next_run_at", { withTimezone: true }),
+        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp58("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index51("plugin_jobs_plugin_idx").on(table.pluginId),
-        nextRunIdx: index51("plugin_jobs_next_run_idx").on(table.nextRunAt),
-        uniqueJobIdx: uniqueIndex30("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
+        pluginIdx: index53("plugin_jobs_plugin_idx").on(table.pluginId),
+        nextRunIdx: index53("plugin_jobs_next_run_idx").on(table.nextRunAt),
+        uniqueJobIdx: uniqueIndex32("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
       })
     );
-    pluginJobRuns = pgTable56(
+    pluginJobRuns = pgTable58(
       "plugin_job_runs",
       {
-        id: uuid55("id").primaryKey().defaultRandom(),
+        id: uuid57("id").primaryKey().defaultRandom(),
         /** FK to the parent job definition. Cascades on delete. */
-        jobId: uuid55("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
+        jobId: uuid57("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
         /** Denormalized FK to the owning plugin for efficient querying. Cascades on delete. */
-        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid57("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** What caused this run to start (`"scheduled"` or `"manual"`). */
-        trigger: text57("trigger").$type().notNull(),
+        trigger: text59("trigger").$type().notNull(),
         /** Current lifecycle state of this run. */
-        status: text57("status").$type().notNull().default("pending"),
+        status: text59("status").$type().notNull().default("pending"),
         /** Wall-clock duration in milliseconds. Null until the run finishes. */
-        durationMs: integer20("duration_ms"),
+        durationMs: integer21("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text57("error"),
+        error: text59("error"),
         /** Ordered list of log lines emitted during this run. */
-        logs: jsonb30("logs").$type().notNull().default([]),
-        startedAt: timestamp56("started_at", { withTimezone: true }),
-        finishedAt: timestamp56("finished_at", { withTimezone: true }),
-        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow()
+        logs: jsonb32("logs").$type().notNull().default([]),
+        startedAt: timestamp58("started_at", { withTimezone: true }),
+        finishedAt: timestamp58("finished_at", { withTimezone: true }),
+        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        jobIdx: index51("plugin_job_runs_job_idx").on(table.jobId),
-        pluginIdx: index51("plugin_job_runs_plugin_idx").on(table.pluginId),
-        statusIdx: index51("plugin_job_runs_status_idx").on(table.status)
+        jobIdx: index53("plugin_job_runs_job_idx").on(table.jobId),
+        pluginIdx: index53("plugin_job_runs_plugin_idx").on(table.pluginId),
+        statusIdx: index53("plugin_job_runs_status_idx").on(table.status)
       })
     );
   }
@@ -5533,47 +5863,47 @@ var init_plugin_jobs = __esm({
 
 // ../packages/db/src/schema/plugin_webhooks.ts
 import {
-  pgTable as pgTable57,
-  uuid as uuid56,
-  text as text58,
-  integer as integer21,
-  timestamp as timestamp57,
-  jsonb as jsonb31,
-  index as index52
+  pgTable as pgTable59,
+  uuid as uuid58,
+  text as text60,
+  integer as integer22,
+  timestamp as timestamp59,
+  jsonb as jsonb33,
+  index as index54
 } from "drizzle-orm/pg-core";
 var pluginWebhookDeliveries;
 var init_plugin_webhooks = __esm({
   "../packages/db/src/schema/plugin_webhooks.ts"() {
     "use strict";
     init_plugins();
-    pluginWebhookDeliveries = pgTable57(
+    pluginWebhookDeliveries = pgTable59(
       "plugin_webhook_deliveries",
       {
-        id: uuid56("id").primaryKey().defaultRandom(),
+        id: uuid58("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid56("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid58("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `webhooks` array. */
-        webhookKey: text58("webhook_key").notNull(),
+        webhookKey: text60("webhook_key").notNull(),
         /** Optional de-duplication ID provided by the external system. */
-        externalId: text58("external_id"),
+        externalId: text60("external_id"),
         /** Current delivery state. */
-        status: text58("status").$type().notNull().default("pending"),
+        status: text60("status").$type().notNull().default("pending"),
         /** Wall-clock processing duration in milliseconds. Null until delivery finishes. */
-        durationMs: integer21("duration_ms"),
+        durationMs: integer22("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text58("error"),
+        error: text60("error"),
         /** Raw JSON body of the inbound HTTP request. */
-        payload: jsonb31("payload").$type().notNull(),
+        payload: jsonb33("payload").$type().notNull(),
         /** Relevant HTTP headers from the inbound request (e.g. signature headers). */
-        headers: jsonb31("headers").$type().notNull().default({}),
-        startedAt: timestamp57("started_at", { withTimezone: true }),
-        finishedAt: timestamp57("finished_at", { withTimezone: true }),
-        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow()
+        headers: jsonb33("headers").$type().notNull().default({}),
+        startedAt: timestamp59("started_at", { withTimezone: true }),
+        finishedAt: timestamp59("finished_at", { withTimezone: true }),
+        createdAt: timestamp59("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index52("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
-        statusIdx: index52("plugin_webhook_deliveries_status_idx").on(table.status),
-        keyIdx: index52("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
+        pluginIdx: index54("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
+        statusIdx: index54("plugin_webhook_deliveries_status_idx").on(table.status),
+        keyIdx: index54("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
       })
     );
   }
@@ -5581,34 +5911,34 @@ var init_plugin_webhooks = __esm({
 
 // ../packages/db/src/schema/plugin_logs.ts
 import {
-  pgTable as pgTable58,
-  uuid as uuid57,
-  text as text59,
-  timestamp as timestamp58,
-  jsonb as jsonb32,
-  index as index53
+  pgTable as pgTable60,
+  uuid as uuid59,
+  text as text61,
+  timestamp as timestamp60,
+  jsonb as jsonb34,
+  index as index55
 } from "drizzle-orm/pg-core";
 var pluginLogs;
 var init_plugin_logs = __esm({
   "../packages/db/src/schema/plugin_logs.ts"() {
     "use strict";
     init_plugins();
-    pluginLogs = pgTable58(
+    pluginLogs = pgTable60(
       "plugin_logs",
       {
-        id: uuid57("id").primaryKey().defaultRandom(),
-        pluginId: uuid57("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        level: text59("level").notNull().default("info"),
-        message: text59("message").notNull(),
-        meta: jsonb32("meta").$type(),
-        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid59("id").primaryKey().defaultRandom(),
+        pluginId: uuid59("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        level: text61("level").notNull().default("info"),
+        message: text61("message").notNull(),
+        meta: jsonb34("meta").$type(),
+        createdAt: timestamp60("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginTimeIdx: index53("plugin_logs_plugin_time_idx").on(
+        pluginTimeIdx: index55("plugin_logs_plugin_time_idx").on(
           table.pluginId,
           table.createdAt
         ),
-        levelIdx: index53("plugin_logs_level_idx").on(table.level)
+        levelIdx: index55("plugin_logs_level_idx").on(table.level)
       })
     );
   }
@@ -5616,13 +5946,13 @@ var init_plugin_logs = __esm({
 
 // ../packages/db/src/schema/vibedash_project_links.ts
 import {
-  index as index54,
-  jsonb as jsonb33,
-  pgTable as pgTable59,
-  text as text60,
-  timestamp as timestamp59,
-  uniqueIndex as uniqueIndex31,
-  uuid as uuid58
+  index as index56,
+  jsonb as jsonb35,
+  pgTable as pgTable61,
+  text as text62,
+  timestamp as timestamp61,
+  uniqueIndex as uniqueIndex33,
+  uuid as uuid60
 } from "drizzle-orm/pg-core";
 var vibedashProjectLinks;
 var init_vibedash_project_links = __esm({
@@ -5631,36 +5961,36 @@ var init_vibedash_project_links = __esm({
     init_companies();
     init_projects();
     init_agents();
-    vibedashProjectLinks = pgTable59(
+    vibedashProjectLinks = pgTable61(
       "vibedash_project_links",
       {
-        id: uuid58("id").primaryKey().defaultRandom(),
-        companyId: uuid58("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        projectId: uuid58("project_id").references(() => projects.id, { onDelete: "set null" }),
-        pmAgentId: uuid58("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        vibedashProjectId: text60("vibedash_project_id").notNull(),
-        vibedashOwnerUserId: text60("vibedash_owner_user_id").notNull(),
-        vibedashOwnerEmail: text60("vibedash_owner_email"),
-        githubRepoUrl: text60("github_repo_url"),
-        githubRepoRef: text60("github_repo_ref"),
-        githubProvider: text60("github_provider").notNull().default("github"),
-        bootstrapStatus: text60("bootstrap_status").notNull().default("provisioning"),
-        lastSyncedAt: timestamp59("last_synced_at", { withTimezone: true }),
-        metadata: jsonb33("metadata").$type(),
-        createdAt: timestamp59("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp59("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid60("id").primaryKey().defaultRandom(),
+        companyId: uuid60("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        projectId: uuid60("project_id").references(() => projects.id, { onDelete: "set null" }),
+        pmAgentId: uuid60("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        vibedashProjectId: text62("vibedash_project_id").notNull(),
+        vibedashOwnerUserId: text62("vibedash_owner_user_id").notNull(),
+        vibedashOwnerEmail: text62("vibedash_owner_email"),
+        githubRepoUrl: text62("github_repo_url"),
+        githubRepoRef: text62("github_repo_ref"),
+        githubProvider: text62("github_provider").notNull().default("github"),
+        bootstrapStatus: text62("bootstrap_status").notNull().default("provisioning"),
+        lastSyncedAt: timestamp61("last_synced_at", { withTimezone: true }),
+        metadata: jsonb35("metadata").$type(),
+        createdAt: timestamp61("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp61("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        vibedashProjectIdUniqueIdx: uniqueIndex31(
+        vibedashProjectIdUniqueIdx: uniqueIndex33(
           "vibedash_project_links_vibedash_project_id_idx"
         ).on(table.vibedashProjectId),
-        companyUniqueIdx: uniqueIndex31("vibedash_project_links_company_id_idx").on(table.companyId),
-        companyStatusIdx: index54("vibedash_project_links_company_status_idx").on(
+        companyUniqueIdx: uniqueIndex33("vibedash_project_links_company_id_idx").on(table.companyId),
+        companyStatusIdx: index56("vibedash_project_links_company_status_idx").on(
           table.companyId,
           table.bootstrapStatus
         ),
-        projectIdx: index54("vibedash_project_links_project_idx").on(table.projectId),
-        pmAgentIdx: index54("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
+        projectIdx: index56("vibedash_project_links_project_idx").on(table.projectId),
+        pmAgentIdx: index56("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
       })
     );
   }
@@ -5697,6 +6027,8 @@ __export(schema_exports, {
   documentRevisions: () => documentRevisions,
   documents: () => documents,
   executionWorkspaces: () => executionWorkspaces,
+  feedbackExports: () => feedbackExports,
+  feedbackVotes: () => feedbackVotes,
   financeEvents: () => financeEvents,
   goals: () => goals,
   heartbeatRunEvents: () => heartbeatRunEvents,
@@ -5772,6 +6104,8 @@ var init_schema2 = __esm({
     init_issue_approvals();
     init_issue_comments();
     init_issue_inbox_archives();
+    init_feedback_votes();
+    init_feedback_exports();
     init_issue_read_states();
     init_assets();
     init_issue_attachments();
@@ -6540,8 +6874,8 @@ var init_test_embedded_postgres = __esm({
 });
 
 // ../packages/db/src/backup-lib.ts
-import { existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
-import { readFile as readFile2, writeFile } from "node:fs/promises";
+import { createWriteStream, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
+import { readFile as readFile2 } from "node:fs/promises";
 import { basename, resolve } from "node:path";
 import postgres2 from "postgres";
 function sanitizeRestoreErrorMessage(error) {
@@ -6555,7 +6889,7 @@ function sanitizeRestoreErrorMessage(error) {
   }
   return error instanceof Error ? error.message : String(error);
 }
-function timestamp60(date2 = /* @__PURE__ */ new Date()) {
+function timestamp62(date2 = /* @__PURE__ */ new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${date2.getFullYear()}${pad(date2.getMonth() + 1)}${pad(date2.getDate())}-${pad(date2.getHours())}${pad(date2.getMinutes())}${pad(date2.getSeconds())}`;
 }
@@ -6567,8 +6901,8 @@ function pruneOldBackups(backupDir, retentionDays, filenamePrefix) {
   for (const name of readdirSync(backupDir)) {
     if (!name.startsWith(`${filenamePrefix}-`) || !name.endsWith(".sql")) continue;
     const fullPath = resolve(backupDir, name);
-    const stat2 = statSync(fullPath);
-    if (stat2.mtimeMs < cutoff) {
+    const stat3 = statSync(fullPath);
+    if (stat3.mtimeMs < cutoff) {
       unlinkSync(fullPath);
       pruned++;
     }
@@ -6617,6 +6951,98 @@ function quoteQualifiedName(schemaName, objectName) {
 function tableKey(schemaName, tableName) {
   return `${schemaName}.${tableName}`;
 }
+function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAULT_BACKUP_WRITE_BUFFER_BYTES) {
+  const stream = createWriteStream(filePath, { encoding: "utf8" });
+  const flushThreshold = Math.max(1, Math.trunc(maxBufferedBytes));
+  let bufferedLines = [];
+  let bufferedBytes = 0;
+  let firstChunk = true;
+  let closed = false;
+  let streamError = null;
+  let pendingWrite = Promise.resolve();
+  stream.on("error", (error) => {
+    streamError = error;
+  });
+  const writeChunk = async (chunk) => {
+    if (streamError) throw streamError;
+    const canContinue = stream.write(chunk);
+    if (!canContinue) {
+      await new Promise((resolve2, reject) => {
+        const handleDrain = () => {
+          cleanup();
+          resolve2();
+        };
+        const handleError = (error) => {
+          cleanup();
+          reject(error);
+        };
+        const cleanup = () => {
+          stream.off("drain", handleDrain);
+          stream.off("error", handleError);
+        };
+        stream.once("drain", handleDrain);
+        stream.once("error", handleError);
+      });
+    }
+    if (streamError) throw streamError;
+  };
+  const flushBufferedLines = () => {
+    if (bufferedLines.length === 0) return;
+    const linesToWrite = bufferedLines;
+    bufferedLines = [];
+    bufferedBytes = 0;
+    const chunkBody = linesToWrite.join("\n");
+    const chunk = firstChunk ? chunkBody : `
+${chunkBody}`;
+    firstChunk = false;
+    pendingWrite = pendingWrite.then(() => writeChunk(chunk));
+  };
+  return {
+    emit(line) {
+      if (closed) {
+        throw new Error(`Cannot write to closed backup file: ${filePath}`);
+      }
+      if (streamError) throw streamError;
+      bufferedLines.push(line);
+      bufferedBytes += Buffer.byteLength(line, "utf8") + 1;
+      if (bufferedBytes >= flushThreshold) {
+        flushBufferedLines();
+      }
+    },
+    async close() {
+      if (closed) return;
+      closed = true;
+      flushBufferedLines();
+      await pendingWrite;
+      await new Promise((resolve2, reject) => {
+        if (streamError) {
+          reject(streamError);
+          return;
+        }
+        stream.end((error) => {
+          if (error) reject(error);
+          else resolve2();
+        });
+      });
+      if (streamError) throw streamError;
+    },
+    async abort() {
+      if (closed) return;
+      closed = true;
+      bufferedLines = [];
+      bufferedBytes = 0;
+      stream.destroy();
+      await pendingWrite.catch(() => {
+      });
+      if (existsSync(filePath)) {
+        try {
+          unlinkSync(filePath);
+        } catch {
+        }
+      }
+    }
+  };
+}
 async function runDatabaseBackup(opts) {
   const filenamePrefix = opts.filenamePrefix ?? "paperclip";
   const retentionDays = Math.max(1, Math.trunc(opts.retentionDays));
@@ -6625,10 +7051,12 @@ async function runDatabaseBackup(opts) {
   const excludedTableNames = normalizeTableNameSet(opts.excludeTables);
   const nullifiedColumnsByTable = normalizeNullifyColumnMap(opts.nullifyColumns);
   const sql4 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+  mkdirSync(opts.backupDir, { recursive: true });
+  const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp62()}.sql`);
+  const writer = createBufferedTextFileWriter(backupFile);
   try {
     await sql4`SELECT 1`;
-    const lines = [];
-    const emit = (line) => lines.push(line);
+    const emit = (line) => writer.emit(line);
     const emitStatement = (statement) => {
       emit(statement);
       emit(STATEMENT_BREAKPOINT);
@@ -6879,8 +7307,8 @@ async function runDatabaseBackup(opts) {
       const rows = await sql4.unsafe(`SELECT * FROM ${qualifiedTableName}`).values();
       const nullifiedColumns = nullifiedColumnsByTable.get(tablename) ?? /* @__PURE__ */ new Set();
       for (const row of rows) {
-        const values = row.map((rawValue, index55) => {
-          const columnName = cols[index55]?.column_name;
+        const values = row.map((rawValue, index57) => {
+          const columnName = cols[index57]?.column_name;
           const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
           if (val === null || val === void 0) return "NULL";
           if (typeof val === "boolean") return val ? "true" : "false";
@@ -6909,9 +7337,7 @@ async function runDatabaseBackup(opts) {
     }
     emitStatement("COMMIT;");
     emit("");
-    mkdirSync(opts.backupDir, { recursive: true });
-    const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp60()}.sql`);
-    await writeFile(backupFile, lines.join("\n"), "utf8");
+    await writer.close();
     const sizeBytes = statSync(backupFile).size;
     const prunedCount = pruneOldBackups(opts.backupDir, retentionDays, filenamePrefix);
     return {
@@ -6919,6 +7345,9 @@ async function runDatabaseBackup(opts) {
       sizeBytes,
       prunedCount
     };
+  } catch (error) {
+    await writer.abort();
+    throw error;
   } finally {
     await sql4.end();
   }
@@ -6947,12 +7376,13 @@ function formatDatabaseBackupResult(result) {
   const pruned = result.prunedCount > 0 ? `; pruned ${result.prunedCount} old backup(s)` : "";
   return `${result.backupFile} (${size}${pruned})`;
 }
-var DRIZZLE_SCHEMA, DRIZZLE_MIGRATIONS_TABLE2, STATEMENT_BREAKPOINT;
+var DRIZZLE_SCHEMA, DRIZZLE_MIGRATIONS_TABLE2, DEFAULT_BACKUP_WRITE_BUFFER_BYTES, STATEMENT_BREAKPOINT;
 var init_backup_lib = __esm({
   "../packages/db/src/backup-lib.ts"() {
     "use strict";
     DRIZZLE_SCHEMA = "drizzle";
     DRIZZLE_MIGRATIONS_TABLE2 = "__drizzle_migrations";
+    DEFAULT_BACKUP_WRITE_BUFFER_BYTES = 1024 * 1024;
     STATEMENT_BREAKPOINT = "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900";
   }
 });
@@ -6983,8 +7413,8 @@ function createEmbeddedPostgresLogBuffer(limit = DEFAULT_RECENT_LOG_LIMIT) {
   const recentLogs = [];
   return {
     append(message) {
-      const text61 = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
-      for (const rawLine of text61.split(/\r?\n/)) {
+      const text63 = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
+      for (const rawLine of text63.split(/\r?\n/)) {
         const line = rawLine.trim();
         if (!line) continue;
         recentLogs.push(line);
@@ -7056,6 +7486,8 @@ __export(src_exports, {
   documents: () => documents,
   ensurePostgresDatabase: () => ensurePostgresDatabase,
   executionWorkspaces: () => executionWorkspaces,
+  feedbackExports: () => feedbackExports,
+  feedbackVotes: () => feedbackVotes,
   financeEvents: () => financeEvents,
   formatDatabaseBackupResult: () => formatDatabaseBackupResult,
   formatEmbeddedPostgresError: () => formatEmbeddedPostgresError2,
@@ -7243,6 +7675,236 @@ var init_banner = __esm({
       "\u255A\u2550\u255D     \u255A\u2550\u255D  \u255A\u2550\u255D\u255A\u2550\u255D     \u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D  \u255A\u2550\u255D \u255A\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u2550\u2550\u2550\u2550\u2550\u255D\u255A\u2550\u255D\u255A\u2550\u255D     "
     ];
     TAGLINE = "Open-source orchestration for zero-human companies";
+  }
+});
+
+// ../packages/shared/src/telemetry/client.ts
+import { createHash as createHash3 } from "node:crypto";
+var DEFAULT_ENDPOINT, BATCH_SIZE, SEND_TIMEOUT_MS, TelemetryClient;
+var init_client2 = __esm({
+  "../packages/shared/src/telemetry/client.ts"() {
+    "use strict";
+    DEFAULT_ENDPOINT = "https://telemetry.paperclip.ing/ingest";
+    BATCH_SIZE = 50;
+    SEND_TIMEOUT_MS = 5e3;
+    TelemetryClient = class {
+      queue = [];
+      config;
+      stateFactory;
+      version;
+      state = null;
+      flushInterval = null;
+      constructor(config, stateFactory, version) {
+        this.config = config;
+        this.stateFactory = stateFactory;
+        this.version = version;
+      }
+      track(eventName, dimensions) {
+        if (!this.config.enabled) return;
+        this.getState();
+        this.queue.push({
+          name: eventName,
+          occurredAt: (/* @__PURE__ */ new Date()).toISOString(),
+          dimensions: dimensions ?? {}
+        });
+        if (this.queue.length >= BATCH_SIZE) {
+          void this.flush();
+        }
+      }
+      async flush() {
+        if (!this.config.enabled || this.queue.length === 0) return;
+        const events = this.queue.splice(0);
+        const state = this.getState();
+        const endpoint = this.config.endpoint ?? DEFAULT_ENDPOINT;
+        const app = this.config.app ?? "paperclip";
+        const schemaVersion = this.config.schemaVersion ?? "1";
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+        try {
+          await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              app,
+              schemaVersion,
+              installId: state.installId,
+              version: this.version,
+              events
+            }),
+            signal: controller.signal
+          });
+        } catch {
+        } finally {
+          clearTimeout(timer);
+        }
+      }
+      startPeriodicFlush(intervalMs = 6e4) {
+        if (this.flushInterval) return;
+        this.flushInterval = setInterval(() => {
+          void this.flush();
+        }, intervalMs);
+        if (typeof this.flushInterval === "object" && "unref" in this.flushInterval) {
+          this.flushInterval.unref();
+        }
+      }
+      stop() {
+        if (this.flushInterval) {
+          clearInterval(this.flushInterval);
+          this.flushInterval = null;
+        }
+      }
+      hashPrivateRef(value) {
+        const state = this.getState();
+        return createHash3("sha256").update(state.salt + value).digest("hex").slice(0, 16);
+      }
+      getState() {
+        if (!this.state) {
+          this.state = this.stateFactory();
+        }
+        return this.state;
+      }
+    };
+  }
+});
+
+// ../packages/shared/src/telemetry/config.ts
+function isCI() {
+  return CI_ENV_VARS.some((key) => process.env[key] === "true" || process.env[key] === "1");
+}
+function resolveTelemetryConfig(fileConfig) {
+  if (process.env.PAPERCLIP_TELEMETRY_DISABLED === "1") {
+    return { enabled: false };
+  }
+  if (process.env.DO_NOT_TRACK === "1") {
+    return { enabled: false };
+  }
+  if (isCI()) {
+    return { enabled: false };
+  }
+  if (fileConfig?.enabled === false) {
+    return { enabled: false };
+  }
+  const endpoint = process.env.PAPERCLIP_TELEMETRY_ENDPOINT || void 0;
+  return { enabled: true, endpoint };
+}
+var CI_ENV_VARS;
+var init_config = __esm({
+  "../packages/shared/src/telemetry/config.ts"() {
+    "use strict";
+    CI_ENV_VARS = ["CI", "CONTINUOUS_INTEGRATION", "BUILD_NUMBER", "GITHUB_ACTIONS", "GITLAB_CI"];
+  }
+});
+
+// ../packages/shared/src/telemetry/state.ts
+import { randomUUID, randomBytes as randomBytes4 } from "node:crypto";
+import { existsSync as existsSync2, mkdirSync as mkdirSync2, readFileSync, writeFileSync } from "node:fs";
+import path7 from "node:path";
+function loadOrCreateState(stateDir, version) {
+  const filePath = path7.join(stateDir, "state.json");
+  if (existsSync2(filePath)) {
+    try {
+      const raw = readFileSync(filePath, "utf-8");
+      const parsed = JSON.parse(raw);
+      if (parsed.installId && parsed.salt) {
+        return parsed;
+      }
+    } catch {
+    }
+  }
+  const state = {
+    installId: randomUUID(),
+    salt: randomBytes4(32).toString("hex"),
+    createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+    firstSeenVersion: version
+  };
+  mkdirSync2(stateDir, { recursive: true });
+  writeFileSync(filePath, JSON.stringify(state, null, 2) + "\n", "utf-8");
+  return state;
+}
+var init_state = __esm({
+  "../packages/shared/src/telemetry/state.ts"() {
+    "use strict";
+  }
+});
+
+// ../packages/shared/src/telemetry/events.ts
+function trackInstallStarted(client2) {
+  client2.track("install.started");
+}
+function trackInstallCompleted(client2, dims) {
+  client2.track("install.completed", { adapter_type: dims.adapterType });
+}
+function trackCompanyImported(client2, dims) {
+  const ref = dims.isPrivate ? client2.hashPrivateRef(dims.sourceRef) : dims.sourceRef;
+  client2.track("company.imported", {
+    source_type: dims.sourceType,
+    source_ref: ref,
+    source_ref_hashed: dims.isPrivate
+  });
+}
+var init_events = __esm({
+  "../packages/shared/src/telemetry/events.ts"() {
+    "use strict";
+  }
+});
+
+// ../packages/shared/src/telemetry/index.ts
+var init_telemetry = __esm({
+  "../packages/shared/src/telemetry/index.ts"() {
+    "use strict";
+    init_client2();
+    init_config();
+    init_state();
+    init_events();
+  }
+});
+
+// src/version.ts
+import { createRequire } from "node:module";
+var require2, pkg, cliVersion;
+var init_version = __esm({
+  "src/version.ts"() {
+    "use strict";
+    require2 = createRequire(import.meta.url);
+    pkg = require2("../package.json");
+    cliVersion = pkg.version ?? "0.0.0";
+  }
+});
+
+// src/telemetry.ts
+import path8 from "node:path";
+function initTelemetry(fileConfig) {
+  if (client) return client;
+  const config = resolveTelemetryConfig(fileConfig);
+  if (!config.enabled) return null;
+  const stateDir = path8.join(resolvePaperclipInstanceRoot(), "telemetry");
+  client = new TelemetryClient(config, () => loadOrCreateState(stateDir, cliVersion), cliVersion);
+  return client;
+}
+function initTelemetryFromConfigFile(configPath) {
+  try {
+    return initTelemetry(readConfig(configPath)?.telemetry);
+  } catch {
+    return initTelemetry();
+  }
+}
+function getTelemetryClient() {
+  return client;
+}
+async function flushTelemetry() {
+  if (client) {
+    await client.flush();
+  }
+}
+var client;
+var init_telemetry2 = __esm({
+  "src/telemetry.ts"() {
+    "use strict";
+    init_telemetry();
+    init_home();
+    init_store();
+    init_version();
+    client = null;
   }
 });
 
@@ -7640,9 +8302,9 @@ var init_port_check = __esm({
 });
 
 // src/checks/secrets-check.ts
-import { randomBytes as randomBytes4 } from "node:crypto";
+import { randomBytes as randomBytes5 } from "node:crypto";
 import fs8 from "node:fs";
-import path7 from "node:path";
+import path9 from "node:path";
 function decodeMasterKey(raw) {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -7712,8 +8374,8 @@ function secretsCheck(config, configPath) {
         message: `Secrets key file does not exist yet: ${keyFilePath}`,
         canRepair: true,
         repair: () => {
-          fs8.mkdirSync(path7.dirname(keyFilePath), { recursive: true });
-          fs8.writeFileSync(keyFilePath, randomBytes4(32).toString("base64"), {
+          fs8.mkdirSync(path9.dirname(keyFilePath), { recursive: true });
+          fs8.writeFileSync(keyFilePath, randomBytes5(32).toString("base64"), {
             encoding: "utf8",
             mode: 384
           });
@@ -7987,7 +8649,7 @@ __export(run_exports, {
   runCommand: () => runCommand
 });
 import fs10 from "node:fs";
-import path8 from "node:path";
+import path10 from "node:path";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "node:url";
 import * as p9 from "@clack/prompts";
 import pc4 from "picocolors";
@@ -8081,8 +8743,8 @@ function maybeEnableUiDevMiddleware(entrypoint) {
   }
 }
 async function importServerEntry() {
-  const projectRoot = path8.resolve(path8.dirname(fileURLToPath2(import.meta.url)), "../../..");
-  const devEntry = path8.resolve(projectRoot, "server/src/index.ts");
+  const projectRoot = path10.resolve(path10.dirname(fileURLToPath2(import.meta.url)), "../../..");
+  const devEntry = path10.resolve(projectRoot, "server/src/index.ts");
   if (fs10.existsSync(devEntry)) {
     maybeEnableUiDevMiddleware(devEntry);
     const mod = await import(pathToFileURL(devEntry).href);
@@ -8132,7 +8794,7 @@ var init_run = __esm({
 
 // src/commands/onboard.ts
 import * as p10 from "@clack/prompts";
-import path9 from "node:path";
+import path11 from "node:path";
 import pc5 from "picocolors";
 function parseBooleanFromEnv(rawValue) {
   if (rawValue === void 0) return null;
@@ -8153,7 +8815,7 @@ function parseEnumFromEnv(rawValue, allowedValues) {
 }
 function resolvePathFromEnv(rawValue) {
   if (!rawValue || rawValue.trim().length === 0) return null;
-  return path9.resolve(expandHomePrefix(rawValue.trim()));
+  return path11.resolve(expandHomePrefix(rawValue.trim()));
 }
 function quickstartDefaultsFromEnv() {
   const instanceId = resolvePaperclipInstanceId();
@@ -8269,10 +8931,11 @@ async function onboard(opts) {
       `Local home: ${instance.homeDir} | instance: ${instance.instanceId} | config: ${configPath}`
     )
   );
+  let existingConfig = null;
   if (configExists(opts.config)) {
-    p10.log.message(pc5.dim(`${configPath} exists, updating config`));
+    p10.log.message(pc5.dim(`${configPath} exists`));
     try {
-      readConfig(opts.config);
+      existingConfig = readConfig(opts.config);
     } catch (err) {
       p10.log.message(
         pc5.yellow(
@@ -8281,6 +8944,68 @@ ${err instanceof Error ? err.message : String(err)}`
         )
       );
     }
+  }
+  if (existingConfig) {
+    p10.log.message(
+      pc5.dim("Existing Paperclip install detected; keeping the current configuration unchanged.")
+    );
+    p10.log.message(pc5.dim(`Use ${pc5.cyan("paperclipai configure")} if you want to change settings.`));
+    const jwtSecret2 = ensureAgentJwtSecret(configPath);
+    const envFilePath2 = resolveAgentJwtEnvFile(configPath);
+    if (jwtSecret2.created) {
+      p10.log.success(`Created ${pc5.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc5.dim(envFilePath2)}`);
+    } else if (process.env.PAPERCLIP_AGENT_JWT_SECRET?.trim()) {
+      p10.log.info(`Using existing ${pc5.cyan("PAPERCLIP_AGENT_JWT_SECRET")} from environment`);
+    } else {
+      p10.log.info(`Using existing ${pc5.cyan("PAPERCLIP_AGENT_JWT_SECRET")} in ${pc5.dim(envFilePath2)}`);
+    }
+    const keyResult2 = ensureLocalSecretsKeyFile(existingConfig, configPath);
+    if (keyResult2.status === "created") {
+      p10.log.success(`Created local secrets key file at ${pc5.dim(keyResult2.path)}`);
+    } else if (keyResult2.status === "existing") {
+      p10.log.message(pc5.dim(`Using existing local secrets key file at ${keyResult2.path}`));
+    }
+    p10.note(
+      [
+        "Existing config preserved",
+        `Database: ${existingConfig.database.mode}`,
+        existingConfig.llm ? `LLM: ${existingConfig.llm.provider}` : "LLM: not configured",
+        `Logging: ${existingConfig.logging.mode} -> ${existingConfig.logging.logDir}`,
+        `Server: ${existingConfig.server.deploymentMode}/${existingConfig.server.exposure} @ ${existingConfig.server.host}:${existingConfig.server.port}`,
+        `Allowed hosts: ${existingConfig.server.allowedHostnames.length > 0 ? existingConfig.server.allowedHostnames.join(", ") : "(loopback only)"}`,
+        `Auth URL mode: ${existingConfig.auth.baseUrlMode}${existingConfig.auth.publicBaseUrl ? ` (${existingConfig.auth.publicBaseUrl})` : ""}`,
+        `Storage: ${existingConfig.storage.provider}`,
+        `Secrets: ${existingConfig.secrets.provider} (strict mode ${existingConfig.secrets.strictMode ? "on" : "off"})`,
+        "Agent auth: PAPERCLIP_AGENT_JWT_SECRET configured"
+      ].join("\n"),
+      "Configuration ready"
+    );
+    p10.note(
+      [
+        `Run: ${pc5.cyan("paperclipai run")}`,
+        `Reconfigure later: ${pc5.cyan("paperclipai configure")}`,
+        `Diagnose setup: ${pc5.cyan("paperclipai doctor")}`
+      ].join("\n"),
+      "Next commands"
+    );
+    let shouldRunNow2 = opts.run === true || opts.yes === true;
+    if (!shouldRunNow2 && !opts.invokedByRun && process.stdin.isTTY && process.stdout.isTTY) {
+      const answer = await p10.confirm({
+        message: "Start Paperclip now?",
+        initialValue: true
+      });
+      if (!p10.isCancel(answer)) {
+        shouldRunNow2 = answer;
+      }
+    }
+    if (shouldRunNow2 && !opts.invokedByRun) {
+      process.env.PAPERCLIP_OPEN_ON_LISTEN = "true";
+      const { runCommand: runCommand2 } = await Promise.resolve().then(() => (init_run(), run_exports));
+      await runCommand2({ config: configPath, repair: true, yes: true });
+      return;
+    }
+    p10.outro("Existing Paperclip setup is ready.");
+    return;
   }
   let setupMode = "quickstart";
   if (opts.yes) {
@@ -8308,6 +9033,8 @@ ${err instanceof Error ? err.message : String(err)}`
     }
     setupMode = setupModeChoice;
   }
+  const tc = getTelemetryClient();
+  if (tc) trackInstallStarted(tc);
   let llm;
   const { defaults: derivedDefaults, usedEnvKeys, ignoredEnvKeys } = quickstartDefaultsFromEnv();
   let {
@@ -8430,6 +9157,9 @@ ${err instanceof Error ? err.message : String(err)}`
     logging,
     server,
     auth: auth2,
+    telemetry: {
+      enabled: true
+    },
     storage,
     secrets
   };
@@ -8440,6 +9170,9 @@ ${err instanceof Error ? err.message : String(err)}`
     p10.log.message(pc5.dim(`Using existing local secrets key file at ${keyResult.path}`));
   }
   writeConfig(config, opts.config);
+  if (tc) trackInstallCompleted(tc, {
+    adapterType: server.deploymentMode
+  });
   p10.note(
     [
       `Database: ${database.mode}`,
@@ -8510,6 +9243,7 @@ var init_onboard = __esm({
     init_home();
     init_auth_bootstrap_ceo();
     init_banner();
+    init_telemetry2();
     ONBOARD_ENV_KEYS = [
       "PAPERCLIP_PUBLIC_URL",
       "DATABASE_URL",
@@ -8880,6 +9614,9 @@ function defaultConfig() {
       baseUrlMode: "auto",
       disableSignUp: false
     },
+    telemetry: {
+      enabled: true
+    },
     storage: defaultStorageConfig(),
     secrets: defaultSecretsConfig()
   };
@@ -9047,6 +9784,25 @@ function asErrorText(value) {
     return "";
   }
 }
+function printToolResult(block) {
+  const isError = block.is_error === true;
+  let text63 = "";
+  if (typeof block.content === "string") {
+    text63 = block.content;
+  } else if (Array.isArray(block.content)) {
+    const parts = [];
+    for (const part of block.content) {
+      if (typeof part !== "object" || part === null || Array.isArray(part)) continue;
+      const record = part;
+      if (typeof record.text === "string") parts.push(record.text);
+    }
+    text63 = parts.join("\n");
+  }
+  console.log((isError ? pc9.red : pc9.cyan)(`tool_result${isError ? " (error)" : ""}`));
+  if (text63) {
+    console.log((isError ? pc9.red : pc9.gray)(text63));
+  }
+}
 function printClaudeStreamEvent(raw, debug) {
   const line = raw.trim();
   if (!line) return;
@@ -9072,14 +9828,29 @@ function printClaudeStreamEvent(raw, debug) {
       const block = blockRaw;
       const blockType = typeof block.type === "string" ? block.type : "";
       if (blockType === "text") {
-        const text61 = typeof block.text === "string" ? block.text : "";
-        if (text61) console.log(pc9.green(`assistant: ${text61}`));
+        const text63 = typeof block.text === "string" ? block.text : "";
+        if (text63) console.log(pc9.green(`assistant: ${text63}`));
+      } else if (blockType === "thinking") {
+        const text63 = typeof block.thinking === "string" ? block.thinking : "";
+        if (text63) console.log(pc9.gray(`thinking: ${text63}`));
       } else if (blockType === "tool_use") {
         const name = typeof block.name === "string" ? block.name : "unknown";
         console.log(pc9.yellow(`tool_call: ${name}`));
         if (block.input !== void 0) {
           console.log(pc9.gray(JSON.stringify(block.input, null, 2)));
         }
+      }
+    }
+    return;
+  }
+  if (type === "user") {
+    const message = typeof parsed.message === "object" && parsed.message !== null && !Array.isArray(parsed.message) ? parsed.message : {};
+    const content = Array.isArray(message.content) ? message.content : [];
+    for (const blockRaw of content) {
+      if (typeof blockRaw !== "object" || blockRaw === null || Array.isArray(blockRaw)) continue;
+      const block = blockRaw;
+      if (typeof block.type === "string" && block.type === "tool_result") {
+        printToolResult(block);
       }
     }
     return;
@@ -9165,13 +9936,13 @@ function printItemStarted(item) {
 function printItemCompleted(item) {
   const itemType = asString(item.type);
   if (itemType === "agent_message") {
-    const text61 = asString(item.text);
-    if (text61) console.log(pc10.green(`assistant: ${text61}`));
+    const text63 = asString(item.text);
+    if (text63) console.log(pc10.green(`assistant: ${text63}`));
     return true;
   }
   if (itemType === "reasoning") {
-    const text61 = asString(item.text);
-    if (text61) console.log(pc10.gray(`thinking: ${text61}`));
+    const text63 = asString(item.text);
+    if (text63) console.log(pc10.gray(`thinking: ${text63}`));
     return true;
   }
   if (itemType === "tool_use") {
@@ -9206,8 +9977,8 @@ function printItemCompleted(item) {
     const changes = Array.isArray(item.changes) ? item.changes : [];
     const entries = changes.map((changeRaw) => asRecord(changeRaw)).filter((change) => Boolean(change)).map((change) => {
       const kind = asString(change.kind, "update");
-      const path21 = asString(change.path, "unknown");
-      return `${kind} ${path21}`;
+      const path25 = asString(change.path, "unknown");
+      return `${kind} ${path25}`;
     });
     const preview = entries.length > 0 ? entries.slice(0, 6).join(", ") : "none";
     const more = entries.length > 6 ? ` (+${entries.length - 6} more)` : "";
@@ -9221,9 +9992,9 @@ function printItemCompleted(item) {
   }
   if (itemType === "tool_result") {
     const isError = item.is_error === true || asString(item.status) === "error";
-    const text61 = asString(item.content) || asString(item.result) || asString(item.output);
+    const text63 = asString(item.content) || asString(item.result) || asString(item.output);
     console.log((isError ? pc10.red : pc10.cyan)(`tool_result${isError ? " (error)" : ""}`));
-    if (text61) console.log((isError ? pc10.red : pc10.gray)(text61));
+    if (text63) console.log((isError ? pc10.red : pc10.gray)(text63));
     return true;
   }
   return false;
@@ -9342,8 +10113,8 @@ function stringifyUnknown(value) {
 }
 function printUserMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text61 = messageRaw.trim();
-    if (text61) console.log(pc11.gray(`user: ${text61}`));
+    const text63 = messageRaw.trim();
+    if (text63) console.log(pc11.gray(`user: ${text63}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -9356,14 +10127,14 @@ function printUserMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type !== "output_text" && type !== "text") continue;
-    const text61 = asString2(part.text).trim();
-    if (text61) console.log(pc11.gray(`user: ${text61}`));
+    const text63 = asString2(part.text).trim();
+    if (text63) console.log(pc11.gray(`user: ${text63}`));
   }
 }
 function printAssistantMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text61 = messageRaw.trim();
-    if (text61) console.log(pc11.green(`assistant: ${text61}`));
+    const text63 = messageRaw.trim();
+    if (text63) console.log(pc11.green(`assistant: ${text63}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -9376,13 +10147,13 @@ function printAssistantMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type === "output_text" || type === "text") {
-      const text61 = asString2(part.text).trim();
-      if (text61) console.log(pc11.green(`assistant: ${text61}`));
+      const text63 = asString2(part.text).trim();
+      if (text63) console.log(pc11.green(`assistant: ${text63}`));
       continue;
     }
     if (type === "thinking") {
-      const text61 = asString2(part.text).trim();
-      if (text61) console.log(pc11.gray(`thinking: ${text61}`));
+      const text63 = asString2(part.text).trim();
+      if (text63) console.log(pc11.gray(`thinking: ${text63}`));
       continue;
     }
     if (type === "tool_call") {
@@ -9502,8 +10273,8 @@ function printCursorStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text61 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
-    if (text61) console.log(pc11.gray(`thinking: ${text61}`));
+    const text63 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
+    if (text63) console.log(pc11.gray(`thinking: ${text63}`));
     return;
   }
   if (type === "tool_call") {
@@ -9541,8 +10312,8 @@ function printCursorStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord2(parsed.part);
-    const text61 = asString2(part?.text);
-    if (text61) console.log(pc11.green(`assistant: ${text61}`));
+    const text63 = asString2(part?.text);
+    if (text63) console.log(pc11.green(`assistant: ${text63}`));
     return;
   }
   if (type === "tool_use") {
@@ -9605,8 +10376,8 @@ function errorText2(value) {
 }
 function printTextMessage(prefix, colorize, messageRaw) {
   if (typeof messageRaw === "string") {
-    const text61 = messageRaw.trim();
-    if (text61) console.log(colorize(`${prefix}: ${text61}`));
+    const text63 = messageRaw.trim();
+    if (text63) console.log(colorize(`${prefix}: ${text63}`));
     return;
   }
   const message = asRecord3(messageRaw);
@@ -9619,13 +10390,13 @@ function printTextMessage(prefix, colorize, messageRaw) {
     if (!part) continue;
     const type = asString3(part.type).trim();
     if (type === "output_text" || type === "text" || type === "content") {
-      const text61 = asString3(part.text).trim() || asString3(part.content).trim();
-      if (text61) console.log(colorize(`${prefix}: ${text61}`));
+      const text63 = asString3(part.text).trim() || asString3(part.content).trim();
+      if (text63) console.log(colorize(`${prefix}: ${text63}`));
       continue;
     }
     if (type === "thinking") {
-      const text61 = asString3(part.text).trim();
-      if (text61) console.log(pc12.gray(`thinking: ${text61}`));
+      const text63 = asString3(part.text).trim();
+      if (text63) console.log(pc12.gray(`thinking: ${text63}`));
       continue;
     }
     if (type === "tool_call") {
@@ -9677,8 +10448,8 @@ function printGeminiStreamEvent(raw, _debug) {
       return;
     }
     if (subtype === "error") {
-      const text61 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-      if (text61) console.log(pc12.red(`error: ${text61}`));
+      const text63 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+      if (text63) console.log(pc12.red(`error: ${text63}`));
       return;
     }
     console.log(pc12.blue(`system: ${subtype || "event"}`));
@@ -9693,8 +10464,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text61 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
-    if (text61) console.log(pc12.gray(`thinking: ${text61}`));
+    const text63 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
+    if (text63) console.log(pc12.gray(`thinking: ${text63}`));
     return;
   }
   if (type === "tool_call") {
@@ -9730,8 +10501,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "error") {
-    const text61 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-    if (text61) console.log(pc12.red(`error: ${text61}`));
+    const text63 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+    if (text63) console.log(pc12.red(`error: ${text63}`));
     return;
   }
   console.log(line);
@@ -9739,9 +10510,9 @@ function printGeminiStreamEvent(raw, _debug) {
 
 // ../packages/adapters/opencode-local/src/cli/format-event.ts
 import pc13 from "picocolors";
-function safeJsonParse(text61) {
+function safeJsonParse(text63) {
   try {
-    return JSON.parse(text61);
+    return JSON.parse(text63);
   } catch {
     return null;
   }
@@ -9785,14 +10556,14 @@ function printOpenCodeStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord4(parsed.part);
-    const text61 = asString4(part?.text).trim();
-    if (text61) console.log(pc13.green(`assistant: ${text61}`));
+    const text63 = asString4(part?.text).trim();
+    if (text63) console.log(pc13.green(`assistant: ${text63}`));
     return;
   }
   if (type === "reasoning") {
     const part = asRecord4(parsed.part);
-    const text61 = asString4(part?.text).trim();
-    if (text61) console.log(pc13.gray(`thinking: ${text61}`));
+    const text63 = asString4(part?.text).trim();
+    if (text63) console.log(pc13.gray(`thinking: ${text63}`));
     return;
   }
   if (type === "tool_use") {
@@ -9840,9 +10611,9 @@ function printOpenCodeStreamEvent(raw, _debug) {
 
 // ../packages/adapters/pi-local/src/cli/format-event.ts
 import pc14 from "picocolors";
-function safeJsonParse2(text61) {
+function safeJsonParse2(text63) {
   try {
-    return JSON.parse(text61);
+    return JSON.parse(text63);
   } catch {
     return null;
   }
@@ -9884,9 +10655,9 @@ function printPiStreamEvent(raw, _debug) {
     const message = asRecord5(parsed.message);
     if (message) {
       const content = message.content;
-      const text61 = extractTextContent(content);
-      if (text61) {
-        console.log(pc14.green(`assistant: ${text61}`));
+      const text63 = extractTextContent(content);
+      if (text63) {
+        console.log(pc14.green(`assistant: ${text63}`));
       }
     }
     return;
@@ -9951,9 +10722,9 @@ function printOpenClawGatewayStreamEvent(raw, debug) {
 
 // ../packages/adapters/agent-browser/src/cli/format-event.ts
 import pc16 from "picocolors";
-function safeJsonParse3(text61) {
+function safeJsonParse3(text63) {
   try {
-    return JSON.parse(text61);
+    return JSON.parse(text63);
   } catch {
     return null;
   }
@@ -10097,7 +10868,7 @@ import pc18 from "picocolors";
 // src/client/board-auth.ts
 import { spawn } from "node:child_process";
 import fs11 from "node:fs";
-import path10 from "node:path";
+import path12 from "node:path";
 import pc17 from "picocolors";
 
 // src/client/command-label.ts
@@ -10121,8 +10892,8 @@ function normalizeApiBase(apiBase) {
   return apiBase.trim().replace(/\/+$/, "");
 }
 function resolveBoardAuthStorePath(overridePath) {
-  if (overridePath?.trim()) return path10.resolve(overridePath.trim());
-  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path10.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
+  if (overridePath?.trim()) return path12.resolve(overridePath.trim());
+  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path12.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
   return resolveDefaultCliAuthPath();
 }
 function readBoardAuthStore(storePath) {
@@ -10154,7 +10925,7 @@ function readBoardAuthStore(storePath) {
 }
 function writeBoardAuthStore(store, storePath) {
   const filePath = resolveBoardAuthStorePath(storePath);
-  fs11.mkdirSync(path10.dirname(filePath), { recursive: true });
+  fs11.mkdirSync(path12.dirname(filePath), { recursive: true });
   fs11.writeFileSync(filePath, `${JSON.stringify(store, null, 2)}
 `, { mode: 384 });
 }
@@ -10305,26 +11076,26 @@ init_store();
 // src/client/context.ts
 init_home();
 import fs12 from "node:fs";
-import path11 from "node:path";
+import path13 from "node:path";
 var DEFAULT_CONTEXT_BASENAME = "context.json";
 var DEFAULT_PROFILE = "default";
 function findContextFileFromAncestors(startDir) {
-  const absoluteStartDir = path11.resolve(startDir);
+  const absoluteStartDir = path13.resolve(startDir);
   let currentDir = absoluteStartDir;
   while (true) {
-    const candidate = path11.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
+    const candidate = path13.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
     if (fs12.existsSync(candidate)) {
       return candidate;
     }
-    const nextDir = path11.resolve(currentDir, "..");
+    const nextDir = path13.resolve(currentDir, "..");
     if (nextDir === currentDir) break;
     currentDir = nextDir;
   }
   return null;
 }
 function resolveContextPath(overridePath) {
-  if (overridePath) return path11.resolve(overridePath);
-  if (process.env.PAPERCLIP_CONTEXT) return path11.resolve(process.env.PAPERCLIP_CONTEXT);
+  if (overridePath) return path13.resolve(overridePath);
+  if (process.env.PAPERCLIP_CONTEXT) return path13.resolve(process.env.PAPERCLIP_CONTEXT);
   return findContextFileFromAncestors(process.cwd()) ?? resolveDefaultContextPath();
 }
 function defaultClientContext() {
@@ -10392,7 +11163,7 @@ function readContext(contextPath) {
 }
 function writeContext(context, contextPath) {
   const filePath = resolveContextPath(contextPath);
-  const dir = path11.dirname(filePath);
+  const dir = path13.dirname(filePath);
   fs12.mkdirSync(dir, { recursive: true });
   const normalized = normalizeContext(context);
   fs12.writeFileSync(filePath, `${JSON.stringify(normalized, null, 2)}
@@ -10471,29 +11242,29 @@ var PaperclipApiClient = class {
     this.runId = opts.runId?.trim() || void 0;
     this.recoverAuth = opts.recoverAuth;
   }
-  get(path21, opts) {
-    return this.request(path21, { method: "GET" }, opts);
+  get(path25, opts) {
+    return this.request(path25, { method: "GET" }, opts);
   }
-  post(path21, body, opts) {
-    return this.request(path21, {
+  post(path25, body, opts) {
+    return this.request(path25, {
       method: "POST",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  patch(path21, body, opts) {
-    return this.request(path21, {
+  patch(path25, body, opts) {
+    return this.request(path25, {
       method: "PATCH",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  delete(path21, opts) {
-    return this.request(path21, { method: "DELETE" }, opts);
+  delete(path25, opts) {
+    return this.request(path25, { method: "DELETE" }, opts);
   }
   setApiKey(apiKey) {
     this.apiKey = apiKey?.trim() || void 0;
   }
-  async request(path21, init, opts, hasRetriedAuth = false) {
-    const url = buildUrl(this.apiBase, path21);
+  async request(path25, init, opts, hasRetriedAuth = false) {
+    const url = buildUrl(this.apiBase, path25);
     const method = String(init.method ?? "GET").toUpperCase();
     const headers = {
       accept: "application/json",
@@ -10517,7 +11288,7 @@ var PaperclipApiClient = class {
     } catch (error) {
       throw new ApiConnectionError({
         apiBase: this.apiBase,
-        path: path21,
+        path: path25,
         method,
         cause: error
       });
@@ -10529,13 +11300,13 @@ var PaperclipApiClient = class {
       const apiError = await toApiError(response);
       if (!hasRetriedAuth && this.recoverAuth) {
         const recoveredToken = await this.recoverAuth({
-          path: path21,
+          path: path25,
           method,
           error: apiError
         });
         if (recoveredToken) {
           this.setApiKey(recoveredToken);
-          return this.request(path21, init, opts, true);
+          return this.request(path25, init, opts, true);
         }
       }
       throw apiError;
@@ -10543,31 +11314,31 @@ var PaperclipApiClient = class {
     if (response.status === 204) {
       return null;
     }
-    const text61 = await response.text();
-    if (!text61.trim()) {
+    const text63 = await response.text();
+    if (!text63.trim()) {
       return null;
     }
-    return safeParseJson(text61);
+    return safeParseJson(text63);
   }
 };
-function buildUrl(apiBase, path21) {
-  const normalizedPath = path21.startsWith("/") ? path21 : `/${path21}`;
+function buildUrl(apiBase, path25) {
+  const normalizedPath = path25.startsWith("/") ? path25 : `/${path25}`;
   const [pathname, query] = normalizedPath.split("?");
   const url = new URL2(apiBase);
   url.pathname = `${url.pathname.replace(/\/+$/, "")}${pathname}`;
   if (query) url.search = query;
   return url.toString();
 }
-function safeParseJson(text61) {
+function safeParseJson(text63) {
   try {
-    return JSON.parse(text61);
+    return JSON.parse(text63);
   } catch {
-    return text61;
+    return text63;
   }
 }
 async function toApiError(response) {
-  const text61 = await response.text();
-  const parsed = safeParseJson(text61);
+  const text63 = await response.text();
+  const parsed = safeParseJson(text63);
   if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
     const body = parsed;
     const message = typeof body.error === "string" && body.error.trim() || typeof body.message === "string" && body.message.trim() || `Request failed with status ${response.status}`;
@@ -11033,7 +11804,7 @@ init_src2();
 init_home();
 init_store();
 init_banner();
-import path12 from "node:path";
+import path14 from "node:path";
 import * as p14 from "@clack/prompts";
 import pc20 from "picocolors";
 function resolveConnectionString(configPath) {
@@ -11057,7 +11828,7 @@ function normalizeRetentionDays(value, fallback) {
   return candidate;
 }
 function resolveBackupDir(raw) {
-  return path12.resolve(expandHomePrefix(raw.trim()));
+  return path14.resolve(expandHomePrefix(raw.trim()));
 }
 async function dbBackupCommand(opts) {
   printPaperclipCliBanner();
@@ -11176,14 +11947,15 @@ function registerContextCommands(program2) {
 }
 
 // src/commands/client/company.ts
-import { mkdir, readdir as readdir2, readFile as readFile3, stat, writeFile as writeFile2 } from "node:fs/promises";
-import path14 from "node:path";
+init_telemetry2();
+import { mkdir as mkdir2, readdir as readdir3, readFile as readFile4, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
+import path17 from "node:path";
 import * as p15 from "@clack/prompts";
-import pc22 from "picocolors";
+import pc23 from "picocolors";
 
 // src/commands/client/zip.ts
 import { inflateRawSync } from "node:zlib";
-import path13 from "node:path";
+import path15 from "node:path";
 var textDecoder = new TextDecoder();
 var binaryContentTypeByExtension = {
   ".gif": "image/gif",
@@ -11210,7 +11982,7 @@ function sharedArchiveRoot(paths) {
   return firstSegments.every((parts) => parts.length > 1 && parts[0] === candidate) ? candidate : null;
 }
 function bytesToPortableFileEntry(pathValue, bytes) {
-  const contentType = binaryContentTypeByExtension[path13.extname(pathValue).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path15.extname(pathValue).toLowerCase()];
   if (!contentType) return textDecoder.decode(bytes);
   return {
     encoding: "base64",
@@ -11274,6 +12046,488 @@ async function readZipArchive(source) {
   return { rootPath, files };
 }
 
+// src/commands/client/feedback.ts
+import { mkdir, readdir as readdir2, readFile as readFile3, stat, writeFile } from "node:fs/promises";
+import path16 from "node:path";
+import pc22 from "picocolors";
+function registerFeedbackCommands(program2) {
+  const feedback = program2.command("feedback").description("Inspect and export local feedback traces");
+  addCommonClientOptions(
+    feedback.command("report").description("Render a terminal report for company feedback traces").option("-C, --company-id <id>", "Company ID (overrides context default)").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--project-id <id>", "Filter by project ID").option("--issue-id <id>", "Filter by issue ID").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--payloads", "Include raw payload dumps in the terminal report", false).action(async (opts) => {
+      try {
+        const ctx = resolveCommandContext(opts);
+        const companyId = await resolveFeedbackCompanyId(ctx, opts.companyId);
+        const traces = await fetchCompanyFeedbackTraces(ctx, companyId, opts);
+        const summary = summarizeFeedbackTraces(traces);
+        if (ctx.json) {
+          printOutput(
+            {
+              apiBase: ctx.api.apiBase,
+              companyId,
+              summary,
+              traces
+            },
+            { json: true }
+          );
+          return;
+        }
+        console.log(renderFeedbackReport({
+          apiBase: ctx.api.apiBase,
+          companyId,
+          traces,
+          summary,
+          includePayloads: Boolean(opts.payloads)
+        }));
+      } catch (err) {
+        handleCommandError(err);
+      }
+    }),
+    { includeCompany: false }
+  );
+  addCommonClientOptions(
+    feedback.command("export").description("Export feedback votes and raw trace bundles into a folder plus zip archive").option("-C, --company-id <id>", "Company ID (overrides context default)").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--project-id <id>", "Filter by project ID").option("--issue-id <id>", "Filter by issue ID").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--out <path>", "Output directory (default: ./feedback-export-<timestamp>)").action(async (opts) => {
+      try {
+        const ctx = resolveCommandContext(opts);
+        const companyId = await resolveFeedbackCompanyId(ctx, opts.companyId);
+        const traces = await fetchCompanyFeedbackTraces(ctx, companyId, opts);
+        const outputDir = path16.resolve(opts.out?.trim() || defaultFeedbackExportDirName());
+        const exported = await writeFeedbackExportBundle({
+          apiBase: ctx.api.apiBase,
+          companyId,
+          traces,
+          outputDir,
+          traceBundleFetcher: (trace) => fetchFeedbackTraceBundle(ctx, trace.id)
+        });
+        if (ctx.json) {
+          printOutput(
+            {
+              companyId,
+              outputDir: exported.outputDir,
+              zipPath: exported.zipPath,
+              summary: exported.manifest.summary
+            },
+            { json: true }
+          );
+          return;
+        }
+        console.log(renderFeedbackExportSummary(exported));
+      } catch (err) {
+        handleCommandError(err);
+      }
+    }),
+    { includeCompany: false }
+  );
+}
+async function resolveFeedbackCompanyId(ctx, explicitCompanyId) {
+  const direct = explicitCompanyId?.trim() || ctx.companyId?.trim();
+  if (direct) return direct;
+  const companies2 = await ctx.api.get("/api/companies") ?? [];
+  const companyId = companies2[0]?.id?.trim();
+  if (!companyId) {
+    throw new Error(
+      "Company ID is required. Pass --company-id, set PAPERCLIP_COMPANY_ID, or configure a CLI context default."
+    );
+  }
+  return companyId;
+}
+function buildFeedbackTraceQuery(opts, includePayload = true) {
+  const params = new URLSearchParams();
+  if (opts.targetType) params.set("targetType", opts.targetType);
+  if (opts.vote) params.set("vote", opts.vote);
+  if (opts.status) params.set("status", opts.status);
+  if (opts.projectId) params.set("projectId", opts.projectId);
+  if (opts.issueId) params.set("issueId", opts.issueId);
+  if (opts.from) params.set("from", opts.from);
+  if (opts.to) params.set("to", opts.to);
+  if (opts.sharedOnly) params.set("sharedOnly", "true");
+  if (includePayload) params.set("includePayload", "true");
+  const query = params.toString();
+  return query ? `?${query}` : "";
+}
+function normalizeFeedbackTraceExportFormat(value) {
+  if (!value || value === "ndjson") return "ndjson";
+  if (value === "json") return "json";
+  throw new Error(`Unsupported export format: ${value}`);
+}
+function serializeFeedbackTraces(traces, format) {
+  if (normalizeFeedbackTraceExportFormat(format) === "json") {
+    return JSON.stringify(traces, null, 2);
+  }
+  return traces.map((trace) => JSON.stringify(trace)).join("\n");
+}
+async function fetchCompanyFeedbackTraces(ctx, companyId, opts) {
+  return await ctx.api.get(
+    `/api/companies/${companyId}/feedback-traces${buildFeedbackTraceQuery(opts, true)}`
+  ) ?? [];
+}
+async function fetchFeedbackTraceBundle(ctx, traceId) {
+  const bundle = await ctx.api.get(`/api/feedback-traces/${traceId}/bundle`);
+  if (!bundle) {
+    throw new Error(`Feedback trace bundle ${traceId} not found`);
+  }
+  return bundle;
+}
+function summarizeFeedbackTraces(traces) {
+  const statuses = {};
+  let thumbsUp = 0;
+  let thumbsDown = 0;
+  let withReason = 0;
+  for (const trace of traces) {
+    if (trace.vote === "up") thumbsUp += 1;
+    if (trace.vote === "down") thumbsDown += 1;
+    if (readFeedbackReason(trace)) withReason += 1;
+    statuses[trace.status] = (statuses[trace.status] ?? 0) + 1;
+  }
+  return {
+    total: traces.length,
+    thumbsUp,
+    thumbsDown,
+    withReason,
+    statuses
+  };
+}
+function renderFeedbackReport(input) {
+  const lines = [];
+  lines.push("");
+  lines.push(pc22.bold(pc22.magenta("Paperclip Feedback Report")));
+  lines.push(pc22.dim((/* @__PURE__ */ new Date()).toISOString()));
+  lines.push(horizontalRule());
+  lines.push(`${pc22.dim("Server:")}  ${input.apiBase}`);
+  lines.push(`${pc22.dim("Company:")} ${input.companyId}`);
+  lines.push("");
+  if (input.traces.length === 0) {
+    lines.push(pc22.yellow("[!!] No feedback traces found."));
+    lines.push("");
+    return lines.join("\n");
+  }
+  lines.push(pc22.bold(pc22.cyan("Summary")));
+  lines.push(horizontalRule());
+  lines.push(`  ${pc22.green(pc22.bold(String(input.summary.thumbsUp)))}  thumbs up`);
+  lines.push(`  ${pc22.red(pc22.bold(String(input.summary.thumbsDown)))}  thumbs down`);
+  lines.push(`  ${pc22.yellow(pc22.bold(String(input.summary.withReason)))}  downvotes with a reason`);
+  lines.push(`  ${pc22.bold(String(input.summary.total))}  total traces`);
+  lines.push("");
+  lines.push(pc22.dim("Export status:"));
+  for (const status of ["pending", "sent", "local_only", "failed"]) {
+    lines.push(`  ${padRight(status, 10)} ${input.summary.statuses[status] ?? 0}`);
+  }
+  lines.push("");
+  lines.push(pc22.bold(pc22.cyan("Trace Details")));
+  lines.push(horizontalRule());
+  for (const trace of input.traces) {
+    const voteColor = trace.vote === "up" ? pc22.green : pc22.red;
+    const voteIcon = trace.vote === "up" ? "^" : "v";
+    const issueRef = trace.issueIdentifier ?? trace.issueId;
+    const label = trace.targetSummary.label?.trim() || trace.targetType;
+    const excerpt = compactText(trace.targetSummary.excerpt);
+    const reason = readFeedbackReason(trace);
+    lines.push(
+      `  ${voteColor(voteIcon)} ${pc22.bold(issueRef)} ${pc22.dim(compactText(trace.issueTitle, 64))}`
+    );
+    lines.push(
+      `    ${pc22.dim("Trace:")} ${trace.id.slice(0, 8)}  ${pc22.dim("Status:")} ${trace.status}  ${pc22.dim("Date:")} ${formatTimestamp(trace.createdAt)}`
+    );
+    lines.push(`    ${pc22.dim("Target:")} ${label}`);
+    if (excerpt) {
+      lines.push(`    ${pc22.dim("Excerpt:")} ${excerpt}`);
+    }
+    if (reason) {
+      lines.push(`    ${pc22.yellow(pc22.bold("Reason:"))} ${pc22.yellow(reason)}`);
+    }
+    lines.push("");
+  }
+  if (input.includePayloads) {
+    lines.push(pc22.bold(pc22.cyan("Raw Payloads")));
+    lines.push(horizontalRule());
+    for (const trace of input.traces) {
+      if (!trace.payloadSnapshot) continue;
+      const issueRef = trace.issueIdentifier ?? trace.issueId;
+      lines.push(`  ${pc22.bold(`${issueRef} (${trace.id.slice(0, 8)})`)}`);
+      const body = JSON.stringify(trace.payloadSnapshot, null, 2)?.split("\n") ?? [];
+      for (const line of body) {
+        lines.push(`    ${pc22.dim(line)}`);
+      }
+      lines.push("");
+    }
+  }
+  lines.push(horizontalRule());
+  lines.push(pc22.dim(`Report complete. ${input.traces.length} trace(s) displayed.`));
+  lines.push("");
+  return lines.join("\n");
+}
+async function writeFeedbackExportBundle(input) {
+  await ensureEmptyOutputDirectory(input.outputDir);
+  await mkdir(path16.join(input.outputDir, "votes"), { recursive: true });
+  await mkdir(path16.join(input.outputDir, "traces"), { recursive: true });
+  await mkdir(path16.join(input.outputDir, "full-traces"), { recursive: true });
+  const summary = summarizeFeedbackTraces(input.traces);
+  const voteFiles = [];
+  const traceFiles = [];
+  const fullTraceDirs = [];
+  const fullTraceFiles = [];
+  const issueSet = /* @__PURE__ */ new Set();
+  for (const trace of input.traces) {
+    const issueRef = sanitizeFileSegment(trace.issueIdentifier ?? trace.issueId);
+    const voteRecord = buildFeedbackVoteRecord(trace);
+    const voteFileName = `${issueRef}-${trace.feedbackVoteId.slice(0, 8)}.json`;
+    const traceFileName = `${issueRef}-${trace.id.slice(0, 8)}.json`;
+    voteFiles.push(voteFileName);
+    traceFiles.push(traceFileName);
+    issueSet.add(trace.issueIdentifier ?? trace.issueId);
+    await writeFile(
+      path16.join(input.outputDir, "votes", voteFileName),
+      `${JSON.stringify(voteRecord, null, 2)}
+`,
+      "utf8"
+    );
+    await writeFile(
+      path16.join(input.outputDir, "traces", traceFileName),
+      `${JSON.stringify(trace, null, 2)}
+`,
+      "utf8"
+    );
+    if (input.traceBundleFetcher) {
+      const bundle = await input.traceBundleFetcher(trace);
+      const bundleDirName = `${issueRef}-${trace.id.slice(0, 8)}`;
+      const bundleDir = path16.join(input.outputDir, "full-traces", bundleDirName);
+      await mkdir(bundleDir, { recursive: true });
+      fullTraceDirs.push(bundleDirName);
+      await writeFile(
+        path16.join(bundleDir, "bundle.json"),
+        `${JSON.stringify(bundle, null, 2)}
+`,
+        "utf8"
+      );
+      fullTraceFiles.push(path16.posix.join("full-traces", bundleDirName, "bundle.json"));
+      for (const file of bundle.files) {
+        const targetPath = path16.join(bundleDir, file.path);
+        await mkdir(path16.dirname(targetPath), { recursive: true });
+        await writeFile(targetPath, file.contents, "utf8");
+        fullTraceFiles.push(path16.posix.join("full-traces", bundleDirName, file.path.replace(/\\/g, "/")));
+      }
+    }
+  }
+  const zipPath = `${input.outputDir}.zip`;
+  const manifest = {
+    exportedAt: (/* @__PURE__ */ new Date()).toISOString(),
+    serverUrl: input.apiBase,
+    companyId: input.companyId,
+    summary: {
+      ...summary,
+      uniqueIssues: issueSet.size,
+      issues: Array.from(issueSet).sort((left, right) => left.localeCompare(right))
+    },
+    files: {
+      votes: voteFiles.slice().sort((left, right) => left.localeCompare(right)),
+      traces: traceFiles.slice().sort((left, right) => left.localeCompare(right)),
+      fullTraces: fullTraceDirs.slice().sort((left, right) => left.localeCompare(right)),
+      zip: path16.basename(zipPath)
+    }
+  };
+  await writeFile(
+    path16.join(input.outputDir, "index.json"),
+    `${JSON.stringify(manifest, null, 2)}
+`,
+    "utf8"
+  );
+  const archiveFiles = await collectJsonFilesForArchive(input.outputDir, [
+    "index.json",
+    ...manifest.files.votes.map((file) => path16.posix.join("votes", file)),
+    ...manifest.files.traces.map((file) => path16.posix.join("traces", file)),
+    ...fullTraceFiles
+  ]);
+  await writeFile(zipPath, createStoredZipArchive(archiveFiles, path16.basename(input.outputDir)));
+  return {
+    outputDir: input.outputDir,
+    zipPath,
+    manifest
+  };
+}
+function renderFeedbackExportSummary(exported) {
+  const lines = [];
+  lines.push("");
+  lines.push(pc22.bold(pc22.magenta("Paperclip Feedback Export")));
+  lines.push(pc22.dim(exported.manifest.exportedAt));
+  lines.push(horizontalRule());
+  lines.push(`${pc22.dim("Company:")} ${exported.manifest.companyId}`);
+  lines.push(`${pc22.dim("Output:")}  ${exported.outputDir}`);
+  lines.push(`${pc22.dim("Archive:")} ${exported.zipPath}`);
+  lines.push("");
+  lines.push(pc22.bold("Export Summary"));
+  lines.push(horizontalRule());
+  lines.push(`  ${pc22.green(pc22.bold(String(exported.manifest.summary.thumbsUp)))}  thumbs up`);
+  lines.push(`  ${pc22.red(pc22.bold(String(exported.manifest.summary.thumbsDown)))}  thumbs down`);
+  lines.push(`  ${pc22.yellow(pc22.bold(String(exported.manifest.summary.withReason)))}  with reason`);
+  lines.push(`  ${pc22.bold(String(exported.manifest.summary.uniqueIssues))}  unique issues`);
+  lines.push("");
+  lines.push(pc22.dim("Files:"));
+  lines.push(`  ${path16.join(exported.outputDir, "index.json")}`);
+  lines.push(`  ${path16.join(exported.outputDir, "votes")} (${exported.manifest.files.votes.length} files)`);
+  lines.push(`  ${path16.join(exported.outputDir, "traces")} (${exported.manifest.files.traces.length} files)`);
+  lines.push(`  ${path16.join(exported.outputDir, "full-traces")} (${exported.manifest.files.fullTraces.length} bundles)`);
+  lines.push(`  ${exported.zipPath}`);
+  lines.push("");
+  return lines.join("\n");
+}
+function readFeedbackReason(trace) {
+  const payload = asRecord8(trace.payloadSnapshot);
+  const vote = asRecord8(payload?.vote);
+  const reason = vote?.reason;
+  return typeof reason === "string" && reason.trim() ? reason.trim() : null;
+}
+function buildFeedbackVoteRecord(trace) {
+  return {
+    voteId: trace.feedbackVoteId,
+    traceId: trace.id,
+    issueId: trace.issueId,
+    issueIdentifier: trace.issueIdentifier,
+    issueTitle: trace.issueTitle,
+    vote: trace.vote,
+    targetType: trace.targetType,
+    targetId: trace.targetId,
+    targetSummary: trace.targetSummary,
+    status: trace.status,
+    consentVersion: trace.consentVersion,
+    createdAt: trace.createdAt,
+    updatedAt: trace.updatedAt,
+    reason: readFeedbackReason(trace)
+  };
+}
+function asRecord8(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value;
+}
+function compactText(value, maxLength = 88) {
+  if (!value) return null;
+  const compact = value.replace(/\s+/g, " ").trim();
+  if (!compact) return null;
+  if (compact.length <= maxLength) return compact;
+  return `${compact.slice(0, maxLength - 3)}...`;
+}
+function formatTimestamp(value) {
+  if (value instanceof Date) return value.toISOString().slice(0, 19).replace("T", " ");
+  if (typeof value === "string") return value.slice(0, 19).replace("T", " ");
+  return "-";
+}
+function horizontalRule() {
+  return pc22.dim("-".repeat(72));
+}
+function padRight(value, width) {
+  return `${value}${" ".repeat(Math.max(0, width - value.length))}`;
+}
+function defaultFeedbackExportDirName() {
+  const iso = (/* @__PURE__ */ new Date()).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  return `feedback-export-${iso}`;
+}
+async function ensureEmptyOutputDirectory(outputDir) {
+  try {
+    const info = await stat(outputDir);
+    if (!info.isDirectory()) {
+      throw new Error(`Output path already exists and is not a directory: ${outputDir}`);
+    }
+    const entries = await readdir2(outputDir);
+    if (entries.length > 0) {
+      throw new Error(`Output directory already exists and is not empty: ${outputDir}`);
+    }
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    if (/ENOENT/.test(message)) {
+      await mkdir(outputDir, { recursive: true });
+      return;
+    }
+    throw error;
+  }
+}
+async function collectJsonFilesForArchive(outputDir, relativePaths) {
+  const files = {};
+  for (const relativePath of relativePaths) {
+    const normalized = relativePath.replace(/\\/g, "/");
+    files[normalized] = await readFile3(path16.join(outputDir, normalized), "utf8");
+  }
+  return files;
+}
+function sanitizeFileSegment(value) {
+  return value.replace(/[^a-zA-Z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "feedback";
+}
+function writeUint16(target, offset, value) {
+  target[offset] = value & 255;
+  target[offset + 1] = value >>> 8 & 255;
+}
+function writeUint32(target, offset, value) {
+  target[offset] = value & 255;
+  target[offset + 1] = value >>> 8 & 255;
+  target[offset + 2] = value >>> 16 & 255;
+  target[offset + 3] = value >>> 24 & 255;
+}
+function crc32(bytes) {
+  let crc = 4294967295;
+  for (const byte of bytes) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) {
+      crc = (crc & 1) === 1 ? crc >>> 1 ^ 3988292384 : crc >>> 1;
+    }
+  }
+  return (crc ^ 4294967295) >>> 0;
+}
+function createStoredZipArchive(files, rootPath) {
+  const encoder = new TextEncoder();
+  const localChunks = [];
+  const centralChunks = [];
+  let localOffset = 0;
+  let entryCount = 0;
+  for (const [relativePath, content] of Object.entries(files).sort(([left], [right]) => left.localeCompare(right))) {
+    const fileName = encoder.encode(`${rootPath}/${relativePath}`);
+    const body = encoder.encode(content);
+    const checksum = crc32(body);
+    const localHeader = new Uint8Array(30 + fileName.length);
+    writeUint32(localHeader, 0, 67324752);
+    writeUint16(localHeader, 4, 20);
+    writeUint16(localHeader, 6, 2048);
+    writeUint16(localHeader, 8, 0);
+    writeUint32(localHeader, 14, checksum);
+    writeUint32(localHeader, 18, body.length);
+    writeUint32(localHeader, 22, body.length);
+    writeUint16(localHeader, 26, fileName.length);
+    localHeader.set(fileName, 30);
+    const centralHeader = new Uint8Array(46 + fileName.length);
+    writeUint32(centralHeader, 0, 33639248);
+    writeUint16(centralHeader, 4, 20);
+    writeUint16(centralHeader, 6, 20);
+    writeUint16(centralHeader, 8, 2048);
+    writeUint16(centralHeader, 10, 0);
+    writeUint32(centralHeader, 16, checksum);
+    writeUint32(centralHeader, 20, body.length);
+    writeUint32(centralHeader, 24, body.length);
+    writeUint16(centralHeader, 28, fileName.length);
+    writeUint32(centralHeader, 42, localOffset);
+    centralHeader.set(fileName, 46);
+    localChunks.push(localHeader, body);
+    centralChunks.push(centralHeader);
+    localOffset += localHeader.length + body.length;
+    entryCount += 1;
+  }
+  const centralDirectoryLength = centralChunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const archive = new Uint8Array(
+    localChunks.reduce((sum, chunk) => sum + chunk.length, 0) + centralDirectoryLength + 22
+  );
+  let offset = 0;
+  for (const chunk of localChunks) {
+    archive.set(chunk, offset);
+    offset += chunk.length;
+  }
+  const centralDirectoryOffset = offset;
+  for (const chunk of centralChunks) {
+    archive.set(chunk, offset);
+    offset += chunk.length;
+  }
+  writeUint32(archive, offset, 101010256);
+  writeUint16(archive, offset + 8, entryCount);
+  writeUint16(archive, offset + 10, entryCount);
+  writeUint32(archive, offset + 12, centralDirectoryLength);
+  writeUint32(archive, offset + 16, centralDirectoryOffset);
+  return archive;
+}
+
 // src/commands/client/company.ts
 var DEFAULT_EXPORT_INCLUDE = {
   company: true,
@@ -11298,7 +12552,7 @@ var IMPORT_INCLUDE_OPTIONS = [
 ];
 var IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
 function readPortableFileEntry(filePath, contents) {
-  const contentType = binaryContentTypeByExtension[path14.extname(filePath).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path17.extname(filePath).toLowerCase()];
   if (!contentType) return contents.toString("utf8");
   return {
     encoding: "base64",
@@ -11353,10 +12607,10 @@ function normalizePortablePath(filePath) {
   return filePath.replace(/\\/g, "/");
 }
 function shouldIncludePortableFile(filePath) {
-  const baseName = path14.basename(filePath);
+  const baseName = path17.basename(filePath);
   const isMarkdown = baseName.endsWith(".md");
   const isPaperclipYaml = baseName === ".paperclip.yaml" || baseName === ".paperclip.yml";
-  const contentType = binaryContentTypeByExtension[path14.extname(baseName).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path17.extname(baseName).toLowerCase()];
   return isMarkdown || isPaperclipYaml || Boolean(contentType);
 }
 function findPortableExtensionPath(files) {
@@ -11650,15 +12904,15 @@ function actionChip(action) {
   switch (action) {
     case "create":
     case "created":
-      return pc22.green(action);
+      return pc23.green(action);
     case "update":
     case "updated":
-      return pc22.yellow(action);
+      return pc23.yellow(action);
     case "skip":
     case "skipped":
     case "none":
     case "unchanged":
-      return pc22.dim(action);
+      return pc23.dim(action);
     default:
       return action;
   }
@@ -11666,32 +12920,32 @@ function actionChip(action) {
 function appendPreviewExamples(lines, title, entries) {
   if (entries.length === 0) return;
   lines.push("");
-  lines.push(pc22.bold(title));
+  lines.push(pc23.bold(title));
   const shown = entries.slice(0, IMPORT_PREVIEW_SAMPLE_LIMIT);
   for (const entry of shown) {
-    const reason = entry.reason?.trim() ? pc22.dim(` (${entry.reason.trim()})`) : "";
+    const reason = entry.reason?.trim() ? pc23.dim(` (${entry.reason.trim()})`) : "";
     lines.push(`- ${actionChip(entry.action)} ${entry.label}${reason}`);
   }
   if (entries.length > shown.length) {
-    lines.push(pc22.dim(`- +${entries.length - shown.length} more`));
+    lines.push(pc23.dim(`- +${entries.length - shown.length} more`));
   }
 }
 function appendMessageBlock(lines, title, messages) {
   if (messages.length === 0) return;
   lines.push("");
-  lines.push(pc22.bold(title));
+  lines.push(pc23.bold(title));
   for (const message of messages) {
     lines.push(`- ${message}`);
   }
 }
 function renderCompanyImportPreview(preview, meta) {
   const lines = [
-    `${pc22.bold("Source")}  ${meta.sourceLabel}`,
-    `${pc22.bold("Target")}  ${meta.targetLabel}`,
-    `${pc22.bold("Include")} ${summarizeInclude(preview.include)}`,
-    `${pc22.bold("Mode")}    ${preview.collisionStrategy} collisions`,
+    `${pc23.bold("Source")}  ${meta.sourceLabel}`,
+    `${pc23.bold("Target")}  ${meta.targetLabel}`,
+    `${pc23.bold("Include")} ${summarizeInclude(preview.include)}`,
+    `${pc23.bold("Mode")}    ${preview.collisionStrategy} collisions`,
     "",
-    pc22.bold("Package"),
+    pc23.bold("Package"),
     `- company: ${preview.manifest.company?.name ?? preview.manifest.source?.companyName ?? "not included"}`,
     `- agents: ${preview.manifest.agents.length}`,
     `- projects: ${preview.manifest.projects.length}`,
@@ -11703,7 +12957,7 @@ function renderCompanyImportPreview(preview, meta) {
     lines.push(`- env inputs: ${preview.envInputs.length} (${requiredCount} required)`);
   }
   lines.push("");
-  lines.push(pc22.bold("Plan"));
+  lines.push(pc23.bold("Plan"));
   lines.push(`- company: ${actionChip(preview.plan.companyAction === "none" ? "unchanged" : preview.plan.companyAction)}`);
   lines.push(`- agents: ${summarizePlanCounts(preview.plan.agentPlans, "agent")}`);
   lines.push(`- projects: ${summarizePlanCounts(preview.plan.projectPlans, "project")}`);
@@ -11738,20 +12992,20 @@ function renderCompanyImportPreview(preview, meta) {
       reason: plan.reason
     }))
   );
-  appendMessageBlock(lines, pc22.cyan("Info"), meta.infoMessages ?? []);
-  appendMessageBlock(lines, pc22.yellow("Warnings"), preview.warnings);
-  appendMessageBlock(lines, pc22.red("Errors"), preview.errors);
+  appendMessageBlock(lines, pc23.cyan("Info"), meta.infoMessages ?? []);
+  appendMessageBlock(lines, pc23.yellow("Warnings"), preview.warnings);
+  appendMessageBlock(lines, pc23.red("Errors"), preview.errors);
   return lines.join("\n");
 }
 function renderCompanyImportResult(result, meta) {
   const lines = [
-    `${pc22.bold("Target")}  ${meta.targetLabel}`,
-    `${pc22.bold("Company")} ${result.company.name} (${actionChip(result.company.action)})`,
-    `${pc22.bold("Agents")}  ${summarizeImportAgentResults(result.agents)}`,
-    `${pc22.bold("Projects")} ${summarizeImportProjectResults(result.projects)}`
+    `${pc23.bold("Target")}  ${meta.targetLabel}`,
+    `${pc23.bold("Company")} ${result.company.name} (${actionChip(result.company.action)})`,
+    `${pc23.bold("Agents")}  ${summarizeImportAgentResults(result.agents)}`,
+    `${pc23.bold("Projects")} ${summarizeImportProjectResults(result.projects)}`
   ];
   if (meta.companyUrl) {
-    lines.splice(1, 0, `${pc22.bold("URL")}     ${meta.companyUrl}`);
+    lines.splice(1, 0, `${pc23.bold("URL")}     ${meta.companyUrl}`);
   }
   appendPreviewExamples(
     lines,
@@ -11773,13 +13027,13 @@ function renderCompanyImportResult(result, meta) {
   );
   if (result.envInputs.length > 0) {
     lines.push("");
-    lines.push(pc22.bold("Env inputs"));
+    lines.push(pc23.bold("Env inputs"));
     lines.push(
       `- ${result.envInputs.length} ${pluralize(result.envInputs.length, "input")} may need values after import`
     );
   }
-  appendMessageBlock(lines, pc22.cyan("Info"), meta.infoMessages ?? []);
-  appendMessageBlock(lines, pc22.yellow("Warnings"), result.warnings);
+  appendMessageBlock(lines, pc23.cyan("Info"), meta.infoMessages ?? []);
+  appendMessageBlock(lines, pc23.yellow("Warnings"), result.warnings);
   return lines.join("\n");
 }
 function printCompanyImportView(title, body, opts) {
@@ -11787,7 +13041,7 @@ function printCompanyImportView(title, body, opts) {
     p15.note(body, title);
     return;
   }
-  console.log(pc22.bold(title));
+  console.log(pc23.bold(title));
   console.log(body);
 }
 function resolveCompanyImportApiPath(input) {
@@ -11827,8 +13081,15 @@ function resolveCompanyImportApplyConfirmationMode(input) {
 function isHttpUrl(input) {
   return /^https?:\/\//i.test(input.trim());
 }
-function isGithubUrl(input) {
-  return /^https?:\/\/github\.com\//i.test(input.trim());
+function looksLikeRepoUrl(input) {
+  try {
+    const url = new URL(input.trim());
+    if (url.protocol !== "https:") return false;
+    const segments = url.pathname.split("/").filter(Boolean);
+    return segments.length >= 2;
+  } catch {
+    return false;
+  }
 }
 function isGithubSegment(input) {
   return /^[A-Za-z0-9._-]+$/.test(input);
@@ -11848,7 +13109,8 @@ function normalizeGithubImportPath(input) {
   return trimmed || null;
 }
 function buildGithubImportUrl(input) {
-  const url = new URL(`https://github.com/${input.owner}/${input.repo.replace(/\.git$/i, "")}`);
+  const host = input.hostname || "github.com";
+  const url = new URL(`https://${host}/${input.owner}/${input.repo.replace(/\.git$/i, "")}`);
   const ref = input.ref?.trim();
   if (ref) {
     url.searchParams.set("ref", ref);
@@ -11876,13 +13138,14 @@ function normalizeGithubImportSource(input, refOverride) {
       path: repoPath.join("/")
     });
   }
-  if (!isGithubUrl(trimmed)) {
-    throw new Error("GitHub source must be a github.com URL or owner/repo[/path] shorthand.");
+  if (!looksLikeRepoUrl(trimmed)) {
+    throw new Error("GitHub source must be a GitHub or GitHub Enterprise URL, or owner/repo[/path] shorthand.");
   }
   if (!ref) {
     return trimmed;
   }
   const url = new URL(trimmed);
+  const hostname = url.hostname;
   const parts = url.pathname.split("/").filter(Boolean);
   if (parts.length < 2) {
     throw new Error("Invalid GitHub URL.");
@@ -11892,70 +13155,70 @@ function normalizeGithubImportSource(input, refOverride) {
   const existingPath = normalizeGithubImportPath(url.searchParams.get("path"));
   const existingCompanyPath = normalizeGithubImportPath(url.searchParams.get("companyPath"));
   if (existingCompanyPath) {
-    return buildGithubImportUrl({ owner, repo, ref, companyPath: existingCompanyPath });
+    return buildGithubImportUrl({ hostname, owner, repo, ref, companyPath: existingCompanyPath });
   }
   if (existingPath) {
-    return buildGithubImportUrl({ owner, repo, ref, path: existingPath });
+    return buildGithubImportUrl({ hostname, owner, repo, ref, path: existingPath });
   }
   if (parts[2] === "tree") {
-    return buildGithubImportUrl({ owner, repo, ref, path: parts.slice(4).join("/") });
+    return buildGithubImportUrl({ hostname, owner, repo, ref, path: parts.slice(4).join("/") });
   }
   if (parts[2] === "blob") {
-    return buildGithubImportUrl({ owner, repo, ref, companyPath: parts.slice(4).join("/") });
+    return buildGithubImportUrl({ hostname, owner, repo, ref, companyPath: parts.slice(4).join("/") });
   }
-  return buildGithubImportUrl({ owner, repo, ref });
+  return buildGithubImportUrl({ hostname, owner, repo, ref });
 }
 async function pathExists(inputPath) {
   try {
-    await stat(path14.resolve(inputPath));
+    await stat2(path17.resolve(inputPath));
     return true;
   } catch {
     return false;
   }
 }
 async function collectPackageFiles(root, current, files) {
-  const entries = await readdir2(current, { withFileTypes: true });
+  const entries = await readdir3(current, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".git")) continue;
-    const absolutePath = path14.join(current, entry.name);
+    const absolutePath = path17.join(current, entry.name);
     if (entry.isDirectory()) {
       await collectPackageFiles(root, absolutePath, files);
       continue;
     }
     if (!entry.isFile()) continue;
-    const relativePath = path14.relative(root, absolutePath).replace(/\\/g, "/");
+    const relativePath = path17.relative(root, absolutePath).replace(/\\/g, "/");
     if (!shouldIncludePortableFile(relativePath)) continue;
-    files[relativePath] = readPortableFileEntry(relativePath, await readFile3(absolutePath));
+    files[relativePath] = readPortableFileEntry(relativePath, await readFile4(absolutePath));
   }
 }
 async function resolveInlineSourceFromPath(inputPath) {
-  const resolved = path14.resolve(inputPath);
-  const resolvedStat = await stat(resolved);
-  if (resolvedStat.isFile() && path14.extname(resolved).toLowerCase() === ".zip") {
-    const archive = await readZipArchive(await readFile3(resolved));
+  const resolved = path17.resolve(inputPath);
+  const resolvedStat = await stat2(resolved);
+  if (resolvedStat.isFile() && path17.extname(resolved).toLowerCase() === ".zip") {
+    const archive = await readZipArchive(await readFile4(resolved));
     const filteredFiles = Object.fromEntries(
       Object.entries(archive.files).filter(([relativePath]) => shouldIncludePortableFile(relativePath))
     );
     return {
-      rootPath: archive.rootPath ?? path14.basename(resolved, ".zip"),
+      rootPath: archive.rootPath ?? path17.basename(resolved, ".zip"),
       files: filteredFiles
     };
   }
-  const rootDir = resolvedStat.isDirectory() ? resolved : path14.dirname(resolved);
+  const rootDir = resolvedStat.isDirectory() ? resolved : path17.dirname(resolved);
   const files = {};
   await collectPackageFiles(rootDir, rootDir, files);
   return {
-    rootPath: path14.basename(rootDir),
+    rootPath: path17.basename(rootDir),
     files
   };
 }
 async function writeExportToFolder(outDir, exported) {
-  const root = path14.resolve(outDir);
-  await mkdir(root, { recursive: true });
+  const root = path17.resolve(outDir);
+  await mkdir2(root, { recursive: true });
   for (const [relativePath, content] of Object.entries(exported.files)) {
     const normalized = relativePath.replace(/\\/g, "/");
-    const filePath = path14.join(root, normalized);
-    await mkdir(path14.dirname(filePath), { recursive: true });
+    const filePath = path17.join(root, normalized);
+    await mkdir2(path17.dirname(filePath), { recursive: true });
     const writeValue = portableFileEntryToWriteValue(content);
     if (typeof writeValue === "string") {
       await writeFile2(filePath, writeValue, "utf8");
@@ -11965,13 +13228,13 @@ async function writeExportToFolder(outDir, exported) {
   }
 }
 async function confirmOverwriteExportDirectory(outDir) {
-  const root = path14.resolve(outDir);
-  const stats = await stat(root).catch(() => null);
+  const root = path17.resolve(outDir);
+  const stats = await stat2(root).catch(() => null);
   if (!stats) return;
   if (!stats.isDirectory()) {
     throw new Error(`Export output path ${root} exists and is not a directory.`);
   }
-  const entries = await readdir2(root);
+  const entries = await readdir3(root);
   if (entries.length === 0) return;
   if (!process.stdin.isTTY || !process.stdout.isTTY) {
     throw new Error(`Export output directory ${root} already contains files. Re-run interactively or choose an empty directory.`);
@@ -12088,6 +13351,61 @@ function registerCompanyCommands(program2) {
     })
   );
   addCommonClientOptions(
+    company.command("feedback:list").description("List feedback traces for a company").requiredOption("-C, --company-id <id>", "Company ID").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--project-id <id>", "Filter by project ID").option("--issue-id <id>", "Filter by issue ID").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--include-payload", "Include stored payload snapshots in the response").action(async (opts) => {
+      try {
+        const ctx = resolveCommandContext(opts, { requireCompany: true });
+        const traces = await ctx.api.get(
+          `/api/companies/${ctx.companyId}/feedback-traces${buildFeedbackTraceQuery(opts)}`
+        ) ?? [];
+        if (ctx.json) {
+          printOutput(traces, { json: true });
+          return;
+        }
+        printOutput(
+          traces.map((trace) => ({
+            id: trace.id,
+            issue: trace.issueIdentifier ?? trace.issueId,
+            vote: trace.vote,
+            status: trace.status,
+            targetType: trace.targetType,
+            target: trace.targetSummary.label
+          })),
+          { json: false }
+        );
+      } catch (err) {
+        handleCommandError(err);
+      }
+    }),
+    { includeCompany: false }
+  );
+  addCommonClientOptions(
+    company.command("feedback:export").description("Export feedback traces for a company").requiredOption("-C, --company-id <id>", "Company ID").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--project-id <id>", "Filter by project ID").option("--issue-id <id>", "Filter by issue ID").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--include-payload", "Include stored payload snapshots in the export").option("--out <path>", "Write export to a file path instead of stdout").option("--format <format>", "Export format: json or ndjson", "ndjson").action(async (opts) => {
+      try {
+        const ctx = resolveCommandContext(opts, { requireCompany: true });
+        const traces = await ctx.api.get(
+          `/api/companies/${ctx.companyId}/feedback-traces${buildFeedbackTraceQuery(opts, opts.includePayload ?? true)}`
+        ) ?? [];
+        const serialized = serializeFeedbackTraces(traces, opts.format);
+        if (opts.out?.trim()) {
+          await writeFile2(opts.out, serialized, "utf8");
+          if (ctx.json) {
+            printOutput(
+              { out: opts.out, count: traces.length, format: normalizeFeedbackTraceExportFormat(opts.format) },
+              { json: true }
+            );
+            return;
+          }
+          console.log(`Wrote ${traces.length} feedback trace(s) to ${opts.out}`);
+          return;
+        }
+        process.stdout.write(`${serialized}${serialized.endsWith("\n") ? "" : "\n"}`);
+      } catch (err) {
+        handleCommandError(err);
+      }
+    }),
+    { includeCompany: false }
+  );
+  addCommonClientOptions(
     company.command("export").description("Export a company into a portable markdown package").argument("<companyId>", "Company ID").requiredOption("--out <path>", "Output directory").option("--include <values>", "Comma-separated include set: company,agents,projects,issues,tasks,skills", "company,agents").option("--skills <values>", "Comma-separated skill slugs/keys to export").option("--projects <values>", "Comma-separated project shortnames/ids to export").option("--issues <values>", "Comma-separated issue identifiers/ids to export").option("--project-issues <values>", "Comma-separated project shortnames/ids whose issues should be exported").option("--expand-referenced-skills", "Vendor skill contents instead of exporting upstream references", false).action(async (companyId, opts) => {
       try {
         const ctx = resolveCommandContext(opts);
@@ -12111,7 +13429,7 @@ function registerCompanyCommands(program2) {
         printOutput(
           {
             ok: true,
-            out: path14.resolve(opts.out),
+            out: path17.resolve(opts.out),
             rootPath: exported.rootPath,
             filesWritten: Object.keys(exported.files).length,
             paperclipExtensionPath: exported.paperclipExtensionPath,
@@ -12165,11 +13483,11 @@ function registerCompanyCommands(program2) {
         }
         let sourcePayload;
         const treatAsLocalPath = !isHttpUrl(from) && await pathExists(from);
-        const isGithubSource = isGithubUrl(from) || isGithubShorthand(from) && !treatAsLocalPath;
+        const isGithubSource = looksLikeRepoUrl(from) || isGithubShorthand(from) && !treatAsLocalPath;
         if (isHttpUrl(from) || isGithubSource) {
-          if (!isGithubUrl(from) && !isGithubShorthand(from)) {
+          if (!looksLikeRepoUrl(from) && !isGithubShorthand(from)) {
             throw new Error(
-              "Only GitHub URLs and local paths are supported for import. Generic HTTP URLs are not supported. Use a GitHub URL (https://github.com/...) or a local directory path."
+              "Only GitHub URLs and local paths are supported for import. Generic HTTP URLs are not supported. Use a GitHub or GitHub Enterprise URL (https://github.com/... or https://ghe.example.com/...) or a local directory path."
             );
           }
           sourcePayload = { type: "github", url: normalizeGithubImportSource(from, opts.ref) };
@@ -12272,6 +13590,12 @@ function registerCompanyCommands(program2) {
         });
         if (!imported) {
           throw new Error("Import request returned no data.");
+        }
+        const tc = getTelemetryClient();
+        if (tc) {
+          const isPrivate = sourcePayload.type !== "github";
+          const sourceRef = sourcePayload.type === "github" ? sourcePayload.url : from;
+          trackCompanyImported(tc, { sourceType: sourcePayload.type, sourceRef, isPrivate });
         }
         let companyUrl;
         if (!ctx.json) {
@@ -12389,6 +13713,7 @@ ${companyUrl}`);
 
 // src/commands/client/issue.ts
 init_src();
+import { writeFile as writeFile3 } from "node:fs/promises";
 function registerIssueCommands(program2) {
   const issue = program2.command("issue").description("Issue operations");
   addCommonClientOptions(
@@ -12400,8 +13725,8 @@ function registerIssueCommands(program2) {
         if (opts.assigneeAgentId) params.set("assigneeAgentId", opts.assigneeAgentId);
         if (opts.projectId) params.set("projectId", opts.projectId);
         const query = params.toString();
-        const path21 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path21) ?? [];
+        const path25 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path25) ?? [];
         const filtered = filterIssueRows(rows, opts.match);
         if (ctx.json) {
           printOutput(filtered, { json: true });
@@ -12506,6 +13831,59 @@ function registerIssueCommands(program2) {
     })
   );
   addCommonClientOptions(
+    issue.command("feedback:list").description("List feedback traces for an issue").argument("<issueId>", "Issue ID").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--include-payload", "Include stored payload snapshots in the response").action(async (issueId, opts) => {
+      try {
+        const ctx = resolveCommandContext(opts);
+        const traces = await ctx.api.get(
+          `/api/issues/${issueId}/feedback-traces${buildFeedbackTraceQuery(opts)}`
+        ) ?? [];
+        if (ctx.json) {
+          printOutput(traces, { json: true });
+          return;
+        }
+        printOutput(
+          traces.map((trace) => ({
+            id: trace.id,
+            issue: trace.issueIdentifier ?? trace.issueId,
+            vote: trace.vote,
+            status: trace.status,
+            targetType: trace.targetType,
+            target: trace.targetSummary.label
+          })),
+          { json: false }
+        );
+      } catch (err) {
+        handleCommandError(err);
+      }
+    })
+  );
+  addCommonClientOptions(
+    issue.command("feedback:export").description("Export feedback traces for an issue").argument("<issueId>", "Issue ID").option("--target-type <type>", "Filter by target type").option("--vote <vote>", "Filter by vote value").option("--status <status>", "Filter by trace status").option("--from <iso8601>", "Only include traces created at or after this timestamp").option("--to <iso8601>", "Only include traces created at or before this timestamp").option("--shared-only", "Only include traces eligible for sharing/export").option("--include-payload", "Include stored payload snapshots in the export").option("--out <path>", "Write export to a file path instead of stdout").option("--format <format>", "Export format: json or ndjson", "ndjson").action(async (issueId, opts) => {
+      try {
+        const ctx = resolveCommandContext(opts);
+        const traces = await ctx.api.get(
+          `/api/issues/${issueId}/feedback-traces${buildFeedbackTraceQuery(opts, opts.includePayload ?? true)}`
+        ) ?? [];
+        const serialized = serializeFeedbackTraces(traces, opts.format);
+        if (opts.out?.trim()) {
+          await writeFile3(opts.out, serialized, "utf8");
+          if (ctx.json) {
+            printOutput(
+              { out: opts.out, count: traces.length, format: normalizeFeedbackTraceExportFormat(opts.format) },
+              { json: true }
+            );
+            return;
+          }
+          console.log(`Wrote ${traces.length} feedback trace(s) to ${opts.out}`);
+          return;
+        }
+        process.stdout.write(`${serialized}${serialized.endsWith("\n") ? "" : "\n"}`);
+      } catch (err) {
+        handleCommandError(err);
+      }
+    })
+  );
+  addCommonClientOptions(
     issue.command("checkout").description("Checkout issue for an agent").argument("<issueId>", "Issue ID").requiredOption("--agent-id <id>", "Agent ID").option(
       "--expected-statuses <csv>",
       "Expected current statuses",
@@ -12557,14 +13935,14 @@ function filterIssueRows(rows, match) {
   if (!match?.trim()) return rows;
   const needle = match.trim().toLowerCase();
   return rows.filter((row) => {
-    const text61 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
-    return text61.includes(needle);
+    const text63 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
+    return text63.includes(needle);
   });
 }
 
 // ../packages/adapter-utils/src/server-utils.ts
 import { constants as fsConstants, promises as fs13 } from "node:fs";
-import path15 from "node:path";
+import path18 from "node:path";
 var MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 var MAX_EXCERPT_BYTES = 32 * 1024;
 var PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
@@ -12579,8 +13957,8 @@ function isMaintainerOnlySkillTarget(candidate) {
 }
 async function resolvePaperclipSkillsDir(moduleDir, additionalCandidates = []) {
   const candidates = [
-    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path15.resolve(moduleDir, relativePath)),
-    ...additionalCandidates.map((candidate) => path15.resolve(candidate))
+    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path18.resolve(moduleDir, relativePath)),
+    ...additionalCandidates.map((candidate) => path18.resolve(candidate))
   ];
   const seenRoots = /* @__PURE__ */ new Set();
   for (const root of candidates) {
@@ -12598,12 +13976,12 @@ async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) 
     const removed = [];
     for (const entry of entries) {
       if (allowed.has(entry.name)) continue;
-      const target = path15.join(skillsHome, entry.name);
+      const target = path18.join(skillsHome, entry.name);
       const existing = await fs13.lstat(target).catch(() => null);
       if (!existing?.isSymbolicLink()) continue;
       const linkedPath = await fs13.readlink(target).catch(() => null);
       if (!linkedPath) continue;
-      const resolvedLinkedPath = path15.isAbsolute(linkedPath) ? linkedPath : path15.resolve(path15.dirname(target), linkedPath);
+      const resolvedLinkedPath = path18.isAbsolute(linkedPath) ? linkedPath : path18.resolve(path18.dirname(target), linkedPath);
       if (!isMaintainerOnlySkillTarget(linkedPath) && !isMaintainerOnlySkillTarget(resolvedLinkedPath)) {
         continue;
       }
@@ -12619,18 +13997,18 @@ async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) 
 // src/commands/client/agent.ts
 import fs14 from "node:fs/promises";
 import os3 from "node:os";
-import path16 from "node:path";
+import path19 from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
-var __moduleDir = path16.dirname(fileURLToPath3(import.meta.url));
+var __moduleDir = path19.dirname(fileURLToPath3(import.meta.url));
 function codexSkillsHome() {
   const fromEnv = process.env.CODEX_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path16.join(os3.homedir(), ".codex");
-  return path16.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path19.join(os3.homedir(), ".codex");
+  return path19.join(base, "skills");
 }
 function claudeSkillsHome() {
   const fromEnv = process.env.CLAUDE_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path16.join(os3.homedir(), ".claude");
-  return path16.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path19.join(os3.homedir(), ".claude");
+  return path19.join(base, "skills");
 }
 async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
   const summary = {
@@ -12649,8 +14027,8 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
   );
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const source = path16.join(sourceSkillsDir, entry.name);
-    const target = path16.join(targetSkillsDir, entry.name);
+    const source = path19.join(sourceSkillsDir, entry.name);
+    const target = path19.join(targetSkillsDir, entry.name);
     const existing = await fs14.lstat(target).catch(() => null);
     if (existing) {
       if (existing.isSymbolicLink()) {
@@ -12671,7 +14049,7 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
             continue;
           }
         }
-        const resolvedLinkedPath = path16.isAbsolute(linkedPath) ? linkedPath : path16.resolve(path16.dirname(target), linkedPath);
+        const resolvedLinkedPath = path19.isAbsolute(linkedPath) ? linkedPath : path19.resolve(path19.dirname(target), linkedPath);
         const linkedTargetExists = await fs14.stat(resolvedLinkedPath).then(() => true).catch(() => false);
         if (!linkedTargetExists) {
           await fs14.unlink(target);
@@ -12774,7 +14152,7 @@ function registerAgentCommands(program2) {
         }
         const installSummaries = [];
         if (opts.installSkills !== false) {
-          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path16.resolve(process.cwd(), "skills")]);
+          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path19.resolve(process.cwd(), "skills")]);
           if (!skillsDir) {
             throw new Error(
               "Could not locate local Paperclip skills directory. Expected ./skills in the repo checkout."
@@ -13007,8 +14385,8 @@ function registerActivityCommands(program2) {
         if (opts.entityType) params.set("entityType", opts.entityType);
         if (opts.entityId) params.set("entityId", opts.entityId);
         const query = params.toString();
-        const path21 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path21) ?? [];
+        const path25 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path25) ?? [];
         if (ctx.json) {
           printOutput(rows, { json: true });
           return;
@@ -13055,13 +14433,216 @@ function registerDashboardCommands(program2) {
   );
 }
 
+// src/commands/routines.ts
+init_src2();
+init_env();
+init_store();
+import fs15 from "node:fs";
+import net3 from "node:net";
+import path20 from "node:path";
+import pc24 from "picocolors";
+import { eq as eq2, inArray } from "drizzle-orm";
+function nonEmpty(value) {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+async function isPortAvailable(port) {
+  return await new Promise((resolve2) => {
+    const server = net3.createServer();
+    server.unref();
+    server.once("error", () => resolve2(false));
+    server.listen(port, "127.0.0.1", () => {
+      server.close(() => resolve2(true));
+    });
+  });
+}
+async function findAvailablePort(preferredPort) {
+  let port = Math.max(1, Math.trunc(preferredPort));
+  while (!await isPortAvailable(port)) {
+    port += 1;
+  }
+  return port;
+}
+function readPidFilePort(postmasterPidFile) {
+  if (!fs15.existsSync(postmasterPidFile)) return null;
+  try {
+    const lines = fs15.readFileSync(postmasterPidFile, "utf8").split("\n");
+    const port = Number(lines[3]?.trim());
+    return Number.isInteger(port) && port > 0 ? port : null;
+  } catch {
+    return null;
+  }
+}
+function readRunningPostmasterPid(postmasterPidFile) {
+  if (!fs15.existsSync(postmasterPidFile)) return null;
+  try {
+    const pid = Number(fs15.readFileSync(postmasterPidFile, "utf8").split("\n")[0]?.trim());
+    if (!Number.isInteger(pid) || pid <= 0) return null;
+    process.kill(pid, 0);
+    return pid;
+  } catch {
+    return null;
+  }
+}
+async function ensureEmbeddedPostgres(dataDir, preferredPort) {
+  const moduleName = "embedded-postgres";
+  let EmbeddedPostgres;
+  try {
+    const mod = await import(moduleName);
+    EmbeddedPostgres = mod.default;
+  } catch {
+    throw new Error(
+      "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again."
+    );
+  }
+  const postmasterPidFile = path20.resolve(dataDir, "postmaster.pid");
+  const runningPid = readRunningPostmasterPid(postmasterPidFile);
+  if (runningPid) {
+    return {
+      port: readPidFilePort(postmasterPidFile) ?? preferredPort,
+      startedByThisProcess: false,
+      stop: async () => {
+      }
+    };
+  }
+  const port = await findAvailablePort(preferredPort);
+  const logBuffer = createEmbeddedPostgresLogBuffer();
+  const instance = new EmbeddedPostgres({
+    databaseDir: dataDir,
+    user: "paperclip",
+    password: "paperclip",
+    port,
+    persistent: true,
+    initdbFlags: ["--encoding=UTF8", "--locale=C", "--lc-messages=C"],
+    onLog: logBuffer.append,
+    onError: logBuffer.append
+  });
+  if (!fs15.existsSync(path20.resolve(dataDir, "PG_VERSION"))) {
+    try {
+      await instance.initialise();
+    } catch (error) {
+      throw formatEmbeddedPostgresError2(error, {
+        fallbackMessage: `Failed to initialize embedded PostgreSQL cluster in ${dataDir} on port ${port}`,
+        recentLogs: logBuffer.getRecentLogs()
+      });
+    }
+  }
+  if (fs15.existsSync(postmasterPidFile)) {
+    fs15.rmSync(postmasterPidFile, { force: true });
+  }
+  try {
+    await instance.start();
+  } catch (error) {
+    throw formatEmbeddedPostgresError2(error, {
+      fallbackMessage: `Failed to start embedded PostgreSQL on port ${port}`,
+      recentLogs: logBuffer.getRecentLogs()
+    });
+  }
+  return {
+    port,
+    startedByThisProcess: true,
+    stop: async () => {
+      await instance.stop();
+    }
+  };
+}
+async function closeDb(db) {
+  await db.$client?.end?.({ timeout: 5 }).catch(() => void 0);
+}
+async function disableAllRoutinesInConfig(options) {
+  const configPath = resolveConfigPath(options.config);
+  loadPaperclipEnvFile(configPath);
+  const companyId = nonEmpty(options.companyId) ?? nonEmpty(process.env.PAPERCLIP_COMPANY_ID) ?? null;
+  if (!companyId) {
+    throw new Error("Company ID is required. Pass --company-id or set PAPERCLIP_COMPANY_ID.");
+  }
+  const config = readConfig(configPath);
+  if (!config) {
+    throw new Error(`Config not found at ${configPath}.`);
+  }
+  let embeddedHandle = null;
+  let db = null;
+  try {
+    if (config.database.mode === "embedded-postgres") {
+      embeddedHandle = await ensureEmbeddedPostgres(
+        config.database.embeddedPostgresDataDir,
+        config.database.embeddedPostgresPort
+      );
+      const adminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/postgres`;
+      await ensurePostgresDatabase(adminConnectionString, "paperclip");
+      const connectionString = `postgres://paperclip:paperclip@127.0.0.1:${embeddedHandle.port}/paperclip`;
+      await applyPendingMigrations(connectionString);
+      db = createDb(connectionString);
+    } else {
+      const connectionString = nonEmpty(config.database.connectionString);
+      if (!connectionString) {
+        throw new Error(`Config at ${configPath} does not define a database connection string.`);
+      }
+      await applyPendingMigrations(connectionString);
+      db = createDb(connectionString);
+    }
+    const existing = await db.select({
+      id: routines.id,
+      status: routines.status
+    }).from(routines).where(eq2(routines.companyId, companyId));
+    const alreadyPausedCount = existing.filter((routine) => routine.status === "paused").length;
+    const archivedCount = existing.filter((routine) => routine.status === "archived").length;
+    const idsToPause = existing.filter((routine) => routine.status !== "paused" && routine.status !== "archived").map((routine) => routine.id);
+    if (idsToPause.length > 0) {
+      await db.update(routines).set({
+        status: "paused",
+        updatedAt: /* @__PURE__ */ new Date()
+      }).where(inArray(routines.id, idsToPause));
+    }
+    return {
+      companyId,
+      totalRoutines: existing.length,
+      pausedCount: idsToPause.length,
+      alreadyPausedCount,
+      archivedCount
+    };
+  } finally {
+    if (db) {
+      await closeDb(db);
+    }
+    if (embeddedHandle?.startedByThisProcess) {
+      await embeddedHandle.stop().catch(() => void 0);
+    }
+  }
+}
+async function disableAllRoutinesCommand(options) {
+  const result = await disableAllRoutinesInConfig(options);
+  if (options.json) {
+    console.log(JSON.stringify(result, null, 2));
+    return;
+  }
+  if (result.totalRoutines === 0) {
+    console.log(pc24.dim(`No routines found for company ${result.companyId}.`));
+    return;
+  }
+  console.log(
+    `Paused ${result.pausedCount} routine(s) for company ${result.companyId} (${result.alreadyPausedCount} already paused, ${result.archivedCount} archived).`
+  );
+}
+function registerRoutineCommands(program2) {
+  const routinesCommand = program2.command("routines").description("Local routine maintenance commands");
+  routinesCommand.command("disable-all").description("Pause all non-archived routines in the configured local instance for one company").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", "Paperclip data directory root (isolates state from ~/.paperclip)").option("-C, --company-id <id>", "Company ID").option("--json", "Output raw JSON").action(async (opts) => {
+    try {
+      await disableAllRoutinesCommand(opts);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error(pc24.red(message));
+      process.exit(1);
+    }
+  });
+}
+
 // src/config/data-dir.ts
 init_home();
-import path17 from "node:path";
+import path21 from "node:path";
 function applyDataDirOverride(options, support = {}) {
   const rawDataDir = options.dataDir?.trim();
   if (!rawDataDir) return null;
-  const resolvedDataDir = path17.resolve(expandHomePrefix(rawDataDir));
+  const resolvedDataDir = path21.resolve(expandHomePrefix(rawDataDir));
   process.env.PAPERCLIP_HOME = resolvedDataDir;
   if (support.hasConfigOption) {
     const hasConfigOverride = Boolean(options.config?.trim()) || Boolean(process.env.PAPERCLIP_CONFIG?.trim());
@@ -13082,6 +14663,7 @@ function applyDataDirOverride(options, support = {}) {
 
 // src/index.ts
 init_env();
+init_telemetry2();
 
 // src/commands/worktree.ts
 init_src2();
@@ -13093,30 +14675,30 @@ init_path_resolver();
 import {
   chmodSync,
   copyFileSync,
-  existsSync as existsSync2,
-  mkdirSync as mkdirSync2,
+  existsSync as existsSync3,
+  mkdirSync as mkdirSync3,
   promises as fsPromises,
   readdirSync as readdirSync2,
-  readFileSync,
+  readFileSync as readFileSync2,
   readlinkSync,
   rmSync,
   statSync as statSync2,
   symlinkSync,
-  writeFileSync
+  writeFileSync as writeFileSync2
 } from "node:fs";
 import os4 from "node:os";
-import path19 from "node:path";
+import path23 from "node:path";
 import { execFileSync } from "node:child_process";
 import { createServer } from "node:net";
 import { Readable } from "node:stream";
 import * as p16 from "@clack/prompts";
-import pc23 from "picocolors";
-import { and as and2, eq as eq2, inArray, sql as sql3 } from "drizzle-orm";
+import pc25 from "picocolors";
+import { and as and2, eq as eq3, inArray as inArray2, sql as sql3 } from "drizzle-orm";
 
 // src/commands/worktree-lib.ts
 init_home();
 import { randomInt } from "node:crypto";
-import path18 from "node:path";
+import path22 from "node:path";
 var DEFAULT_WORKTREE_HOME = "~/.paperclip-worktrees";
 var WORKTREE_SEED_MODES = ["minimal", "full"];
 var MINIMAL_WORKTREE_EXCLUDED_TABLES = [
@@ -13151,7 +14733,7 @@ function resolveWorktreeSeedPlan(mode) {
     }
   };
 }
-function nonEmpty(value) {
+function nonEmpty2(value) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 function isLoopbackHost2(hostname) {
@@ -13164,7 +14746,7 @@ function sanitizeWorktreeInstanceId(rawValue) {
   return normalized || "worktree";
 }
 function resolveSuggestedWorktreeName(cwd, explicitName) {
-  return nonEmpty(explicitName) ?? path18.basename(path18.resolve(cwd));
+  return nonEmpty2(explicitName) ?? path22.basename(path22.resolve(cwd));
 }
 function hslComponentToHex(n) {
   return Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
@@ -13204,24 +14786,24 @@ function generateWorktreeColor() {
   return hslToHex(randomInt(0, 360), 68, 56);
 }
 function resolveWorktreeLocalPaths(opts) {
-  const cwd = path18.resolve(opts.cwd);
-  const homeDir = path18.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
-  const instanceRoot = path18.resolve(homeDir, "instances", opts.instanceId);
-  const repoConfigDir = path18.resolve(cwd, ".paperclip");
+  const cwd = path22.resolve(opts.cwd);
+  const homeDir = path22.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
+  const instanceRoot = path22.resolve(homeDir, "instances", opts.instanceId);
+  const repoConfigDir = path22.resolve(cwd, ".paperclip");
   return {
     cwd,
     repoConfigDir,
-    configPath: path18.resolve(repoConfigDir, "config.json"),
-    envPath: path18.resolve(repoConfigDir, ".env"),
+    configPath: path22.resolve(repoConfigDir, "config.json"),
+    envPath: path22.resolve(repoConfigDir, ".env"),
     homeDir,
     instanceId: opts.instanceId,
     instanceRoot,
-    contextPath: path18.resolve(homeDir, "context.json"),
-    embeddedPostgresDataDir: path18.resolve(instanceRoot, "db"),
-    backupDir: path18.resolve(instanceRoot, "data", "backups"),
-    logDir: path18.resolve(instanceRoot, "logs"),
-    secretsKeyFilePath: path18.resolve(instanceRoot, "secrets", "master.key"),
-    storageDir: path18.resolve(instanceRoot, "data", "storage")
+    contextPath: path22.resolve(homeDir, "context.json"),
+    embeddedPostgresDataDir: path22.resolve(instanceRoot, "db"),
+    backupDir: path22.resolve(instanceRoot, "data", "backups"),
+    logDir: path22.resolve(instanceRoot, "logs"),
+    secretsKeyFilePath: path22.resolve(instanceRoot, "secrets", "master.key"),
+    storageDir: path22.resolve(instanceRoot, "data", "storage")
   };
 }
 function rewriteLocalUrlPort(rawUrl, port) {
@@ -13274,6 +14856,9 @@ function buildWorktreeConfig(input) {
       baseUrlMode: source?.auth.baseUrlMode ?? "auto",
       ...authPublicBaseUrl ? { publicBaseUrl: authPublicBaseUrl } : {},
       disableSignUp: source?.auth.disableSignUp ?? false
+    },
+    telemetry: {
+      enabled: source?.telemetry?.enabled ?? true
     },
     storage: {
       provider: source?.storage.provider ?? "local_disk",
@@ -13737,7 +15322,7 @@ function buildWorktreeMergePlan(input) {
 }
 
 // src/commands/worktree.ts
-function nonEmpty2(value) {
+function nonEmpty3(value) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 function isCurrentSourceConfigPath(sourceConfigPath) {
@@ -13745,11 +15330,11 @@ function isCurrentSourceConfigPath(sourceConfigPath) {
   if (!currentConfigPath || currentConfigPath.trim().length === 0) {
     return false;
   }
-  return path19.resolve(currentConfigPath) === path19.resolve(sourceConfigPath);
+  return path23.resolve(currentConfigPath) === path23.resolve(sourceConfigPath);
 }
 var WORKTREE_NAME_PREFIX = "paperclip-";
 function resolveWorktreeMakeName(name) {
-  const value = nonEmpty2(name);
+  const value = nonEmpty3(name);
   if (!value) {
     throw new Error("Worktree name is required.");
   }
@@ -13764,7 +15349,7 @@ function resolveWorktreeHome(explicit) {
   return explicit ?? process.env.PAPERCLIP_WORKTREES_DIR ?? DEFAULT_WORKTREE_HOME;
 }
 function resolveWorktreeStartPoint(explicit) {
-  return explicit ?? nonEmpty2(process.env.PAPERCLIP_WORKTREE_START_POINT) ?? void 0;
+  return explicit ?? nonEmpty3(process.env.PAPERCLIP_WORKTREE_START_POINT) ?? void 0;
 }
 function assertStorageCompanyPrefix(companyId, objectKey) {
   if (!objectKey.startsWith(`${companyId}/`) || objectKey.includes("..")) {
@@ -13783,9 +15368,9 @@ function normalizeStorageObjectKey(objectKey) {
   return parts.join("/");
 }
 function resolveLocalStoragePath(baseDir, objectKey) {
-  const resolved = path19.resolve(baseDir, normalizeStorageObjectKey(objectKey));
-  const root = path19.resolve(baseDir);
-  if (resolved !== root && !resolved.startsWith(`${root}${path19.sep}`)) {
+  const resolved = path23.resolve(baseDir, normalizeStorageObjectKey(objectKey));
+  const root = path23.resolve(baseDir);
+  if (resolved !== root && !resolved.startsWith(`${root}${path23.sep}`)) {
     throw new Error("Invalid object key path.");
   }
   return resolved;
@@ -13836,7 +15421,7 @@ function createConfiguredStorageFromPaperclipConfig(config) {
       async putObject(companyId, objectKey, body) {
         assertStorageCompanyPrefix(companyId, objectKey);
         const filePath = resolveLocalStoragePath(baseDir, objectKey);
-        await fsPromises.mkdir(path19.dirname(filePath), { recursive: true });
+        await fsPromises.mkdir(path23.dirname(filePath), { recursive: true });
         await fsPromises.writeFile(filePath, body);
       }
     };
@@ -13863,8 +15448,8 @@ function createConfiguredStorageFromPaperclipConfig(config) {
   return {
     async getObject(companyId, objectKey) {
       assertStorageCompanyPrefix(companyId, objectKey);
-      const { sdk, client } = await getS3Client();
-      const response = await client.send(
+      const { sdk, client: client2 } = await getS3Client();
+      const response = await client2.send(
         new sdk.GetObjectCommand({
           Bucket: bucket,
           Key: buildS3ObjectKey(prefix, objectKey)
@@ -13874,8 +15459,8 @@ function createConfiguredStorageFromPaperclipConfig(config) {
     },
     async putObject(companyId, objectKey, body, contentType) {
       assertStorageCompanyPrefix(companyId, objectKey);
-      const { sdk, client } = await getS3Client();
-      await client.send(
+      const { sdk, client: client2 } = await getS3Client();
+      await client2.send(
         new sdk.PutObjectCommand({
           Bucket: bucket,
           Key: buildS3ObjectKey(prefix, objectKey),
@@ -13920,7 +15505,7 @@ async function readSourceAttachmentBody(sourceStorages, companyId, objectKey) {
   return null;
 }
 function resolveWorktreeMakeTargetPath(name) {
-  return path19.resolve(os4.homedir(), resolveWorktreeMakeName(name));
+  return path23.resolve(os4.homedir(), resolveWorktreeMakeName(name));
 }
 function extractExecSyncErrorMessage(error) {
   if (!error || typeof error !== "object") {
@@ -13928,12 +15513,12 @@ function extractExecSyncErrorMessage(error) {
   }
   const stderr = "stderr" in error ? error.stderr : null;
   if (typeof stderr === "string") {
-    return nonEmpty2(stderr);
+    return nonEmpty3(stderr);
   }
   if (stderr instanceof Buffer) {
-    return nonEmpty2(stderr.toString("utf8"));
+    return nonEmpty3(stderr.toString("utf8"));
   }
-  return error instanceof Error ? nonEmpty2(error.message) : null;
+  return error instanceof Error ? nonEmpty3(error.message) : null;
 }
 function localBranchExists(cwd, branchName) {
   try {
@@ -13953,20 +15538,20 @@ function resolveGitWorktreeAddArgs(input) {
   const commitish = input.startPoint ?? "HEAD";
   return ["worktree", "add", "-b", input.branchName, input.targetPath, commitish];
 }
-function readPidFilePort(postmasterPidFile) {
-  if (!existsSync2(postmasterPidFile)) return null;
+function readPidFilePort2(postmasterPidFile) {
+  if (!existsSync3(postmasterPidFile)) return null;
   try {
-    const lines = readFileSync(postmasterPidFile, "utf8").split("\n");
+    const lines = readFileSync2(postmasterPidFile, "utf8").split("\n");
     const port = Number(lines[3]?.trim());
     return Number.isInteger(port) && port > 0 ? port : null;
   } catch {
     return null;
   }
 }
-function readRunningPostmasterPid(postmasterPidFile) {
-  if (!existsSync2(postmasterPidFile)) return null;
+function readRunningPostmasterPid2(postmasterPidFile) {
+  if (!existsSync3(postmasterPidFile)) return null;
   try {
-    const pid = Number(readFileSync(postmasterPidFile, "utf8").split("\n")[0]?.trim());
+    const pid = Number(readFileSync2(postmasterPidFile, "utf8").split("\n")[0]?.trim());
     if (!Number.isInteger(pid) || pid <= 0) return null;
     process.kill(pid, 0);
     return pid;
@@ -13974,7 +15559,7 @@ function readRunningPostmasterPid(postmasterPidFile) {
     return null;
   }
 }
-async function isPortAvailable(port) {
+async function isPortAvailable2(port) {
   return await new Promise((resolve2) => {
     const server = createServer();
     server.unref();
@@ -13984,41 +15569,41 @@ async function isPortAvailable(port) {
     });
   });
 }
-async function findAvailablePort(preferredPort, reserved = /* @__PURE__ */ new Set()) {
+async function findAvailablePort2(preferredPort, reserved = /* @__PURE__ */ new Set()) {
   let port = Math.max(1, Math.trunc(preferredPort));
-  while (reserved.has(port) || !await isPortAvailable(port)) {
+  while (reserved.has(port) || !await isPortAvailable2(port)) {
     port += 1;
   }
   return port;
 }
 function resolveRepoManagedWorktreesRoot(cwd) {
-  const normalized = path19.resolve(cwd);
-  const marker = `${path19.sep}.paperclip${path19.sep}worktrees${path19.sep}`;
-  const index55 = normalized.indexOf(marker);
-  if (index55 === -1) return null;
-  const repoRoot = normalized.slice(0, index55);
-  return path19.resolve(repoRoot, ".paperclip", "worktrees");
+  const normalized = path23.resolve(cwd);
+  const marker = `${path23.sep}.paperclip${path23.sep}worktrees${path23.sep}`;
+  const index57 = normalized.indexOf(marker);
+  if (index57 === -1) return null;
+  const repoRoot = normalized.slice(0, index57);
+  return path23.resolve(repoRoot, ".paperclip", "worktrees");
 }
 function collectClaimedWorktreePorts(homeDir, currentInstanceId, cwd) {
   const serverPorts = /* @__PURE__ */ new Set();
   const databasePorts = /* @__PURE__ */ new Set();
   const configPaths = /* @__PURE__ */ new Set();
-  const instancesDir = path19.resolve(homeDir, "instances");
-  if (existsSync2(instancesDir)) {
+  const instancesDir = path23.resolve(homeDir, "instances");
+  if (existsSync3(instancesDir)) {
     for (const entry of readdirSync2(instancesDir, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name === currentInstanceId) continue;
-      const configPath = path19.resolve(instancesDir, entry.name, "config.json");
-      if (existsSync2(configPath)) {
+      const configPath = path23.resolve(instancesDir, entry.name, "config.json");
+      if (existsSync3(configPath)) {
         configPaths.add(configPath);
       }
     }
   }
   const repoManagedWorktreesRoot = resolveRepoManagedWorktreesRoot(cwd);
-  if (repoManagedWorktreesRoot && existsSync2(repoManagedWorktreesRoot)) {
+  if (repoManagedWorktreesRoot && existsSync3(repoManagedWorktreesRoot)) {
     for (const entry of readdirSync2(repoManagedWorktreesRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const configPath = path19.resolve(repoManagedWorktreesRoot, entry.name, ".paperclip", "config.json");
-      if (existsSync2(configPath)) {
+      const configPath = path23.resolve(repoManagedWorktreesRoot, entry.name, ".paperclip", "config.json");
+      if (existsSync3(configPath)) {
         configPaths.add(configPath);
       }
     }
@@ -14044,7 +15629,7 @@ function detectGitBranchName(cwd) {
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
-    return nonEmpty2(value);
+    return nonEmpty3(value);
   } catch {
     return null;
   }
@@ -14072,26 +15657,26 @@ function detectGitWorkspaceInfo(cwd) {
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
     return {
-      root: path19.resolve(root),
-      commonDir: path19.resolve(root, commonDirRaw),
-      gitDir: path19.resolve(root, gitDirRaw),
-      hooksPath: path19.resolve(root, hooksPathRaw)
+      root: path23.resolve(root),
+      commonDir: path23.resolve(root, commonDirRaw),
+      gitDir: path23.resolve(root, gitDirRaw),
+      hooksPath: path23.resolve(root, hooksPathRaw)
     };
   } catch {
     return null;
   }
 }
 function copyDirectoryContents(sourceDir, targetDir) {
-  if (!existsSync2(sourceDir)) return false;
+  if (!existsSync3(sourceDir)) return false;
   const entries = readdirSync2(sourceDir, { withFileTypes: true });
   if (entries.length === 0) return false;
-  mkdirSync2(targetDir, { recursive: true });
+  mkdirSync3(targetDir, { recursive: true });
   let copied = false;
   for (const entry of entries) {
-    const sourcePath = path19.resolve(sourceDir, entry.name);
-    const targetPath = path19.resolve(targetDir, entry.name);
+    const sourcePath = path23.resolve(sourceDir, entry.name);
+    const targetPath = path23.resolve(targetDir, entry.name);
     if (entry.isDirectory()) {
-      mkdirSync2(targetPath, { recursive: true });
+      mkdirSync3(targetPath, { recursive: true });
       copyDirectoryContents(sourcePath, targetPath);
       copied = true;
       continue;
@@ -14115,7 +15700,7 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   const workspace = detectGitWorkspaceInfo(cwd);
   if (!workspace) return null;
   const sourceHooksPath = workspace.hooksPath;
-  const targetHooksPath = path19.resolve(workspace.gitDir, "hooks");
+  const targetHooksPath = path23.resolve(workspace.gitDir, "hooks");
   if (sourceHooksPath === targetHooksPath) {
     return {
       sourceHooksPath,
@@ -14130,17 +15715,17 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   };
 }
 function rebindWorkspaceCwd(input) {
-  const sourceRepoRoot = path19.resolve(input.sourceRepoRoot);
-  const targetRepoRoot = path19.resolve(input.targetRepoRoot);
-  const workspaceCwd = path19.resolve(input.workspaceCwd);
-  const relative = path19.relative(sourceRepoRoot, workspaceCwd);
+  const sourceRepoRoot = path23.resolve(input.sourceRepoRoot);
+  const targetRepoRoot = path23.resolve(input.targetRepoRoot);
+  const workspaceCwd = path23.resolve(input.workspaceCwd);
+  const relative = path23.relative(sourceRepoRoot, workspaceCwd);
   if (!relative || relative === "") {
     return targetRepoRoot;
   }
-  if (relative.startsWith("..") || path19.isAbsolute(relative)) {
+  if (relative.startsWith("..") || path23.isAbsolute(relative)) {
     return null;
   }
-  return path19.resolve(targetRepoRoot, relative);
+  return path23.resolve(targetRepoRoot, relative);
 }
 async function rebindSeededProjectWorkspaces(input) {
   const targetRepo = detectGitWorkspaceInfo(input.currentCwd);
@@ -14155,7 +15740,7 @@ async function rebindSeededProjectWorkspaces(input) {
     }).from(projectWorkspaces);
     const rebound = [];
     for (const row of rows) {
-      const workspaceCwd = nonEmpty2(row.cwd);
+      const workspaceCwd = nonEmpty3(row.cwd);
       if (!workspaceCwd) continue;
       const sourceRepo = detectGitWorkspaceInfo(workspaceCwd);
       if (!sourceRepo) continue;
@@ -14166,13 +15751,13 @@ async function rebindSeededProjectWorkspaces(input) {
         workspaceCwd
       });
       if (!reboundCwd) continue;
-      const normalizedCurrent = path19.resolve(workspaceCwd);
+      const normalizedCurrent = path23.resolve(workspaceCwd);
       if (reboundCwd === normalizedCurrent) continue;
-      if (!existsSync2(reboundCwd)) continue;
+      if (!existsSync3(reboundCwd)) continue;
       await db.update(projectWorkspaces).set({
         cwd: reboundCwd,
         updatedAt: /* @__PURE__ */ new Date()
-      }).where(eq2(projectWorkspaces.id, row.id));
+      }).where(eq3(projectWorkspaces.id, row.id));
       rebound.push({
         name: row.name,
         fromCwd: normalizedCurrent,
@@ -14185,18 +15770,18 @@ async function rebindSeededProjectWorkspaces(input) {
   }
 }
 function resolveSourceConfigPath(opts) {
-  if (opts.sourceConfigPathOverride) return path19.resolve(opts.sourceConfigPathOverride);
-  if (opts.fromConfig) return path19.resolve(opts.fromConfig);
+  if (opts.sourceConfigPathOverride) return path23.resolve(opts.sourceConfigPathOverride);
+  if (opts.fromConfig) return path23.resolve(opts.fromConfig);
   if (!opts.fromDataDir && !opts.fromInstance) {
     return resolveConfigPath();
   }
-  const sourceHome = path19.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
+  const sourceHome = path23.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
   const sourceInstanceId = sanitizeWorktreeInstanceId(opts.fromInstance ?? "default");
-  return path19.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
+  return path23.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
 }
 function resolveSourceConnectionString(config, envEntries, portOverride) {
   if (config.database.mode === "postgres") {
-    const connectionString = nonEmpty2(envEntries.DATABASE_URL) ?? nonEmpty2(config.database.connectionString);
+    const connectionString = nonEmpty3(envEntries.DATABASE_URL) ?? nonEmpty3(config.database.connectionString);
     if (!connectionString) {
       throw new Error(
         "Source instance uses postgres mode but has no connection string in config or adjacent .env."
@@ -14211,11 +15796,11 @@ function copySeededSecretsKey(input) {
   if (input.sourceConfig.secrets.provider !== "local_encrypted") {
     return;
   }
-  mkdirSync2(path19.dirname(input.targetKeyFilePath), { recursive: true });
+  mkdirSync3(path23.dirname(input.targetKeyFilePath), { recursive: true });
   const allowProcessEnvFallback = isCurrentSourceConfigPath(input.sourceConfigPath);
-  const sourceInlineMasterKey = nonEmpty2(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY) ?? (allowProcessEnvFallback ? nonEmpty2(process.env.PAPERCLIP_SECRETS_MASTER_KEY) : null);
+  const sourceInlineMasterKey = nonEmpty3(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY) ?? (allowProcessEnvFallback ? nonEmpty3(process.env.PAPERCLIP_SECRETS_MASTER_KEY) : null);
   if (sourceInlineMasterKey) {
-    writeFileSync(input.targetKeyFilePath, sourceInlineMasterKey, {
+    writeFileSync2(input.targetKeyFilePath, sourceInlineMasterKey, {
       encoding: "utf8",
       mode: 384
     });
@@ -14225,10 +15810,10 @@ function copySeededSecretsKey(input) {
     }
     return;
   }
-  const sourceKeyFileOverride = nonEmpty2(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY_FILE) ?? (allowProcessEnvFallback ? nonEmpty2(process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE) : null);
+  const sourceKeyFileOverride = nonEmpty3(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY_FILE) ?? (allowProcessEnvFallback ? nonEmpty3(process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE) : null);
   const sourceConfiguredKeyPath = sourceKeyFileOverride ?? input.sourceConfig.secrets.localEncrypted.keyFilePath;
   const sourceKeyFilePath = resolveRuntimeLikePath(sourceConfiguredKeyPath, input.sourceConfigPath);
-  if (!existsSync2(sourceKeyFilePath)) {
+  if (!existsSync3(sourceKeyFilePath)) {
     throw new Error(
       `Cannot seed worktree database because source local_encrypted secrets key was not found at ${sourceKeyFilePath}.`
     );
@@ -14239,7 +15824,7 @@ function copySeededSecretsKey(input) {
   } catch {
   }
 }
-async function ensureEmbeddedPostgres(dataDir, preferredPort) {
+async function ensureEmbeddedPostgres2(dataDir, preferredPort) {
   const moduleName = "embedded-postgres";
   let EmbeddedPostgres;
   try {
@@ -14250,17 +15835,17 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
       "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again."
     );
   }
-  const postmasterPidFile = path19.resolve(dataDir, "postmaster.pid");
-  const runningPid = readRunningPostmasterPid(postmasterPidFile);
+  const postmasterPidFile = path23.resolve(dataDir, "postmaster.pid");
+  const runningPid = readRunningPostmasterPid2(postmasterPidFile);
   if (runningPid) {
     return {
-      port: readPidFilePort(postmasterPidFile) ?? preferredPort,
+      port: readPidFilePort2(postmasterPidFile) ?? preferredPort,
       startedByThisProcess: false,
       stop: async () => {
       }
     };
   }
-  const port = await findAvailablePort(preferredPort);
+  const port = await findAvailablePort2(preferredPort);
   const logBuffer = createEmbeddedPostgresLogBuffer();
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,
@@ -14272,7 +15857,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
     onLog: logBuffer.append,
     onError: logBuffer.append
   });
-  if (!existsSync2(path19.resolve(dataDir, "PG_VERSION"))) {
+  if (!existsSync3(path23.resolve(dataDir, "PG_VERSION"))) {
     try {
       await instance.initialise();
     } catch (error) {
@@ -14282,7 +15867,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
       });
     }
   }
-  if (existsSync2(postmasterPidFile)) {
+  if (existsSync3(postmasterPidFile)) {
     rmSync(postmasterPidFile, { force: true });
   }
   try {
@@ -14315,7 +15900,7 @@ async function seedWorktreeDatabase(input) {
   let targetHandle = null;
   try {
     if (input.sourceConfig.database.mode === "embedded-postgres") {
-      sourceHandle = await ensureEmbeddedPostgres(
+      sourceHandle = await ensureEmbeddedPostgres2(
         input.sourceConfig.database.embeddedPostgresDataDir,
         input.sourceConfig.database.embeddedPostgresPort
       );
@@ -14327,14 +15912,14 @@ async function seedWorktreeDatabase(input) {
     );
     const backup = await runDatabaseBackup({
       connectionString: sourceConnectionString,
-      backupDir: path19.resolve(input.targetPaths.backupDir, "seed"),
+      backupDir: path23.resolve(input.targetPaths.backupDir, "seed"),
       retentionDays: 7,
       filenamePrefix: `${input.instanceId}-seed`,
       includeMigrationJournal: true,
       excludeTables: seedPlan.excludedTables,
       nullifyColumns: seedPlan.nullifyColumns
     });
-    targetHandle = await ensureEmbeddedPostgres(
+    targetHandle = await ensureEmbeddedPostgres2(
       input.targetConfig.database.embeddedPostgresDataDir,
       input.targetConfig.database.embeddedPostgresPort
     );
@@ -14384,8 +15969,8 @@ async function runWorktreeInit(opts) {
     color: generateWorktreeColor()
   };
   const sourceConfigPath = resolveSourceConfigPath(opts);
-  const sourceConfig = existsSync2(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
-  if ((existsSync2(paths.configPath) || existsSync2(paths.instanceRoot)) && !opts.force) {
+  const sourceConfig = existsSync3(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
+  if ((existsSync3(paths.configPath) || existsSync3(paths.instanceRoot)) && !opts.force) {
     throw new Error(
       `Worktree config already exists at ${paths.configPath} or instance data exists at ${paths.instanceRoot}. Re-run with --force to replace it.`
     );
@@ -14396,9 +15981,9 @@ async function runWorktreeInit(opts) {
   }
   const claimedPorts = collectClaimedWorktreePorts(paths.homeDir, paths.instanceId, paths.cwd);
   const preferredServerPort = opts.serverPort ?? (sourceConfig?.server.port ?? 3100) + 1;
-  const serverPort = await findAvailablePort(preferredServerPort, claimedPorts.serverPorts);
+  const serverPort = await findAvailablePort2(preferredServerPort, claimedPorts.serverPorts);
   const preferredDbPort = opts.dbPort ?? (sourceConfig?.database.embeddedPostgresPort ?? 54329) + 1;
-  const databasePort = await findAvailablePort(
+  const databasePort = await findAvailablePort2(
     preferredDbPort,
     /* @__PURE__ */ new Set([...claimedPorts.databasePorts, serverPort])
   );
@@ -14410,7 +15995,7 @@ async function runWorktreeInit(opts) {
   });
   writeConfig(targetConfig, paths.configPath);
   const sourceEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(sourceConfigPath));
-  const existingAgentJwtSecret = nonEmpty2(sourceEnvEntries.PAPERCLIP_AGENT_JWT_SECRET) ?? nonEmpty2(process.env.PAPERCLIP_AGENT_JWT_SECRET);
+  const existingAgentJwtSecret = nonEmpty3(sourceEnvEntries.PAPERCLIP_AGENT_JWT_SECRET) ?? nonEmpty3(process.env.PAPERCLIP_AGENT_JWT_SECRET);
   mergePaperclipEnvEntries(
     {
       ...buildWorktreeEnvEntries(paths, branding),
@@ -14444,53 +16029,53 @@ async function runWorktreeInit(opts) {
       reboundWorkspaceSummary = seeded.reboundWorkspaces;
       spinner4.stop(`Seeded isolated worktree database (${seedMode}).`);
     } catch (error) {
-      spinner4.stop(pc23.red("Failed to seed worktree database."));
+      spinner4.stop(pc25.red("Failed to seed worktree database."));
       throw error;
     }
   }
-  p16.log.message(pc23.dim(`Repo config: ${paths.configPath}`));
-  p16.log.message(pc23.dim(`Repo env: ${paths.envPath}`));
-  p16.log.message(pc23.dim(`Isolated home: ${paths.homeDir}`));
-  p16.log.message(pc23.dim(`Instance: ${paths.instanceId}`));
-  p16.log.message(pc23.dim(`Worktree badge: ${branding.name} (${branding.color})`));
-  p16.log.message(pc23.dim(`Server port: ${serverPort} | DB port: ${databasePort}`));
+  p16.log.message(pc25.dim(`Repo config: ${paths.configPath}`));
+  p16.log.message(pc25.dim(`Repo env: ${paths.envPath}`));
+  p16.log.message(pc25.dim(`Isolated home: ${paths.homeDir}`));
+  p16.log.message(pc25.dim(`Instance: ${paths.instanceId}`));
+  p16.log.message(pc25.dim(`Worktree badge: ${branding.name} (${branding.color})`));
+  p16.log.message(pc25.dim(`Server port: ${serverPort} | DB port: ${databasePort}`));
   if (copiedGitHooks?.copied) {
     p16.log.message(
-      pc23.dim(`Mirrored git hooks: ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`)
+      pc25.dim(`Mirrored git hooks: ${copiedGitHooks.sourceHooksPath} -> ${copiedGitHooks.targetHooksPath}`)
     );
   }
   if (seedSummary) {
-    p16.log.message(pc23.dim(`Seed mode: ${seedMode}`));
-    p16.log.message(pc23.dim(`Seed snapshot: ${seedSummary}`));
+    p16.log.message(pc25.dim(`Seed mode: ${seedMode}`));
+    p16.log.message(pc25.dim(`Seed snapshot: ${seedSummary}`));
     for (const rebound of reboundWorkspaceSummary) {
       p16.log.message(
-        pc23.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`)
+        pc25.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`)
       );
     }
   }
   p16.outro(
-    pc23.green(
+    pc25.green(
       `Worktree ready. Run Paperclip inside this repo and the CLI/server will use ${paths.instanceId} automatically.`
     )
   );
 }
 async function worktreeInitCommand(opts) {
   printPaperclipCliBanner();
-  p16.intro(pc23.bgCyan(pc23.black(" paperclipai worktree init ")));
+  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree init ")));
   await runWorktreeInit(opts);
 }
 async function worktreeMakeCommand(nameArg, opts) {
   printPaperclipCliBanner();
-  p16.intro(pc23.bgCyan(pc23.black(" paperclipai worktree:make ")));
+  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree:make ")));
   const name = resolveWorktreeMakeName(nameArg);
   const startPoint = resolveWorktreeStartPoint(opts.startPoint);
   const sourceCwd = process.cwd();
   const sourceConfigPath = resolveSourceConfigPath(opts);
   const targetPath = resolveWorktreeMakeTargetPath(name);
-  if (existsSync2(targetPath)) {
+  if (existsSync3(targetPath)) {
     throw new Error(`Target path already exists: ${targetPath}`);
   }
-  mkdirSync2(path19.dirname(targetPath), { recursive: true });
+  mkdirSync3(path23.dirname(targetPath), { recursive: true });
   if (startPoint) {
     const [remote] = startPoint.split("/", 1);
     try {
@@ -14519,7 +16104,7 @@ async function worktreeMakeCommand(nameArg, opts) {
     });
     spinner4.stop(`Created git worktree at ${targetPath}.`);
   } catch (error) {
-    spinner4.stop(pc23.red("Failed to create git worktree."));
+    spinner4.stop(pc25.red("Failed to create git worktree."));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
   const installSpinner = p16.spinner();
@@ -14531,7 +16116,7 @@ async function worktreeMakeCommand(nameArg, opts) {
     });
     installSpinner.stop("Installed dependencies.");
   } catch (error) {
-    installSpinner.stop(pc23.yellow("Failed to install dependencies (continuing anyway)."));
+    installSpinner.stop(pc25.yellow("Failed to install dependencies (continuing anyway)."));
     p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
   }
   const originalCwd = process.cwd();
@@ -14586,15 +16171,15 @@ function parseGitWorktreeList(cwd) {
   return entries;
 }
 function toMergeSourceChoices(cwd) {
-  const currentCwd = path19.resolve(cwd);
+  const currentCwd = path23.resolve(cwd);
   return parseGitWorktreeList(cwd).map((entry) => {
     const branchLabel = entry.branch?.replace(/^refs\/heads\//, "") ?? "(detached)";
-    const worktreePath = path19.resolve(entry.worktree);
+    const worktreePath = path23.resolve(entry.worktree);
     return {
       worktree: worktreePath,
       branch: entry.branch,
       branchLabel,
-      hasPaperclipConfig: existsSync2(path19.resolve(worktreePath, ".paperclip", "config.json")),
+      hasPaperclipConfig: existsSync3(path23.resolve(worktreePath, ".paperclip", "config.json")),
       isCurrent: worktreePath === currentCwd
     };
   });
@@ -14637,23 +16222,23 @@ function worktreePathHasUncommittedChanges(worktreePath) {
 }
 async function worktreeCleanupCommand(nameArg, opts) {
   printPaperclipCliBanner();
-  p16.intro(pc23.bgCyan(pc23.black(" paperclipai worktree:cleanup ")));
+  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree:cleanup ")));
   const name = resolveWorktreeMakeName(nameArg);
   const sourceCwd = process.cwd();
   const targetPath = resolveWorktreeMakeTargetPath(name);
   const instanceId = sanitizeWorktreeInstanceId(opts.instance ?? name);
-  const homeDir = path19.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
-  const instanceRoot = path19.resolve(homeDir, "instances", instanceId);
+  const homeDir = path23.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
+  const instanceRoot = path23.resolve(homeDir, "instances", instanceId);
   const hasBranch = localBranchExists(sourceCwd, name);
-  const hasTargetDir = existsSync2(targetPath);
-  const hasInstanceData = existsSync2(instanceRoot);
+  const hasTargetDir = existsSync3(targetPath);
+  const hasInstanceData = existsSync3(instanceRoot);
   const worktrees = parseGitWorktreeList(sourceCwd);
   const linkedWorktree = worktrees.find(
-    (wt) => wt.branch === `refs/heads/${name}` || path19.resolve(wt.worktree) === path19.resolve(targetPath)
+    (wt) => wt.branch === `refs/heads/${name}` || path23.resolve(wt.worktree) === path23.resolve(targetPath)
   );
   if (!hasBranch && !hasTargetDir && !hasInstanceData && !linkedWorktree) {
     p16.log.info("Nothing to clean up \u2014 no branch, worktree directory, or instance data found.");
-    p16.outro(pc23.green("Already clean."));
+    p16.outro(pc25.green("Already clean."));
     return;
   }
   const problems = [];
@@ -14686,7 +16271,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
     }
   }
   if (linkedWorktree) {
-    const worktreeDirExists = existsSync2(linkedWorktree.worktree);
+    const worktreeDirExists = existsSync3(linkedWorktree.worktree);
     const spinner4 = p16.spinner();
     if (worktreeDirExists) {
       spinner4.start(`Removing git worktree at ${linkedWorktree.worktree}...`);
@@ -14699,7 +16284,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
         });
         spinner4.stop(`Removed git worktree at ${linkedWorktree.worktree}.`);
       } catch (error) {
-        spinner4.stop(pc23.yellow(`Could not remove worktree cleanly, will prune instead.`));
+        spinner4.stop(pc25.yellow(`Could not remove worktree cleanly, will prune instead.`));
         p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
       }
     } else {
@@ -14716,7 +16301,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
       stdio: ["ignore", "pipe", "pipe"]
     });
   }
-  if (existsSync2(targetPath)) {
+  if (existsSync3(targetPath)) {
     const spinner4 = p16.spinner();
     spinner4.start(`Removing worktree directory ${targetPath}...`);
     rmSync(targetPath, { recursive: true, force: true });
@@ -14733,17 +16318,17 @@ async function worktreeCleanupCommand(nameArg, opts) {
       });
       spinner4.stop(`Deleted local branch "${name}".`);
     } catch (error) {
-      spinner4.stop(pc23.yellow(`Could not delete branch "${name}".`));
+      spinner4.stop(pc25.yellow(`Could not delete branch "${name}".`));
       p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
     }
   }
-  if (existsSync2(instanceRoot)) {
+  if (existsSync3(instanceRoot)) {
     const spinner4 = p16.spinner();
     spinner4.start(`Removing instance data at ${instanceRoot}...`);
     rmSync(instanceRoot, { recursive: true, force: true });
     spinner4.stop(`Removed instance data at ${instanceRoot}.`);
   }
-  p16.outro(pc23.green("Cleanup complete."));
+  p16.outro(pc25.green("Cleanup complete."));
 }
 async function worktreeEnvCommand(opts) {
   const configPath = resolveConfigPath(opts.config);
@@ -14762,12 +16347,12 @@ async function worktreeEnvCommand(opts) {
   }
   console.log(formatShellExports(out));
 }
-async function closeDb(db) {
+async function closeDb2(db) {
   await db.$client?.end?.({ timeout: 5 }).catch(() => void 0);
 }
 function resolveCurrentEndpoint() {
   return {
-    rootPath: path19.resolve(process.cwd()),
+    rootPath: path23.resolve(process.cwd()),
     configPath: resolveConfigPath(),
     label: "current",
     isCurrent: true
@@ -14778,13 +16363,13 @@ function resolveAttachmentLookupStorages(input) {
     input.sourceEndpoint.configPath,
     resolveCurrentEndpoint().configPath,
     input.targetEndpoint.configPath,
-    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path19.resolve(choice.worktree, ".paperclip", "config.json"))
+    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path23.resolve(choice.worktree, ".paperclip", "config.json"))
   ];
   const seen = /* @__PURE__ */ new Set();
   const storages = [];
   for (const configPath of orderedConfigPaths) {
-    const resolved = path19.resolve(configPath);
-    if (seen.has(resolved) || !existsSync2(resolved)) continue;
+    const resolved = path23.resolve(configPath);
+    if (seen.has(resolved) || !existsSync3(resolved)) continue;
     seen.add(resolved);
     storages.push(openConfiguredStorage(resolved));
   }
@@ -14799,7 +16384,7 @@ async function openConfiguredDb(configPath) {
   let embeddedHandle = null;
   try {
     if (config.database.mode === "embedded-postgres") {
-      embeddedHandle = await ensureEmbeddedPostgres(
+      embeddedHandle = await ensureEmbeddedPostgres2(
         config.database.embeddedPostgresDataDir,
         config.database.embeddedPostgresPort
       );
@@ -14816,7 +16401,7 @@ async function openConfiguredDb(configPath) {
     return {
       db,
       stop: async () => {
-        await closeDb(db);
+        await closeDb2(db);
         if (embeddedHandle?.startedByThisProcess) {
           await embeddedHandle.stop();
         }
@@ -14844,7 +16429,7 @@ async function resolveMergeCompany(input) {
   ]);
   const targetById = new Map(targetCompanies.map((company) => [company.id, company]));
   const shared = sourceCompanies.filter((company) => targetById.has(company.id));
-  const selector = nonEmpty2(input.selector);
+  const selector = nonEmpty3(input.selector);
   if (selector) {
     const matched = shared.find(
       (company) => company.id === selector || company.issuePrefix.toLowerCase() === selector.toLowerCase()
@@ -14971,11 +16556,11 @@ async function collectMergePlan(input) {
   ] = await Promise.all([
     input.targetDb.select({
       issueCounter: companies.issueCounter
-    }).from(companies).where(eq2(companies.id, companyId)).then((rows) => rows[0] ?? null),
-    input.sourceDb.select().from(issues).where(eq2(issues.companyId, companyId)),
-    input.targetDb.select().from(issues).where(eq2(issues.companyId, companyId)),
-    input.scopes.includes("comments") ? input.sourceDb.select().from(issueComments).where(eq2(issueComments.companyId, companyId)) : Promise.resolve([]),
-    input.targetDb.select().from(issueComments).where(eq2(issueComments.companyId, companyId)),
+    }).from(companies).where(eq3(companies.id, companyId)).then((rows) => rows[0] ?? null),
+    input.sourceDb.select().from(issues).where(eq3(issues.companyId, companyId)),
+    input.targetDb.select().from(issues).where(eq3(issues.companyId, companyId)),
+    input.scopes.includes("comments") ? input.sourceDb.select().from(issueComments).where(eq3(issueComments.companyId, companyId)) : Promise.resolve([]),
+    input.targetDb.select().from(issueComments).where(eq3(issueComments.companyId, companyId)),
     input.sourceDb.select({
       id: issueDocuments.id,
       companyId: issueDocuments.companyId,
@@ -14995,7 +16580,7 @@ async function collectMergePlan(input) {
       updatedByUserId: documents.updatedByUserId,
       documentCreatedAt: documents.createdAt,
       documentUpdatedAt: documents.updatedAt
-    }).from(issueDocuments).innerJoin(documents, eq2(issueDocuments.documentId, documents.id)).innerJoin(issues, eq2(issueDocuments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
+    }).from(issueDocuments).innerJoin(documents, eq3(issueDocuments.documentId, documents.id)).innerJoin(issues, eq3(issueDocuments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
     input.targetDb.select({
       id: issueDocuments.id,
       companyId: issueDocuments.companyId,
@@ -15015,7 +16600,7 @@ async function collectMergePlan(input) {
       updatedByUserId: documents.updatedByUserId,
       documentCreatedAt: documents.createdAt,
       documentUpdatedAt: documents.updatedAt
-    }).from(issueDocuments).innerJoin(documents, eq2(issueDocuments.documentId, documents.id)).innerJoin(issues, eq2(issueDocuments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
+    }).from(issueDocuments).innerJoin(documents, eq3(issueDocuments.documentId, documents.id)).innerJoin(issues, eq3(issueDocuments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
     input.sourceDb.select({
       id: documentRevisions.id,
       companyId: documentRevisions.companyId,
@@ -15026,7 +16611,7 @@ async function collectMergePlan(input) {
       createdByAgentId: documentRevisions.createdByAgentId,
       createdByUserId: documentRevisions.createdByUserId,
       createdAt: documentRevisions.createdAt
-    }).from(documentRevisions).innerJoin(issueDocuments, eq2(documentRevisions.documentId, issueDocuments.documentId)).innerJoin(issues, eq2(issueDocuments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
+    }).from(documentRevisions).innerJoin(issueDocuments, eq3(documentRevisions.documentId, issueDocuments.documentId)).innerJoin(issues, eq3(issueDocuments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
     input.targetDb.select({
       id: documentRevisions.id,
       companyId: documentRevisions.companyId,
@@ -15037,7 +16622,7 @@ async function collectMergePlan(input) {
       createdByAgentId: documentRevisions.createdByAgentId,
       createdByUserId: documentRevisions.createdByUserId,
       createdAt: documentRevisions.createdAt
-    }).from(documentRevisions).innerJoin(issueDocuments, eq2(documentRevisions.documentId, issueDocuments.documentId)).innerJoin(issues, eq2(issueDocuments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
+    }).from(documentRevisions).innerJoin(issueDocuments, eq3(documentRevisions.documentId, issueDocuments.documentId)).innerJoin(issues, eq3(issueDocuments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
     input.sourceDb.select({
       id: issueAttachments.id,
       companyId: issueAttachments.companyId,
@@ -15056,7 +16641,7 @@ async function collectMergePlan(input) {
       assetUpdatedAt: assets.updatedAt,
       attachmentCreatedAt: issueAttachments.createdAt,
       attachmentUpdatedAt: issueAttachments.updatedAt
-    }).from(issueAttachments).innerJoin(assets, eq2(issueAttachments.assetId, assets.id)).innerJoin(issues, eq2(issueAttachments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
+    }).from(issueAttachments).innerJoin(assets, eq3(issueAttachments.assetId, assets.id)).innerJoin(issues, eq3(issueAttachments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
     input.targetDb.select({
       id: issueAttachments.id,
       companyId: issueAttachments.companyId,
@@ -15075,14 +16660,14 @@ async function collectMergePlan(input) {
       assetUpdatedAt: assets.updatedAt,
       attachmentCreatedAt: issueAttachments.createdAt,
       attachmentUpdatedAt: issueAttachments.updatedAt
-    }).from(issueAttachments).innerJoin(assets, eq2(issueAttachments.assetId, assets.id)).innerJoin(issues, eq2(issueAttachments.issueId, issues.id)).where(eq2(issues.companyId, companyId)),
-    input.sourceDb.select().from(projects).where(eq2(projects.companyId, companyId)),
-    input.sourceDb.select().from(projectWorkspaces).where(eq2(projectWorkspaces.companyId, companyId)),
-    input.targetDb.select().from(projects).where(eq2(projects.companyId, companyId)),
-    input.targetDb.select().from(agents).where(eq2(agents.companyId, companyId)),
-    input.targetDb.select().from(projectWorkspaces).where(eq2(projectWorkspaces.companyId, companyId)),
-    input.targetDb.select().from(goals).where(eq2(goals.companyId, companyId)),
-    input.sourceDb.select({ count: sql3`count(*)::int` }).from(heartbeatRuns).where(eq2(heartbeatRuns.companyId, companyId))
+    }).from(issueAttachments).innerJoin(assets, eq3(issueAttachments.assetId, assets.id)).innerJoin(issues, eq3(issueAttachments.issueId, issues.id)).where(eq3(issues.companyId, companyId)),
+    input.sourceDb.select().from(projects).where(eq3(projects.companyId, companyId)),
+    input.sourceDb.select().from(projectWorkspaces).where(eq3(projectWorkspaces.companyId, companyId)),
+    input.targetDb.select().from(projects).where(eq3(projects.companyId, companyId)),
+    input.targetDb.select().from(agents).where(eq3(agents.companyId, companyId)),
+    input.targetDb.select().from(projectWorkspaces).where(eq3(projectWorkspaces.companyId, companyId)),
+    input.targetDb.select().from(goals).where(eq3(goals.companyId, companyId)),
+    input.sourceDb.select({ count: sql3`count(*)::int` }).from(heartbeatRuns).where(eq3(heartbeatRuns.companyId, companyId))
   ]);
   if (!targetCompanyRow) {
     throw new Error(`Target company ${companyId} was not found.`);
@@ -15202,7 +16787,7 @@ function resolveEndpointFromChoice(choice) {
   }
   return {
     rootPath: choice.worktree,
-    configPath: path19.resolve(choice.worktree, ".paperclip", "config.json"),
+    configPath: path23.resolve(choice.worktree, ".paperclip", "config.json"),
     label: choice.branchLabel,
     isCurrent: false
   };
@@ -15218,24 +16803,24 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
     return currentEndpoint;
   }
   const choices = toMergeSourceChoices(process.cwd());
-  const directPath = path19.resolve(trimmed);
-  if (existsSync2(directPath)) {
+  const directPath = path23.resolve(trimmed);
+  if (existsSync3(directPath)) {
     if (allowCurrent && directPath === currentEndpoint.rootPath) {
       return currentEndpoint;
     }
-    const configPath = path19.resolve(directPath, ".paperclip", "config.json");
-    if (!existsSync2(configPath)) {
+    const configPath = path23.resolve(directPath, ".paperclip", "config.json");
+    if (!existsSync3(configPath)) {
       throw new Error(`Resolved worktree path ${directPath} does not contain .paperclip/config.json.`);
     }
     return {
       rootPath: directPath,
       configPath,
-      label: path19.basename(directPath),
+      label: path23.basename(directPath),
       isCurrent: false
     };
   }
   const matched = choices.find(
-    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path19.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
+    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path23.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
   );
   if (!matched) {
     throw new Error(
@@ -15248,9 +16833,9 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
   return resolveEndpointFromChoice(matched);
 }
 async function promptForSourceEndpoint(excludeWorktreePath) {
-  const excluded = excludeWorktreePath ? path19.resolve(excludeWorktreePath) : null;
+  const excluded = excludeWorktreePath ? path23.resolve(excludeWorktreePath) : null;
   const currentEndpoint = resolveCurrentEndpoint();
-  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path19.resolve(choice.worktree) !== excluded).map((choice) => ({
+  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path23.resolve(choice.worktree) !== excluded).map((choice) => ({
     value: choice.isCurrent ? "__current__" : choice.worktree,
     label: choice.branchLabel,
     hint: `${choice.worktree}${choice.isCurrent ? " (current)" : ""}`
@@ -15275,12 +16860,12 @@ async function applyMergePlan(input) {
   return await input.targetDb.transaction(async (tx) => {
     const importedProjectIds = input.plan.projectImports.map((project) => project.source.id);
     const existingImportedProjectIds = importedProjectIds.length > 0 ? new Set(
-      (await tx.select({ id: projects.id }).from(projects).where(inArray(projects.id, importedProjectIds))).map((row) => row.id)
+      (await tx.select({ id: projects.id }).from(projects).where(inArray2(projects.id, importedProjectIds))).map((row) => row.id)
     ) : /* @__PURE__ */ new Set();
     const projectImports = input.plan.projectImports.filter((project) => !existingImportedProjectIds.has(project.source.id));
     const importedWorkspaceIds = projectImports.flatMap((project) => project.workspaces.map((workspace) => workspace.id));
     const existingImportedWorkspaceIds = importedWorkspaceIds.length > 0 ? new Set(
-      (await tx.select({ id: projectWorkspaces.id }).from(projectWorkspaces).where(inArray(projectWorkspaces.id, importedWorkspaceIds))).map((row) => row.id)
+      (await tx.select({ id: projectWorkspaces.id }).from(projectWorkspaces).where(inArray2(projectWorkspaces.id, importedWorkspaceIds))).map((row) => row.id)
     ) : /* @__PURE__ */ new Set();
     let insertedProjects = 0;
     let insertedProjectWorkspaces = 0;
@@ -15334,12 +16919,12 @@ async function applyMergePlan(input) {
     );
     const issueCandidateIds = issueCandidates.map((issue) => issue.source.id);
     const existingIssueIds = issueCandidateIds.length > 0 ? new Set(
-      (await tx.select({ id: issues.id }).from(issues).where(inArray(issues.id, issueCandidateIds))).map((row) => row.id)
+      (await tx.select({ id: issues.id }).from(issues).where(inArray2(issues.id, issueCandidateIds))).map((row) => row.id)
     ) : /* @__PURE__ */ new Set();
     const issueInserts = issueCandidates.filter((issue) => !existingIssueIds.has(issue.source.id));
     let nextIssueNumber = 0;
     if (issueInserts.length > 0) {
-      const [companyRow] = await tx.update(companies).set({ issueCounter: sql3`${companies.issueCounter} + ${issueInserts.length}` }).where(eq2(companies.id, companyId)).returning({ issueCounter: companies.issueCounter });
+      const [companyRow] = await tx.update(companies).set({ issueCounter: sql3`${companies.issueCounter} + ${issueInserts.length}` }).where(eq3(companies.id, companyId)).returning({ issueCounter: companies.issueCounter });
       nextIssueNumber = companyRow.issueCounter - issueInserts.length + 1;
     }
     const insertedIssueIdentifiers = /* @__PURE__ */ new Map();
@@ -15390,12 +16975,12 @@ async function applyMergePlan(input) {
     );
     const commentCandidateIds = commentCandidates.map((comment) => comment.source.id);
     const existingCommentIds = commentCandidateIds.length > 0 ? new Set(
-      (await tx.select({ id: issueComments.id }).from(issueComments).where(inArray(issueComments.id, commentCandidateIds))).map((row) => row.id)
+      (await tx.select({ id: issueComments.id }).from(issueComments).where(inArray2(issueComments.id, commentCandidateIds))).map((row) => row.id)
     ) : /* @__PURE__ */ new Set();
     let insertedComments = 0;
     for (const comment of commentCandidates) {
       if (existingCommentIds.has(comment.source.id)) continue;
-      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq2(issues.id, comment.source.issueId), eq2(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
+      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq3(issues.id, comment.source.issueId), eq3(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
       if (!parentExists) continue;
       await tx.insert(issueComments).values({
         id: comment.source.id,
@@ -15416,13 +17001,13 @@ async function applyMergePlan(input) {
     let mergedDocuments = 0;
     let insertedDocumentRevisions = 0;
     for (const documentPlan of documentCandidates) {
-      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq2(issues.id, documentPlan.source.issueId), eq2(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
+      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq3(issues.id, documentPlan.source.issueId), eq3(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
       if (!parentExists) continue;
-      const conflictingKeyDocument = await tx.select({ documentId: issueDocuments.documentId }).from(issueDocuments).where(and2(eq2(issueDocuments.issueId, documentPlan.source.issueId), eq2(issueDocuments.key, documentPlan.source.key))).then((rows) => rows[0] ?? null);
+      const conflictingKeyDocument = await tx.select({ documentId: issueDocuments.documentId }).from(issueDocuments).where(and2(eq3(issueDocuments.issueId, documentPlan.source.issueId), eq3(issueDocuments.key, documentPlan.source.key))).then((rows) => rows[0] ?? null);
       if (conflictingKeyDocument && conflictingKeyDocument.documentId !== documentPlan.source.documentId) {
         continue;
       }
-      const existingDocument = await tx.select({ id: documents.id }).from(documents).where(eq2(documents.id, documentPlan.source.documentId)).then((rows) => rows[0] ?? null);
+      const existingDocument = await tx.select({ id: documents.id }).from(documents).where(eq3(documents.id, documentPlan.source.documentId)).then((rows) => rows[0] ?? null);
       if (!existingDocument) {
         await tx.insert(documents).values({
           id: documentPlan.source.documentId,
@@ -15450,7 +17035,7 @@ async function applyMergePlan(input) {
         });
         insertedDocuments += 1;
       } else {
-        const existingLink = await tx.select({ id: issueDocuments.id }).from(issueDocuments).where(eq2(issueDocuments.documentId, documentPlan.source.documentId)).then((rows) => rows[0] ?? null);
+        const existingLink = await tx.select({ id: issueDocuments.id }).from(issueDocuments).where(eq3(issueDocuments.documentId, documentPlan.source.documentId)).then((rows) => rows[0] ?? null);
         if (!existingLink) {
           await tx.insert(issueDocuments).values({
             id: documentPlan.source.id,
@@ -15466,7 +17051,7 @@ async function applyMergePlan(input) {
             issueId: documentPlan.source.issueId,
             key: documentPlan.source.key,
             updatedAt: documentPlan.source.linkUpdatedAt
-          }).where(eq2(issueDocuments.documentId, documentPlan.source.documentId));
+          }).where(eq3(issueDocuments.documentId, documentPlan.source.documentId));
         }
         await tx.update(documents).set({
           title: documentPlan.source.title,
@@ -15477,11 +17062,11 @@ async function applyMergePlan(input) {
           updatedByAgentId: documentPlan.targetUpdatedByAgentId,
           updatedByUserId: documentPlan.source.updatedByUserId,
           updatedAt: documentPlan.source.documentUpdatedAt
-        }).where(eq2(documents.id, documentPlan.source.documentId));
+        }).where(eq3(documents.id, documentPlan.source.documentId));
         mergedDocuments += 1;
       }
       const existingRevisionIds = new Set(
-        (await tx.select({ id: documentRevisions.id }).from(documentRevisions).where(eq2(documentRevisions.documentId, documentPlan.source.documentId))).map((row) => row.id)
+        (await tx.select({ id: documentRevisions.id }).from(documentRevisions).where(eq3(documentRevisions.documentId, documentPlan.source.documentId))).map((row) => row.id)
       );
       for (const revisionPlan of documentPlan.revisionsToInsert) {
         if (existingRevisionIds.has(revisionPlan.source.id)) continue;
@@ -15503,13 +17088,13 @@ async function applyMergePlan(input) {
       (plan) => plan.action === "insert"
     );
     const existingAttachmentIds = new Set(
-      (await tx.select({ id: issueAttachments.id }).from(issueAttachments).where(eq2(issueAttachments.companyId, companyId))).map((row) => row.id)
+      (await tx.select({ id: issueAttachments.id }).from(issueAttachments).where(eq3(issueAttachments.companyId, companyId))).map((row) => row.id)
     );
     let insertedAttachments = 0;
     let skippedMissingAttachmentObjects = 0;
     for (const attachment of attachmentCandidates) {
       if (existingAttachmentIds.has(attachment.source.id)) continue;
-      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq2(issues.id, attachment.source.issueId), eq2(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
+      const parentExists = await tx.select({ id: issues.id }).from(issues).where(and2(eq3(issues.id, attachment.source.issueId), eq3(issues.companyId, companyId))).then((rows) => rows[0] ?? null);
       if (!parentExists) continue;
       const body = await readSourceAttachmentBody(
         input.sourceStorages,
@@ -15574,7 +17159,7 @@ async function worktreeMergeHistoryCommand(sourceArg, opts) {
   }
   const targetEndpoint = opts.to ? resolveWorktreeEndpointFromSelector(opts.to, { allowCurrent: true }) : resolveCurrentEndpoint();
   const sourceEndpoint = opts.from ? resolveWorktreeEndpointFromSelector(opts.from, { allowCurrent: true }) : sourceArg ? resolveWorktreeEndpointFromSelector(sourceArg, { allowCurrent: true }) : await promptForSourceEndpoint(targetEndpoint.rootPath);
-  if (path19.resolve(sourceEndpoint.configPath) === path19.resolve(targetEndpoint.configPath)) {
+  if (path23.resolve(sourceEndpoint.configPath) === path23.resolve(targetEndpoint.configPath)) {
     throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to worktrees.");
   }
   const scopes = parseWorktreeMergeScopes(opts.scope);
@@ -15643,7 +17228,7 @@ async function worktreeMergeHistoryCommand(sourceArg, opts) {
       );
     }
     p16.outro(
-      pc23.green(
+      pc25.green(
         `Imported ${applied.insertedProjects} projects (${applied.insertedProjectWorkspaces} workspaces), ${applied.insertedIssues} issues, ${applied.insertedComments} comments, ${applied.insertedDocuments} documents (${applied.insertedDocumentRevisions} revisions, ${applied.mergedDocuments} merged), and ${applied.insertedAttachments} attachments into ${company.issuePrefix}.`
       )
     );
@@ -15663,27 +17248,27 @@ function registerWorktreeCommands(program2) {
 }
 
 // src/commands/client/plugin.ts
-import path20 from "node:path";
-import pc24 from "picocolors";
+import path24 from "node:path";
+import pc26 from "picocolors";
 function resolvePackageArg(packageArg, isLocal) {
   if (!isLocal) return packageArg;
-  if (path20.isAbsolute(packageArg)) return packageArg;
+  if (path24.isAbsolute(packageArg)) return packageArg;
   if (packageArg.startsWith("~")) {
     const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-    return path20.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
+    return path24.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
   }
-  return path20.resolve(process.cwd(), packageArg);
+  return path24.resolve(process.cwd(), packageArg);
 }
 function formatPlugin(p17) {
-  const statusColor = p17.status === "ready" ? pc24.green(p17.status) : p17.status === "error" ? pc24.red(p17.status) : p17.status === "disabled" ? pc24.dim(p17.status) : pc24.yellow(p17.status);
+  const statusColor = p17.status === "ready" ? pc26.green(p17.status) : p17.status === "error" ? pc26.red(p17.status) : p17.status === "disabled" ? pc26.dim(p17.status) : pc26.yellow(p17.status);
   const parts = [
-    `key=${pc24.bold(p17.pluginKey)}`,
+    `key=${pc26.bold(p17.pluginKey)}`,
     `status=${statusColor}`,
     `version=${p17.version}`,
-    `id=${pc24.dim(p17.id)}`
+    `id=${pc26.dim(p17.id)}`
   ];
   if (p17.lastError) {
-    parts.push(`error=${pc24.red(p17.lastError.slice(0, 80))}`);
+    parts.push(`error=${pc26.red(p17.lastError.slice(0, 80))}`);
   }
   return parts.join("  ");
 }
@@ -15701,7 +17286,7 @@ function registerPluginCommands(program2) {
         }
         const rows = plugins2 ?? [];
         if (rows.length === 0) {
-          console.log(pc24.dim("No plugins installed."));
+          console.log(pc26.dim("No plugins installed."));
           return;
         }
         for (const p17 of rows) {
@@ -15722,7 +17307,7 @@ function registerPluginCommands(program2) {
         const resolvedPackage = resolvePackageArg(packageArg, isLocal);
         if (!ctx.json) {
           console.log(
-            pc24.dim(
+            pc26.dim(
               isLocal ? `Installing plugin from local path: ${resolvedPackage}` : `Installing plugin: ${resolvedPackage}${opts.version ? `@${opts.version}` : ""}`
             )
           );
@@ -15737,16 +17322,16 @@ function registerPluginCommands(program2) {
           return;
         }
         if (!installedPlugin) {
-          console.log(pc24.dim("Install returned no plugin record."));
+          console.log(pc26.dim("Install returned no plugin record."));
           return;
         }
         console.log(
-          pc24.green(
-            `\u2713 Installed ${pc24.bold(installedPlugin.pluginKey)} v${installedPlugin.version} (${installedPlugin.status})`
+          pc26.green(
+            `\u2713 Installed ${pc26.bold(installedPlugin.pluginKey)} v${installedPlugin.version} (${installedPlugin.status})`
           )
         );
         if (installedPlugin.lastError) {
-          console.log(pc24.red(`  Warning: ${installedPlugin.lastError}`));
+          console.log(pc26.red(`  Warning: ${installedPlugin.lastError}`));
         }
       } catch (err) {
         handleCommandError(err);
@@ -15763,7 +17348,7 @@ function registerPluginCommands(program2) {
         const qs = purge ? "?purge=true" : "";
         if (!ctx.json) {
           console.log(
-            pc24.dim(
+            pc26.dim(
               purge ? `Uninstalling and purging plugin: ${pluginKey}` : `Uninstalling plugin: ${pluginKey}`
             )
           );
@@ -15775,7 +17360,7 @@ function registerPluginCommands(program2) {
           printOutput(result, { json: true });
           return;
         }
-        console.log(pc24.green(`\u2713 Uninstalled ${pc24.bold(pluginKey)}${purge ? " (purged)" : ""}`));
+        console.log(pc26.green(`\u2713 Uninstalled ${pc26.bold(pluginKey)}${purge ? " (purged)" : ""}`));
       } catch (err) {
         handleCommandError(err);
       }
@@ -15792,7 +17377,7 @@ function registerPluginCommands(program2) {
           printOutput(result, { json: true });
           return;
         }
-        console.log(pc24.green(`\u2713 Enabled ${pc24.bold(pluginKey)} \u2014 status: ${result?.status ?? "unknown"}`));
+        console.log(pc26.green(`\u2713 Enabled ${pc26.bold(pluginKey)} \u2014 status: ${result?.status ?? "unknown"}`));
       } catch (err) {
         handleCommandError(err);
       }
@@ -15809,7 +17394,7 @@ function registerPluginCommands(program2) {
           printOutput(result, { json: true });
           return;
         }
-        console.log(pc24.dim(`Disabled ${pc24.bold(pluginKey)} \u2014 status: ${result?.status ?? "unknown"}`));
+        console.log(pc26.dim(`Disabled ${pc26.bold(pluginKey)} \u2014 status: ${result?.status ?? "unknown"}`));
       } catch (err) {
         handleCommandError(err);
       }
@@ -15827,13 +17412,13 @@ function registerPluginCommands(program2) {
           return;
         }
         if (!result) {
-          console.log(pc24.red(`Plugin not found: ${pluginKey}`));
+          console.log(pc26.red(`Plugin not found: ${pluginKey}`));
           process.exit(1);
         }
         console.log(formatPlugin(result));
         if (result.lastError) {
           console.log(`
-${pc24.red("Last error:")}
+${pc26.red("Last error:")}
 ${result.lastError}`);
         }
       } catch (err) {
@@ -15852,14 +17437,14 @@ ${result.lastError}`);
         }
         const rows = examples ?? [];
         if (rows.length === 0) {
-          console.log(pc24.dim("No bundled examples available."));
+          console.log(pc26.dim("No bundled examples available."));
           return;
         }
         for (const ex of rows) {
           console.log(
-            `${pc24.bold(ex.displayName)}  ${pc24.dim(ex.pluginKey)}
+            `${pc26.bold(ex.displayName)}  ${pc26.dim(ex.pluginKey)}
   ${ex.description}
-  ${pc24.cyan(`paperclipai plugin install ${ex.localPath}`)}`
+  ${pc26.cyan(`paperclipai plugin install ${ex.localPath}`)}`
           );
         }
       } catch (err) {
@@ -15943,9 +17528,10 @@ function registerClientAuthCommands(auth2) {
 }
 
 // src/index.ts
+init_version();
 var program = new Command();
 var DATA_DIR_OPTION_HELP = "Paperclip data directory root (isolates state from ~/.paperclip)";
-program.name("paperclipai").description("Paperclip CLI \u2014 setup, diagnose, and configure your instance").version("0.2.7");
+program.name("paperclipai").description("Paperclip CLI \u2014 setup, diagnose, and configure your instance").version(cliVersion);
 program.hook("preAction", (_thisCommand, actionCommand) => {
   const options = actionCommand.optsWithGlobals();
   const optionNames = new Set(actionCommand.options.map((option) => option.attributeName()));
@@ -15954,6 +17540,7 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
     hasContextOption: optionNames.has("context")
   });
   loadPaperclipEnvFile(options.config);
+  initTelemetryFromConfigFile(options.config);
 });
 program.command("onboard").description("Interactive first-run setup wizard").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("-y, --yes", "Accept defaults (quickstart + start immediately)", false).option("--run", "Start Paperclip immediately after saving config", false).action(onboard);
 program.command("doctor").description("Run diagnostic checks on your Paperclip setup").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--repair", "Attempt to repair issues automatically").alias("--fix").option("-y, --yes", "Skip repair confirmation prompts").action(async (opts) => {
@@ -15979,13 +17566,26 @@ registerAgentCommands(program);
 registerApprovalCommands(program);
 registerActivityCommands(program);
 registerDashboardCommands(program);
+registerRoutineCommands(program);
+registerFeedbackCommands(program);
 registerWorktreeCommands(program);
 registerPluginCommands(program);
 var auth = program.command("auth").description("Authentication and bootstrap utilities");
 auth.command("bootstrap-ceo").description("Create a one-time bootstrap invite URL for first instance admin").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--force", "Create new invite even if admin already exists", false).option("--expires-hours <hours>", "Invite expiration window in hours", (value) => Number(value)).option("--base-url <url>", "Public base URL used to print invite link").action(bootstrapCeoInvite);
 registerClientAuthCommands(auth);
-program.parseAsync().catch((err) => {
-  console.error(err instanceof Error ? err.message : String(err));
-  process.exit(1);
-});
+async function main() {
+  let failed = false;
+  try {
+    await program.parseAsync();
+  } catch (err) {
+    failed = true;
+    console.error(err instanceof Error ? err.message : String(err));
+  } finally {
+    await flushTelemetry();
+  }
+  if (failed) {
+    process.exit(1);
+  }
+}
+void main();
 //# sourceMappingURL=index.js.map

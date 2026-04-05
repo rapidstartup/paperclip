@@ -1,8 +1,25 @@
 import type { Db } from "@paperclipai/db";
+import type { ExecutionWorkspace, ExecutionWorkspaceConfig } from "@paperclipai/shared";
 import { agents } from "@paperclipai/db";
 import type { AdapterSessionCodec } from "../adapters/index.js";
 import { type BudgetEnforcementScope } from "./budgets.js";
+import { type ExecutionWorkspaceInput, type RealizedExecutionWorkspace } from "./workspace-runtime.js";
+import { resolveExecutionWorkspaceMode } from "./execution-workspace-policy.js";
 import { type SessionCompactionPolicy } from "@paperclipai/adapter-utils";
+export declare function applyPersistedExecutionWorkspaceConfig(input: {
+    config: Record<string, unknown>;
+    workspaceConfig: ExecutionWorkspaceConfig | null;
+    mode: ReturnType<typeof resolveExecutionWorkspaceMode>;
+}): {
+    [x: string]: unknown;
+};
+export declare function stripWorkspaceRuntimeFromExecutionRunConfig(config: Record<string, unknown>): {
+    [x: string]: unknown;
+};
+export declare function buildRealizedExecutionWorkspaceFromPersisted(input: {
+    base: ExecutionWorkspaceInput;
+    workspace: ExecutionWorkspace;
+}): RealizedExecutionWorkspace | null;
 interface WakeupOptions {
     source?: "timer" | "assignment" | "on_demand" | "automation";
     triggerDetail?: "manual" | "ping" | "callback" | "system";
@@ -56,6 +73,16 @@ export declare function resolveRuntimeSessionParamsForWorkspace(input: {
     sessionParams: Record<string, unknown> | null;
     warning: string | null;
 };
+/**
+ * Extended task key derivation that falls back to a stable synthetic key
+ * for timer/heartbeat wakes. This ensures timer wakes can resume their
+ * previous session via `agentTaskSessions` instead of starting fresh.
+ *
+ * The synthetic key is only used when:
+ * - No explicit task/issue key exists in the context
+ * - The wake source is "timer" (scheduled heartbeat)
+ */
+export declare function deriveTaskKeyWithHeartbeatFallback(contextSnapshot: Record<string, unknown> | null | undefined, payload: Record<string, unknown> | null | undefined): string | null;
 export declare function shouldResetTaskSessionForWake(contextSnapshot: Record<string, unknown> | null | undefined): boolean;
 export declare function formatRuntimeWorkspaceWarningLog(warning: string): {
     stream: "stdout";
@@ -399,10 +426,10 @@ export declare function heartbeatService(db: Db): {
         runId: string;
         level: string | null;
         color: string | null;
+        message: string | null;
         seq: number;
         eventType: string;
         stream: string | null;
-        message: string | null;
     }[], {
         id: import("drizzle-orm/pg-core").PgColumn<{
             name: "id";

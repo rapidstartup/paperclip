@@ -1,3 +1,4 @@
+import type { RoutineVariable } from "@paperclipai/shared";
 export declare const routines: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "routines";
     schema: undefined;
@@ -206,6 +207,25 @@ export declare const routines: import("drizzle-orm/pg-core").PgTableWithColumns<
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        variables: import("drizzle-orm/pg-core").PgColumn<{
+            name: "variables";
+            tableName: "routines";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: RoutineVariable[];
+            driverParam: unknown;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: RoutineVariable[];
+        }>;
         createdByAgentId: import("drizzle-orm/pg-core").PgColumn<{
             name: "created_by_agent_id";
             tableName: "routines";

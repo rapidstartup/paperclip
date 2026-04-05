@@ -1,8 +1,8 @@
 import { and, asc, desc, eq, inArray, isNull, ne, or, sql } from "drizzle-orm";
 import { activityLog, agents, assets, companies, companyMemberships, documents, goals, heartbeatRuns, executionWorkspaces, issueAttachments, issueInboxArchives, issueLabels, issueComments, issueDocuments, issueReadStates, issues, labels, projectWorkspaces, projects, } from "@paperclipai/db";
-import { extractAgentMentionIds, extractProjectMentionIds } from "@paperclipai/shared";
+import { extractAgentMentionIds, extractProjectMentionIds, isUuidLike } from "@paperclipai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
-import { defaultIssueExecutionWorkspaceSettingsForProject, gateProjectExecutionWorkspacePolicy, parseProjectExecutionWorkspacePolicy, } from "./execution-workspace-policy.js";
+import { defaultIssueExecutionWorkspaceSettingsForProject, gateProjectExecutionWorkspacePolicy, issueExecutionWorkspaceModeForPersistedWorkspace, parseProjectExecutionWorkspacePolicy, } from "./execution-workspace-policy.js";
 import { instanceSettingsService } from "./instance-settings.js";
 import { redactCurrentUserText } from "../log-redaction.js";
 import { resolveIssueGoalId, resolveNextIssueGoalId } from "./issue-goal-fallback.js";
@@ -48,6 +48,23 @@ async function getProjectDefaultGoalId(db, companyId, projectId) {
         .where(and(eq(projects.id, projectId), eq(projects.companyId, companyId)))
         .then((rows) => rows[0] ?? null);
     return row?.goalId ?? null;
+}
+async function getWorkspaceInheritanceIssue(db, companyId, issueId) {
+    const issue = await db
+        .select({
+        id: issues.id,
+        projectId: issues.projectId,
+        projectWorkspaceId: issues.projectWorkspaceId,
+        executionWorkspaceId: issues.executionWorkspaceId,
+        executionWorkspaceSettings: issues.executionWorkspaceSettings,
+    })
+        .from(issues)
+        .where(and(eq(issues.id, issueId), eq(issues.companyId, companyId)))
+        .then((rows) => rows[0] ?? null);
+    if (!issue) {
+        throw notFound("Workspace inheritance issue not found");
+    }
+    return issue;
 }
 function touchedByUserCondition(companyId, userId) {
     return sql `
@@ -146,13 +163,52 @@ function issueLastActivityAtExpr(companyId, userId) {
     const lastExternalCommentAt = lastExternalCommentAtExpr(companyId, userId);
     const myLastTouchAt = myLastTouchAtExpr(companyId, userId);
     return sql `
-    COALESCE(
-      ${lastExternalCommentAt},
+    GREATEST(
+      COALESCE(${lastExternalCommentAt}, to_timestamp(0)),
       CASE
         WHEN ${issues.updatedAt} > COALESCE(${myLastTouchAt}, to_timestamp(0))
         THEN ${issues.updatedAt}
         ELSE to_timestamp(0)
       END
+    )
+  `;
+}
+const ISSUE_LOCAL_INBOX_ACTIVITY_ACTIONS = [
+    "issue.read_marked",
+    "issue.read_unmarked",
+    "issue.inbox_archived",
+    "issue.inbox_unarchived",
+];
+function issueLatestCommentAtExpr(companyId) {
+    return sql `
+    (
+      SELECT MAX(${issueComments.createdAt})
+      FROM ${issueComments}
+      WHERE ${issueComments.issueId} = ${issues.id}
+        AND ${issueComments.companyId} = ${companyId}
+    )
+  `;
+}
+function issueLatestLogAtExpr(companyId) {
+    return sql `
+    (
+      SELECT MAX(${activityLog.createdAt})
+      FROM ${activityLog}
+      WHERE ${activityLog.companyId} = ${companyId}
+        AND ${activityLog.entityType} = 'issue'
+        AND ${activityLog.entityId} = ${issues.id}::text
+        AND ${activityLog.action} NOT IN (${sql.join(ISSUE_LOCAL_INBOX_ACTIVITY_ACTIONS.map((action) => sql `${action}`), sql `, `)})
+    )
+  `;
+}
+function issueCanonicalLastActivityAtExpr(companyId) {
+    const latestCommentAt = issueLatestCommentAtExpr(companyId);
+    const latestLogAt = issueLatestLogAtExpr(companyId);
+    return sql `
+    GREATEST(
+      ${issues.updatedAt},
+      COALESCE(${latestCommentAt}, to_timestamp(0)),
+      COALESCE(${latestLogAt}, to_timestamp(0))
     )
   `;
 }
@@ -249,6 +305,20 @@ export function deriveIssueUserContext(issue, userId, stats) {
         isUnreadForMe,
     };
 }
+function latestIssueActivityAt(...values) {
+    const normalized = values
+        .map((value) => {
+        if (!value)
+            return null;
+        if (value instanceof Date)
+            return Number.isNaN(value.getTime()) ? null : value;
+        const parsed = new Date(value);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+    })
+        .filter((value) => value instanceof Date)
+        .sort((a, b) => b.getTime() - a.getTime());
+    return normalized[0] ?? null;
+}
 async function labelMapForIssues(dbOrTx, issueIds) {
     const map = new Map();
     if (issueIds.length === 0)
@@ -318,6 +388,28 @@ function withActiveRuns(issueRows, runMap) {
 }
 export function issueService(db) {
     const instanceSettings = instanceSettingsService(db);
+    async function getIssueByUuid(id) {
+        const row = await db
+            .select()
+            .from(issues)
+            .where(eq(issues.id, id))
+            .then((rows) => rows[0] ?? null);
+        if (!row)
+            return null;
+        const [enriched] = await withIssueLabels(db, [row]);
+        return enriched;
+    }
+    async function getIssueByIdentifier(identifier) {
+        const row = await db
+            .select()
+            .from(issues)
+            .where(eq(issues.identifier, identifier.toUpperCase()))
+            .then((rows) => rows[0] ?? null);
+        if (!row)
+            return null;
+        const [enriched] = await withIssueLabels(db, [row]);
+        return enriched;
+    }
     function redactIssueComment(comment, censorUsernameInLogs) {
         return {
             ...comment,
@@ -356,8 +448,8 @@ export function issueService(db) {
             throw notFound("Assignee user not found");
         }
     }
-    async function assertValidProjectWorkspace(companyId, projectId, projectWorkspaceId) {
-        const workspace = await db
+    async function assertValidProjectWorkspace(companyId, projectId, projectWorkspaceId, dbOrTx = db) {
+        const workspace = await dbOrTx
             .select({
             id: projectWorkspaces.id,
             companyId: projectWorkspaces.companyId,
@@ -374,8 +466,8 @@ export function issueService(db) {
             throw unprocessable("Project workspace must belong to the selected project");
         }
     }
-    async function assertValidExecutionWorkspace(companyId, projectId, executionWorkspaceId) {
-        const workspace = await db
+    async function assertValidExecutionWorkspace(companyId, projectId, executionWorkspaceId, dbOrTx = db) {
+        const workspace = await dbOrTx
             .select({
             id: executionWorkspaces.id,
             companyId: executionWorkspaces.companyId,
@@ -537,6 +629,9 @@ export function issueService(db) {
             }
             if (filters?.projectId)
                 conditions.push(eq(issues.projectId, filters.projectId));
+            if (filters?.executionWorkspaceId) {
+                conditions.push(eq(issues.executionWorkspaceId, filters.executionWorkspaceId));
+            }
             if (filters?.parentId)
                 conditions.push(eq(issues.parentId, filters.parentId));
             if (filters?.originKind)
@@ -571,53 +666,116 @@ export function issueService(db) {
           ELSE 6
         END
       `;
+            const canonicalLastActivityAt = issueCanonicalLastActivityAtExpr(companyId);
             const rows = await db
                 .select()
                 .from(issues)
                 .where(and(...conditions))
-                .orderBy(hasSearch ? asc(searchOrder) : asc(priorityOrder), asc(priorityOrder), desc(issues.updatedAt));
+                .orderBy(hasSearch ? asc(searchOrder) : asc(priorityOrder), asc(priorityOrder), desc(canonicalLastActivityAt), desc(issues.updatedAt));
             const withLabels = await withIssueLabels(db, rows);
             const runMap = await activeRunMapForIssues(db, withLabels);
             const withRuns = withActiveRuns(withLabels, runMap);
-            if (!contextUserId || withRuns.length === 0) {
+            if (withRuns.length === 0) {
                 return withRuns;
             }
             const issueIds = withRuns.map((row) => row.id);
-            const statsRows = await db
-                .select({
-                issueId: issueComments.issueId,
-                myLastCommentAt: sql `
-            MAX(CASE WHEN ${issueComments.authorUserId} = ${contextUserId} THEN ${issueComments.createdAt} END)
-          `,
-                lastExternalCommentAt: sql `
-            MAX(
-              CASE
-                WHEN ${issueComments.authorUserId} IS NULL OR ${issueComments.authorUserId} <> ${contextUserId}
-                THEN ${issueComments.createdAt}
-              END
-            )
-          `,
-            })
-                .from(issueComments)
-                .where(and(eq(issueComments.companyId, companyId), inArray(issueComments.issueId, issueIds)))
-                .groupBy(issueComments.issueId);
-            const readRows = await db
-                .select({
-                issueId: issueReadStates.issueId,
-                myLastReadAt: issueReadStates.lastReadAt,
-            })
-                .from(issueReadStates)
-                .where(and(eq(issueReadStates.companyId, companyId), eq(issueReadStates.userId, contextUserId), inArray(issueReadStates.issueId, issueIds)));
-            const statsByIssueId = new Map(statsRows.map((row) => [row.issueId, row]));
-            const readByIssueId = new Map(readRows.map((row) => [row.issueId, row.myLastReadAt]));
-            return withRuns.map((row) => ({
-                ...row,
-                ...deriveIssueUserContext(row, contextUserId, {
-                    myLastCommentAt: statsByIssueId.get(row.id)?.myLastCommentAt ?? null,
-                    myLastReadAt: readByIssueId.get(row.id) ?? null,
-                    lastExternalCommentAt: statsByIssueId.get(row.id)?.lastExternalCommentAt ?? null,
+            const [statsRows, readRows, lastActivityRows] = await Promise.all([
+                contextUserId
+                    ? db
+                        .select({
+                        issueId: issueComments.issueId,
+                        myLastCommentAt: sql `
+                MAX(CASE WHEN ${issueComments.authorUserId} = ${contextUserId} THEN ${issueComments.createdAt} END)
+              `,
+                        lastExternalCommentAt: sql `
+                MAX(
+                  CASE
+                    WHEN ${issueComments.authorUserId} IS NULL OR ${issueComments.authorUserId} <> ${contextUserId}
+                    THEN ${issueComments.createdAt}
+                  END
+                )
+              `,
+                    })
+                        .from(issueComments)
+                        .where(and(eq(issueComments.companyId, companyId), inArray(issueComments.issueId, issueIds)))
+                        .groupBy(issueComments.issueId)
+                    : Promise.resolve([]),
+                contextUserId
+                    ? db
+                        .select({
+                        issueId: issueReadStates.issueId,
+                        myLastReadAt: issueReadStates.lastReadAt,
+                    })
+                        .from(issueReadStates)
+                        .where(and(eq(issueReadStates.companyId, companyId), eq(issueReadStates.userId, contextUserId), inArray(issueReadStates.issueId, issueIds)))
+                    : Promise.resolve([]),
+                Promise.all([
+                    db
+                        .select({
+                        issueId: issueComments.issueId,
+                        latestCommentAt: sql `MAX(${issueComments.createdAt})`,
+                    })
+                        .from(issueComments)
+                        .where(and(eq(issueComments.companyId, companyId), inArray(issueComments.issueId, issueIds)))
+                        .groupBy(issueComments.issueId),
+                    db
+                        .select({
+                        issueId: activityLog.entityId,
+                        latestLogAt: sql `MAX(${activityLog.createdAt})`,
+                    })
+                        .from(activityLog)
+                        .where(and(eq(activityLog.companyId, companyId), eq(activityLog.entityType, "issue"), inArray(activityLog.entityId, issueIds), sql `${activityLog.action} NOT IN (${sql.join(ISSUE_LOCAL_INBOX_ACTIVITY_ACTIONS.map((action) => sql `${action}`), sql `, `)})`))
+                        .groupBy(activityLog.entityId),
+                ]).then(([commentRows, logRows]) => {
+                    const byIssueId = new Map();
+                    for (const row of commentRows) {
+                        byIssueId.set(row.issueId, {
+                            issueId: row.issueId,
+                            latestCommentAt: row.latestCommentAt,
+                            latestLogAt: null,
+                        });
+                    }
+                    for (const row of logRows) {
+                        const existing = byIssueId.get(row.issueId);
+                        if (existing)
+                            existing.latestLogAt = row.latestLogAt;
+                        else {
+                            byIssueId.set(row.issueId, {
+                                issueId: row.issueId,
+                                latestCommentAt: null,
+                                latestLogAt: row.latestLogAt,
+                            });
+                        }
+                    }
+                    return [...byIssueId.values()];
                 }),
-            }));
+            ]);
+            const statsByIssueId = new Map(statsRows.map((row) => [row.issueId, row]));
+            const lastActivityByIssueId = new Map(lastActivityRows.map((row) => [row.issueId, row]));
+            if (!contextUserId) {
+                return withRuns.map((row) => {
+                    const activity = lastActivityByIssueId.get(row.id);
+                    const lastActivityAt = latestIssueActivityAt(row.updatedAt, activity?.latestCommentAt ?? null, activity?.latestLogAt ?? null) ?? row.updatedAt;
+                    return {
+                        ...row,
+                        lastActivityAt,
+                    };
+                });
+            }
+            const readByIssueId = new Map(readRows.map((row) => [row.issueId, row.myLastReadAt]));
+            return withRuns.map((row) => {
+                const activity = lastActivityByIssueId.get(row.id);
+                const lastActivityAt = latestIssueActivityAt(row.updatedAt, activity?.latestCommentAt ?? null, activity?.latestLogAt ?? null) ?? row.updatedAt;
+                return {
+                    ...row,
+                    lastActivityAt,
+                    ...deriveIssueUserContext(row, contextUserId, {
+                        myLastCommentAt: statsByIssueId.get(row.id)?.myLastCommentAt ?? null,
+                        myLastReadAt: readByIssueId.get(row.id) ?? null,
+                        lastExternalCommentAt: statsByIssueId.get(row.id)?.lastExternalCommentAt ?? null,
+                    }),
+                };
+            });
         },
         countUnreadTouchedByUser: async (companyId, userId, status) => {
             const conditions = [
@@ -662,6 +820,13 @@ export function issueService(db) {
                 .returning();
             return row;
         },
+        markUnread: async (companyId, issueId, userId) => {
+            const deleted = await db
+                .delete(issueReadStates)
+                .where(and(eq(issueReadStates.companyId, companyId), eq(issueReadStates.issueId, issueId), eq(issueReadStates.userId, userId)))
+                .returning();
+            return deleted.length > 0;
+        },
         archiveInbox: async (companyId, issueId, userId, archivedAt = new Date()) => {
             const now = new Date();
             const [row] = await db
@@ -690,30 +855,21 @@ export function issueService(db) {
                 .returning();
             return row ?? null;
         },
-        getById: async (id) => {
-            const row = await db
-                .select()
-                .from(issues)
-                .where(eq(issues.id, id))
-                .then((rows) => rows[0] ?? null);
-            if (!row)
+        getById: async (raw) => {
+            const id = raw.trim();
+            if (/^[A-Z]+-\d+$/i.test(id)) {
+                return getIssueByIdentifier(id);
+            }
+            if (!isUuidLike(id)) {
                 return null;
-            const [enriched] = await withIssueLabels(db, [row]);
-            return enriched;
+            }
+            return getIssueByUuid(id);
         },
         getByIdentifier: async (identifier) => {
-            const row = await db
-                .select()
-                .from(issues)
-                .where(eq(issues.identifier, identifier.toUpperCase()))
-                .then((rows) => rows[0] ?? null);
-            if (!row)
-                return null;
-            const [enriched] = await withIssueLabels(db, [row]);
-            return enriched;
+            return getIssueByIdentifier(identifier);
         },
         create: async (companyId, data) => {
-            const { labelIds: inputLabelIds, ...issueData } = data;
+            const { labelIds: inputLabelIds, inheritExecutionWorkspaceFromIssueId, ...issueData } = data;
             const isolatedWorkspacesEnabled = (await instanceSettings.getExperimental()).enableIsolatedWorkspaces;
             if (!isolatedWorkspacesEnabled) {
                 delete issueData.executionWorkspaceId;
@@ -729,12 +885,6 @@ export function issueService(db) {
             if (data.assigneeUserId) {
                 await assertAssignableUser(companyId, data.assigneeUserId);
             }
-            if (data.projectWorkspaceId) {
-                await assertValidProjectWorkspace(companyId, data.projectId, data.projectWorkspaceId);
-            }
-            if (data.executionWorkspaceId) {
-                await assertValidExecutionWorkspace(companyId, data.projectId, data.executionWorkspaceId);
-            }
             if (data.status === "in_progress" && !data.assigneeAgentId && !data.assigneeUserId) {
                 throw unprocessable("in_progress issues require an assignee");
             }
@@ -746,8 +896,43 @@ export function issueService(db) {
             return db.transaction(async (tx) => {
                 const defaultCompanyGoal = await getDefaultCompanyGoal(tx, companyId);
                 const projectGoalId = await getProjectDefaultGoalId(tx, companyId, issueData.projectId);
+                let projectWorkspaceId = issueData.projectWorkspaceId ?? null;
+                let executionWorkspaceId = issueData.executionWorkspaceId ?? null;
+                let executionWorkspacePreference = issueData.executionWorkspacePreference ?? null;
                 let executionWorkspaceSettings = issueData.executionWorkspaceSettings ?? null;
-                if (executionWorkspaceSettings == null && issueData.projectId) {
+                const workspaceInheritanceIssueId = inheritExecutionWorkspaceFromIssueId ?? issueData.parentId ?? null;
+                const hasExplicitExecutionWorkspaceOverride = issueData.executionWorkspaceId !== undefined ||
+                    issueData.executionWorkspacePreference !== undefined ||
+                    issueData.executionWorkspaceSettings !== undefined;
+                if (workspaceInheritanceIssueId) {
+                    const workspaceSource = await getWorkspaceInheritanceIssue(tx, companyId, workspaceInheritanceIssueId);
+                    if (projectWorkspaceId == null && workspaceSource.projectWorkspaceId) {
+                        projectWorkspaceId = workspaceSource.projectWorkspaceId;
+                    }
+                    if (isolatedWorkspacesEnabled &&
+                        !hasExplicitExecutionWorkspaceOverride &&
+                        workspaceSource.executionWorkspaceId) {
+                        const sourceWorkspace = await tx
+                            .select({
+                            id: executionWorkspaces.id,
+                            mode: executionWorkspaces.mode,
+                        })
+                            .from(executionWorkspaces)
+                            .where(eq(executionWorkspaces.id, workspaceSource.executionWorkspaceId))
+                            .then((rows) => rows[0] ?? null);
+                        if (sourceWorkspace) {
+                            executionWorkspaceId = sourceWorkspace.id;
+                            executionWorkspacePreference = "reuse_existing";
+                            executionWorkspaceSettings = {
+                                ...(workspaceSource.executionWorkspaceSettings ?? {}),
+                                mode: issueExecutionWorkspaceModeForPersistedWorkspace(sourceWorkspace.mode),
+                            };
+                        }
+                    }
+                }
+                if (executionWorkspaceSettings == null &&
+                    executionWorkspaceId == null &&
+                    issueData.projectId) {
                     const project = await tx
                         .select({ executionWorkspacePolicy: projects.executionWorkspacePolicy })
                         .from(projects)
@@ -756,7 +941,6 @@ export function issueService(db) {
                     executionWorkspaceSettings =
                         defaultIssueExecutionWorkspaceSettingsForProject(gateProjectExecutionWorkspacePolicy(parseProjectExecutionWorkspacePolicy(project?.executionWorkspacePolicy), isolatedWorkspacesEnabled));
                 }
-                let projectWorkspaceId = issueData.projectWorkspaceId ?? null;
                 if (!projectWorkspaceId && issueData.projectId) {
                     const project = await tx
                         .select({
@@ -776,6 +960,12 @@ export function issueService(db) {
                             .then((rows) => rows[0]?.id ?? null);
                     }
                 }
+                if (projectWorkspaceId) {
+                    await assertValidProjectWorkspace(companyId, issueData.projectId, projectWorkspaceId, tx);
+                }
+                if (executionWorkspaceId) {
+                    await assertValidExecutionWorkspace(companyId, issueData.projectId, executionWorkspaceId, tx);
+                }
                 const [company] = await tx
                     .update(companies)
                     .set({ issueCounter: sql `${companies.issueCounter} + 1` })
@@ -793,6 +983,8 @@ export function issueService(db) {
                         defaultGoalId: defaultCompanyGoal?.id ?? null,
                     }),
                     ...(projectWorkspaceId ? { projectWorkspaceId } : {}),
+                    ...(executionWorkspaceId ? { executionWorkspaceId } : {}),
+                    ...(executionWorkspacePreference ? { executionWorkspacePreference } : {}),
                     ...(executionWorkspaceSettings ? { executionWorkspaceSettings } : {}),
                     companyId,
                     issueNumber,
@@ -1238,6 +1430,7 @@ export function issueService(db) {
                 issueId,
                 authorAgentId: actor.agentId ?? null,
                 authorUserId: actor.userId ?? null,
+                createdByRunId: actor.runId ?? null,
                 body: redactedBody,
             })
                 .returning();

@@ -1,5 +1,5 @@
 import type { Db } from "@paperclipai/db";
-import type { CreateRoutine, CreateRoutineTrigger, Routine, RoutineDetail, RoutineListItem, RoutineRunSummary, RoutineTrigger, RoutineTriggerSecretMaterial, RunRoutine, UpdateRoutine, UpdateRoutineTrigger } from "@paperclipai/shared";
+import type { CreateRoutine, CreateRoutineTrigger, Routine, RoutineDetail, RoutineListItem, RoutineRunSummary, RoutineTrigger, RoutineTriggerSecretMaterial, RoutineVariable, RunRoutine, UpdateRoutine, UpdateRoutineTrigger } from "@paperclipai/shared";
 import { type IssueAssignmentWakeupDeps } from "./issue-assignment-wakeup.js";
 type Actor = {
     agentId?: string | null;
@@ -23,10 +23,11 @@ export declare function routineService(db: Db, deps?: {
         projectId: string;
         priority: string;
         assigneeAgentId: string;
+        updatedByAgentId: string | null;
         parentIssueId: string | null;
         concurrencyPolicy: string;
         catchUpPolicy: string;
-        updatedByAgentId: string | null;
+        variables: RoutineVariable[];
         lastTriggeredAt: Date | null;
         lastEnqueuedAt: Date | null;
     }>;
@@ -38,10 +39,9 @@ export declare function routineService(db: Db, deps?: {
         createdByAgentId: string | null;
         createdByUserId: string | null;
         updatedByUserId: string | null;
-        updatedByAgentId: string | null;
-        routineId: string;
         kind: string;
         label: string | null;
+        routineId: string;
         enabled: boolean;
         cronExpression: string | null;
         timezone: string | null;
@@ -53,6 +53,7 @@ export declare function routineService(db: Db, deps?: {
         replayWindowSec: number | null;
         lastRotatedAt: Date | null;
         lastResult: string | null;
+        updatedByAgentId: string | null;
     }>;
     list: (companyId: string) => Promise<RoutineListItem[]>;
     getDetail: (id: string) => Promise<RoutineDetail | null>;

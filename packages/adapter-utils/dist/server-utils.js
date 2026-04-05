@@ -116,6 +116,23 @@ export function redactEnvForLogs(env) {
     }
     return redacted;
 }
+export function buildInvocationEnvForLogs(env, options = {}) {
+    const merged = { ...env };
+    const runtimeEnv = options.runtimeEnv ?? {};
+    for (const key of options.includeRuntimeKeys ?? []) {
+        if (key in merged)
+            continue;
+        const value = runtimeEnv[key];
+        if (typeof value !== "string" || value.length === 0)
+            continue;
+        merged[key] = value;
+    }
+    const resolvedCommand = options.resolvedCommand?.trim();
+    if (resolvedCommand) {
+        merged[options.resolvedCommandEnvKey ?? "PAPERCLIP_RESOLVED_COMMAND"] = resolvedCommand;
+    }
+    return redactEnvForLogs(merged);
+}
 export function buildPaperclipEnv(agent) {
     const resolveHostForUrl = (rawHost) => {
         const host = rawHost.trim();
@@ -176,6 +193,9 @@ async function resolveCommandPath(command, cwd, env) {
         }
     }
     return null;
+}
+export async function resolveCommandForLogs(command, cwd, env) {
+    return (await resolveCommandPath(command, cwd, env)) ?? command;
 }
 function quoteForCmd(arg) {
     if (!arg.length)

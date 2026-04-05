@@ -1,9 +1,10 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
 import { projects, projectGoals, goals, projectWorkspaces, agents } from "@paperclipai/db";
-import { PROJECT_COLORS, deriveProjectUrlKey, isUuidLike, normalizeProjectUrlKey, } from "@paperclipai/shared";
+import { PROJECT_COLORS, deriveProjectUrlKey, hasNonAsciiContent, isUuidLike, normalizeProjectUrlKey, } from "@paperclipai/shared";
 import { listWorkspaceRuntimeServicesForProjectWorkspaces } from "./workspace-runtime.js";
 import { unprocessable } from "../errors.js";
 import { parseProjectExecutionWorkspacePolicy } from "./execution-workspace-policy.js";
+import { mergeProjectWorkspaceRuntimeConfig, readProjectWorkspaceRuntimeConfig } from "./project-workspace-runtime-config.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
 const REPO_ONLY_CWD_SENTINEL = "/__paperclip_repo_only__";
 /** Batch-load goal refs for a set of projects. */
@@ -90,6 +91,7 @@ function toWorkspace(row, runtimeServices = []) {
         remoteWorkspaceRef: row.remoteWorkspaceRef ?? null,
         sharedWorkspaceKey: row.sharedWorkspaceKey ?? null,
         metadata: row.metadata ?? null,
+        runtimeConfig: readProjectWorkspaceRuntimeConfig(row.metadata ?? null),
         isPrimary: row.isPrimary,
         runtimeServices,
         createdAt: row.createdAt,
@@ -266,6 +268,9 @@ function deriveWorkspaceName(input) {
 export function resolveProjectNameForUniqueShortname(requestedName, existingProjects, options) {
     const requestedShortname = normalizeProjectUrlKey(requestedName);
     if (!requestedShortname)
+        return requestedName;
+    // Non-ASCII names get a UUID suffix in deriveProjectUrlKey, making slugs inherently unique.
+    if (hasNonAsciiContent(requestedName))
         return requestedName;
     const usedShortnames = new Set(existingProjects
         .filter((project) => !(options?.excludeProjectId && project.id === options.excludeProjectId))
@@ -484,7 +489,9 @@ export function projectService(db) {
                     remoteProvider: readNonEmptyString(data.remoteProvider),
                     remoteWorkspaceRef,
                     sharedWorkspaceKey: readNonEmptyString(data.sharedWorkspaceKey),
-                    metadata: data.metadata ?? null,
+                    metadata: data.runtimeConfig !== undefined
+                        ? mergeProjectWorkspaceRuntimeConfig(data.metadata ?? null, data.runtimeConfig ?? null)
+                        : data.metadata ?? null,
                     isPrimary: shouldBePrimary,
                 })
                     .returning()
@@ -551,8 +558,14 @@ export function projectService(db) {
                 patch.remoteWorkspaceRef = nextRemoteWorkspaceRef;
             if (data.sharedWorkspaceKey !== undefined)
                 patch.sharedWorkspaceKey = readNonEmptyString(data.sharedWorkspaceKey);
-            if (data.metadata !== undefined)
-                patch.metadata = data.metadata;
+            if (data.metadata !== undefined || data.runtimeConfig !== undefined) {
+                patch.metadata =
+                    data.runtimeConfig !== undefined
+                        ? mergeProjectWorkspaceRuntimeConfig(data.metadata !== undefined
+                            ? data.metadata
+                            : (existing.metadata ?? null), data.runtimeConfig ?? null)
+                        : data.metadata;
+            }
             const updated = await db.transaction(async (tx) => {
                 if (data.isPrimary === true) {
                     await tx

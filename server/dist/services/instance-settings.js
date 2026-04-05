@@ -1,5 +1,5 @@
 import { companies, instanceSettings } from "@paperclipai/db";
-import { instanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, } from "@paperclipai/shared";
+import { DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE, instanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, } from "@paperclipai/shared";
 import { eq } from "drizzle-orm";
 const DEFAULT_SINGLETON_KEY = "default";
 function normalizeGeneralSettings(raw) {
@@ -7,10 +7,14 @@ function normalizeGeneralSettings(raw) {
     if (parsed.success) {
         return {
             censorUsernameInLogs: parsed.data.censorUsernameInLogs ?? false,
+            keyboardShortcuts: parsed.data.keyboardShortcuts ?? false,
+            feedbackDataSharingPreference: parsed.data.feedbackDataSharingPreference ?? DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
         };
     }
     return {
         censorUsernameInLogs: false,
+        keyboardShortcuts: false,
+        feedbackDataSharingPreference: DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
     };
 }
 function normalizeExperimentalSettings(raw) {

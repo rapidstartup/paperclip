@@ -18,6 +18,11 @@ export type RunDatabaseRestoreOptions = {
     backupFile: string;
     connectTimeoutSeconds?: number;
 };
+export declare function createBufferedTextFileWriter(filePath: string, maxBufferedBytes?: number): {
+    emit(line: string): void;
+    close(): Promise<void>;
+    abort(): Promise<void>;
+};
 export declare function runDatabaseBackup(opts: RunDatabaseBackupOptions): Promise<RunDatabaseBackupResult>;
 export declare function runDatabaseRestore(opts: RunDatabaseRestoreOptions): Promise<void>;
 export declare function formatDatabaseBackupResult(result: RunDatabaseBackupResult): string;

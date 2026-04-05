@@ -13,6 +13,12 @@ export const companies = pgTable("companies", {
     requireBoardApprovalForNewAgents: boolean("require_board_approval_for_new_agents")
         .notNull()
         .default(true),
+    feedbackDataSharingEnabled: boolean("feedback_data_sharing_enabled")
+        .notNull()
+        .default(false),
+    feedbackDataSharingConsentAt: timestamp("feedback_data_sharing_consent_at", { withTimezone: true }),
+    feedbackDataSharingConsentByUserId: text("feedback_data_sharing_consent_by_user_id"),
+    feedbackDataSharingTermsVersion: text("feedback_data_sharing_terms_version"),
     brandColor: text("brand_color"),
     githubToken: text("github_token"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

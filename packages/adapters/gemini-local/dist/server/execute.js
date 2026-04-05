@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, redactEnvForLogs, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
 import { describeGeminiFailure, detectGeminiAuthRequired, isGeminiTurnLimitResult, isGeminiUnknownSessionError, parseGeminiJsonl, } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
@@ -165,6 +165,12 @@ export async function execute(ctx) {
     const billingType = resolveGeminiBillingType(effectiveEnv);
     const runtimeEnv = ensurePathInEnv(effectiveEnv);
     await ensureCommandResolvable(command, cwd, runtimeEnv);
+    const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+    const loggedEnv = buildInvocationEnvForLogs(env, {
+        runtimeEnv,
+        includeRuntimeKeys: ["HOME"],
+        resolvedCommand,
+    });
     const timeoutSec = asNumber(config.timeoutSec, 0);
     const graceSec = asNumber(config.graceSec, 20);
     const extraArgs = (() => {
@@ -266,11 +272,11 @@ export async function execute(ctx) {
         if (onMeta) {
             await onMeta({
                 adapterType: "gemini_local",
-                command,
+                command: resolvedCommand,
                 cwd,
                 commandNotes,
                 commandArgs: args.map((value, index) => (index === args.length - 1 ? `<prompt ${prompt.length} chars>` : value)),
-                env: redactEnvForLogs(env),
+                env: loggedEnv,
                 prompt,
                 promptMetrics,
                 context,

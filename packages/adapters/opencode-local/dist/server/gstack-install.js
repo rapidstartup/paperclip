@@ -73,6 +73,17 @@ function markdownFileSort(left, right) {
         return -1;
     return left.localeCompare(right, 'en', { sensitivity: 'base' });
 }
+async function readInstalledMarkdownFiles(targetDir) {
+    const entries = await fs.readdir(targetDir, { withFileTypes: true }).catch(() => []);
+    return entries
+        .filter((entry) => {
+        if (!entry.name.toLowerCase().endsWith('.md'))
+            return false;
+        return entry.isFile() || entry.isSymbolicLink();
+    })
+        .map((entry) => entry.name)
+        .sort(markdownFileSort);
+}
 async function fetchWithTimeout(fetchImpl, url, timeoutMs, headers) {
     const signal = AbortSignal.timeout(Math.max(1, timeoutMs));
     return fetchImpl(url, {
@@ -133,8 +144,33 @@ export async function ensureGstackCommandsInstalled(options = {}) {
     const now = (options.nowMs ?? Date.now)();
     const successCacheTtlMs = options.successCacheTtlMs ?? DEFAULT_SUCCESS_CACHE_TTL_MS;
     const failureCacheTtlMs = options.failureCacheTtlMs ?? DEFAULT_FAILURE_CACHE_TTL_MS;
+    const syncExisting = options.syncExisting === true;
     const targetDir = resolveOpenCodeGstackCommandsDir({ platform, env, homedir });
     const key = cacheKey({ targetDir, owner, repo, ref, commandsPath });
+    const installSource = sourceLabel({ owner, repo, ref, commandsPath });
+    if (!syncExisting) {
+        const localFiles = await readInstalledMarkdownFiles(targetDir);
+        if (localFiles.length > 0) {
+            const localResult = {
+                targetDir,
+                source: installSource,
+                files: localFiles,
+                writtenFiles: 0,
+                removedFiles: 0,
+                unchangedFiles: localFiles.length,
+                usedFallbackManifest: false,
+                fromCache: false,
+            };
+            if (!options.disableCache) {
+                installCache.set(key, {
+                    ok: true,
+                    expiresAt: now + Math.max(0, successCacheTtlMs),
+                    result: localResult,
+                });
+            }
+            return localResult;
+        }
+    }
     if (!options.disableCache) {
         const cached = installCache.get(key);
         if (cached && cached.expiresAt > now) {
@@ -144,7 +180,6 @@ export async function ensureGstackCommandsInstalled(options = {}) {
             throw new Error(cached.errorMessage);
         }
     }
-    const installSource = sourceLabel({ owner, repo, ref, commandsPath });
     try {
         const remote = await resolveRemoteMarkdownFiles({
             fetchImpl,
@@ -156,15 +191,22 @@ export async function ensureGstackCommandsInstalled(options = {}) {
         });
         const baseRawUrl = `https://raw.githubusercontent.com/${encodeURIComponent(owner)}` +
             `/${encodeURIComponent(repo)}/${encodeURIComponent(ref)}/${commandsPath}`;
-        const fetchedFiles = await Promise.all(remote.files.map(async (name) => {
+        const fetchedFiles = [];
+        for (const name of remote.files) {
             const fileUrl = `${baseRawUrl}/${encodeURIComponent(name)}`;
             const response = await fetchWithTimeout(fetchImpl, fileUrl, timeoutMs);
+            if (response.status === 404) {
+                continue;
+            }
             if (!response.ok) {
                 throw new Error(`Failed to download ${name} (${response.status} ${response.statusText})`);
             }
             const content = await response.text();
-            return { name, content };
-        }));
+            fetchedFiles.push({ name, content });
+        }
+        if (fetchedFiles.length === 0) {
+            throw new Error(`No gstack command files could be downloaded from ${installSource}`);
+        }
         await fs.mkdir(targetDir, { recursive: true });
         let writtenFiles = 0;
         let unchangedFiles = 0;
@@ -179,18 +221,20 @@ export async function ensureGstackCommandsInstalled(options = {}) {
             writtenFiles += 1;
         }
         let removedFiles = 0;
-        const desired = new Set(fetchedFiles.map((file) => file.name));
-        const existingEntries = await fs.readdir(targetDir, { withFileTypes: true }).catch(() => []);
-        for (const entry of existingEntries) {
-            const fileName = entry.name;
-            if (!fileName.toLowerCase().endsWith('.md'))
-                continue;
-            if (desired.has(fileName))
-                continue;
-            if (!entry.isFile() && !entry.isSymbolicLink())
-                continue;
-            await fs.unlink(path.resolve(targetDir, fileName)).catch(() => { });
-            removedFiles += 1;
+        if (syncExisting) {
+            const desired = new Set(fetchedFiles.map((file) => file.name));
+            const existingEntries = await fs.readdir(targetDir, { withFileTypes: true }).catch(() => []);
+            for (const entry of existingEntries) {
+                const fileName = entry.name;
+                if (!fileName.toLowerCase().endsWith('.md'))
+                    continue;
+                if (desired.has(fileName))
+                    continue;
+                if (!entry.isFile() && !entry.isSymbolicLink())
+                    continue;
+                await fs.unlink(path.resolve(targetDir, fileName)).catch(() => { });
+                removedFiles += 1;
+            }
         }
         const result = {
             targetDir,

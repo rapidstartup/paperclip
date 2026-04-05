@@ -44,6 +44,7 @@ import { createPluginDevWatcher } from "./services/plugin-dev-watcher.js";
 import { createPluginHostServiceCleanup } from "./services/plugin-host-service-cleanup.js";
 import { pluginRegistryService } from "./services/plugin-registry.js";
 import { createHostClientHandlers } from "@paperclipai/plugin-sdk";
+const FEEDBACK_EXPORT_FLUSH_INTERVAL_MS = 5_000;
 export function resolveViteHmrPort(serverPort) {
     if (serverPort <= 55_535) {
         return serverPort + 10_000;
@@ -109,7 +110,9 @@ export async function createApp(db, opts) {
     api.use(agentRoutes(db));
     api.use(assetRoutes(db, opts.storageService));
     api.use(projectRoutes(db));
-    api.use(issueRoutes(db, opts.storageService));
+    api.use(issueRoutes(db, opts.storageService, {
+        feedbackExportService: opts.feedbackExportService,
+    }));
     api.use(routineRoutes(db));
     api.use(executionWorkspaceRoutes(db));
     api.use(goalRoutes(db));
@@ -237,6 +240,19 @@ export async function createApp(db, opts) {
     app.use(errorHandler);
     jobCoordinator.start();
     scheduler.start();
+    const feedbackExportTimer = opts.feedbackExportService
+        ? setInterval(() => {
+            void opts.feedbackExportService?.flushPendingFeedbackTraces().catch((err) => {
+                logger.error({ err }, "Failed to flush pending feedback exports");
+            });
+        }, FEEDBACK_EXPORT_FLUSH_INTERVAL_MS)
+        : null;
+    feedbackExportTimer?.unref?.();
+    if (opts.feedbackExportService) {
+        void opts.feedbackExportService.flushPendingFeedbackTraces().catch((err) => {
+            logger.error({ err }, "Failed to flush pending feedback exports");
+        });
+    }
     void toolDispatcher.initialize().catch((err) => {
         logger.error({ err }, "Failed to initialize plugin tool dispatcher");
     });
@@ -255,6 +271,8 @@ export async function createApp(db, opts) {
         logger.error({ err }, "Failed to load ready plugins on startup");
     });
     process.once("exit", () => {
+        if (feedbackExportTimer)
+            clearInterval(feedbackExportTimer);
         devWatcher?.close();
         hostServiceCleanup.disposeAll();
         hostServiceCleanup.teardown();

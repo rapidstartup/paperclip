@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asBoolean, asStringArray, parseObject, buildPaperclipEnv, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, renderTemplate, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asBoolean, asStringArray, parseObject, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, renderTemplate, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { parseCodexJsonl, isCodexUnknownSessionError } from "./parse.js";
 import { pathExists, prepareManagedCodexHome, resolveManagedCodexHomeDir, resolveSharedCodexHomeDir } from "./codex-home.js";
 import { resolveCodexDesiredSkillNames } from "./skills.js";
@@ -282,6 +282,12 @@ export async function execute(ctx) {
     const billingType = resolveCodexBillingType(effectiveEnv);
     const runtimeEnv = ensurePathInEnv(effectiveEnv);
     await ensureCommandResolvable(command, cwd, runtimeEnv);
+    const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+    const loggedEnv = buildInvocationEnvForLogs(env, {
+        runtimeEnv,
+        includeRuntimeKeys: ["HOME"],
+        resolvedCommand,
+    });
     const timeoutSec = asNumber(config.timeoutSec, 0);
     const graceSec = asNumber(config.graceSec, 20);
     const extraArgs = (() => {
@@ -385,7 +391,7 @@ export async function execute(ctx) {
         if (onMeta) {
             await onMeta({
                 adapterType: "codex_local",
-                command,
+                command: resolvedCommand,
                 cwd,
                 commandNotes,
                 commandArgs: args.map((value, idx) => {
@@ -393,7 +399,7 @@ export async function execute(ctx) {
                         return `<prompt ${prompt.length} chars>`;
                     return value;
                 }),
-                env: redactEnvForLogs(env),
+                env: loggedEnv,
                 prompt,
                 promptMetrics,
                 context,

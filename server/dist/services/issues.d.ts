@@ -9,6 +9,7 @@ export interface IssueFilters {
     inboxArchivedByUserId?: string;
     unreadForUserId?: string;
     projectId?: string;
+    executionWorkspaceId?: string;
     parentId?: string;
     labelId?: string;
     originKind?: string;
@@ -41,6 +42,10 @@ type IssueUserContextInput = {
     createdAt: Date | string;
     updatedAt: Date | string;
 };
+type IssueCreateInput = Omit<typeof issues.$inferInsert, "companyId"> & {
+    labelIds?: string[];
+    inheritExecutionWorkspaceFromIssueId?: string | null;
+};
 /** Decodes HTML character references in a raw @mention capture so UI-encoded bodies match agent names. */
 export declare function normalizeAgentMentionToken(raw: string): string;
 export declare function deriveIssueUserContext(issue: IssueUserContextInput, userId: string, stats: {
@@ -64,6 +69,7 @@ export declare function issueService(db: Db): {
         issueId: string;
         lastReadAt: Date;
     }>;
+    markUnread: (companyId: string, issueId: string, userId: string) => Promise<boolean>;
     archiveInbox: (companyId: string, issueId: string, userId: string, archivedAt?: Date) => Promise<{
         id: string;
         createdAt: Date;
@@ -82,11 +88,9 @@ export declare function issueService(db: Db): {
         archivedAt: Date;
         issueId: string;
     }>;
-    getById: (id: string) => Promise<IssueWithLabels | null>;
+    getById: (raw: string) => Promise<IssueWithLabels | null>;
     getByIdentifier: (identifier: string) => Promise<IssueWithLabels | null>;
-    create: (companyId: string, data: Omit<typeof issues.$inferInsert, "companyId"> & {
-        labelIds?: string[];
-    }) => Promise<IssueWithLabels>;
+    create: (companyId: string, data: IssueCreateInput) => Promise<IssueWithLabels>;
     update: (id: string, data: Partial<typeof issues.$inferInsert> & {
         labelIds?: string[];
     }) => Promise<IssueWithLabels | null>;
@@ -391,9 +395,10 @@ export declare function issueService(db: Db): {
         updatedAt: Date;
         companyId: string;
         issueId: string;
+        body: string;
+        createdByRunId: string | null;
         authorAgentId: string | null;
         authorUserId: string | null;
-        body: string;
     }[]>;
     getCommentCursor: (issueId: string) => Promise<{
         totalComments: number;
@@ -406,22 +411,25 @@ export declare function issueService(db: Db): {
         updatedAt: Date;
         companyId: string;
         issueId: string;
+        body: string;
+        createdByRunId: string | null;
         authorAgentId: string | null;
         authorUserId: string | null;
-        body: string;
     } | null>;
     addComment: (issueId: string, body: string, actor: {
         agentId?: string;
         userId?: string;
+        runId?: string | null;
     }) => Promise<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
         issueId: string;
+        body: string;
+        createdByRunId: string | null;
         authorAgentId: string | null;
         authorUserId: string | null;
-        body: string;
     }>;
     createAttachment: (input: {
         issueId: string;

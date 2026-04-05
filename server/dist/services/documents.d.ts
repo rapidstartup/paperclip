@@ -86,6 +86,8 @@ export declare function documentService(db: Db): {
         issueId: string;
         key: string;
         revisionNumber: number;
+        title: string | null;
+        format: string;
         body: string;
         changeSummary: string | null;
         createdByAgentId: string | null;
@@ -102,6 +104,7 @@ export declare function documentService(db: Db): {
         baseRevisionId?: string | null;
         createdByAgentId?: string | null;
         createdByUserId?: string | null;
+        createdByRunId?: string | null;
     }) => Promise<{
         created: false;
         document: {
@@ -140,6 +143,34 @@ export declare function documentService(db: Db): {
             updatedByUserId: string | null;
             createdAt: Date;
             updatedAt: Date;
+        };
+    }>;
+    restoreIssueDocumentRevision: (input: {
+        issueId: string;
+        key: string;
+        revisionId: string;
+        createdByAgentId?: string | null;
+        createdByUserId?: string | null;
+    }) => Promise<{
+        restoredFromRevisionId: string;
+        restoredFromRevisionNumber: number;
+        document: {
+            title: string | null;
+            format: string;
+            body: string;
+            latestRevisionId: string;
+            latestRevisionNumber: number;
+            updatedByAgentId: string | null;
+            updatedByUserId: string | null;
+            updatedAt: Date;
+            id: string;
+            companyId: string;
+            issueId: string;
+            key: string;
+            latestBody: string;
+            createdByAgentId: string | null;
+            createdByUserId: string | null;
+            createdAt: Date;
         };
     }>;
     deleteIssueDocument: (issueId: string, rawKey: string) => Promise<{

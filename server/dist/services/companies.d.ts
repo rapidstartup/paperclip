@@ -11,6 +11,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubTokenConfigured: boolean;
         logoAssetId: string | null;
@@ -31,6 +35,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubTokenConfigured: boolean;
         logoAssetId: string | null;
@@ -51,6 +59,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubTokenConfigured: boolean;
         logoAssetId: string | null;
@@ -76,6 +88,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubToken: string | null;
         createdAt: Date;
@@ -95,6 +111,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubTokenConfigured: boolean;
         logoAssetId: string | null;
@@ -117,6 +137,10 @@ export declare function companyService(db: Db): {
         budgetMonthlyCents: number;
         spentMonthlyCents: number;
         requireBoardApprovalForNewAgents: boolean;
+        feedbackDataSharingEnabled: boolean;
+        feedbackDataSharingConsentAt: Date | null;
+        feedbackDataSharingConsentByUserId: string | null;
+        feedbackDataSharingTermsVersion: string | null;
         brandColor: string | null;
         githubToken: string | null;
         createdAt: Date;

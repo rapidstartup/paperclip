@@ -16,7 +16,8 @@ function parseOrigin(value) {
 }
 function trustedOriginsForRequest(req) {
     const origins = new Set(DEFAULT_DEV_ORIGINS.map((value) => value.toLowerCase()));
-    const host = req.header("host")?.trim();
+    const forwardedHost = req.header("x-forwarded-host")?.split(",")[0]?.trim();
+    const host = forwardedHost || req.header("host")?.trim();
     if (host) {
         origins.add(`http://${host}`.toLowerCase());
         origins.add(`https://${host}`.toLowerCase());

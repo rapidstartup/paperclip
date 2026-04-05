@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { asString, asNumber, asBoolean, asStringArray, parseObject, parseJson, buildPaperclipEnv, readPaperclipRuntimeSkillEntries, joinPromptSections, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asBoolean, asStringArray, parseObject, parseJson, buildPaperclipEnv, readPaperclipRuntimeSkillEntries, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, resolveCommandForLogs, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { parseClaudeStreamJson, describeClaudeFailure, detectClaudeLoginRequired, isClaudeMaxTurnsResult, isClaudeUnknownSessionError, } from "./parse.js";
 import { resolveClaudeDesiredSkillNames } from "./skills.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -188,6 +188,12 @@ async function buildClaudeRuntimeConfig(input) {
     }
     const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
     await ensureCommandResolvable(command, cwd, runtimeEnv);
+    const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+    const loggedEnv = buildInvocationEnvForLogs(env, {
+        runtimeEnv,
+        includeRuntimeKeys: ["HOME", "CLAUDE_CONFIG_DIR"],
+        resolvedCommand,
+    });
     const timeoutSec = asNumber(config.timeoutSec, 0);
     const graceSec = asNumber(config.graceSec, 20);
     const extraArgs = (() => {
@@ -198,11 +204,13 @@ async function buildClaudeRuntimeConfig(input) {
     })();
     return {
         command,
+        resolvedCommand,
         cwd,
         workspaceId,
         workspaceRepoUrl,
         workspaceRepoRef,
         env,
+        loggedEnv,
         timeoutSec,
         graceSec,
         extraArgs,
@@ -217,11 +225,13 @@ export async function runClaudeLogin(input) {
         context: input.context ?? {},
         authToken: input.authToken,
     });
+    const runAsUser = resolveClaudeRunAsUser(input.config);
     const proc = await runChildProcess(input.runId, runtime.command, ["login"], {
         cwd: runtime.cwd,
         env: runtime.env,
         timeoutSec: runtime.timeoutSec,
         graceSec: runtime.graceSec,
+        runAsUser: runAsUser ?? undefined,
         onLog,
     });
     const loginMeta = detectClaudeLoginRequired({
@@ -258,7 +268,7 @@ export async function execute(ctx) {
         context,
         authToken,
     });
-    const { command, cwd, workspaceId, workspaceRepoUrl, workspaceRepoRef, env, timeoutSec, graceSec, extraArgs, } = runtimeConfig;
+    const { command, resolvedCommand, cwd, workspaceId, workspaceRepoUrl, workspaceRepoRef, env, loggedEnv, timeoutSec, graceSec, extraArgs, } = runtimeConfig;
     const hasDangerousSkipInExtraArgs = extraArgs.includes("--dangerously-skip-permissions");
     const effectiveRunAsRoot = runAsUser ? runAsUser.uid === 0 : runningAsRoot;
     const canUseDangerousSkipPermissions = dangerouslySkipPermissions && !effectiveRunAsRoot;
@@ -386,11 +396,11 @@ export async function execute(ctx) {
         if (onMeta) {
             await onMeta({
                 adapterType: "claude_local",
-                command,
+                command: resolvedCommand,
                 cwd,
                 commandArgs: args,
                 commandNotes: attemptNotes,
-                env: redactEnvForLogs(env),
+                env: loggedEnv,
                 prompt,
                 promptMetrics,
                 context,

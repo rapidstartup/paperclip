@@ -1,9 +1,11 @@
 import { Router } from "express";
 import { companySkillCreateSchema, companySkillFileUpdateSchema, companySkillImportSchema, companySkillProjectScanRequestSchema, } from "@paperclipai/shared";
+import { trackSkillImported } from "@paperclipai/shared/telemetry";
 import { validate } from "../middleware/validate.js";
 import { accessService, agentService, companySkillService, logActivity } from "../services/index.js";
 import { forbidden } from "../errors.js";
 import { assertCompanyAccess, getActorInfo } from "./authz.js";
+import { getTelemetryClient } from "../telemetry.js";
 export function companySkillRoutes(db) {
     const router = Router();
     const agents = agentService(db);
@@ -13,6 +15,25 @@ export function companySkillRoutes(db) {
         if (!agent.permissions || typeof agent.permissions !== "object")
             return false;
         return Boolean(agent.permissions.canCreateAgents);
+    }
+    function asString(value) {
+        if (typeof value !== "string")
+            return null;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+    }
+    function deriveTrackedSkillRef(skill) {
+        if (skill.sourceType === "skills_sh") {
+            return skill.key;
+        }
+        if (skill.sourceType !== "github") {
+            return null;
+        }
+        const hostname = asString(skill.metadata?.hostname);
+        if (hostname !== "github.com") {
+            return null;
+        }
+        return skill.key;
     }
     async function assertCanMutateCompanySkills(req, companyId) {
         assertCompanyAccess(req, companyId);
@@ -143,6 +164,15 @@ export function companySkillRoutes(db) {
                 warningCount: result.warnings.length,
             },
         });
+        const telemetryClient = getTelemetryClient();
+        if (telemetryClient) {
+            for (const skill of result.imported) {
+                trackSkillImported(telemetryClient, {
+                    sourceType: skill.sourceType,
+                    skillRef: deriveTrackedSkillRef(skill),
+                });
+            }
+        }
         res.status(201).json(result);
     });
     router.post("/companies/:companyId/skills/scan-projects", validate(companySkillProjectScanRequestSchema), async (req, res) => {

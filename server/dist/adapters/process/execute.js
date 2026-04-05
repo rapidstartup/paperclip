@@ -1,4 +1,4 @@
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, redactEnvForLogs, runChildProcess, } from "../utils.js";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, buildInvocationEnvForLogs, ensurePathInEnv, resolveCommandForLogs, runChildProcess, } from "../utils.js";
 export async function execute(ctx) {
     const { runId, agent, config, onLog, onMeta } = ctx;
     const command = asString(config.command, "");
@@ -12,15 +12,22 @@ export async function execute(ctx) {
         if (typeof v === "string")
             env[k] = v;
     }
+    const runtimeEnv = ensurePathInEnv({ ...process.env, ...env });
+    const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+    const loggedEnv = buildInvocationEnvForLogs(env, {
+        runtimeEnv,
+        includeRuntimeKeys: ["HOME"],
+        resolvedCommand,
+    });
     const timeoutSec = asNumber(config.timeoutSec, 0);
     const graceSec = asNumber(config.graceSec, 15);
     if (onMeta) {
         await onMeta({
             adapterType: "process",
-            command,
+            command: resolvedCommand,
             cwd,
             commandArgs: args,
-            env: redactEnvForLogs(env),
+            env: loggedEnv,
         });
     }
     const proc = await runChildProcess(runId, command, args, {

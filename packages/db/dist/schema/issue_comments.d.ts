@@ -87,6 +87,23 @@ export declare const issueComments: import("drizzle-orm/pg-core").PgTableWithCol
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        createdByRunId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "created_by_run_id";
+            tableName: "issue_comments";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         body: import("drizzle-orm/pg-core").PgColumn<{
             name: "body";
             tableName: "issue_comments";

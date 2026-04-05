@@ -41,50 +41,35 @@ function mapIssueDocumentRow(row, includeBody) {
         updatedAt: row.updatedAt,
     };
 }
+const issueDocumentSelect = {
+    id: documents.id,
+    companyId: documents.companyId,
+    issueId: issueDocuments.issueId,
+    key: issueDocuments.key,
+    title: documents.title,
+    format: documents.format,
+    latestBody: documents.latestBody,
+    latestRevisionId: documents.latestRevisionId,
+    latestRevisionNumber: documents.latestRevisionNumber,
+    createdByAgentId: documents.createdByAgentId,
+    createdByUserId: documents.createdByUserId,
+    updatedByAgentId: documents.updatedByAgentId,
+    updatedByUserId: documents.updatedByUserId,
+    createdAt: documents.createdAt,
+    updatedAt: documents.updatedAt,
+};
 export function documentService(db) {
     return {
         getIssueDocumentPayload: async (issue) => {
             const [planDocument, documentSummaries] = await Promise.all([
                 db
-                    .select({
-                    id: documents.id,
-                    companyId: documents.companyId,
-                    issueId: issueDocuments.issueId,
-                    key: issueDocuments.key,
-                    title: documents.title,
-                    format: documents.format,
-                    latestBody: documents.latestBody,
-                    latestRevisionId: documents.latestRevisionId,
-                    latestRevisionNumber: documents.latestRevisionNumber,
-                    createdByAgentId: documents.createdByAgentId,
-                    createdByUserId: documents.createdByUserId,
-                    updatedByAgentId: documents.updatedByAgentId,
-                    updatedByUserId: documents.updatedByUserId,
-                    createdAt: documents.createdAt,
-                    updatedAt: documents.updatedAt,
-                })
+                    .select(issueDocumentSelect)
                     .from(issueDocuments)
                     .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                     .where(and(eq(issueDocuments.issueId, issue.id), eq(issueDocuments.key, "plan")))
                     .then((rows) => rows[0] ?? null),
                 db
-                    .select({
-                    id: documents.id,
-                    companyId: documents.companyId,
-                    issueId: issueDocuments.issueId,
-                    key: issueDocuments.key,
-                    title: documents.title,
-                    format: documents.format,
-                    latestBody: documents.latestBody,
-                    latestRevisionId: documents.latestRevisionId,
-                    latestRevisionNumber: documents.latestRevisionNumber,
-                    createdByAgentId: documents.createdByAgentId,
-                    createdByUserId: documents.createdByUserId,
-                    updatedByAgentId: documents.updatedByAgentId,
-                    updatedByUserId: documents.updatedByUserId,
-                    createdAt: documents.createdAt,
-                    updatedAt: documents.updatedAt,
-                })
+                    .select(issueDocumentSelect)
                     .from(issueDocuments)
                     .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                     .where(eq(issueDocuments.issueId, issue.id))
@@ -105,23 +90,7 @@ export function documentService(db) {
         },
         listIssueDocuments: async (issueId) => {
             const rows = await db
-                .select({
-                id: documents.id,
-                companyId: documents.companyId,
-                issueId: issueDocuments.issueId,
-                key: issueDocuments.key,
-                title: documents.title,
-                format: documents.format,
-                latestBody: documents.latestBody,
-                latestRevisionId: documents.latestRevisionId,
-                latestRevisionNumber: documents.latestRevisionNumber,
-                createdByAgentId: documents.createdByAgentId,
-                createdByUserId: documents.createdByUserId,
-                updatedByAgentId: documents.updatedByAgentId,
-                updatedByUserId: documents.updatedByUserId,
-                createdAt: documents.createdAt,
-                updatedAt: documents.updatedAt,
-            })
+                .select(issueDocumentSelect)
                 .from(issueDocuments)
                 .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                 .where(eq(issueDocuments.issueId, issueId))
@@ -131,23 +100,7 @@ export function documentService(db) {
         getIssueDocumentByKey: async (issueId, rawKey) => {
             const key = normalizeDocumentKey(rawKey);
             const row = await db
-                .select({
-                id: documents.id,
-                companyId: documents.companyId,
-                issueId: issueDocuments.issueId,
-                key: issueDocuments.key,
-                title: documents.title,
-                format: documents.format,
-                latestBody: documents.latestBody,
-                latestRevisionId: documents.latestRevisionId,
-                latestRevisionNumber: documents.latestRevisionNumber,
-                createdByAgentId: documents.createdByAgentId,
-                createdByUserId: documents.createdByUserId,
-                updatedByAgentId: documents.updatedByAgentId,
-                updatedByUserId: documents.updatedByUserId,
-                createdAt: documents.createdAt,
-                updatedAt: documents.updatedAt,
-            })
+                .select(issueDocumentSelect)
                 .from(issueDocuments)
                 .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                 .where(and(eq(issueDocuments.issueId, issueId), eq(issueDocuments.key, key)))
@@ -164,6 +117,8 @@ export function documentService(db) {
                 issueId: issueDocuments.issueId,
                 key: issueDocuments.key,
                 revisionNumber: documentRevisions.revisionNumber,
+                title: documentRevisions.title,
+                format: documentRevisions.format,
                 body: documentRevisions.body,
                 changeSummary: documentRevisions.changeSummary,
                 createdByAgentId: documentRevisions.createdByAgentId,
@@ -228,10 +183,13 @@ export function documentService(db) {
                             companyId: issue.companyId,
                             documentId: existing.id,
                             revisionNumber: nextRevisionNumber,
+                            title: input.title ?? null,
+                            format: input.format,
                             body: input.body,
                             changeSummary: input.changeSummary ?? null,
                             createdByAgentId: input.createdByAgentId ?? null,
                             createdByUserId: input.createdByUserId ?? null,
+                            createdByRunId: input.createdByRunId ?? null,
                             createdAt: now,
                         })
                             .returning();
@@ -293,10 +251,13 @@ export function documentService(db) {
                         companyId: issue.companyId,
                         documentId: document.id,
                         revisionNumber: 1,
+                        title: input.title ?? null,
+                        format: input.format,
                         body: input.body,
                         changeSummary: input.changeSummary ?? null,
                         createdByAgentId: input.createdByAgentId ?? null,
                         createdByUserId: input.createdByUserId ?? null,
+                        createdByRunId: input.createdByRunId ?? null,
                         createdAt: now,
                     })
                         .returning();
@@ -341,27 +302,93 @@ export function documentService(db) {
                 throw error;
             }
         },
+        restoreIssueDocumentRevision: async (input) => {
+            const key = normalizeDocumentKey(input.key);
+            return db.transaction(async (tx) => {
+                const existing = await tx
+                    .select(issueDocumentSelect)
+                    .from(issueDocuments)
+                    .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
+                    .where(and(eq(issueDocuments.issueId, input.issueId), eq(issueDocuments.key, key)))
+                    .then((rows) => rows[0] ?? null);
+                if (!existing)
+                    throw notFound("Document not found");
+                const revision = await tx
+                    .select({
+                    id: documentRevisions.id,
+                    companyId: documentRevisions.companyId,
+                    documentId: documentRevisions.documentId,
+                    revisionNumber: documentRevisions.revisionNumber,
+                    title: documentRevisions.title,
+                    format: documentRevisions.format,
+                    body: documentRevisions.body,
+                })
+                    .from(documentRevisions)
+                    .where(and(eq(documentRevisions.id, input.revisionId), eq(documentRevisions.documentId, existing.id)))
+                    .then((rows) => rows[0] ?? null);
+                if (!revision)
+                    throw notFound("Document revision not found");
+                if (existing.latestRevisionId === revision.id) {
+                    throw conflict("Selected revision is already the latest revision", {
+                        currentRevisionId: existing.latestRevisionId,
+                    });
+                }
+                const now = new Date();
+                const nextRevisionNumber = existing.latestRevisionNumber + 1;
+                const [restoredRevision] = await tx
+                    .insert(documentRevisions)
+                    .values({
+                    companyId: existing.companyId,
+                    documentId: existing.id,
+                    revisionNumber: nextRevisionNumber,
+                    title: revision.title ?? null,
+                    format: revision.format,
+                    body: revision.body,
+                    changeSummary: `Restored from revision ${revision.revisionNumber}`,
+                    createdByAgentId: input.createdByAgentId ?? null,
+                    createdByUserId: input.createdByUserId ?? null,
+                    createdAt: now,
+                })
+                    .returning();
+                await tx
+                    .update(documents)
+                    .set({
+                    title: revision.title ?? null,
+                    format: revision.format,
+                    latestBody: revision.body,
+                    latestRevisionId: restoredRevision.id,
+                    latestRevisionNumber: nextRevisionNumber,
+                    updatedByAgentId: input.createdByAgentId ?? null,
+                    updatedByUserId: input.createdByUserId ?? null,
+                    updatedAt: now,
+                })
+                    .where(eq(documents.id, existing.id));
+                await tx
+                    .update(issueDocuments)
+                    .set({ updatedAt: now })
+                    .where(eq(issueDocuments.documentId, existing.id));
+                return {
+                    restoredFromRevisionId: revision.id,
+                    restoredFromRevisionNumber: revision.revisionNumber,
+                    document: {
+                        ...existing,
+                        title: revision.title ?? null,
+                        format: revision.format,
+                        body: revision.body,
+                        latestRevisionId: restoredRevision.id,
+                        latestRevisionNumber: nextRevisionNumber,
+                        updatedByAgentId: input.createdByAgentId ?? null,
+                        updatedByUserId: input.createdByUserId ?? null,
+                        updatedAt: now,
+                    },
+                };
+            });
+        },
         deleteIssueDocument: async (issueId, rawKey) => {
             const key = normalizeDocumentKey(rawKey);
             return db.transaction(async (tx) => {
                 const existing = await tx
-                    .select({
-                    id: documents.id,
-                    companyId: documents.companyId,
-                    issueId: issueDocuments.issueId,
-                    key: issueDocuments.key,
-                    title: documents.title,
-                    format: documents.format,
-                    latestBody: documents.latestBody,
-                    latestRevisionId: documents.latestRevisionId,
-                    latestRevisionNumber: documents.latestRevisionNumber,
-                    createdByAgentId: documents.createdByAgentId,
-                    createdByUserId: documents.createdByUserId,
-                    updatedByAgentId: documents.updatedByAgentId,
-                    updatedByUserId: documents.updatedByUserId,
-                    createdAt: documents.createdAt,
-                    updatedAt: documents.updatedAt,
-                })
+                    .select(issueDocumentSelect)
                     .from(issueDocuments)
                     .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                     .where(and(eq(issueDocuments.issueId, issueId), eq(issueDocuments.key, key)))

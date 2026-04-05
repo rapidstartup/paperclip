@@ -9,7 +9,7 @@ Run this checklist on every heartbeat. This covers both your local planning/memo
 
 ## 2. Local Planning Check
 
-1. Read today's plan from `$AGENT_HOME/memory/YYYY-MM-DD.md` under "## Today's Plan".
+1. Ensure today's daily note exists at `$AGENT_HOME/memory/YYYY-MM-DD.md` (create it with `## Today's Plan` and `## Timeline` headings if missing), then read "## Today's Plan".
 2. Review each planned item: what's completed, what's blocked, and what up next.
 3. For any blockers, resolve them yourself or escalate to the board.
 4. If you're ahead, start on the next highest priority.
@@ -37,7 +37,7 @@ If `PAPERCLIP_APPROVAL_ID` is set:
 
 ## 6. Delegation
 
-- Create subtasks with `POST /api/companies/{companyId}/issues`. Always set `parentId` and `goalId`.
+- Create subtasks with `POST /api/companies/{companyId}/issues`. Always set `parentId` and `goalId`. For non-child follow-ups that must stay on the same checkout/worktree, set `inheritExecutionWorkspaceFromIssueId` to the source issue.
 - Use `paperclip-create-agent` skill when hiring new agents.
 - Assign work to the right agent for the job.
 

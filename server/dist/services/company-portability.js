@@ -5,6 +5,7 @@ import { promisify } from "node:util";
 import { ISSUE_PRIORITIES, ISSUE_STATUSES, PROJECT_STATUSES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_STATUSES, ROUTINE_TRIGGER_KINDS, ROUTINE_TRIGGER_SIGNING_MODES, deriveProjectUrlKey, normalizeAgentUrlKey, } from "@paperclipai/shared";
 import { readPaperclipSkillSyncPreference, writePaperclipSkillSyncPreference, } from "@paperclipai/adapter-utils/server-utils";
 import { notFound, unprocessable } from "../errors.js";
+import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";
 import { accessService } from "./access.js";
 import { agentService } from "./agents.js";
 import { agentInstructionsService } from "./agent-instructions.js";
@@ -356,7 +357,7 @@ const ADAPTER_DEFAULT_RULES_BY_TYPE = {
     claude_local: [
         { path: ["timeoutSec"], value: 0 },
         { path: ["graceSec"], value: 15 },
-        { path: ["maxTurnsPerRun"], value: 300 },
+        { path: ["maxTurnsPerRun"], value: 1000 },
     ],
     openclaw_gateway: [
         { path: ["timeoutSec"], value: 120 },
@@ -398,6 +399,30 @@ function normalizeRoutineTriggerExtension(value) {
         replayWindowSec: asInteger(value.replayWindowSec),
     };
 }
+function normalizeRoutineVariableExtension(value) {
+    if (!isPlainRecord(value))
+        return null;
+    const name = asString(value.name);
+    if (!name)
+        return null;
+    const type = asString(value.type) ?? "text";
+    if (!["text", "textarea", "number", "boolean", "select"].includes(type))
+        return null;
+    const options = Array.isArray(value.options)
+        ? value.options.map((entry) => asString(entry)).filter((entry) => Boolean(entry))
+        : [];
+    const defaultValue = typeof value.defaultValue === "string" || typeof value.defaultValue === "number" || typeof value.defaultValue === "boolean"
+        ? value.defaultValue
+        : null;
+    return {
+        name,
+        label: asString(value.label),
+        type: type,
+        defaultValue,
+        required: asBoolean(value.required) ?? true,
+        options,
+    };
+}
 function normalizeRoutineExtension(value) {
     if (!isPlainRecord(value))
         return null;
@@ -406,9 +431,15 @@ function normalizeRoutineExtension(value) {
             .map((entry) => normalizeRoutineTriggerExtension(entry))
             .filter((entry) => entry !== null)
         : [];
+    const variables = Array.isArray(value.variables)
+        ? value.variables
+            .map((entry) => normalizeRoutineVariableExtension(entry))
+            .filter((entry) => entry !== null)
+        : null;
     const routine = {
         concurrencyPolicy: asString(value.concurrencyPolicy),
         catchUpPolicy: asString(value.catchUpPolicy),
+        variables,
         triggers,
     };
     return stripEmptyValues(routine) ? routine : null;
@@ -417,6 +448,7 @@ function buildRoutineManifestFromLiveRoutine(routine) {
     return {
         concurrencyPolicy: routine.concurrencyPolicy,
         catchUpPolicy: routine.catchUpPolicy,
+        variables: routine.variables,
         triggers: routine.triggers.map((trigger) => ({
             kind: trigger.kind,
             label: trigger.label ?? null,
@@ -870,11 +902,13 @@ function resolvePortableRoutineDefinition(issue, scheduleValue) {
         ? {
             concurrencyPolicy: issue.routine.concurrencyPolicy,
             catchUpPolicy: issue.routine.catchUpPolicy,
+            variables: issue.routine.variables ?? null,
             triggers: [...issue.routine.triggers],
         }
         : {
             concurrencyPolicy: null,
             catchUpPolicy: null,
+            variables: null,
             triggers: [],
         };
     if (routine.concurrencyPolicy && !ROUTINE_CONCURRENCY_POLICIES.includes(routine.concurrencyPolicy)) {
@@ -1792,14 +1826,14 @@ function parseFrontmatterMarkdown(raw) {
     };
 }
 async function fetchText(url) {
-    const response = await fetch(url);
+    const response = await ghFetch(url);
     if (!response.ok) {
         throw unprocessable(`Failed to fetch ${url}: ${response.status}`);
     }
     return response.text();
 }
 async function fetchOptionalText(url) {
-    const response = await fetch(url);
+    const response = await ghFetch(url);
     if (response.status === 404)
         return null;
     if (!response.ok) {
@@ -1808,14 +1842,14 @@ async function fetchOptionalText(url) {
     return response.text();
 }
 async function fetchBinary(url) {
-    const response = await fetch(url);
+    const response = await ghFetch(url);
     if (!response.ok) {
         throw unprocessable(`Failed to fetch ${url}: ${response.status}`);
     }
     return Buffer.from(await response.arrayBuffer());
 }
 async function fetchJson(url) {
-    const response = await fetch(url, {
+    const response = await ghFetch(url, {
         headers: {
             accept: "application/vnd.github+json",
         },
@@ -1956,7 +1990,7 @@ function buildManifestFromPackageFiles(files, opts) {
     const taskPaths = Array.from(new Set([...referencedTaskPaths, ...discoveredTaskPaths])).sort();
     const skillPaths = Array.from(new Set([...referencedSkillPaths, ...discoveredSkillPaths])).sort();
     const manifest = {
-        schemaVersion: 4,
+        schemaVersion: 5,
         generatedAt: new Date().toISOString(),
         source: opts?.sourceLabel ?? null,
         includes: {
@@ -1975,6 +2009,14 @@ function buildManifestFromPackageFiles(files, opts) {
             requireBoardApprovalForNewAgents: typeof paperclipCompany.requireBoardApprovalForNewAgents === "boolean"
                 ? paperclipCompany.requireBoardApprovalForNewAgents
                 : readCompanyApprovalDefault(companyFrontmatter),
+            feedbackDataSharingEnabled: typeof paperclipCompany.feedbackDataSharingEnabled === "boolean"
+                ? paperclipCompany.feedbackDataSharingEnabled
+                : false,
+            feedbackDataSharingConsentAt: typeof paperclipCompany.feedbackDataSharingConsentAt === "string"
+                ? paperclipCompany.feedbackDataSharingConsentAt
+                : null,
+            feedbackDataSharingConsentByUserId: asString(paperclipCompany.feedbackDataSharingConsentByUserId),
+            feedbackDataSharingTermsVersion: asString(paperclipCompany.feedbackDataSharingTermsVersion),
         },
         sidebar: paperclipSidebar,
         agents: [],
@@ -2071,14 +2113,16 @@ function buildManifestFromPackageFiles(files, opts) {
             const repoPath = asString(primarySource?.path);
             const commit = asString(primarySource?.commit);
             const trackingRef = asString(primarySource?.trackingRef);
+            const sourceHostname = asString(primarySource?.hostname) || "github.com";
             const [owner, repoName] = (repo ?? "").split("/");
             sourceType = "github";
             sourceLocator = asString(primarySource?.url)
-                ?? (repo ? `https://github.com/${repo}${repoPath ? `/tree/${trackingRef ?? commit ?? "main"}/${repoPath}` : ""}` : null);
+                ?? (repo ? `https://${sourceHostname}/${repo}${repoPath ? `/tree/${trackingRef ?? commit ?? "main"}/${repoPath}` : ""}` : null);
             sourceRef = commit;
             normalizedMetadata = owner && repoName
                 ? {
                     sourceKind: "github",
+                    ...(sourceHostname !== "github.com" ? { hostname: sourceHostname } : {}),
                     owner,
                     repo: repoName,
                     ref: commit,
@@ -2216,9 +2260,10 @@ function normalizeGitHubSourcePath(value) {
 }
 export function parseGitHubSourceUrl(rawUrl) {
     const url = new URL(rawUrl);
-    if (url.hostname !== "github.com") {
-        throw unprocessable("GitHub source must use github.com URL");
+    if (url.protocol !== "https:") {
+        throw unprocessable("GitHub source URL must use HTTPS");
     }
+    const hostname = url.hostname;
     const parts = url.pathname.split("/").filter(Boolean);
     if (parts.length < 2) {
         throw unprocessable("Invalid GitHub URL");
@@ -2237,6 +2282,7 @@ export function parseGitHubSourceUrl(rawUrl) {
                 basePath = "";
         }
         return {
+            hostname,
             owner,
             repo,
             ref: queryRef || "main",
@@ -2262,11 +2308,7 @@ export function parseGitHubSourceUrl(rawUrl) {
         if (basePath === ".")
             basePath = "";
     }
-    return { owner, repo, ref, basePath, companyPath };
-}
-function resolveRawGitHubUrl(owner, repo, ref, filePath) {
-    const normalizedFilePath = filePath.replace(/^\/+/, "");
-    return `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${normalizedFilePath}`;
+    return { hostname, owner, repo, ref, basePath, companyPath };
 }
 export function companyPortabilityService(db, storage) {
     const companies = companyService(db);
@@ -2289,13 +2331,13 @@ export function companyPortabilityService(db, storage) {
             : parsed.companyPath;
         let companyMarkdown = null;
         try {
-            companyMarkdown = await fetchOptionalText(resolveRawGitHubUrl(parsed.owner, parsed.repo, ref, companyRelativePath));
+            companyMarkdown = await fetchOptionalText(resolveRawGitHubUrl(parsed.hostname, parsed.owner, parsed.repo, ref, companyRelativePath));
         }
         catch (err) {
             if (ref === "main") {
                 ref = "master";
                 warnings.push("GitHub ref main not found; falling back to master.");
-                companyMarkdown = await fetchOptionalText(resolveRawGitHubUrl(parsed.owner, parsed.repo, ref, companyRelativePath));
+                companyMarkdown = await fetchOptionalText(resolveRawGitHubUrl(parsed.hostname, parsed.owner, parsed.repo, ref, companyRelativePath));
             }
             else {
                 throw err;
@@ -2310,7 +2352,8 @@ export function companyPortabilityService(db, storage) {
         const files = {
             [companyPath]: companyMarkdown,
         };
-        const tree = await fetchJson(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${ref}?recursive=1`).catch(() => ({ tree: [] }));
+        const apiBase = gitHubApiBase(parsed.hostname);
+        const tree = await fetchJson(`${apiBase}/repos/${parsed.owner}/${parsed.repo}/git/trees/${ref}?recursive=1`).catch(() => ({ tree: [] }));
         const basePrefix = parsed.basePath ? `${parsed.basePath.replace(/^\/+|\/+$/g, "")}/` : "";
         const candidatePaths = (tree.tree ?? [])
             .filter((entry) => entry.type === "blob")
@@ -2329,7 +2372,7 @@ export function companyPortabilityService(db, storage) {
             const relativePath = basePrefix ? repoPath.slice(basePrefix.length) : repoPath;
             if (files[relativePath] !== undefined)
                 continue;
-            files[normalizePortablePath(relativePath)] = await fetchText(resolveRawGitHubUrl(parsed.owner, parsed.repo, ref, repoPath));
+            files[normalizePortablePath(relativePath)] = await fetchText(resolveRawGitHubUrl(parsed.hostname, parsed.owner, parsed.repo, ref, repoPath));
         }
         const companyDoc = parseFrontmatterMarkdown(companyMarkdown);
         const includeEntries = readIncludeEntries(companyDoc.frontmatter);
@@ -2340,14 +2383,14 @@ export function companyPortabilityService(db, storage) {
                 continue;
             if (!(repoPath.endsWith(".md") || repoPath.endsWith(".yaml") || repoPath.endsWith(".yml")))
                 continue;
-            files[relativePath] = await fetchText(resolveRawGitHubUrl(parsed.owner, parsed.repo, ref, repoPath));
+            files[relativePath] = await fetchText(resolveRawGitHubUrl(parsed.hostname, parsed.owner, parsed.repo, ref, repoPath));
         }
         const resolved = buildManifestFromPackageFiles(files);
         const companyLogoPath = resolved.manifest.company?.logoPath;
         if (companyLogoPath && !resolved.files[companyLogoPath]) {
             const repoPath = [parsed.basePath, companyLogoPath].filter(Boolean).join("/");
             try {
-                const binary = await fetchBinary(resolveRawGitHubUrl(parsed.owner, parsed.repo, ref, repoPath));
+                const binary = await fetchBinary(resolveRawGitHubUrl(parsed.hostname, parsed.owner, parsed.repo, ref, repoPath));
                 resolved.files[companyLogoPath] = bufferToPortableBinaryFile(binary, inferContentTypeFromPath(companyLogoPath));
             }
             catch (err) {
@@ -2773,6 +2816,7 @@ export function companyPortabilityService(db, storage) {
                 priority: routine.priority !== "medium" ? routine.priority : undefined,
                 concurrencyPolicy: routine.concurrencyPolicy !== "coalesce_if_active" ? routine.concurrencyPolicy : undefined,
                 catchUpPolicy: routine.catchUpPolicy !== "skip_missed" ? routine.catchUpPolicy : undefined,
+                variables: (routine.variables ?? []).length > 0 ? routine.variables : undefined,
                 triggers: routine.triggers.map((trigger) => stripEmptyValues({
                     kind: trigger.kind,
                     label: trigger.label ?? null,
@@ -2798,6 +2842,10 @@ export function companyPortabilityService(db, storage) {
                 brandColor: company.brandColor ?? null,
                 logoPath: companyLogoPath,
                 requireBoardApprovalForNewAgents: company.requireBoardApprovalForNewAgents ? undefined : false,
+                feedbackDataSharingEnabled: company.feedbackDataSharingEnabled ? true : undefined,
+                feedbackDataSharingConsentAt: company.feedbackDataSharingConsentAt?.toISOString() ?? null,
+                feedbackDataSharingConsentByUserId: company.feedbackDataSharingConsentByUserId ?? null,
+                feedbackDataSharingTermsVersion: company.feedbackDataSharingTermsVersion ?? null,
             }),
             sidebar: stripEmptyValues(sidebarOrder),
             agents: Object.keys(paperclipAgents).length > 0 ? paperclipAgents : undefined,
@@ -3252,6 +3300,18 @@ export function companyPortabilityService(db, storage) {
                 requireBoardApprovalForNewAgents: include.company
                     ? (sourceManifest.company?.requireBoardApprovalForNewAgents ?? true)
                     : true,
+                feedbackDataSharingEnabled: include.company
+                    ? (sourceManifest.company?.feedbackDataSharingEnabled ?? false)
+                    : false,
+                feedbackDataSharingConsentAt: include.company && sourceManifest.company?.feedbackDataSharingConsentAt
+                    ? new Date(sourceManifest.company.feedbackDataSharingConsentAt)
+                    : null,
+                feedbackDataSharingConsentByUserId: include.company
+                    ? (sourceManifest.company?.feedbackDataSharingConsentByUserId ?? null)
+                    : null,
+                feedbackDataSharingTermsVersion: include.company
+                    ? (sourceManifest.company?.feedbackDataSharingTermsVersion ?? null)
+                    : null,
             });
             if (mode === "agent_safe" && options?.sourceCompanyId) {
                 await access.copyActiveUserMemberships(options.sourceCompanyId, created.id);
@@ -3272,6 +3332,12 @@ export function companyPortabilityService(db, storage) {
                     description: sourceManifest.company.description,
                     brandColor: sourceManifest.company.brandColor,
                     requireBoardApprovalForNewAgents: sourceManifest.company.requireBoardApprovalForNewAgents,
+                    feedbackDataSharingEnabled: sourceManifest.company.feedbackDataSharingEnabled,
+                    feedbackDataSharingConsentAt: sourceManifest.company.feedbackDataSharingConsentAt
+                        ? new Date(sourceManifest.company.feedbackDataSharingConsentAt)
+                        : null,
+                    feedbackDataSharingConsentByUserId: sourceManifest.company.feedbackDataSharingConsentByUserId,
+                    feedbackDataSharingTermsVersion: sourceManifest.company.feedbackDataSharingTermsVersion,
                 });
                 targetCompany = updated ?? targetCompany;
                 companyAction = "updated";
@@ -3640,6 +3706,7 @@ export function companyPortabilityService(db, storage) {
                     const routineDefinition = resolvedRoutine.routine ?? {
                         concurrencyPolicy: null,
                         catchUpPolicy: null,
+                        variables: null,
                         triggers: [],
                     };
                     const createdRoutine = await routines.create(targetCompany.id, {
@@ -3661,6 +3728,7 @@ export function companyPortabilityService(db, storage) {
                         catchUpPolicy: routineDefinition.catchUpPolicy && ROUTINE_CATCH_UP_POLICIES.includes(routineDefinition.catchUpPolicy)
                             ? routineDefinition.catchUpPolicy
                             : "skip_missed",
+                        variables: routineDefinition.variables ?? [],
                     }, {
                         agentId: null,
                         userId: actorUserId ?? null,

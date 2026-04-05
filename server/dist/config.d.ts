@@ -37,9 +37,12 @@ export interface Config {
     storageS3Endpoint: string | undefined;
     storageS3Prefix: string;
     storageS3ForcePathStyle: boolean;
+    feedbackExportBackendUrl: string | undefined;
+    feedbackExportBackendToken: string | undefined;
     heartbeatSchedulerEnabled: boolean;
     heartbeatSchedulerIntervalMs: number;
     companyDeletionEnabled: boolean;
+    telemetryEnabled: boolean;
     gitCloneToken: string | undefined;
 }
 export declare function loadConfig(): Config;

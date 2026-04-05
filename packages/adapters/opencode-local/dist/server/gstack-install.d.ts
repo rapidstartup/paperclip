@@ -22,6 +22,7 @@ export interface EnsureGstackCommandsInstalledOptions {
     nowMs?: () => number;
     platform?: NodeJS.Platform;
     homedir?: string;
+    syncExisting?: boolean;
 }
 export declare function resolveOpenCodeGstackCommandsDir(input?: {
     platform?: NodeJS.Platform;

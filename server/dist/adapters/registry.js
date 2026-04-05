@@ -8,7 +8,7 @@ import { agentConfigurationDoc as cursorAgentConfigurationDoc, models as cursorM
 import { execute as geminiExecute, listGeminiSkills, syncGeminiSkills, testEnvironment as geminiTestEnvironment, sessionCodec as geminiSessionCodec, } from "@paperclipai/adapter-gemini-local/server";
 import { agentConfigurationDoc as geminiAgentConfigurationDoc, models as geminiModels } from "@paperclipai/adapter-gemini-local";
 import { execute as openCodeExecute, listOpenCodeSkills, syncOpenCodeSkills, testEnvironment as openCodeTestEnvironment, sessionCodec as openCodeSessionCodec, listOpenCodeModels, } from "@paperclipai/adapter-opencode-local/server";
-import { agentConfigurationDoc as openCodeAgentConfigurationDoc, } from "@paperclipai/adapter-opencode-local";
+import { agentConfigurationDoc as openCodeAgentConfigurationDoc, models as openCodeModels, } from "@paperclipai/adapter-opencode-local";
 import { execute as openclawGatewayExecute, testEnvironment as openclawGatewayTestEnvironment, } from "@paperclipai/adapter-openclaw-gateway/server";
 import { agentConfigurationDoc as openclawGatewayAgentConfigurationDoc, models as openclawGatewayModels, } from "@paperclipai/adapter-openclaw-gateway";
 import { listCodexModels } from "./codex-models.js";
@@ -88,8 +88,8 @@ const openCodeLocalAdapter = {
     listSkills: listOpenCodeSkills,
     syncSkills: syncOpenCodeSkills,
     sessionCodec: openCodeSessionCodec,
+    models: openCodeModels,
     sessionManagement: getAdapterSessionManagement("opencode_local") ?? undefined,
-    models: [],
     listModels: listOpenCodeModels,
     supportsLocalAgentJwt: true,
     agentConfigurationDoc: openCodeAgentConfigurationDoc,

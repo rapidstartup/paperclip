@@ -180,7 +180,8 @@ export async function listOpenCodeModels() {
     try {
         return await discoverOpenCodeModelsCached();
     }
-    catch {
+    catch (err) {
+        console.error("[opencode-local] Failed to discover models:", err instanceof Error ? err.message : String(err));
         return [];
     }
 }

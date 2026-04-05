@@ -1,5 +1,7 @@
 import { ZodError } from "zod";
 import { HttpError } from "../errors.js";
+import { trackErrorHandlerCrash } from "@paperclipai/shared/telemetry";
+import { getTelemetryClient } from "../telemetry.js";
 function attachErrorContext(req, res, payload, rawError) {
     res.__errorContext = {
         error: payload,
@@ -17,6 +19,9 @@ export function errorHandler(err, req, res, _next) {
     if (err instanceof HttpError) {
         if (err.status >= 500) {
             attachErrorContext(req, res, { message: err.message, stack: err.stack, name: err.name, details: err.details }, err);
+            const tc = getTelemetryClient();
+            if (tc)
+                trackErrorHandlerCrash(tc, { errorCode: err.name });
         }
         res.status(err.status).json({
             error: err.message,
@@ -32,6 +37,9 @@ export function errorHandler(err, req, res, _next) {
     attachErrorContext(req, res, err instanceof Error
         ? { message: err.message, stack: err.stack, name: err.name }
         : { message: String(err), raw: err, stack: rootError.stack, name: rootError.name }, rootError);
+    const tc = getTelemetryClient();
+    if (tc)
+        trackErrorHandlerCrash(tc, { errorCode: rootError.name });
     res.status(500).json({ error: "Internal server error" });
 }
 //# sourceMappingURL=error-handler.js.map

@@ -9,6 +9,14 @@ export declare function createApp(db: Db, opts: {
     uiMode: UiMode;
     serverPort: number;
     storageService: StorageService;
+    feedbackExportService?: {
+        flushPendingFeedbackTraces(input?: {
+            companyId?: string;
+            traceId?: string;
+            limit?: number;
+            now?: Date;
+        }): Promise<unknown>;
+    };
     deploymentMode: DeploymentMode;
     deploymentExposure: DeploymentExposure;
     allowedHostnames: string[];

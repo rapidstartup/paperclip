@@ -1,4 +1,5 @@
 export { companyService } from "./companies.js";
+export { feedbackService } from "./feedback.js";
 export { companySkillService } from "./company-skills.js";
 export { agentService, deduplicateAgentName } from "./agents.js";
 export { agentInstructionsService, syncInstructionsBundleConfigFromFilePath } from "./agent-instructions.js";
@@ -28,6 +29,6 @@ export { workProductService } from "./work-products.js";
 export { logActivity } from "./activity-log.js";
 export { notifyHireApproved } from "./hire-hook.js";
 export { publishLiveEvent, subscribeCompanyLiveEvents } from "./live-events.js";
-export { reconcilePersistedRuntimeServicesOnStartup } from "./workspace-runtime.js";
+export { reconcilePersistedRuntimeServicesOnStartup, restartDesiredRuntimeServicesOnStartup } from "./workspace-runtime.js";
 export { createStorageServiceFromConfig, getStorageService } from "../storage/index.js";
 //# sourceMappingURL=index.js.map

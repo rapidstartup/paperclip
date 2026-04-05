@@ -3,10 +3,11 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, redactEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, renderTemplate, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, resolveCommandForLogs, renderTemplate, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
+import { ensureGstackCommandsInstalled } from "./gstack-install.js";
 import { prepareOpenCodeRuntimeConfig } from "./runtime-config.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 function firstNonEmptyLine(text) {
@@ -138,7 +139,25 @@ export async function execute(ctx) {
     const preparedRuntimeConfig = await prepareOpenCodeRuntimeConfig({ env, config });
     try {
         const runtimeEnv = Object.fromEntries(Object.entries(ensurePathInEnv({ ...process.env, ...preparedRuntimeConfig.env })).filter((entry) => typeof entry[1] === "string"));
+        try {
+            const gstackInstall = await ensureGstackCommandsInstalled({ env: runtimeEnv });
+            if (gstackInstall.writtenFiles > 0 || gstackInstall.removedFiles > 0) {
+                await onLog("stdout", `[paperclip] Synced ${gstackInstall.files.length} gstack OpenCode command files in ${gstackInstall.targetDir} (${gstackInstall.writtenFiles} updated, ${gstackInstall.removedFiles} removed).\n`);
+            }
+            else if (gstackInstall.usedFallbackManifest) {
+                await onLog("stdout", `[paperclip] Verified gstack OpenCode commands in ${gstackInstall.targetDir} using fallback manifest.\n`);
+            }
+        }
+        catch {
+            // Optional best-effort setup: command availability should not impact normal runs.
+        }
         await ensureCommandResolvable(command, cwd, runtimeEnv);
+        const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+        const loggedEnv = buildInvocationEnvForLogs(preparedRuntimeConfig.env, {
+            runtimeEnv,
+            includeRuntimeKeys: ["HOME"],
+            resolvedCommand,
+        });
         await ensureOpenCodeModelConfiguredAndAvailable({
             model,
             command,
@@ -238,11 +257,11 @@ export async function execute(ctx) {
             if (onMeta) {
                 await onMeta({
                     adapterType: "opencode_local",
-                    command,
+                    command: resolvedCommand,
                     cwd,
                     commandNotes,
                     commandArgs: [...args, `<stdin prompt ${prompt.length} chars>`],
-                    env: redactEnvForLogs(preparedRuntimeConfig.env),
+                    env: loggedEnv,
                     prompt,
                     promptMetrics,
                     context,
