@@ -2,6 +2,8 @@
   <img src="doc/assets/header.png" alt="Paperclip — runs your business" width="720" />
 </p>
 
+<!-- deploy trigger: 2026-04-06T05:25:00Z -->
+
 <p align="center">
   <a href="#quickstart"><strong>Quickstart</strong></a> &middot;
   <a href="https://paperclip.ing/docs"><strong>Docs</strong></a> &middot;
