@@ -42,8 +42,10 @@ COPY patches/ patches/
 RUN pnpm install --frozen-lockfile --prod --filter @paperclipai/server... --ignore-scripts --force
 
 COPY . .
-RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Run local build before deploy." && exit 1)
-RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Run local build before deploy." && exit 1)
+RUN pnpm install --frozen-lockfile
+RUN pnpm -r build
+RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Build failed." && exit 1)
+RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build failed." && exit 1)
 RUN npm install --no-save tsx
 RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
 RUN npm install --global --omit=dev @openai/codex@latest && npm cache clean --force
