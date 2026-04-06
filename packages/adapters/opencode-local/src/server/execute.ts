@@ -91,6 +91,51 @@ async function ensureOpenCodeSkillsInjected(
   }
 }
 
+async function statIfExists(targetPath: string): Promise<boolean> {
+  try {
+    await fs.stat(targetPath);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function ensureAgentHomeInstructionCompanionFiles(input: {
+  agentHome: string;
+  instructionsRootPath: string;
+  onLog: AdapterExecutionContext["onLog"];
+}) {
+  const { agentHome, instructionsRootPath, onLog } = input;
+  if (!agentHome || !path.isAbsolute(agentHome)) return;
+  if (!instructionsRootPath || !path.isAbsolute(instructionsRootPath)) return;
+
+  const companionFiles = ["AGENTS.md", "HEARTBEAT.md", "SOUL.md", "TOOLS.md"] as const;
+  await fs.mkdir(agentHome, { recursive: true });
+
+  for (const fileName of companionFiles) {
+    const sourcePath = path.join(instructionsRootPath, fileName);
+    const targetPath = path.join(agentHome, fileName);
+
+    const hasSource = await statIfExists(sourcePath);
+    if (!hasSource) continue;
+    const hasTarget = await statIfExists(targetPath);
+    if (hasTarget) continue;
+
+    try {
+      await fs.copyFile(sourcePath, targetPath);
+      await onLog(
+        "stdout",
+        `[paperclip] Seeded ${fileName} into AGENT_HOME from managed instructions bundle.\n`,
+      );
+    } catch (err) {
+      await onLog(
+        "stderr",
+        `[paperclip] Failed to seed ${fileName} into AGENT_HOME: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
+    }
+  }
+}
+
 export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult> {
   const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
 
@@ -172,6 +217,16 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   for (const [key, value] of Object.entries(envConfig)) {
     if (typeof value === "string") env[key] = value;
   }
+
+  const instructionsRootPath = asString(config.instructionsRootPath, "").trim();
+  if (agentHome) {
+    await ensureAgentHomeInstructionCompanionFiles({
+      agentHome,
+      instructionsRootPath,
+      onLog,
+    });
+  }
+
   // Prevent OpenCode from writing an opencode.json config file into the
   // project working directory (which would pollute the git repo).  Model
   // selection is already handled via the --model CLI flag.  Set after the
