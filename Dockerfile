@@ -43,6 +43,7 @@ RUN pnpm install --frozen-lockfile --prod --filter @paperclipai/server... --igno
 
 COPY . .
 RUN NODE_ENV=development pnpm install --frozen-lockfile --prod=false --force
+RUN npm install --global --omit=dev typescript && npm cache clean --force
 RUN pnpm -r build
 RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Build failed." && exit 1)
 RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build failed." && exit 1)
