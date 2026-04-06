@@ -107,16 +107,27 @@ async function ensureAgentHomeInstructionCompanionFiles(input: {
 }) {
   const { agentHome, instructionsRootPath, onLog } = input;
   if (!agentHome || !path.isAbsolute(agentHome)) return;
-  if (!instructionsRootPath || !path.isAbsolute(instructionsRootPath)) return;
+  const resolvedInstructionsRootPath =
+    instructionsRootPath && path.isAbsolute(instructionsRootPath) ? instructionsRootPath : "";
 
   const companionFiles = ["AGENTS.md", "HEARTBEAT.md", "SOUL.md", "TOOLS.md"] as const;
+  const fallbackCompanionContent: Partial<Record<(typeof companionFiles)[number], string>> = {
+    "AGENTS.md":
+      "# AGENTS.md\n\nFollow project goals, execute carefully, and report concrete outcomes.\n",
+    "HEARTBEAT.md":
+      "# HEARTBEAT.md\n\n1. Review current goal and context.\n2. Execute the highest-impact next step.\n3. Record results and next actions.\n",
+    "SOUL.md":
+      "# SOUL.md\n\nOperate with ownership, clarity, and pragmatic execution.\n",
+    "TOOLS.md":
+      "# TOOLS.md\n\nUse available repo, shell, and browser tools. Prefer minimal-risk, verifiable changes.\n",
+  };
   await fs.mkdir(agentHome, { recursive: true });
 
   for (const fileName of companionFiles) {
-    const sourcePath = path.join(instructionsRootPath, fileName);
+    const sourcePath = path.join(resolvedInstructionsRootPath, fileName);
     const targetPath = path.join(agentHome, fileName);
 
-    const hasSource = await statIfExists(sourcePath);
+    const hasSource = resolvedInstructionsRootPath ? await statIfExists(sourcePath) : false;
     if (!hasSource) continue;
     const hasTarget = await statIfExists(targetPath);
     if (hasTarget) continue;
@@ -131,6 +142,26 @@ async function ensureAgentHomeInstructionCompanionFiles(input: {
       await onLog(
         "stderr",
         `[paperclip] Failed to seed ${fileName} into AGENT_HOME: ${err instanceof Error ? err.message : String(err)}\n`,
+      );
+    }
+  }
+
+  for (const fileName of companionFiles) {
+    const targetPath = path.join(agentHome, fileName);
+    const hasTarget = await statIfExists(targetPath);
+    if (hasTarget) continue;
+    const fallback = fallbackCompanionContent[fileName];
+    if (!fallback) continue;
+    try {
+      await fs.writeFile(targetPath, fallback, "utf8");
+      await onLog(
+        "stdout",
+        `[paperclip] Created default ${fileName} in AGENT_HOME.\n`,
+      );
+    } catch (err) {
+      await onLog(
+        "stderr",
+        `[paperclip] Failed to create default ${fileName} in AGENT_HOME: ${err instanceof Error ? err.message : String(err)}\n`,
       );
     }
   }
