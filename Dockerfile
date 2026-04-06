@@ -71,4 +71,4 @@ ENV NODE_ENV=production \
 
 EXPOSE 3100
 
-CMD ["node", "server/dist/index.js"]
+CMD ["node", "--import", "./node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
