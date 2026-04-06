@@ -47,7 +47,6 @@ RUN npm install --global --omit=dev typescript && npm cache clean --force
 RUN pnpm -r build
 RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Build failed." && exit 1)
 RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build failed." && exit 1)
-RUN npm install --no-save tsx
 RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
 RUN npm install --global --omit=dev @openai/codex@latest && npm cache clean --force
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest && npm cache clean --force
@@ -72,4 +71,4 @@ ENV NODE_ENV=production \
 
 EXPOSE 3100
 
-CMD ["node", "--import", "./node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
+CMD ["node", "server/dist/index.js"]
