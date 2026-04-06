@@ -72,4 +72,5 @@ ENV NODE_ENV=production \
 
 EXPOSE 3100
 
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
 CMD ["node", "server/dist/index.js"]
