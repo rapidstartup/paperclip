@@ -42,7 +42,7 @@ COPY patches/ patches/
 RUN pnpm install --frozen-lockfile --prod --filter @paperclipai/server... --ignore-scripts --force
 
 COPY . .
-RUN pnpm install --frozen-lockfile
+RUN NODE_ENV=development pnpm install --frozen-lockfile --prod=false
 RUN pnpm -r build
 RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Build failed." && exit 1)
 RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build failed." && exit 1)
