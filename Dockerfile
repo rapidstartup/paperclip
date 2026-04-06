@@ -45,6 +45,7 @@ COPY . .
 RUN CI=true NODE_ENV=development pnpm install --frozen-lockfile --prod=false --force
 RUN npm install --global --omit=dev typescript && npm cache clean --force
 RUN pnpm -r build
+RUN node -e "const fs=require('fs');const path=require('path');const roots=['cli','server','packages'];const walk=(dir)=>{if(!fs.existsSync(dir))return;for(const entry of fs.readdirSync(dir,{withFileTypes:true})){if(entry.name==='node_modules'||entry.name.startsWith('.'))continue;const full=path.join(dir,entry.name);if(entry.isDirectory())walk(full);else if(entry.isFile()&&entry.name==='package.json'){const raw=fs.readFileSync(full,'utf8');const pkg=JSON.parse(raw);const publish=pkg.publishConfig;const hasDistExports=publish&&typeof publish==='object'&&publish.exports&&typeof publish.exports==='object';if(!hasDistExports)continue;pkg.exports=publish.exports;if(typeof publish.main==='string')pkg.main=publish.main;if(typeof publish.types==='string')pkg.types=publish.types;fs.writeFileSync(full,JSON.stringify(pkg,null,2)+'\\n');}}};for(const root of roots){walk(root);}"
 RUN test -f ui/dist/index.html || (echo "ERROR: ui dist missing. Build failed." && exit 1)
 RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build failed." && exit 1)
 RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
@@ -71,4 +72,4 @@ ENV NODE_ENV=production \
 
 EXPOSE 3100
 
-CMD ["node", "--import", "./node_modules/tsx/dist/loader.mjs", "server/dist/index.js"]
+CMD ["node", "server/dist/index.js"]
