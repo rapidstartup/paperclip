@@ -1,4 +1,4 @@
-import type { ServerAdapterModule } from "./types.js";
+import type { AdapterExecutionContext, ServerAdapterModule } from "./types.js";
 import { getAdapterSessionManagement } from "@paperclipai/adapter-utils";
 import {
   execute as claudeExecute,
@@ -90,6 +90,26 @@ import {
 } from "@paperclipai/adapter-agent-browser";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+
+/**
+ * hermes-paperclip-adapter execute() reads ctx.agent.adapterConfig, but the heartbeat passes
+ * secret-resolved fields on ctx.config (same pattern as Claude/Codex). Merge so OPENROUTER_API_KEY
+ * and other env bindings reach the Hermes child process.
+ */
+function hermesExecuteWithResolvedConfig(ctx: AdapterExecutionContext) {
+  const base =
+    typeof ctx.agent.adapterConfig === "object" && ctx.agent.adapterConfig !== null
+    && !Array.isArray(ctx.agent.adapterConfig)
+      ? (ctx.agent.adapterConfig as Record<string, unknown>)
+      : {};
+  return hermesExecute({
+    ...ctx,
+    agent: {
+      ...ctx.agent,
+      adapterConfig: { ...base, ...ctx.config },
+    },
+  });
+}
 
 const claudeLocalAdapter: ServerAdapterModule = {
   type: "claude_local",
@@ -188,7 +208,7 @@ const piLocalAdapter: ServerAdapterModule = {
 
 const hermesLocalAdapter: ServerAdapterModule = {
   type: "hermes_local",
-  execute: hermesExecute,
+  execute: hermesExecuteWithResolvedConfig,
   testEnvironment: hermesTestEnvironment,
   sessionCodec: hermesSessionCodec,
   listSkills: hermesListSkills,
