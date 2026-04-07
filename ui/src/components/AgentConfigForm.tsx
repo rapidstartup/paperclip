@@ -1623,7 +1623,7 @@ function ModelDropdown({
               <div className="px-2 py-2 space-y-2">
                 <p className="text-xs text-muted-foreground">
                   {onDetectModel
-                    ? "No model on disk (~/.hermes/config.yaml on the server) and no inference from company secrets. Add OPENROUTER_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY secrets, click detect, or type a provider/model."
+                    ? "No model on disk (~/.hermes/config.yaml on the server) and no matching company secret for inference. Add a secret named OPENROUTER_API_KEY or openrouter_api_key (or OpenAI/Anthropic equivalents), click detect, or type a provider/model."
                     : "No models found."}
                 </p>
               </div>

@@ -537,6 +537,26 @@ export function agentRoutes(db: Db) {
     "ANTHROPIC_API_KEY",
   ] as const;
 
+  /**
+   * Company secrets are keyed by an operator-chosen name; UI often uses e.g. `openrouter_api_key`
+   * while the runtime env var must be `OPENROUTER_API_KEY`. Try canonical and common aliases.
+   */
+  const HERMES_ENV_SECRET_NAME_ALIASES: Record<string, readonly string[]> = {
+    OPENROUTER_API_KEY: ["OPENROUTER_API_KEY", "openrouter_api_key", "openrouter"],
+    OPENAI_API_KEY: ["OPENAI_API_KEY", "openai_api_key", "openai"],
+    ANTHROPIC_API_KEY: ["ANTHROPIC_API_KEY", "anthropic_api_key", "anthropic"],
+  };
+
+  async function findCompanySecretForHermesEnvKey(companyId: string, envKey: string) {
+    const aliases = HERMES_ENV_SECRET_NAME_ALIASES[envKey];
+    if (!aliases) return null;
+    for (const name of aliases) {
+      const secret = await secretsSvc.getByName(companyId, name);
+      if (secret) return secret;
+    }
+    return null;
+  }
+
   async function injectDefaultEnvBindingsForHermes(
     companyId: string,
     adapterType: string | null | undefined,
@@ -548,7 +568,7 @@ export function agentRoutes(db: Db) {
     let added = false;
     for (const key of HERMES_DEFAULT_SECRET_ENV_KEYS) {
       if (nextEnv[key] !== undefined) continue;
-      const secret = await secretsSvc.getByName(companyId, key);
+      const secret = await findCompanySecretForHermesEnvKey(companyId, key);
       if (!secret) continue;
       nextEnv[key] = { type: "secret_ref" as const, secretId: secret.id };
       added = true;
@@ -846,21 +866,21 @@ export function agentRoutes(db: Db) {
    * Infer a usable default from which company secrets exist (same keys as adapter env).
    */
   async function inferHermesModelFromCompanySecrets(companyId: string) {
-    if (await secretsSvc.getByName(companyId, "OPENROUTER_API_KEY")) {
+    if (await findCompanySecretForHermesEnvKey(companyId, "OPENROUTER_API_KEY")) {
       return {
         model: "anthropic/claude-sonnet-4",
         provider: "openrouter",
         source: "inferred-from-secret",
       };
     }
-    if (await secretsSvc.getByName(companyId, "OPENAI_API_KEY")) {
+    if (await findCompanySecretForHermesEnvKey(companyId, "OPENAI_API_KEY")) {
       return {
         model: "gpt-4o",
         provider: "auto",
         source: "inferred-from-secret",
       };
     }
-    if (await secretsSvc.getByName(companyId, "ANTHROPIC_API_KEY")) {
+    if (await findCompanySecretForHermesEnvKey(companyId, "ANTHROPIC_API_KEY")) {
       return {
         model: "anthropic/claude-sonnet-4",
         provider: "auto",
