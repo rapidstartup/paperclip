@@ -587,6 +587,61 @@ export function agentRoutes(db: Db) {
     return next;
   }
 
+  const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+  const OPENROUTER_HERMES_MODELS_MAX = 800;
+
+  /**
+   * Hermes ships with models: [] in the adapter; detection only suggests one default.
+   * When the company has an OpenRouter key, fetch the live catalog for the model picker.
+   */
+  async function listOpenRouterHermesModels(companyId: string): Promise<Array<{ id: string; label: string }>> {
+    const secret = await findCompanySecretForHermesEnvKey(companyId, "OPENROUTER_API_KEY");
+    if (!secret) return [];
+    let apiKey: string;
+    try {
+      apiKey = await secretsSvc.resolveSecretValue(companyId, secret.id, "latest");
+    } catch {
+      return [];
+    }
+    const trimmedKey = apiKey.trim();
+    if (!trimmedKey) return [];
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20_000);
+    try {
+      const response = await fetch(OPENROUTER_MODELS_URL, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${trimmedKey}`,
+          Accept: "application/json",
+        },
+        signal: controller.signal,
+      });
+      if (!response.ok) return [];
+      const body = (await response.json()) as { data?: unknown };
+      const rows = Array.isArray(body.data) ? body.data : [];
+      const out: Array<{ id: string; label: string }> = [];
+      for (const row of rows) {
+        if (out.length >= OPENROUTER_HERMES_MODELS_MAX) break;
+        if (typeof row !== "object" || row === null) continue;
+        const rec = row as Record<string, unknown>;
+        const id = typeof rec.id === "string" ? rec.id.trim() : "";
+        if (!id) continue;
+        const name = typeof rec.name === "string" ? rec.name.trim() : "";
+        out.push({
+          id,
+          label: name && name !== id ? `${id} — ${name}` : id,
+        });
+      }
+      out.sort((a, b) => a.id.localeCompare(b.id));
+      return out;
+    } catch {
+      return [];
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
   async function assertAdapterConfigConstraints(
     companyId: string,
     adapterType: string | null | undefined,
@@ -856,7 +911,17 @@ export function agentRoutes(db: Db) {
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
     const type = req.params.type as string;
-    const models = await listAdapterModels(type);
+    let models = await listAdapterModels(type);
+    if (type === "hermes_local") {
+      const openrouter = await listOpenRouterHermesModels(companyId);
+      if (openrouter.length > 0) {
+        const byId = new Map(models.map((m) => [m.id, m] as const));
+        for (const m of openrouter) {
+          if (!byId.has(m.id)) byId.set(m.id, m);
+        }
+        models = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+      }
+    }
     res.json(models);
   });
 
