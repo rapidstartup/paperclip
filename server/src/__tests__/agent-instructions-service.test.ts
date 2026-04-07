@@ -2,7 +2,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
-import { agentInstructionsService } from "../services/agent-instructions.js";
+import {
+  agentInstructionsService,
+  syncInstructionsBundleConfigFromFilePath,
+} from "../services/agent-instructions.js";
 
 type TestAgent = {
   id: string;
@@ -357,5 +360,39 @@ describe("agent instructions service", () => {
       "Recovered managed instructions entry file from disk as AGENTS.md; previous entry docs/MISSING.md was missing.",
     ]);
     expect(exported.files).toEqual({ "AGENTS.md": "# Managed Agent\n" });
+  });
+
+  it("syncs bundle metadata from relative instructionsFilePath when adapter cwd is unset", async () => {
+    const paperclipHome = await makeTempDir("paperclip-agent-instructions-sync-relative-");
+    cleanupDirs.add(paperclipHome);
+    process.env.PAPERCLIP_HOME = paperclipHome;
+    process.env.PAPERCLIP_INSTANCE_ID = "test-instance";
+
+    const managedRoot = path.join(
+      paperclipHome,
+      "instances",
+      "test-instance",
+      "companies",
+      "company-1",
+      "agents",
+      "agent-1",
+      "instructions",
+    );
+    await fs.mkdir(managedRoot, { recursive: true });
+    await fs.writeFile(path.join(managedRoot, "AGENTS.md"), "# Hello\n", "utf8");
+
+    const agent = makeAgent({
+      instructionsFilePath: "AGENTS.md",
+    });
+
+    const synced = syncInstructionsBundleConfigFromFilePath(
+      agent,
+      agent.adapterConfig as Record<string, unknown>,
+    );
+
+    expect(synced.instructionsBundleMode).toBe("managed");
+    expect(synced.instructionsRootPath).toBe(managedRoot);
+    expect(synced.instructionsEntryFile).toBe("AGENTS.md");
+    expect(synced.instructionsFilePath).toBe(path.join(managedRoot, "AGENTS.md"));
   });
 });
