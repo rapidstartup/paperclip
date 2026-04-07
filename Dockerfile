@@ -2,7 +2,7 @@ FROM node:22-bookworm-slim AS production
 ARG USER_UID=1000
 ARG USER_GID=1000
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates gosu curl git wget ripgrep python3 \
+  && apt-get install -y --no-install-recommends ca-certificates gosu curl git wget ripgrep python3 python3-pip \
   && mkdir -p -m 755 /etc/apt/keyrings \
   && wget -nv -O/etc/apt/keyrings/githubcli-archive-keyring.gpg https://cli.github.com/packages/githubcli-archive-keyring.gpg \
   && echo "20e0125d6f6e077a9ad46f03371bc26d90b04939fb95170f5a1905099cc6bcc0  /etc/apt/keyrings/githubcli-archive-keyring.gpg" | sha256sum -c - \
@@ -51,6 +51,11 @@ RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build fai
 RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
 RUN npm install --global --omit=dev @openai/codex@latest && npm cache clean --force
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest && npm cache clean --force
+# Hermes Agent CLI (hermes_local adapter) — PyPI package, not npm; requires Python 3.11+
+RUN python3 -m pip install --break-system-packages --no-cache-dir --upgrade pip \
+  && python3 -m pip install --break-system-packages --no-cache-dir "hermes-agent[cli,mcp,pty]>=0.7,<1" \
+  && command -v hermes \
+  && rm -rf /root/.cache/pip
 RUN mkdir -p /paperclip && chown node:node /paperclip
 
 COPY scripts/docker-entrypoint.sh /usr/local/bin/
