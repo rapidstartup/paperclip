@@ -840,12 +840,45 @@ export function agentRoutes(db: Db) {
     res.json(models);
   });
 
+  /**
+   * Hermes adapter detectModel() only reads ~/.hermes/config.yaml on the API host.
+   * Paperclip env bindings do not create that file, so headless deploys get null.
+   * Infer a usable default from which company secrets exist (same keys as adapter env).
+   */
+  async function inferHermesModelFromCompanySecrets(companyId: string) {
+    if (await secretsSvc.getByName(companyId, "OPENROUTER_API_KEY")) {
+      return {
+        model: "anthropic/claude-sonnet-4",
+        provider: "openrouter",
+        source: "inferred-from-secret",
+      };
+    }
+    if (await secretsSvc.getByName(companyId, "OPENAI_API_KEY")) {
+      return {
+        model: "gpt-4o",
+        provider: "auto",
+        source: "inferred-from-secret",
+      };
+    }
+    if (await secretsSvc.getByName(companyId, "ANTHROPIC_API_KEY")) {
+      return {
+        model: "anthropic/claude-sonnet-4",
+        provider: "auto",
+        source: "inferred-from-secret",
+      };
+    }
+    return null;
+  }
+
   router.get("/companies/:companyId/adapters/:type/detect-model", async (req, res) => {
     const companyId = req.params.companyId as string;
     assertCompanyAccess(req, companyId);
     const type = req.params.type as string;
 
-    const detected = await detectAdapterModel(type);
+    let detected = await detectAdapterModel(type);
+    if (!detected && type === "hermes_local") {
+      detected = await inferHermesModelFromCompanySecrets(companyId);
+    }
     res.json(detected);
   });
 

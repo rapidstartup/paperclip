@@ -790,7 +790,11 @@ export function AgentConfigForm(props: AgentConfigFormProps) {
                       return result.data?.model ?? null;
                     }
                   : undefined}
-                detectModelLabel={adapterType === "hermes_local" ? "Detect from Hermes config" : undefined}
+                detectModelLabel={
+                  adapterType === "hermes_local"
+                    ? "Detect from Hermes config or secrets"
+                    : undefined
+                }
               />
               {fetchedModelsError && (
                 <p className="text-xs text-destructive">
@@ -1615,11 +1619,11 @@ function ModelDropdown({
                 ))}
               </div>
             ))}
-            {filteredModels.length === 0 && !canCreateManualModel && (
+            {filteredModels.length === 0 && !canCreateManualModel && !detectedModel && (
               <div className="px-2 py-2 space-y-2">
                 <p className="text-xs text-muted-foreground">
                   {onDetectModel
-                    ? "No Hermes model detected yet. Configure Hermes or enter a provider/model manually."
+                    ? "No model on disk (~/.hermes/config.yaml on the server) and no inference from company secrets. Add OPENROUTER_API_KEY / OPENAI_API_KEY / ANTHROPIC_API_KEY secrets, click detect, or type a provider/model."
                     : "No models found."}
                 </p>
               </div>
