@@ -95,6 +95,10 @@ import { httpAdapter } from "./http/index.js";
  * hermes-paperclip-adapter execute() reads ctx.agent.adapterConfig, but the heartbeat passes
  * secret-resolved fields on ctx.config (same pattern as Claude/Codex). Merge so OPENROUTER_API_KEY
  * and other env bindings reach the Hermes child process.
+ *
+ * Hermes `chat -q` is non-interactive: terminal tools that run `curl` to Paperclip hit “dangerous
+ * command” approval with nobody to approve → "User denied". The upstream CLI flag `--yolo` bypasses
+ * those prompts (same idea as Codex bypass flags).
  */
 function hermesExecuteWithResolvedConfig(ctx: AdapterExecutionContext) {
   const base =
@@ -102,11 +106,20 @@ function hermesExecuteWithResolvedConfig(ctx: AdapterExecutionContext) {
     && !Array.isArray(ctx.agent.adapterConfig)
       ? (ctx.agent.adapterConfig as Record<string, unknown>)
       : {};
+  const merged: Record<string, unknown> = { ...base, ...ctx.config };
+  const rawExtra = merged.extraArgs;
+  const extra: string[] = Array.isArray(rawExtra)
+    ? rawExtra.filter((item): item is string => typeof item === "string")
+    : [];
+  if (merged.hermesDisableYolo !== true && !extra.includes("--yolo")) {
+    extra.push("--yolo");
+  }
+  merged.extraArgs = extra;
   return hermesExecute({
     ...ctx,
     agent: {
       ...ctx.agent,
-      adapterConfig: { ...base, ...ctx.config },
+      adapterConfig: merged,
     },
   });
 }
