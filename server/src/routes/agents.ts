@@ -530,6 +530,43 @@ export function agentRoutes(db: Db) {
     };
   }
 
+  /** Hermes CLI reads provider keys from the process environment (no TTY setup wizard). */
+  const HERMES_DEFAULT_SECRET_ENV_KEYS = [
+    "OPENROUTER_API_KEY",
+    "OPENAI_API_KEY",
+    "ANTHROPIC_API_KEY",
+  ] as const;
+
+  async function injectDefaultEnvBindingsForHermes(
+    companyId: string,
+    adapterType: string | null | undefined,
+    adapterConfig: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    if (adapterType !== "hermes_local") return adapterConfig;
+    const existingEnv = asRecord(adapterConfig.env) ?? {};
+    const nextEnv: Record<string, unknown> = { ...existingEnv };
+    let added = false;
+    for (const key of HERMES_DEFAULT_SECRET_ENV_KEYS) {
+      if (nextEnv[key] !== undefined) continue;
+      const secret = await secretsSvc.getByName(companyId, key);
+      if (!secret) continue;
+      nextEnv[key] = { type: "secret_ref" as const, secretId: secret.id };
+      added = true;
+    }
+    if (!added) return adapterConfig;
+    return { ...adapterConfig, env: nextEnv };
+  }
+
+  async function injectDefaultAdapterSecretEnvBindings(
+    companyId: string,
+    adapterType: string | null | undefined,
+    adapterConfig: Record<string, unknown>,
+  ): Promise<Record<string, unknown>> {
+    let next = await injectDefaultEnvBindingsForOpenCode(companyId, adapterType, adapterConfig);
+    next = await injectDefaultEnvBindingsForHermes(companyId, adapterType, next);
+    return next;
+  }
+
   async function assertAdapterConfigConstraints(
     companyId: string,
     adapterType: string | null | undefined,
@@ -1320,7 +1357,7 @@ export function agentRoutes(db: Db) {
       sourceIssueIds: _sourceIssueIds,
       ...hireInput
     } = req.body;
-    const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(
+    const requestedAdapterConfig = await injectDefaultAdapterSecretEnvBindings(
       companyId,
       hireInput.adapterType,
       applyCreateDefaultsByAdapterType(
@@ -1488,7 +1525,7 @@ export function agentRoutes(db: Db) {
       desiredSkills: requestedDesiredSkills,
       ...createInput
     } = req.body;
-    const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(
+    const requestedAdapterConfig = await injectDefaultAdapterSecretEnvBindings(
       companyId,
       createInput.adapterType,
       applyCreateDefaultsByAdapterType(
@@ -1936,9 +1973,14 @@ export function agentRoutes(db: Db) {
           rawEffectiveAdapterConfig,
         );
       }
-      const effectiveAdapterConfig = applyCreateDefaultsByAdapterType(
+      let effectiveAdapterConfig = applyCreateDefaultsByAdapterType(
         requestedAdapterType,
         rawEffectiveAdapterConfig,
+      );
+      effectiveAdapterConfig = await injectDefaultAdapterSecretEnvBindings(
+        existing.companyId,
+        requestedAdapterType,
+        effectiveAdapterConfig,
       );
       const normalizedEffectiveAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(
         existing.companyId,
