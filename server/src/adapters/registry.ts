@@ -1,5 +1,6 @@
 import type { AdapterExecutionContext, ServerAdapterModule } from "./types.js";
 import { getAdapterSessionManagement } from "@paperclipai/adapter-utils";
+import { buildPaperclipEnv } from "@paperclipai/adapter-utils/server-utils";
 import {
   execute as claudeExecute,
   listClaudeSkills,
@@ -91,10 +92,22 @@ import {
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
 
+function asHermesEnvStringMap(value: unknown): Record<string, string> {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return {};
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof v === "string") out[k] = v;
+  }
+  return out;
+}
+
 /**
  * hermes-paperclip-adapter execute() reads ctx.agent.adapterConfig, but the heartbeat passes
  * secret-resolved fields on ctx.config (same pattern as Claude/Codex). Merge so OPENROUTER_API_KEY
  * and other env bindings reach the Hermes child process.
+ *
+ * Also inject the same Paperclip baseline env as Claude/Codex (`PAPERCLIP_API_URL`, agent ids, run id,
+ * JWT) so tools are not forced to guess `localhost:8082` (or similar) when calling the API.
  *
  * Hermes `chat -q` is non-interactive: terminal tools that run `curl` to Paperclip hit “dangerous
  * command” approval with nobody to approve → "User denied". The upstream CLI flag `--yolo` bypasses
@@ -107,6 +120,18 @@ function hermesExecuteWithResolvedConfig(ctx: AdapterExecutionContext) {
       ? (ctx.agent.adapterConfig as Record<string, unknown>)
       : {};
   const merged: Record<string, unknown> = { ...base, ...ctx.config };
+
+  const paperclipEnv = buildPaperclipEnv(ctx.agent);
+  paperclipEnv.PAPERCLIP_RUN_ID = ctx.runId;
+  const adapterEnv = asHermesEnvStringMap(merged.env);
+  const hasExplicitApiKey =
+    typeof adapterEnv.PAPERCLIP_API_KEY === "string" &&
+    adapterEnv.PAPERCLIP_API_KEY.trim().length > 0;
+  merged.env = { ...paperclipEnv, ...adapterEnv };
+  if (!hasExplicitApiKey && typeof ctx.authToken === "string" && ctx.authToken.trim().length > 0) {
+    (merged.env as Record<string, string>).PAPERCLIP_API_KEY = ctx.authToken;
+  }
+
   const rawExtra = merged.extraArgs;
   const extra: string[] = Array.isArray(rawExtra)
     ? rawExtra.filter((item): item is string => typeof item === "string")
