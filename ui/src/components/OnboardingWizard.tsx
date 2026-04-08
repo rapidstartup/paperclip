@@ -7,6 +7,8 @@ import { useCompany } from "../context/CompanyContext";
 import { companiesApi } from "../api/companies";
 import { goalsApi } from "../api/goals";
 import { agentsApi } from "../api/agents";
+import { secretsApi } from "../api/secrets";
+import { ApiError } from "../api/client";
 import { issuesApi } from "../api/issues";
 import { projectsApi } from "../api/projects";
 import { queryKeys } from "../lib/queryKeys";
@@ -57,6 +59,8 @@ import {
   X
 } from "lucide-react";
 import { HermesIcon } from "./HermesIcon";
+
+const OPENROUTER_ONBOARDING_SECRET_NAME = "openrouter_api_key";
 
 type Step = 1 | 2 | 3 | 4;
 type AdapterType =
@@ -128,6 +132,10 @@ export function OnboardingWizard() {
     useState(false);
   const [unsetAnthropicLoading, setUnsetAnthropicLoading] = useState(false);
   const [showMoreAdapters, setShowMoreAdapters] = useState(false);
+  const [hermesOpenrouterKeyDraft, setHermesOpenrouterKeyDraft] = useState("");
+  const [hermesOpenrouterSecretId, setHermesOpenrouterSecretId] = useState<
+    string | null
+  >(null);
 
   // Step 3
   const [taskTitle, setTaskTitle] = useState(
@@ -207,6 +215,19 @@ export function OnboardingWizard() {
     queryFn: () => agentsApi.adapterModels(createdCompanyId!, adapterType),
     enabled: Boolean(createdCompanyId) && effectiveOnboardingOpen && step === 2
   });
+
+  const { data: companySecrets } = useQuery({
+    queryKey: createdCompanyId
+      ? queryKeys.secrets.list(createdCompanyId)
+      : ["secrets", "none"],
+    queryFn: () => secretsApi.list(createdCompanyId!),
+    enabled:
+      Boolean(createdCompanyId) &&
+      effectiveOnboardingOpen &&
+      step === 2 &&
+      adapterType === "hermes_local"
+  });
+
   const isLocalAdapter =
     adapterType === "claude_local" ||
     adapterType === "codex_local" ||
@@ -236,6 +257,25 @@ export function OnboardingWizard() {
     setAdapterEnvResult(null);
     setAdapterEnvError(null);
   }, [step, adapterType, model, command, args, url]);
+
+  useEffect(() => {
+    if (adapterType !== "hermes_local") {
+      setHermesOpenrouterKeyDraft("");
+      setHermesOpenrouterSecretId(null);
+    }
+  }, [adapterType]);
+
+  useEffect(() => {
+    if (adapterType !== "hermes_local" || companySecrets === undefined) return;
+    const match = companySecrets.find(
+      (s) =>
+        s.name === OPENROUTER_ONBOARDING_SECRET_NAME ||
+        s.name === "OPENROUTER_API_KEY"
+    );
+    if (match) {
+      setHermesOpenrouterSecretId(match.id);
+    }
+  }, [adapterType, companySecrets]);
 
   const selectedModel = (adapterModels ?? []).find((m) => m.id === model);
   const hasAnthropicApiKeyOverrideCheck =
@@ -308,6 +348,8 @@ export function OnboardingWizard() {
     setCreatedAgentId(null);
     setCreatedProjectId(null);
     setCreatedIssueRef(null);
+    setHermesOpenrouterKeyDraft("");
+    setHermesOpenrouterSecretId(null);
   }
 
   function handleClose() {
@@ -315,11 +357,87 @@ export function OnboardingWizard() {
     closeOnboarding();
   }
 
-  function buildAdapterConfig(): Record<string, unknown> {
+  async function persistHermesOpenrouterKey(
+    setMessage: (msg: string) => void
+  ): Promise<{ ok: boolean; secretIdForConfig: string | null }> {
+    if (!createdCompanyId || adapterType !== "hermes_local") {
+      return { ok: true, secretIdForConfig: hermesOpenrouterSecretId };
+    }
+    const trimmed = hermesOpenrouterKeyDraft.trim();
+    if (!trimmed) {
+      const fromList = companySecrets?.find(
+        (s) =>
+          s.name === OPENROUTER_ONBOARDING_SECRET_NAME ||
+          s.name === "OPENROUTER_API_KEY"
+      );
+      return {
+        ok: true,
+        secretIdForConfig: fromList?.id ?? hermesOpenrouterSecretId
+      };
+    }
+    let secretIdForConfig = hermesOpenrouterSecretId;
+    try {
+      if (secretIdForConfig) {
+        await secretsApi.rotate(secretIdForConfig, { value: trimmed });
+      } else {
+        try {
+          const created = await secretsApi.create(createdCompanyId, {
+            name: OPENROUTER_ONBOARDING_SECRET_NAME,
+            value: trimmed
+          });
+          secretIdForConfig = created.id;
+          setHermesOpenrouterSecretId(created.id);
+        } catch (err) {
+          const apiErr = err instanceof ApiError ? err : null;
+          if (apiErr?.status !== 409) throw err;
+          const list = await secretsApi.list(createdCompanyId);
+          const existing = list.find(
+            (s) =>
+              s.name === OPENROUTER_ONBOARDING_SECRET_NAME ||
+              s.name === "OPENROUTER_API_KEY"
+          );
+          if (!existing) throw err;
+          await secretsApi.rotate(existing.id, { value: trimmed });
+          secretIdForConfig = existing.id;
+          setHermesOpenrouterSecretId(existing.id);
+        }
+      }
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.secrets.list(createdCompanyId)
+      });
+      await queryClient.invalidateQueries({
+        queryKey: queryKeys.agents.adapterModels(createdCompanyId, "hermes_local")
+      });
+      setHermesOpenrouterKeyDraft("");
+      return { ok: true, secretIdForConfig };
+    } catch (err) {
+      setMessage(
+        err instanceof Error ? err.message : "Failed to save OpenRouter API key."
+      );
+      return { ok: false, secretIdForConfig: hermesOpenrouterSecretId };
+    }
+  }
+
+  function buildAdapterConfig(hermesOpenrouterSecretIdOverride?: string | null): Record<string, unknown> {
     const adapter = getUIAdapter(adapterType);
+    const openrouterSecretId =
+      adapterType === "hermes_local"
+        ? (hermesOpenrouterSecretIdOverride ?? hermesOpenrouterSecretId)
+        : null;
+    const envBindings =
+      adapterType === "hermes_local" && openrouterSecretId
+        ? {
+            ...defaultCreateValues.envBindings,
+            OPENROUTER_API_KEY: {
+              type: "secret_ref" as const,
+              secretId: openrouterSecretId
+            }
+          }
+        : defaultCreateValues.envBindings;
     const config = adapter.buildAdapterConfig({
       ...defaultCreateValues,
       adapterType,
+      envBindings,
       model:
         adapterType === "codex_local"
           ? model || DEFAULT_CODEX_LOCAL_MODEL
@@ -363,11 +481,21 @@ export function OnboardingWizard() {
     setAdapterEnvLoading(true);
     setAdapterEnvError(null);
     try {
+      let hermesSecretForThisRequest: string | null | undefined;
+      if (adapterType === "hermes_local") {
+        const persisted = await persistHermesOpenrouterKey((msg) =>
+          setAdapterEnvError(msg)
+        );
+        if (!persisted.ok) return null;
+        hermesSecretForThisRequest = persisted.secretIdForConfig;
+      }
       const result = await agentsApi.testEnvironment(
         createdCompanyId,
         adapterType,
         {
-          adapterConfig: adapterConfigOverride ?? buildAdapterConfig()
+          adapterConfig:
+            adapterConfigOverride ??
+            buildAdapterConfig(hermesSecretForThisRequest)
         }
       );
       setAdapterEnvResult(result);
@@ -423,6 +551,16 @@ export function OnboardingWizard() {
     setLoading(true);
     setError(null);
     try {
+      let hermesSecretForAgentCreate: string | null | undefined;
+      if (adapterType === "hermes_local") {
+        const persisted = await persistHermesOpenrouterKey((msg) =>
+          setError(msg)
+        );
+        if (!persisted.ok) {
+          return;
+        }
+        hermesSecretForAgentCreate = persisted.secretIdForConfig;
+      }
       if (adapterType === "opencode_local") {
         const selectedModelId = model.trim();
         if (!selectedModelId) {
@@ -465,7 +603,7 @@ export function OnboardingWizard() {
         name: agentName.trim(),
         role: "ceo",
         adapterType,
-        adapterConfig: buildAdapterConfig(),
+        adapterConfig: buildAdapterConfig(hermesSecretForAgentCreate),
         runtimeConfig: {
           heartbeat: {
             enabled: true,
@@ -1016,6 +1154,35 @@ export function OnboardingWizard() {
                           </PopoverContent>
                         </Popover>
                       </div>
+                      {adapterType === "hermes_local" && (
+                        <div className="group">
+                          <label className="text-xs text-muted-foreground mb-1 block">
+                            OpenRouter API key
+                          </label>
+                          <input
+                            className="w-full rounded-md border border-border bg-transparent px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-ring placeholder:text-muted-foreground/50"
+                            type="password"
+                            autoComplete="new-password"
+                            placeholder={
+                              hermesOpenrouterSecretId
+                                ? "Paste new key to rotate the stored secret"
+                                : "sk-or-v1-… (saved as company secret)"
+                            }
+                            value={hermesOpenrouterKeyDraft}
+                            onChange={(e) =>
+                              setHermesOpenrouterKeyDraft(e.target.value)
+                            }
+                          />
+                          <p className="text-[11px] text-muted-foreground mt-1">
+                            Used to load models and run Test. Stored encrypted
+                            when you click Test or Next (secret name{" "}
+                            <span className="font-mono">
+                              {OPENROUTER_ONBOARDING_SECRET_NAME}
+                            </span>
+                            ).
+                          </p>
+                        </div>
+                      )}
                     </div>
                   )}
 
