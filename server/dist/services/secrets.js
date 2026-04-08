@@ -72,7 +72,7 @@ export function secretService(db) {
     async function normalizeEnvConfig(companyId, envValue, opts) {
         const record = asRecord(envValue);
         if (!record)
-            throw unprocessable("adapterConfig.env must be an object");
+            throw unprocessable(`${opts?.fieldPath ?? "env"} must be an object`);
         const normalized = {};
         for (const [key, rawBinding] of Object.entries(record)) {
             if (!ENV_KEY_RE.test(key)) {
@@ -219,6 +219,7 @@ export function secretService(db) {
             return secret;
         },
         normalizeAdapterConfigForPersistence: async (companyId, adapterConfig, opts) => normalizeAdapterConfigForPersistenceInternal(companyId, adapterConfig, opts),
+        normalizeEnvBindingsForPersistence: async (companyId, envValue, opts) => normalizeEnvConfig(companyId, envValue, opts),
         normalizeHireApprovalPayloadForPersistence: async (companyId, payload, opts) => {
             const normalized = { ...payload };
             const adapterConfig = asRecord(payload.adapterConfig);

@@ -549,6 +549,7 @@ export interface WorkerToHostMethods {
             issueId: string;
             body: string;
             companyId: string;
+            authorAgentId?: string;
         },
         result: IssueComment
     ];

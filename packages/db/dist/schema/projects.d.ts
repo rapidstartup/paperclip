@@ -1,3 +1,4 @@
+import type { AgentEnvConfig } from "@paperclipai/shared";
 export declare const projects: import("drizzle-orm/pg-core").PgTableWithColumns<{
     name: "projects";
     schema: undefined;
@@ -155,6 +156,25 @@ export declare const projects: import("drizzle-orm/pg-core").PgTableWithColumns<
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        env: import("drizzle-orm/pg-core").PgColumn<{
+            name: "env";
+            tableName: "projects";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: AgentEnvConfig;
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: AgentEnvConfig;
+        }>;
         pauseReason: import("drizzle-orm/pg-core").PgColumn<{
             name: "pause_reason";
             tableName: "projects";

@@ -62,6 +62,6 @@ export function isCodexUnknownSessionError(stdout, stderr) {
         .map((line) => line.trim())
         .filter(Boolean)
         .join("\n");
-    return /unknown (session|thread)|session .* not found|thread .* not found|conversation .* not found|missing rollout path for thread|state db missing rollout path/i.test(haystack);
+    return /unknown (session|thread)|session .* not found|thread .* not found|conversation .* not found|missing rollout path for thread|state db missing rollout path|no rollout found for thread id/i.test(haystack);
 }
 //# sourceMappingURL=parse.js.map

@@ -2,9 +2,10 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { asString, asNumber, asBoolean, asStringArray, parseObject, parseJson, buildPaperclipEnv, readPaperclipRuntimeSkillEntries, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, resolveCommandForLogs, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asBoolean, asStringArray, parseObject, parseJson, buildPaperclipEnv, readPaperclipRuntimeSkillEntries, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePathInEnv, resolveCommandForLogs, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { parseClaudeStreamJson, describeClaudeFailure, detectClaudeLoginRequired, isClaudeMaxTurnsResult, isClaudeUnknownSessionError, } from "./parse.js";
 import { resolveClaudeDesiredSkillNames } from "./skills.js";
+import { isBedrockModelId } from "./models.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
 /**
  * Create a tmpdir with `.claude/skills/` containing symlinks to skills from
@@ -38,8 +39,14 @@ function hasNonEmptyEnvValue(env, key) {
     const raw = env[key];
     return typeof raw === "string" && raw.trim().length > 0;
 }
+function isBedrockAuth(env) {
+    return (env.CLAUDE_CODE_USE_BEDROCK === "1" ||
+        env.CLAUDE_CODE_USE_BEDROCK === "true" ||
+        hasNonEmptyEnvValue(env, "ANTHROPIC_BEDROCK_BASE_URL"));
+}
 function resolveClaudeBillingType(env) {
-    // Claude uses API-key auth when ANTHROPIC_API_KEY is present; otherwise rely on local login/session auth.
+    if (isBedrockAuth(env))
+        return "metered_api";
     return hasNonEmptyEnvValue(env, "ANTHROPIC_API_KEY") ? "api" : "subscription";
 }
 function parseBooleanEnv(value, fallback) {
@@ -122,6 +129,7 @@ async function buildClaudeRuntimeConfig(input) {
     const linkedIssueIds = Array.isArray(context.issueIds)
         ? context.issueIds.filter((value) => typeof value === "string" && value.trim().length > 0)
         : [];
+    const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
     if (wakeTaskId) {
         env.PAPERCLIP_TASK_ID = wakeTaskId;
     }
@@ -139,6 +147,9 @@ async function buildClaudeRuntimeConfig(input) {
     }
     if (linkedIssueIds.length > 0) {
         env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+    }
+    if (wakePayloadJson) {
+        env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
     }
     if (effectiveWorkspaceCwd) {
         env.PAPERCLIP_WORKSPACE_CWD = effectiveWorkspaceCwd;
@@ -251,16 +262,11 @@ export async function execute(ctx) {
     const effort = asString(config.effort, "");
     const chrome = asBoolean(config.chrome, false);
     const maxTurns = asNumber(config.maxTurnsPerRun, 0);
-    const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, false);
+    const dangerouslySkipPermissions = asBoolean(config.dangerouslySkipPermissions, true);
     const runningAsRoot = typeof process.getuid === "function" && process.getuid() === 0;
     const runAsUser = resolveClaudeRunAsUser(config);
     const instructionsFilePath = asString(config.instructionsFilePath, "").trim();
     const instructionsFileDir = instructionsFilePath ? `${path.dirname(instructionsFilePath)}/` : "";
-    const commandNotes = instructionsFilePath
-        ? [
-            `Injected agent instructions via --append-system-prompt-file ${instructionsFilePath} (with path directive appended)`,
-        ]
-        : [];
     const runtimeConfig = await buildClaudeRuntimeConfig({
         runId,
         agent,
@@ -272,20 +278,26 @@ export async function execute(ctx) {
     const hasDangerousSkipInExtraArgs = extraArgs.includes("--dangerously-skip-permissions");
     const effectiveRunAsRoot = runAsUser ? runAsUser.uid === 0 : runningAsRoot;
     const canUseDangerousSkipPermissions = dangerouslySkipPermissions && !effectiveRunAsRoot;
-    if (runAsUser) {
-        commandNotes.push(`Spawned Claude CLI as uid ${runAsUser.uid}, gid ${runAsUser.gid}.`);
-    }
-    if ((dangerouslySkipPermissions || hasDangerousSkipInExtraArgs) && effectiveRunAsRoot) {
-        commandNotes.push("Ignored dangerouslySkipPermissions because Claude CLI forbids --dangerously-skip-permissions under root/sudo.");
-    }
     const effectiveEnv = Object.fromEntries(Object.entries({ ...process.env, ...env }).filter((entry) => typeof entry[1] === "string"));
     const billingType = resolveClaudeBillingType(effectiveEnv);
     const skillsDir = await buildSkillsDir(config);
-    // When instructionsFilePath is configured, create a combined temp file that
-    // includes both the file content and the path directive, so we only need
-    // --append-system-prompt-file (Claude CLI forbids using both flags together).
-    let effectiveInstructionsFilePath = instructionsFilePath;
-    if (instructionsFilePath) {
+    const runtimeSessionParams = parseObject(runtime.sessionParams);
+    const runtimeSessionId = asString(runtimeSessionParams.sessionId, runtime.sessionId ?? "");
+    const runtimeSessionCwd = asString(runtimeSessionParams.cwd, "");
+    const canResumeSession = runtimeSessionId.length > 0 &&
+        (runtimeSessionCwd.length === 0 || path.resolve(runtimeSessionCwd) === path.resolve(cwd));
+    const sessionId = canResumeSession ? runtimeSessionId : null;
+    if (runtimeSessionId && !canResumeSession) {
+        await onLog("stdout", `[paperclip] Claude session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${cwd}".\n`);
+    }
+    let effectiveInstructionsFilePath;
+    let preparedInstructionsFile = false;
+    const ensureEffectiveInstructionsFilePath = async (resumeSessionId) => {
+        if (resumeSessionId || !instructionsFilePath)
+            return undefined;
+        if (preparedInstructionsFile)
+            return effectiveInstructionsFilePath;
+        preparedInstructionsFile = true;
         try {
             const instructionsContent = await fs.readFile(instructionsFilePath, "utf-8");
             const pathDirective = `\nThe above agent instructions were loaded from ${instructionsFilePath}. Resolve any relative file references from ${instructionsFileDir}.`;
@@ -298,16 +310,8 @@ export async function execute(ctx) {
             await onLog("stderr", `[paperclip] Warning: could not read agent instructions file "${instructionsFilePath}": ${reason}\n`);
             effectiveInstructionsFilePath = undefined;
         }
-    }
-    const runtimeSessionParams = parseObject(runtime.sessionParams);
-    const runtimeSessionId = asString(runtimeSessionParams.sessionId, runtime.sessionId ?? "");
-    const runtimeSessionCwd = asString(runtimeSessionParams.cwd, "");
-    const canResumeSession = runtimeSessionId.length > 0 &&
-        (runtimeSessionCwd.length === 0 || path.resolve(runtimeSessionCwd) === path.resolve(cwd));
-    const sessionId = canResumeSession ? runtimeSessionId : null;
-    if (runtimeSessionId && !canResumeSession) {
-        await onLog("stdout", `[paperclip] Claude session "${runtimeSessionId}" was saved for cwd "${runtimeSessionCwd}" and will not be resumed in "${cwd}".\n`);
-    }
+        return effectiveInstructionsFilePath;
+    };
     const bootstrapPromptTemplate = asString(config.bootstrapPromptTemplate, "");
     const templateData = {
         agentId: agent.id,
@@ -318,23 +322,27 @@ export async function execute(ctx) {
         run: { id: runId, source: "on_demand" },
         context,
     };
-    const renderedPrompt = renderTemplate(promptTemplate, templateData);
     const renderedBootstrapPrompt = !sessionId && bootstrapPromptTemplate.trim().length > 0
         ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
         : "";
+    const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: Boolean(sessionId) });
+    const shouldUseResumeDeltaPrompt = Boolean(sessionId) && wakePrompt.length > 0;
+    const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
     const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
     const prompt = joinPromptSections([
         renderedBootstrapPrompt,
+        wakePrompt,
         sessionHandoffNote,
         renderedPrompt,
     ]);
     const promptMetrics = {
         promptChars: prompt.length,
         bootstrapPromptChars: renderedBootstrapPrompt.length,
+        wakePromptChars: wakePrompt.length,
         sessionHandoffChars: sessionHandoffNote.length,
         heartbeatPromptChars: renderedPrompt.length,
     };
-    const buildClaudeArgs = (resumeSessionId, options) => {
+    const buildClaudeArgs = (resumeSessionId, attemptInstructionsFilePath, options) => {
         const args = ["--print", "-", "--output-format", "stream-json", "--verbose"];
         if (resumeSessionId)
             args.push("--resume", resumeSessionId);
@@ -343,14 +351,18 @@ export async function execute(ctx) {
         }
         if (chrome)
             args.push("--chrome");
-        if (model)
+        // For Bedrock: only pass --model when the ID is a Bedrock-native identifier
+        // (e.g. "us.anthropic.*" or ARN). Anthropic-style IDs like "claude-opus-4-6" are invalid
+        // on Bedrock, so skip them and let the CLI use its own configured model.
+        if (model && (!isBedrockAuth(effectiveEnv) || isBedrockModelId(model))) {
             args.push("--model", model);
+        }
         if (effort)
             args.push("--effort", effort);
         if (maxTurns > 0)
             args.push("--max-turns", String(maxTurns));
-        if (effectiveInstructionsFilePath) {
-            args.push("--append-system-prompt-file", effectiveInstructionsFilePath);
+        if (attemptInstructionsFilePath && !resumeSessionId) {
+            args.push("--append-system-prompt-file", attemptInstructionsFilePath);
         }
         args.push("--add-dir", skillsDir);
         if ((options?.sanitizedExtraArgs?.length ?? 0) > 0)
@@ -380,6 +392,7 @@ export async function execute(ctx) {
             : `Claude exited with code ${proc.exitCode ?? -1}`;
     };
     const runAttempt = async (resumeSessionId, options) => {
+        const attemptInstructionsFilePath = await ensureEffectiveInstructionsFilePath(resumeSessionId);
         const attemptRunAsUser = options?.disableRunAsUser ? undefined : (runAsUser ?? undefined);
         const attemptRunAsRoot = attemptRunAsUser ? attemptRunAsUser.uid === 0 : runningAsRoot;
         const useDangerousSkipPermissions = dangerouslySkipPermissions &&
@@ -388,10 +401,21 @@ export async function execute(ctx) {
         const attemptSanitizedExtraArgs = attemptRunAsRoot
             ? extraArgs.filter((arg) => arg !== "--dangerously-skip-permissions")
             : extraArgs;
-        const args = buildClaudeArgs(resumeSessionId, {
+        const args = buildClaudeArgs(resumeSessionId, attemptInstructionsFilePath, {
             useDangerousSkipPermissions,
             sanitizedExtraArgs: attemptSanitizedExtraArgs,
         });
+        const commandNotes = attemptInstructionsFilePath && !resumeSessionId
+            ? [
+                `Injected agent instructions via --append-system-prompt-file ${instructionsFilePath} (with path directive appended)`,
+            ]
+            : [];
+        if (attemptRunAsUser) {
+            commandNotes.push(`Spawned Claude CLI as uid ${attemptRunAsUser.uid}, gid ${attemptRunAsUser.gid}.`);
+        }
+        if ((dangerouslySkipPermissions || hasDangerousSkipInExtraArgs) && attemptRunAsRoot) {
+            commandNotes.push("Ignored dangerouslySkipPermissions because Claude CLI forbids --dangerously-skip-permissions under root/sudo.");
+        }
         const attemptNotes = options?.attemptNote ? [...commandNotes, options.attemptNote] : commandNotes;
         if (onMeta) {
             await onMeta({
@@ -493,7 +517,7 @@ export async function execute(ctx) {
             sessionParams: resolvedSessionParams,
             sessionDisplayId: resolvedSessionId,
             provider: "anthropic",
-            biller: "anthropic",
+            biller: isBedrockAuth(effectiveEnv) ? "aws_bedrock" : "anthropic",
             model: parsedStream.model || asString(parsed.model, model),
             billingType,
             costUsd: parsedStream.costUsd ?? asNumber(parsed.total_cost_usd, 0),

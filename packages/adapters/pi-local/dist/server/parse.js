@@ -56,6 +56,14 @@ export function parsePiJsonl(stdout) {
             }
             continue;
         }
+        if (eventType === "auto_retry_end") {
+            const succeeded = event.success === true;
+            if (!succeeded) {
+                const finalError = asString(event.finalError, "").trim();
+                result.errors.push(finalError || "Pi exhausted automatic retries without producing a response.");
+            }
+            continue;
+        }
         // Turn lifecycle
         if (eventType === "turn_start") {
             continue;
@@ -116,6 +124,13 @@ export function parsePiJsonl(stdout) {
                         }
                     }
                 }
+            }
+            continue;
+        }
+        if (eventType === "error") {
+            const message = asString(event.message, "").trim();
+            if (message) {
+                result.errors.push(message);
             }
             continue;
         }

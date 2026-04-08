@@ -6,6 +6,12 @@ function truncateSummaryText(value, maxLength = 500) {
 function readNumericField(record, key) {
     return key in record ? record[key] ?? null : undefined;
 }
+function readCommentText(value) {
+    if (typeof value !== "string")
+        return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
 export function summarizeHeartbeatRunResultJson(resultJson) {
     if (!resultJson || typeof resultJson !== "object" || Array.isArray(resultJson)) {
         return null;
@@ -26,5 +32,14 @@ export function summarizeHeartbeatRunResultJson(resultJson) {
         }
     }
     return Object.keys(summary).length > 0 ? summary : null;
+}
+export function buildHeartbeatRunIssueComment(resultJson) {
+    if (!resultJson || typeof resultJson !== "object" || Array.isArray(resultJson)) {
+        return null;
+    }
+    return (readCommentText(resultJson.summary)
+        ?? readCommentText(resultJson.result)
+        ?? readCommentText(resultJson.message)
+        ?? null);
 }
 //# sourceMappingURL=heartbeat-run-summary.js.map

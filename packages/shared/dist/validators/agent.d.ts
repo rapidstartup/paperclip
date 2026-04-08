@@ -46,7 +46,7 @@ export declare const createAgentSchema: z.ZodObject<{
     reportsTo: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     capabilities: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     desiredSkills: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    adapterType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["process", "http", "claude_local", "codex_local", "gemini_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"]>>>;
+    adapterType: z.ZodDefault<z.ZodString>;
     adapterConfig: z.ZodDefault<z.ZodOptional<z.ZodEffects<z.ZodRecord<z.ZodString, z.ZodUnknown>, Record<string, unknown>, Record<string, unknown>>>>;
     runtimeConfig: z.ZodDefault<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     budgetMonthlyCents: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
@@ -61,7 +61,7 @@ export declare const createAgentSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     budgetMonthlyCents: number;
-    adapterType: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
+    adapterType: string;
     adapterConfig: Record<string, unknown>;
     role: "ceo" | "cto" | "cmo" | "cfo" | "engineer" | "designer" | "pm" | "qa" | "devops" | "researcher" | "general";
     runtimeConfig: Record<string, unknown>;
@@ -76,9 +76,9 @@ export declare const createAgentSchema: z.ZodObject<{
     reportsTo?: string | null | undefined;
 }, {
     name: string;
-    budgetMonthlyCents?: number | undefined;
     metadata?: Record<string, unknown> | null | undefined;
-    adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
+    budgetMonthlyCents?: number | undefined;
+    adapterType?: string | undefined;
     desiredSkills?: string[] | undefined;
     adapterConfig?: Record<string, unknown> | undefined;
     title?: string | null | undefined;
@@ -100,7 +100,7 @@ export declare const createAgentHireSchema: z.ZodObject<{
     reportsTo: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     capabilities: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     desiredSkills: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
-    adapterType: z.ZodDefault<z.ZodOptional<z.ZodEnum<["process", "http", "claude_local", "codex_local", "gemini_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"]>>>;
+    adapterType: z.ZodDefault<z.ZodString>;
     adapterConfig: z.ZodDefault<z.ZodOptional<z.ZodEffects<z.ZodRecord<z.ZodString, z.ZodUnknown>, Record<string, unknown>, Record<string, unknown>>>>;
     runtimeConfig: z.ZodDefault<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     budgetMonthlyCents: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
@@ -118,10 +118,11 @@ export declare const createAgentHireSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     name: string;
     budgetMonthlyCents: number;
-    adapterType: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser";
+    adapterType: string;
     adapterConfig: Record<string, unknown>;
     role: "ceo" | "cto" | "cmo" | "cfo" | "engineer" | "designer" | "pm" | "qa" | "devops" | "researcher" | "general";
     runtimeConfig: Record<string, unknown>;
+    sourceIssueId?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     desiredSkills?: string[] | undefined;
     title?: string | null | undefined;
@@ -131,13 +132,13 @@ export declare const createAgentHireSchema: z.ZodObject<{
         canCreateAgents: boolean;
     } | undefined;
     reportsTo?: string | null | undefined;
-    sourceIssueId?: string | null | undefined;
     sourceIssueIds?: string[] | undefined;
 }, {
     name: string;
-    budgetMonthlyCents?: number | undefined;
+    sourceIssueId?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
-    adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
+    budgetMonthlyCents?: number | undefined;
+    adapterType?: string | undefined;
     desiredSkills?: string[] | undefined;
     adapterConfig?: Record<string, unknown> | undefined;
     title?: string | null | undefined;
@@ -149,15 +150,14 @@ export declare const createAgentHireSchema: z.ZodObject<{
         canCreateAgents?: boolean | undefined;
     } | undefined;
     reportsTo?: string | null | undefined;
-    sourceIssueId?: string | null | undefined;
     sourceIssueIds?: string[] | undefined;
 }>;
 export type CreateAgentHire = z.infer<typeof createAgentHireSchema>;
 export declare const updateAgentSchema: z.ZodObject<{
     name: z.ZodOptional<z.ZodString>;
-    budgetMonthlyCents: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodNumber>>>;
     metadata: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>>;
-    adapterType: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<["process", "http", "claude_local", "codex_local", "gemini_local", "opencode_local", "pi_local", "cursor", "openclaw_gateway", "hermes_local", "agent_browser"]>>>>;
+    budgetMonthlyCents: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodNumber>>>;
+    adapterType: z.ZodOptional<z.ZodDefault<z.ZodString>>;
     desiredSkills: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     adapterConfig: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEffects<z.ZodRecord<z.ZodString, z.ZodUnknown>, Record<string, unknown>, Record<string, unknown>>>>>;
     title: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
@@ -172,12 +172,12 @@ export declare const updateAgentSchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodEnum<["active", "paused", "idle", "running", "error", "pending_approval", "terminated"]>>;
     spentMonthlyCents: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    status?: "active" | "paused" | "idle" | "running" | "error" | "pending_approval" | "terminated" | undefined;
     name?: string | undefined;
+    status?: "active" | "paused" | "idle" | "running" | "error" | "pending_approval" | "terminated" | undefined;
+    metadata?: Record<string, unknown> | null | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
-    metadata?: Record<string, unknown> | null | undefined;
-    adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
+    adapterType?: string | undefined;
     desiredSkills?: string[] | undefined;
     adapterConfig?: Record<string, unknown> | undefined;
     title?: string | null | undefined;
@@ -189,12 +189,12 @@ export declare const updateAgentSchema: z.ZodObject<{
     reportsTo?: string | null | undefined;
     replaceAdapterConfig?: boolean | undefined;
 }, {
-    status?: "active" | "paused" | "idle" | "running" | "error" | "pending_approval" | "terminated" | undefined;
     name?: string | undefined;
+    status?: "active" | "paused" | "idle" | "running" | "error" | "pending_approval" | "terminated" | undefined;
+    metadata?: Record<string, unknown> | null | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
-    metadata?: Record<string, unknown> | null | undefined;
-    adapterType?: "process" | "http" | "claude_local" | "codex_local" | "gemini_local" | "opencode_local" | "pi_local" | "cursor" | "openclaw_gateway" | "hermes_local" | "agent_browser" | undefined;
+    adapterType?: string | undefined;
     desiredSkills?: string[] | undefined;
     adapterConfig?: Record<string, unknown> | undefined;
     title?: string | null | undefined;
@@ -252,8 +252,8 @@ export declare const wakeAgentSchema: z.ZodObject<{
     idempotencyKey?: string | null | undefined;
     triggerDetail?: "manual" | "system" | "ping" | "callback" | undefined;
 }, {
-    source?: "timer" | "assignment" | "on_demand" | "automation" | undefined;
     reason?: string | null | undefined;
+    source?: "timer" | "assignment" | "on_demand" | "automation" | undefined;
     payload?: Record<string, unknown> | null | undefined;
     idempotencyKey?: string | null | undefined;
     triggerDetail?: "manual" | "system" | "ping" | "callback" | undefined;

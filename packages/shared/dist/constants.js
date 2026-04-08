@@ -113,6 +113,11 @@ export const INBOX_MINE_ISSUE_STATUSES = [
 export const INBOX_MINE_ISSUE_STATUS_FILTER = INBOX_MINE_ISSUE_STATUSES.join(",");
 export const ISSUE_PRIORITIES = ["critical", "high", "medium", "low"];
 export const ISSUE_ORIGIN_KINDS = ["manual", "routine_execution"];
+export const ISSUE_RELATION_TYPES = ["blocks"];
+export const ISSUE_EXECUTION_POLICY_MODES = ["normal", "auto"];
+export const ISSUE_EXECUTION_STAGE_TYPES = ["review", "approval"];
+export const ISSUE_EXECUTION_STATE_STATUSES = ["idle", "pending", "changes_requested", "completed"];
+export const ISSUE_EXECUTION_DECISION_OUTCOMES = ["approved", "changes_requested"];
 export const GOAL_LEVELS = ["company", "team", "agent", "task"];
 export const GOAL_STATUSES = ["planned", "active", "achieved", "cancelled"];
 export const PROJECT_STATUSES = [
@@ -126,7 +131,7 @@ export const ROUTINE_STATUSES = ["active", "paused", "archived"];
 export const ROUTINE_CONCURRENCY_POLICIES = ["coalesce_if_active", "always_enqueue", "skip_if_active"];
 export const ROUTINE_CATCH_UP_POLICIES = ["skip_missed", "enqueue_missed_with_cap"];
 export const ROUTINE_TRIGGER_KINDS = ["schedule", "webhook", "api"];
-export const ROUTINE_TRIGGER_SIGNING_MODES = ["bearer", "hmac_sha256"];
+export const ROUTINE_TRIGGER_SIGNING_MODES = ["bearer", "hmac_sha256", "github_hmac", "none"];
 export const ROUTINE_VARIABLE_TYPES = ["text", "textarea", "number", "boolean", "select"];
 export const ROUTINE_RUN_STATUSES = [
     "received",
@@ -150,7 +155,12 @@ export const PROJECT_COLORS = [
     "#06b6d4", // cyan
     "#3b82f6", // blue
 ];
-export const APPROVAL_TYPES = ["hire_agent", "approve_ceo_strategy", "budget_override_required"];
+export const APPROVAL_TYPES = [
+    "hire_agent",
+    "approve_ceo_strategy",
+    "budget_override_required",
+    "request_board_approval",
+];
 export const APPROVAL_STATUSES = [
     "pending",
     "revision_requested",

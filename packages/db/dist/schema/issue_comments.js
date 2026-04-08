@@ -18,5 +18,6 @@ export const issueComments = pgTable("issue_comments", {
     companyIdx: index("issue_comments_company_idx").on(table.companyId),
     companyIssueCreatedAtIdx: index("issue_comments_company_issue_created_at_idx").on(table.companyId, table.issueId, table.createdAt),
     companyAuthorIssueCreatedAtIdx: index("issue_comments_company_author_issue_created_at_idx").on(table.companyId, table.authorUserId, table.issueId, table.createdAt),
+    bodySearchIdx: index("issue_comments_body_search_idx").using("gin", table.body.op("gin_trgm_ops")),
 }));
 //# sourceMappingURL=issue_comments.js.map

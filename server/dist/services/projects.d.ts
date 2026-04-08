@@ -59,10 +59,11 @@ export declare function projectService(db: Db): {
         updatedAt: Date;
         companyId: string;
         goalId: string | null;
-        leadAgentId: string | null;
-        targetDate: string | null;
         color: string | null;
+        targetDate: string | null;
         executionWorkspacePolicy: Record<string, unknown> | null;
+        env: import("@paperclipai/shared").AgentEnvConfig | null;
+        leadAgentId: string | null;
         archivedAt: Date | null;
     } | null>;
     listWorkspaces: (projectId: string) => Promise<ProjectWorkspace[]>;

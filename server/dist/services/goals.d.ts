@@ -9,9 +9,9 @@ export declare function getDefaultCompanyGoal(db: GoalReader, companyId: string)
     updatedAt: Date;
     companyId: string;
     title: string;
-    level: string;
     parentId: string | null;
     ownerAgentId: string | null;
+    level: string;
 }>;
 export declare function goalService(db: Db): {
     list: (companyId: string) => Omit<import("drizzle-orm/pg-core").PgSelectBase<"goals", {
@@ -193,9 +193,9 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        level: string;
         parentId: string | null;
         ownerAgentId: string | null;
+        level: string;
     }[], {
         id: import("drizzle-orm/pg-core").PgColumn<{
             name: "id";
@@ -376,9 +376,9 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        level: string;
         parentId: string | null;
         ownerAgentId: string | null;
+        level: string;
     }>;
     getDefaultCompanyGoal: (companyId: string) => Promise<{
         id: string;
@@ -388,9 +388,9 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        level: string;
         parentId: string | null;
         ownerAgentId: string | null;
+        level: string;
     }>;
     create: (companyId: string, data: Omit<typeof goals.$inferInsert, "companyId">) => Promise<{
         id: string;
@@ -400,9 +400,9 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        level: string;
         parentId: string | null;
         ownerAgentId: string | null;
+        level: string;
     }>;
     update: (id: string, data: Partial<typeof goals.$inferInsert>) => Promise<{
         id: string;
@@ -424,9 +424,9 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        level: string;
         parentId: string | null;
         ownerAgentId: string | null;
+        level: string;
     }>;
 };
 export {};

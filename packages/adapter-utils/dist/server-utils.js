@@ -109,6 +109,130 @@ export function joinPromptSections(sections, separator = "\n\n") {
         .filter(Boolean)
         .join(separator);
 }
+function normalizePaperclipWakeIssue(value) {
+    const issue = parseObject(value);
+    const id = asString(issue.id, "").trim() || null;
+    const identifier = asString(issue.identifier, "").trim() || null;
+    const title = asString(issue.title, "").trim() || null;
+    const status = asString(issue.status, "").trim() || null;
+    const priority = asString(issue.priority, "").trim() || null;
+    if (!id && !identifier && !title)
+        return null;
+    return {
+        id,
+        identifier,
+        title,
+        status,
+        priority,
+    };
+}
+function normalizePaperclipWakeComment(value) {
+    const comment = parseObject(value);
+    const author = parseObject(comment.author);
+    const body = asString(comment.body, "");
+    if (!body.trim())
+        return null;
+    return {
+        id: asString(comment.id, "").trim() || null,
+        issueId: asString(comment.issueId, "").trim() || null,
+        body,
+        bodyTruncated: asBoolean(comment.bodyTruncated, false),
+        createdAt: asString(comment.createdAt, "").trim() || null,
+        authorType: asString(author.type, "").trim() || null,
+        authorId: asString(author.id, "").trim() || null,
+    };
+}
+export function normalizePaperclipWakePayload(value) {
+    const payload = parseObject(value);
+    const comments = Array.isArray(payload.comments)
+        ? payload.comments
+            .map((entry) => normalizePaperclipWakeComment(entry))
+            .filter((entry) => Boolean(entry))
+        : [];
+    const commentWindow = parseObject(payload.commentWindow);
+    const commentIds = Array.isArray(payload.commentIds)
+        ? payload.commentIds
+            .filter((entry) => typeof entry === "string" && entry.trim().length > 0)
+            .map((entry) => entry.trim())
+        : [];
+    if (comments.length === 0 && commentIds.length === 0)
+        return null;
+    return {
+        reason: asString(payload.reason, "").trim() || null,
+        issue: normalizePaperclipWakeIssue(payload.issue),
+        commentIds,
+        latestCommentId: asString(payload.latestCommentId, "").trim() || null,
+        comments,
+        requestedCount: asNumber(commentWindow.requestedCount, comments.length || commentIds.length),
+        includedCount: asNumber(commentWindow.includedCount, comments.length),
+        missingCount: asNumber(commentWindow.missingCount, 0),
+        truncated: asBoolean(payload.truncated, false),
+        fallbackFetchNeeded: asBoolean(payload.fallbackFetchNeeded, false),
+    };
+}
+export function stringifyPaperclipWakePayload(value) {
+    const normalized = normalizePaperclipWakePayload(value);
+    if (!normalized)
+        return null;
+    return JSON.stringify(normalized);
+}
+export function renderPaperclipWakePrompt(value, options = {}) {
+    const normalized = normalizePaperclipWakePayload(value);
+    if (!normalized)
+        return "";
+    const resumedSession = options.resumedSession === true;
+    const lines = resumedSession
+        ? [
+            "## Paperclip Resume Delta",
+            "",
+            "You are resuming an existing Paperclip session.",
+            "This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.",
+            "Focus on the new wake delta below and continue the current task without restating the full heartbeat boilerplate.",
+            "Fetch the API thread only when `fallbackFetchNeeded` is true or you need broader history than this batch.",
+            "",
+            `- reason: ${normalized.reason ?? "unknown"}`,
+            `- issue: ${normalized.issue?.identifier ?? normalized.issue?.id ?? "unknown"}${normalized.issue?.title ? ` ${normalized.issue.title}` : ""}`,
+            `- pending comments: ${normalized.includedCount}/${normalized.requestedCount}`,
+            `- latest comment id: ${normalized.latestCommentId ?? "unknown"}`,
+            `- fallback fetch needed: ${normalized.fallbackFetchNeeded ? "yes" : "no"}`,
+        ]
+        : [
+            "## Paperclip Wake Payload",
+            "",
+            "Treat this wake payload as the highest-priority change for the current heartbeat.",
+            "This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.",
+            "Before generic repo exploration or boilerplate heartbeat updates, acknowledge the latest comment and explain how it changes your next action.",
+            "Use this inline wake data first before refetching the issue thread.",
+            "Only fetch the API thread when `fallbackFetchNeeded` is true or you need broader history than this batch.",
+            "",
+            `- reason: ${normalized.reason ?? "unknown"}`,
+            `- issue: ${normalized.issue?.identifier ?? normalized.issue?.id ?? "unknown"}${normalized.issue?.title ? ` ${normalized.issue.title}` : ""}`,
+            `- pending comments: ${normalized.includedCount}/${normalized.requestedCount}`,
+            `- latest comment id: ${normalized.latestCommentId ?? "unknown"}`,
+            `- fallback fetch needed: ${normalized.fallbackFetchNeeded ? "yes" : "no"}`,
+        ];
+    if (normalized.issue?.status) {
+        lines.push(`- issue status: ${normalized.issue.status}`);
+    }
+    if (normalized.issue?.priority) {
+        lines.push(`- issue priority: ${normalized.issue.priority}`);
+    }
+    if (normalized.missingCount > 0) {
+        lines.push(`- omitted comments: ${normalized.missingCount}`);
+    }
+    lines.push("", "New comments in order:");
+    for (const [index, comment] of normalized.comments.entries()) {
+        const authorLabel = comment.authorId
+            ? `${comment.authorType ?? "unknown"} ${comment.authorId}`
+            : comment.authorType ?? "unknown";
+        lines.push(`${index + 1}. comment ${comment.id ?? "unknown"} at ${comment.createdAt ?? "unknown"} by ${authorLabel}`, comment.body);
+        if (comment.bodyTruncated) {
+            lines.push("[comment body truncated]");
+        }
+        lines.push("");
+    }
+    return lines.join("\n").trim();
+}
 export function redactEnvForLogs(env) {
     const redacted = {};
     for (const [key, value] of Object.entries(env)) {
@@ -203,6 +327,10 @@ function quoteForCmd(arg) {
     const escaped = arg.replace(/"/g, '""');
     return /[\s"&<>|^()]/.test(escaped) ? `"${escaped}"` : escaped;
 }
+function resolveWindowsCmdShell(env) {
+    const fallbackRoot = env.SystemRoot || process.env.SystemRoot || "C:\\Windows";
+    return path.join(fallbackRoot, "System32", "cmd.exe");
+}
 async function resolveSpawnTarget(command, args, cwd, env) {
     const resolved = await resolveCommandPath(command, cwd, env);
     const executable = resolved ?? command;
@@ -210,7 +338,9 @@ async function resolveSpawnTarget(command, args, cwd, env) {
         return { command: executable, args };
     }
     if (/\.(cmd|bat)$/i.test(executable)) {
-        const shell = env.ComSpec || process.env.ComSpec || "cmd.exe";
+        // Always use cmd.exe for .cmd/.bat wrappers. Some environments override
+        // ComSpec to PowerShell, which breaks cmd-specific flags like /d /s /c.
+        const shell = resolveWindowsCmdShell(env);
         const commandLine = [quoteForCmd(executable), ...args.map(quoteForCmd)].join(" ");
         return {
             command: shell,

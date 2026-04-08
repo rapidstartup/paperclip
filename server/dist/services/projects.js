@@ -1,8 +1,7 @@
 import { and, asc, desc, eq, inArray } from "drizzle-orm";
-import { projects, projectGoals, goals, projectWorkspaces, agents } from "@paperclipai/db";
+import { projects, projectGoals, goals, projectWorkspaces } from "@paperclipai/db";
 import { PROJECT_COLORS, deriveProjectUrlKey, hasNonAsciiContent, isUuidLike, normalizeProjectUrlKey, } from "@paperclipai/shared";
-import { listWorkspaceRuntimeServicesForProjectWorkspaces } from "./workspace-runtime.js";
-import { unprocessable } from "../errors.js";
+import { listCurrentRuntimeServicesForProjectWorkspaces } from "./workspace-runtime-read-model.js";
 import { parseProjectExecutionWorkspacePolicy } from "./execution-workspace-policy.js";
 import { mergeProjectWorkspaceRuntimeConfig, readProjectWorkspaceRuntimeConfig } from "./project-workspace-runtime-config.js";
 import { resolveManagedProjectWorkspaceDir } from "../home-paths.js";
@@ -151,7 +150,7 @@ async function attachWorkspaces(db, rows) {
         .from(projectWorkspaces)
         .where(inArray(projectWorkspaces.projectId, projectIds))
         .orderBy(desc(projectWorkspaces.isPrimary), asc(projectWorkspaces.createdAt), asc(projectWorkspaces.id));
-    const runtimeServicesByWorkspaceId = await listWorkspaceRuntimeServicesForProjectWorkspaces(db, rows[0].companyId, workspaceRows.map((workspace) => workspace.id));
+    const runtimeServicesByWorkspaceId = await listCurrentRuntimeServicesForProjectWorkspaces(db, rows[0].companyId, workspaceRows.map((workspace) => workspace.id));
     const sharedRuntimeServicesByWorkspaceId = new Map(Array.from(runtimeServicesByWorkspaceId.entries()).map(([workspaceId, services]) => [
         workspaceId,
         services.map(toRuntimeService),
@@ -189,30 +188,6 @@ async function syncGoalLinks(db, projectId, companyId, goalIds) {
     // Insert new links
     if (goalIds.length > 0) {
         await db.insert(projectGoals).values(goalIds.map((goalId) => ({ projectId, goalId, companyId })));
-    }
-}
-async function assertGoalIdsBelongToCompany(dbOrTx, companyId, goalIds) {
-    const deduped = [...new Set(goalIds)];
-    if (deduped.length === 0)
-        return;
-    const existing = await dbOrTx
-        .select({ id: goals.id })
-        .from(goals)
-        .where(and(eq(goals.companyId, companyId), inArray(goals.id, deduped)));
-    if (existing.length !== deduped.length) {
-        throw unprocessable("Project goals must belong to same company");
-    }
-}
-async function assertLeadAgentBelongsToCompany(dbOrTx, companyId, leadAgentId) {
-    if (!leadAgentId)
-        return;
-    const existing = await dbOrTx
-        .select({ id: agents.id })
-        .from(agents)
-        .where(and(eq(agents.id, leadAgentId), eq(agents.companyId, companyId)));
-    const match = existing[0] ?? null;
-    if (!match) {
-        throw unprocessable("Project lead agent must belong to same company");
     }
 }
 /** Resolve goalIds from input, handling the legacy goalId field. */
@@ -349,8 +324,6 @@ export function projectService(db) {
             projectData.name = resolveProjectNameForUniqueShortname(projectData.name, existingProjects);
             // Also write goalId to the legacy column (first goal or null)
             const legacyGoalId = ids && ids.length > 0 ? ids[0] : projectData.goalId ?? null;
-            await assertGoalIdsBelongToCompany(db, companyId, ids ?? []);
-            await assertLeadAgentBelongsToCompany(db, companyId, projectData.leadAgentId);
             const row = await db
                 .insert(projects)
                 .values({ ...projectData, goalId: legacyGoalId, companyId })
@@ -392,11 +365,7 @@ export function projectService(db) {
                 updatedAt: new Date(),
             };
             if (ids !== undefined) {
-                await assertGoalIdsBelongToCompany(db, existingProject.companyId, ids);
                 updates.goalId = ids.length > 0 ? ids[0] : null;
-            }
-            if (projectData.leadAgentId !== undefined) {
-                await assertLeadAgentBelongsToCompany(db, existingProject.companyId, projectData.leadAgentId);
             }
             const row = await db
                 .update(projects)
@@ -431,7 +400,7 @@ export function projectService(db) {
                 .orderBy(desc(projectWorkspaces.isPrimary), asc(projectWorkspaces.createdAt), asc(projectWorkspaces.id));
             if (rows.length === 0)
                 return [];
-            const runtimeServicesByWorkspaceId = await listWorkspaceRuntimeServicesForProjectWorkspaces(db, rows[0].companyId, rows.map((workspace) => workspace.id));
+            const runtimeServicesByWorkspaceId = await listCurrentRuntimeServicesForProjectWorkspaces(db, rows[0].companyId, rows.map((workspace) => workspace.id));
             return rows.map((row) => toWorkspace(row, (runtimeServicesByWorkspaceId.get(row.id) ?? []).map(toRuntimeService)));
         },
         createWorkspace: async (projectId, data) => {

@@ -7,11 +7,11 @@ export declare const companySkillFileInventoryEntrySchema: z.ZodObject<{
     path: z.ZodString;
     kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
 }, "strip", z.ZodTypeAny, {
-    path: string;
     kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+    path: string;
 }, {
-    path: string;
     kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+    path: string;
 }>;
 export declare const companySkillSchema: z.ZodObject<{
     id: z.ZodString;
@@ -30,22 +30,23 @@ export declare const companySkillSchema: z.ZodObject<{
         path: z.ZodString;
         kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
     }, "strip", z.ZodTypeAny, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }>, "many">>;
     metadata: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     createdAt: z.ZodDate;
     updatedAt: z.ZodDate;
 }, "strip", z.ZodTypeAny, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -55,17 +56,17 @@ export declare const companySkillSchema: z.ZodObject<{
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
     fileInventory: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[];
-    metadata: Record<string, unknown> | null;
 }, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -74,10 +75,9 @@ export declare const companySkillSchema: z.ZodObject<{
     sourceRef: string | null;
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
-    metadata: Record<string, unknown> | null;
     fileInventory?: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[] | undefined;
 }>;
 export declare const companySkillListItemSchema: z.ZodObject<{
@@ -97,11 +97,11 @@ export declare const companySkillListItemSchema: z.ZodObject<{
         path: z.ZodString;
         kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
     }, "strip", z.ZodTypeAny, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }>, "many">>;
     metadata: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     createdAt: z.ZodDate;
@@ -113,12 +113,13 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     sourceLabel: z.ZodNullable<z.ZodString>;
     sourceBadge: z.ZodEnum<["paperclip", "github", "local", "url", "catalog", "skills_sh"]>;
 }, "strip", z.ZodTypeAny, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -128,22 +129,22 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
     fileInventory: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[];
-    metadata: Record<string, unknown> | null;
     attachedAgentCount: number;
     editable: boolean;
     editableReason: string | null;
     sourceLabel: string | null;
-    sourceBadge: "paperclip" | "github" | "url" | "catalog" | "skills_sh" | "local";
+    sourceBadge: "github" | "url" | "catalog" | "skills_sh" | "paperclip" | "local";
 }, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -152,15 +153,14 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     sourceRef: string | null;
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
-    metadata: Record<string, unknown> | null;
     attachedAgentCount: number;
     editable: boolean;
     editableReason: string | null;
     sourceLabel: string | null;
-    sourceBadge: "paperclip" | "github" | "url" | "catalog" | "skills_sh" | "local";
+    sourceBadge: "github" | "url" | "catalog" | "skills_sh" | "paperclip" | "local";
     fileInventory?: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[] | undefined;
 }>;
 export declare const companySkillUsageAgentSchema: z.ZodObject<{
@@ -202,11 +202,11 @@ export declare const companySkillDetailSchema: z.ZodObject<{
         path: z.ZodString;
         kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
     }, "strip", z.ZodTypeAny, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }, {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }>, "many">>;
     metadata: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
     createdAt: z.ZodDate;
@@ -240,12 +240,13 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     sourceLabel: z.ZodNullable<z.ZodString>;
     sourceBadge: z.ZodEnum<["paperclip", "github", "local", "url", "catalog", "skills_sh"]>;
 }, "strip", z.ZodTypeAny, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -255,15 +256,14 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
     fileInventory: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[];
-    metadata: Record<string, unknown> | null;
     attachedAgentCount: number;
     editable: boolean;
     editableReason: string | null;
     sourceLabel: string | null;
-    sourceBadge: "paperclip" | "github" | "url" | "catalog" | "skills_sh" | "local";
+    sourceBadge: "github" | "url" | "catalog" | "skills_sh" | "paperclip" | "local";
     usedByAgents: {
         id: string;
         name: string;
@@ -273,12 +273,13 @@ export declare const companySkillDetailSchema: z.ZodObject<{
         actualState: string | null;
     }[];
 }, {
-    updatedAt: Date;
     markdown: string;
     id: string;
     companyId: string;
     createdAt: Date;
+    updatedAt: Date;
     name: string;
+    metadata: Record<string, unknown> | null;
     description: string | null;
     key: string;
     slug: string;
@@ -287,15 +288,14 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     sourceRef: string | null;
     trustLevel: "markdown_only" | "assets" | "scripts_executables";
     compatibility: "unknown" | "compatible" | "invalid";
-    metadata: Record<string, unknown> | null;
     attachedAgentCount: number;
     editable: boolean;
     editableReason: string | null;
     sourceLabel: string | null;
-    sourceBadge: "paperclip" | "github" | "url" | "catalog" | "skills_sh" | "local";
+    sourceBadge: "github" | "url" | "catalog" | "skills_sh" | "paperclip" | "local";
     fileInventory?: {
-        path: string;
         kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+        path: string;
     }[] | undefined;
     usedByAgents?: {
         id: string;
@@ -353,16 +353,16 @@ export declare const companySkillProjectScanSkippedSchema: z.ZodObject<{
     path: z.ZodNullable<z.ZodString>;
     reason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    path: string | null;
-    reason: string;
     projectId: string;
+    reason: string;
+    path: string | null;
     projectName: string;
     workspaceId: string | null;
     workspaceName: string | null;
 }, {
-    path: string | null;
-    reason: string;
     projectId: string;
+    reason: string;
+    path: string | null;
     projectName: string;
     workspaceId: string | null;
     workspaceName: string | null;
@@ -380,11 +380,11 @@ export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
     existingSourceLocator: z.ZodNullable<z.ZodString>;
     reason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    path: string;
+    projectId: string;
     reason: string;
+    path: string;
     key: string;
     slug: string;
-    projectId: string;
     projectName: string;
     workspaceId: string;
     workspaceName: string;
@@ -392,11 +392,11 @@ export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
     existingSkillKey: string;
     existingSourceLocator: string | null;
 }, {
-    path: string;
+    projectId: string;
     reason: string;
+    path: string;
     key: string;
     slug: string;
-    projectId: string;
     projectName: string;
     workspaceId: string;
     workspaceName: string;
@@ -425,22 +425,23 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: z.ZodString;
             kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
         }, "strip", z.ZodTypeAny, {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }, {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }>, "many">>;
         metadata: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         createdAt: z.ZodDate;
         updatedAt: z.ZodDate;
     }, "strip", z.ZodTypeAny, {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -450,17 +451,17 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
         fileInventory: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[];
-        metadata: Record<string, unknown> | null;
     }, {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -469,10 +470,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         sourceRef: string | null;
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
-        metadata: Record<string, unknown> | null;
         fileInventory?: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[] | undefined;
     }>, "many">;
     updated: z.ZodArray<z.ZodObject<{
@@ -492,22 +492,23 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: z.ZodString;
             kind: z.ZodEnum<["skill", "markdown", "reference", "script", "asset", "other"]>;
         }, "strip", z.ZodTypeAny, {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }, {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }>, "many">>;
         metadata: z.ZodNullable<z.ZodRecord<z.ZodString, z.ZodUnknown>>;
         createdAt: z.ZodDate;
         updatedAt: z.ZodDate;
     }, "strip", z.ZodTypeAny, {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -517,17 +518,17 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
         fileInventory: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[];
-        metadata: Record<string, unknown> | null;
     }, {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -536,10 +537,9 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         sourceRef: string | null;
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
-        metadata: Record<string, unknown> | null;
         fileInventory?: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[] | undefined;
     }>, "many">;
     skipped: z.ZodArray<z.ZodObject<{
@@ -550,16 +550,16 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         path: z.ZodNullable<z.ZodString>;
         reason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        path: string | null;
-        reason: string;
         projectId: string;
+        reason: string;
+        path: string | null;
         projectName: string;
         workspaceId: string | null;
         workspaceName: string | null;
     }, {
-        path: string | null;
-        reason: string;
         projectId: string;
+        reason: string;
+        path: string | null;
         projectName: string;
         workspaceId: string | null;
         workspaceName: string | null;
@@ -577,11 +577,11 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         existingSourceLocator: z.ZodNullable<z.ZodString>;
         reason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        path: string;
+        projectId: string;
         reason: string;
+        path: string;
         key: string;
         slug: string;
-        projectId: string;
         projectName: string;
         workspaceId: string;
         workspaceName: string;
@@ -589,11 +589,11 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         existingSkillKey: string;
         existingSourceLocator: string | null;
     }, {
-        path: string;
+        projectId: string;
         reason: string;
+        path: string;
         key: string;
         slug: string;
-        projectId: string;
         projectName: string;
         workspaceId: string;
         workspaceName: string;
@@ -604,20 +604,21 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     skipped: {
-        path: string | null;
-        reason: string;
         projectId: string;
+        reason: string;
+        path: string | null;
         projectName: string;
         workspaceId: string | null;
         workspaceName: string | null;
     }[];
     updated: {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -627,21 +628,21 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
         fileInventory: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[];
-        metadata: Record<string, unknown> | null;
     }[];
     scannedProjects: number;
     scannedWorkspaces: number;
     discovered: number;
     imported: {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -651,17 +652,16 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
         fileInventory: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[];
-        metadata: Record<string, unknown> | null;
     }[];
     conflicts: {
-        path: string;
+        projectId: string;
         reason: string;
+        path: string;
         key: string;
         slug: string;
-        projectId: string;
         projectName: string;
         workspaceId: string;
         workspaceName: string;
@@ -672,20 +672,21 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
     warnings: string[];
 }, {
     skipped: {
-        path: string | null;
-        reason: string;
         projectId: string;
+        reason: string;
+        path: string | null;
         projectName: string;
         workspaceId: string | null;
         workspaceName: string | null;
     }[];
     updated: {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -694,22 +695,22 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         sourceRef: string | null;
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
-        metadata: Record<string, unknown> | null;
         fileInventory?: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[] | undefined;
     }[];
     scannedProjects: number;
     scannedWorkspaces: number;
     discovered: number;
     imported: {
-        updatedAt: Date;
         markdown: string;
         id: string;
         companyId: string;
         createdAt: Date;
+        updatedAt: Date;
         name: string;
+        metadata: Record<string, unknown> | null;
         description: string | null;
         key: string;
         slug: string;
@@ -718,18 +719,17 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         sourceRef: string | null;
         trustLevel: "markdown_only" | "assets" | "scripts_executables";
         compatibility: "unknown" | "compatible" | "invalid";
-        metadata: Record<string, unknown> | null;
         fileInventory?: {
-            path: string;
             kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+            path: string;
         }[] | undefined;
     }[];
     conflicts: {
-        path: string;
+        projectId: string;
         reason: string;
+        path: string;
         key: string;
         slug: string;
-        projectId: string;
         projectName: string;
         workspaceId: string;
         workspaceName: string;
@@ -764,17 +764,17 @@ export declare const companySkillFileDetailSchema: z.ZodObject<{
     markdown: z.ZodBoolean;
     editable: z.ZodBoolean;
 }, "strip", z.ZodTypeAny, {
-    path: string;
     markdown: boolean;
     kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+    path: string;
     editable: boolean;
     skillId: string;
     content: string;
     language: string | null;
 }, {
-    path: string;
     markdown: boolean;
     kind: "skill" | "markdown" | "reference" | "script" | "asset" | "other";
+    path: string;
     editable: boolean;
     skillId: string;
     content: string;

@@ -1,5 +1,6 @@
 import { getAdapterSessionManagement } from "@paperclipai/adapter-utils";
-import { execute as claudeExecute, listClaudeSkills, syncClaudeSkills, testEnvironment as claudeTestEnvironment, sessionCodec as claudeSessionCodec, getQuotaWindows as claudeGetQuotaWindows, } from "@paperclipai/adapter-claude-local/server";
+import { buildPaperclipEnv } from "@paperclipai/adapter-utils/server-utils";
+import { execute as claudeExecute, listClaudeSkills, syncClaudeSkills, listClaudeModels, testEnvironment as claudeTestEnvironment, sessionCodec as claudeSessionCodec, getQuotaWindows as claudeGetQuotaWindows, } from "@paperclipai/adapter-claude-local/server";
 import { agentConfigurationDoc as claudeAgentConfigurationDoc, models as claudeModels } from "@paperclipai/adapter-claude-local";
 import { execute as codexExecute, listCodexSkills, syncCodexSkills, testEnvironment as codexTestEnvironment, sessionCodec as codexSessionCodec, getQuotaWindows as codexGetQuotaWindows, } from "@paperclipai/adapter-codex-local/server";
 import { agentConfigurationDoc as codexAgentConfigurationDoc, models as codexModels } from "@paperclipai/adapter-codex-local";
@@ -19,8 +20,64 @@ import { execute as hermesExecute, testEnvironment as hermesTestEnvironment, ses
 import { agentConfigurationDoc as hermesAgentConfigurationDoc, models as hermesModels, } from "hermes-paperclip-adapter";
 import { execute as agentBrowserExecute, testEnvironment as agentBrowserTestEnvironment, sessionCodec as agentBrowserSessionCodec, } from "@paperclipai/adapter-agent-browser/server";
 import { agentConfigurationDoc as agentBrowserAgentConfigurationDoc, models as agentBrowserModels, } from "@paperclipai/adapter-agent-browser";
+import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
+import { buildExternalAdapters } from "./plugin-loader.js";
+import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+function asHermesEnvStringMap(value) {
+    if (typeof value !== "object" || value === null || Array.isArray(value))
+        return {};
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+        if (typeof v === "string")
+            out[k] = v;
+    }
+    return out;
+}
+/**
+ * hermes-paperclip-adapter execute() reads ctx.agent.adapterConfig, but the heartbeat passes
+ * secret-resolved fields on ctx.config (same pattern as Claude/Codex). Merge so OPENROUTER_API_KEY
+ * and other env bindings reach the Hermes child process.
+ *
+ * Also inject the same Paperclip baseline env as Claude/Codex (`PAPERCLIP_API_URL`, agent ids, run id,
+ * JWT) so tools are not forced to guess `localhost:8082` (or similar) when calling the API.
+ *
+ * Hermes `chat -q` is non-interactive: terminal tools that run `curl` to Paperclip hit “dangerous
+ * command” approval with nobody to approve → "User denied". The upstream CLI flag `--yolo` bypasses
+ * those prompts (same idea as Codex bypass flags).
+ */
+function hermesExecuteWithResolvedConfig(ctx) {
+    const base = typeof ctx.agent.adapterConfig === "object" && ctx.agent.adapterConfig !== null
+        && !Array.isArray(ctx.agent.adapterConfig)
+        ? ctx.agent.adapterConfig
+        : {};
+    const merged = { ...base, ...ctx.config };
+    const paperclipEnv = buildPaperclipEnv(ctx.agent);
+    paperclipEnv.PAPERCLIP_RUN_ID = ctx.runId;
+    const adapterEnv = asHermesEnvStringMap(merged.env);
+    const hasExplicitApiKey = typeof adapterEnv.PAPERCLIP_API_KEY === "string" &&
+        adapterEnv.PAPERCLIP_API_KEY.trim().length > 0;
+    merged.env = { ...paperclipEnv, ...adapterEnv };
+    if (!hasExplicitApiKey && typeof ctx.authToken === "string" && ctx.authToken.trim().length > 0) {
+        merged.env.PAPERCLIP_API_KEY = ctx.authToken;
+    }
+    const rawExtra = merged.extraArgs;
+    const extra = Array.isArray(rawExtra)
+        ? rawExtra.filter((item) => typeof item === "string")
+        : [];
+    if (merged.hermesDisableYolo !== true && !extra.includes("--yolo")) {
+        extra.push("--yolo");
+    }
+    merged.extraArgs = extra;
+    return hermesExecute({
+        ...ctx,
+        agent: {
+            ...ctx.agent,
+            adapterConfig: merged,
+        },
+    });
+}
 const claudeLocalAdapter = {
     type: "claude_local",
     execute: claudeExecute,
@@ -30,6 +87,7 @@ const claudeLocalAdapter = {
     sessionCodec: claudeSessionCodec,
     sessionManagement: getAdapterSessionManagement("claude_local") ?? undefined,
     models: claudeModels,
+    listModels: listClaudeModels,
     supportsLocalAgentJwt: true,
     agentConfigurationDoc: claudeAgentConfigurationDoc,
     getQuotaWindows: claudeGetQuotaWindows,
@@ -111,7 +169,7 @@ const piLocalAdapter = {
 };
 const hermesLocalAdapter = {
     type: "hermes_local",
-    execute: hermesExecute,
+    execute: hermesExecuteWithResolvedConfig,
     testEnvironment: hermesTestEnvironment,
     sessionCodec: hermesSessionCodec,
     listSkills: hermesListSkills,
@@ -131,29 +189,112 @@ const agentBrowserAdapter = {
     supportsLocalAgentJwt: false,
     agentConfigurationDoc: agentBrowserAgentConfigurationDoc,
 };
-const adaptersByType = new Map([
-    claudeLocalAdapter,
-    codexLocalAdapter,
-    openCodeLocalAdapter,
-    piLocalAdapter,
-    cursorLocalAdapter,
-    geminiLocalAdapter,
-    openclawGatewayAdapter,
-    hermesLocalAdapter,
-    agentBrowserAdapter,
-    processAdapter,
-    httpAdapter,
-].map((a) => [a.type, a]));
-export function getServerAdapter(type) {
-    const adapter = adaptersByType.get(type);
+const adaptersByType = new Map();
+const builtinFallbacks = new Map();
+const pausedOverrides = new Set();
+function registerBuiltInAdapters() {
+    for (const adapter of [
+        claudeLocalAdapter,
+        codexLocalAdapter,
+        openCodeLocalAdapter,
+        piLocalAdapter,
+        cursorLocalAdapter,
+        geminiLocalAdapter,
+        openclawGatewayAdapter,
+        hermesLocalAdapter,
+        agentBrowserAdapter,
+        processAdapter,
+        httpAdapter,
+    ]) {
+        adaptersByType.set(adapter.type, adapter);
+    }
+}
+registerBuiltInAdapters();
+// ---------------------------------------------------------------------------
+// Load external adapter plugins (e.g. droid_local)
+//
+// External adapter packages export createServerAdapter() which returns a
+// ServerAdapterModule. The host fills in sessionManagement.
+// ---------------------------------------------------------------------------
+/** Cached sync wrapper — the store is a simple JSON file read, safe to call frequently. */
+function getDisabledAdapterTypesFromStore() {
+    return getDisabledAdapterTypes();
+}
+/**
+ * Load external adapters from the plugin store and hardcoded sources.
+ * Called once at module initialization. The promise is exported so that
+ * callers (e.g. assertKnownAdapterType, app startup) can await completion
+ * and avoid racing against the loading window.
+ */
+const externalAdaptersReady = (async () => {
+    try {
+        const externalAdapters = await buildExternalAdapters();
+        for (const externalAdapter of externalAdapters) {
+            const overriding = BUILTIN_ADAPTER_TYPES.has(externalAdapter.type);
+            if (overriding) {
+                console.log(`[paperclip] External adapter "${externalAdapter.type}" overrides built-in adapter`);
+                // Save the original builtin for later restoration.
+                const existing = adaptersByType.get(externalAdapter.type);
+                if (existing && !builtinFallbacks.has(externalAdapter.type)) {
+                    builtinFallbacks.set(externalAdapter.type, existing);
+                }
+            }
+            adaptersByType.set(externalAdapter.type, {
+                ...externalAdapter,
+                sessionManagement: getAdapterSessionManagement(externalAdapter.type) ?? undefined,
+            });
+        }
+    }
+    catch (err) {
+        console.error("[paperclip] Failed to load external adapters:", err);
+    }
+})();
+/**
+ * Await this before validating adapter types to avoid race conditions
+ * during server startup. External adapters are loaded asynchronously;
+ * calling assertKnownAdapterType before this resolves will reject
+ * valid external adapter types.
+ */
+export function waitForExternalAdapters() {
+    return externalAdaptersReady;
+}
+export function registerServerAdapter(adapter) {
+    if (BUILTIN_ADAPTER_TYPES.has(adapter.type) && !builtinFallbacks.has(adapter.type)) {
+        const existing = adaptersByType.get(adapter.type);
+        if (existing) {
+            builtinFallbacks.set(adapter.type, existing);
+        }
+    }
+    adaptersByType.set(adapter.type, adapter);
+}
+export function unregisterServerAdapter(type) {
+    if (type === processAdapter.type || type === httpAdapter.type)
+        return;
+    if (builtinFallbacks.has(type)) {
+        pausedOverrides.delete(type);
+        const fallback = builtinFallbacks.get(type);
+        if (fallback) {
+            adaptersByType.set(type, fallback);
+        }
+        return;
+    }
+    if (BUILTIN_ADAPTER_TYPES.has(type)) {
+        return;
+    }
+    adaptersByType.delete(type);
+}
+export function requireServerAdapter(type) {
+    const adapter = findActiveServerAdapter(type);
     if (!adapter) {
-        // Fall back to process adapter for unknown types
-        return processAdapter;
+        throw new Error(`Unknown adapter type: ${type}`);
     }
     return adapter;
 }
+export function getServerAdapter(type) {
+    return findActiveServerAdapter(type) ?? processAdapter;
+}
 export async function listAdapterModels(type) {
-    const adapter = adaptersByType.get(type);
+    const adapter = findActiveServerAdapter(type);
     if (!adapter)
         return [];
     if (adapter.listModels) {
@@ -166,14 +307,81 @@ export async function listAdapterModels(type) {
 export function listServerAdapters() {
     return Array.from(adaptersByType.values());
 }
+/**
+ * List adapters excluding those that are disabled in settings.
+ * Used for menus and agent creation flows — disabled adapters remain
+ * functional for existing agents but hidden from selection.
+ */
+export function listEnabledServerAdapters() {
+    const disabled = getDisabledAdapterTypesFromStore();
+    const disabledSet = disabled.length > 0 ? new Set(disabled) : null;
+    return disabledSet
+        ? Array.from(adaptersByType.values()).filter((a) => !disabledSet.has(a.type))
+        : Array.from(adaptersByType.values());
+}
 export async function detectAdapterModel(type) {
-    const adapter = adaptersByType.get(type);
+    const adapter = findActiveServerAdapter(type);
     if (!adapter?.detectModel)
         return null;
     const detected = await adapter.detectModel();
-    return detected ? { model: detected.model, provider: detected.provider, source: detected.source } : null;
+    if (!detected)
+        return null;
+    return {
+        model: detected.model,
+        provider: detected.provider,
+        source: detected.source,
+        ...(detected.candidates?.length ? { candidates: detected.candidates } : {}),
+    };
+}
+// ---------------------------------------------------------------------------
+// Override pause / resume
+// ---------------------------------------------------------------------------
+/**
+ * Pause or resume an external override for a builtin adapter type.
+ *
+ * - `paused = true`  → subsequent calls to `getServerAdapter(type)` return
+ *   the builtin fallback instead of the external adapter.  Already-running
+ *   agent sessions are unaffected (they hold a reference to the module they
+ *   started with).
+ *
+ * - `paused = false` → the external adapter is active again.
+ *
+ * Returns `true` if the state actually changed, `false` if the type is not
+ * an override or was already in the requested state.
+ */
+export function setOverridePaused(type, paused) {
+    if (!builtinFallbacks.has(type))
+        return false;
+    const wasPaused = pausedOverrides.has(type);
+    if (paused && !wasPaused) {
+        pausedOverrides.add(type);
+        console.log(`[paperclip] Override paused for "${type}" — builtin adapter restored`);
+        return true;
+    }
+    if (!paused && wasPaused) {
+        pausedOverrides.delete(type);
+        console.log(`[paperclip] Override resumed for "${type}" — external adapter active`);
+        return true;
+    }
+    return false;
+}
+/** Check whether the external override for a builtin type is currently paused. */
+export function isOverridePaused(type) {
+    return pausedOverrides.has(type);
+}
+/** Get the set of types whose overrides are currently paused. */
+export function getPausedOverrides() {
+    return pausedOverrides;
 }
 export function findServerAdapter(type) {
+    return adaptersByType.get(type) ?? null;
+}
+export function findActiveServerAdapter(type) {
+    if (pausedOverrides.has(type)) {
+        const fallback = builtinFallbacks.get(type);
+        if (fallback)
+            return fallback;
+    }
     return adaptersByType.get(type) ?? null;
 }
 //# sourceMappingURL=registry.js.map

@@ -14,12 +14,12 @@ export declare const envBindingSecretRefSchema: z.ZodObject<{
     secretId: z.ZodString;
     version: z.ZodOptional<z.ZodUnion<[z.ZodLiteral<"latest">, z.ZodNumber]>>;
 }, "strip", z.ZodTypeAny, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }>;
 export declare const envBindingSchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
@@ -36,12 +36,12 @@ export declare const envBindingSchema: z.ZodUnion<[z.ZodString, z.ZodObject<{
     secretId: z.ZodString;
     version: z.ZodOptional<z.ZodUnion<[z.ZodLiteral<"latest">, z.ZodNumber]>>;
 }, "strip", z.ZodTypeAny, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }>]>;
 export declare const envConfigSchema: z.ZodRecord<z.ZodString, z.ZodUnion<[z.ZodString, z.ZodObject<{
@@ -58,12 +58,12 @@ export declare const envConfigSchema: z.ZodRecord<z.ZodString, z.ZodUnion<[z.Zod
     secretId: z.ZodString;
     version: z.ZodOptional<z.ZodUnion<[z.ZodLiteral<"latest">, z.ZodNumber]>>;
 }, "strip", z.ZodTypeAny, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }, {
-    type: "secret_ref";
     secretId: string;
+    type: "secret_ref";
     version?: number | "latest" | undefined;
 }>]>>;
 export declare const createSecretSchema: z.ZodObject<{
@@ -73,16 +73,16 @@ export declare const createSecretSchema: z.ZodObject<{
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     externalRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    value: string;
     name: string;
-    provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
+    value: string;
     description?: string | null | undefined;
+    provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
     externalRef?: string | null | undefined;
 }, {
-    value: string;
     name: string;
-    provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
+    value: string;
     description?: string | null | undefined;
+    provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
     externalRef?: string | null | undefined;
 }>;
 export type CreateSecret = z.infer<typeof createSecretSchema>;

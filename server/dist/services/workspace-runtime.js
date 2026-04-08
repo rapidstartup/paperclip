@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { existsSync, readdirSync, readFileSync, realpathSync } from "node:fs";
 import fs from "node:fs/promises";
 import net from "node:net";
 import { createHash, randomUUID } from "node:crypto";
@@ -17,6 +18,7 @@ export function resolveShell() {
 const runtimeServicesById = new Map();
 const runtimeServicesByReuseKey = new Map();
 const runtimeServiceLeasesByRun = new Map();
+const DEFAULT_EXECUTE_PROCESS_OUTPUT_BYTES = 256 * 1024;
 export async function resetRuntimeServicesForTests() {
     for (const record of runtimeServicesById.values()) {
         clearIdleTimer(record);
@@ -34,6 +36,102 @@ function stableStringify(value) {
         return `{${Object.keys(rec).sort().map((key) => `${JSON.stringify(key)}:${stableStringify(rec[key])}`).join(",")}}`;
     }
     return JSON.stringify(value);
+}
+function readJsonFile(filePath) {
+    return JSON.parse(readFileSync(filePath, "utf8"));
+}
+function findWorkspaceRoot(startCwd) {
+    let current = path.resolve(startCwd);
+    while (true) {
+        if (existsSync(path.join(current, "pnpm-workspace.yaml"))) {
+            return current;
+        }
+        const parent = path.dirname(current);
+        if (parent === current)
+            return null;
+        current = parent;
+    }
+}
+function discoverWorkspacePackagePaths(rootDir) {
+    const packagePaths = new Map();
+    const ignoredDirNames = new Set([".git", ".paperclip", "dist", "node_modules"]);
+    function visit(dirPath) {
+        if (!existsSync(dirPath))
+            return;
+        const packageJsonPath = path.join(dirPath, "package.json");
+        if (existsSync(packageJsonPath)) {
+            const packageJson = readJsonFile(packageJsonPath);
+            if (typeof packageJson.name === "string" && packageJson.name.length > 0) {
+                packagePaths.set(packageJson.name, dirPath);
+            }
+        }
+        for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+            if (!entry.isDirectory())
+                continue;
+            if (ignoredDirNames.has(entry.name))
+                continue;
+            visit(path.join(dirPath, entry.name));
+        }
+    }
+    visit(path.join(rootDir, "packages"));
+    visit(path.join(rootDir, "server"));
+    visit(path.join(rootDir, "ui"));
+    visit(path.join(rootDir, "cli"));
+    return packagePaths;
+}
+function findServerWorkspaceLinkMismatches(rootDir) {
+    const serverPackageJsonPath = path.join(rootDir, "server", "package.json");
+    if (!existsSync(serverPackageJsonPath))
+        return [];
+    const serverPackageJson = readJsonFile(serverPackageJsonPath);
+    const dependencies = {
+        ...serverPackageJson.dependencies,
+        ...serverPackageJson.devDependencies,
+    };
+    const workspacePackagePaths = discoverWorkspacePackagePaths(rootDir);
+    const mismatches = [];
+    for (const [packageName, version] of Object.entries(dependencies)) {
+        if (typeof version !== "string" || !version.startsWith("workspace:"))
+            continue;
+        const expectedPath = workspacePackagePaths.get(packageName);
+        if (!expectedPath)
+            continue;
+        const normalizedExpectedPath = existsSync(expectedPath) ? path.resolve(realpathSync(expectedPath)) : path.resolve(expectedPath);
+        const linkPath = path.join(rootDir, "server", "node_modules", ...packageName.split("/"));
+        const actualPath = existsSync(linkPath) ? path.resolve(realpathSync(linkPath)) : null;
+        if (actualPath === normalizedExpectedPath)
+            continue;
+        mismatches.push({
+            packageName,
+            expectedPath: normalizedExpectedPath,
+            actualPath,
+        });
+    }
+    return mismatches;
+}
+export async function ensureServerWorkspaceLinksCurrent(startCwd, opts) {
+    const workspaceRoot = findWorkspaceRoot(startCwd);
+    if (!workspaceRoot)
+        return;
+    const mismatches = findServerWorkspaceLinkMismatches(workspaceRoot);
+    if (mismatches.length === 0)
+        return;
+    if (opts?.onLog) {
+        await opts.onLog("stdout", "[runtime] detected stale workspace package links for server; relinking dependencies...\n");
+        for (const mismatch of mismatches) {
+            await opts.onLog("stdout", `[runtime]   ${mismatch.packageName}: ${mismatch.actualPath ?? "missing"} -> ${mismatch.expectedPath}\n`);
+        }
+    }
+    for (const mismatch of mismatches) {
+        const linkPath = path.join(workspaceRoot, "server", "node_modules", ...mismatch.packageName.split("/"));
+        await fs.mkdir(path.dirname(linkPath), { recursive: true });
+        await fs.rm(linkPath, { recursive: true, force: true });
+        await fs.symlink(mismatch.expectedPath, linkPath);
+    }
+    const remainingMismatches = findServerWorkspaceLinkMismatches(workspaceRoot);
+    if (remainingMismatches.length === 0)
+        return;
+    throw new Error(`Workspace relink did not repair all server package links: ${remainingMismatches.map((item) => item.packageName).join(", ")}`);
 }
 export function sanitizeRuntimeServiceBaseEnv(baseEnv) {
     const env = { ...baseEnv };
@@ -147,6 +245,46 @@ function formatCommandForDisplay(command, args) {
         .map((part) => (/^[A-Za-z0-9_./:-]+$/.test(part) ? part : JSON.stringify(part)))
         .join(" ");
 }
+function createProcessOutputCapture(maxBytes) {
+    const limit = Math.max(1, Math.trunc(maxBytes));
+    let chunks = [];
+    let truncated = false;
+    let totalBytes = 0;
+    return {
+        append(chunk) {
+            if (!chunk)
+                return;
+            chunks.push(chunk);
+            totalBytes += Buffer.byteLength(chunk, "utf8");
+            let currentBytes = chunks.reduce((sum, value) => sum + Buffer.byteLength(value, "utf8"), 0);
+            if (currentBytes <= limit)
+                return;
+            const combined = Buffer.from(chunks.join(""), "utf8");
+            const tail = combined.subarray(Math.max(0, combined.length - limit)).toString("utf8");
+            chunks = [tail];
+            truncated = true;
+            currentBytes = Buffer.byteLength(tail, "utf8");
+            if (currentBytes > limit) {
+                chunks = [Buffer.from(tail, "utf8").subarray(Math.max(0, currentBytes - limit)).toString("utf8")];
+            }
+        },
+        finish() {
+            const text = chunks.join("");
+            if (!truncated) {
+                return {
+                    text,
+                    truncated: false,
+                    totalBytes,
+                };
+            }
+            return {
+                text: `[output truncated to last ${limit} bytes; total ${totalBytes} bytes]\n${text}`,
+                truncated: true,
+                totalBytes,
+            };
+        },
+    };
+}
 async function executeProcess(input) {
     const proc = await new Promise((resolve, reject) => {
         const child = spawn(input.command, input.args, {
@@ -154,18 +292,28 @@ async function executeProcess(input) {
             stdio: ["ignore", "pipe", "pipe"],
             env: input.env ?? process.env,
         });
-        let stdout = "";
-        let stderr = "";
+        const stdout = createProcessOutputCapture(input.maxStdoutBytes ?? DEFAULT_EXECUTE_PROCESS_OUTPUT_BYTES);
+        const stderr = createProcessOutputCapture(input.maxStderrBytes ?? DEFAULT_EXECUTE_PROCESS_OUTPUT_BYTES);
         child.stdout?.on("data", (chunk) => {
-            stdout += String(chunk);
+            stdout.append(String(chunk));
         });
         child.stderr?.on("data", (chunk) => {
-            stderr += String(chunk);
+            stderr.append(String(chunk));
         });
         child.on("error", reject);
         child.on("close", (code) => resolve({ stdout, stderr, code }));
     });
-    return proc;
+    const stdout = proc.stdout.finish();
+    const stderr = proc.stderr.finish();
+    return {
+        stdout: stdout.text,
+        stderr: stderr.text,
+        code: proc.code,
+        stdoutTruncated: stdout.truncated,
+        stderrTruncated: stderr.truncated,
+        stdoutBytes: stdout.totalBytes,
+        stderrBytes: stderr.totalBytes,
+    };
 }
 async function runGit(args, cwd) {
     const proc = await executeProcess({
@@ -246,11 +394,33 @@ function buildWorkspaceCommandEnv(input) {
     env.PAPERCLIP_ISSUE_TITLE = input.issue?.title ?? "";
     return env;
 }
+function quoteShellArg(value) {
+    return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+function resolveRepoManagedWorkspaceCommand(command, repoRoot) {
+    const patterns = [
+        /^(?<prefix>(?:bash|sh|zsh)\s+)(?<quote>["']?)(?<relative>\.\/[^"'\s]+)\k<quote>(?<suffix>(?:\s.*)?)$/s,
+        /^(?<quote>["']?)(?<relative>\.\/[^"'\s]+)\k<quote>(?<suffix>(?:\s.*)?)$/s,
+    ];
+    for (const pattern of patterns) {
+        const match = command.match(pattern);
+        if (!match?.groups)
+            continue;
+        const relativePath = match.groups.relative;
+        const repoManagedPath = path.join(repoRoot, relativePath.slice(2));
+        if (!existsSync(repoManagedPath))
+            continue;
+        const prefix = match.groups.prefix ?? "";
+        const suffix = match.groups.suffix ?? "";
+        return `${prefix}${quoteShellArg(repoManagedPath)}${suffix}`;
+    }
+    return command;
+}
 async function runWorkspaceCommand(input) {
     const shell = resolveShell();
     const proc = await executeProcess({
         command: shell,
-        args: ["-c", input.command],
+        args: ["-c", input.resolvedCommand ?? input.command],
         cwd: input.cwd,
         env: input.env,
     });
@@ -288,6 +458,14 @@ async function recordGitOperation(recorder, input) {
                 stdout: result.stdout,
                 stderr: result.stderr,
                 system: result.code === 0 ? input.successMessage ?? null : null,
+                metadata: result.stdoutTruncated || result.stderrTruncated
+                    ? {
+                        stdoutTruncated: result.stdoutTruncated,
+                        stderrTruncated: result.stderrTruncated,
+                        stdoutBytes: result.stdoutBytes,
+                        stderrBytes: result.stderrBytes,
+                    }
+                    : null,
             };
         },
     });
@@ -316,7 +494,7 @@ async function recordWorkspaceCommandOperation(recorder, input) {
             const shell = resolveShell();
             const result = await executeProcess({
                 command: shell,
-                args: ["-c", input.command],
+                args: ["-c", input.resolvedCommand ?? input.command],
                 cwd: input.cwd,
                 env: input.env,
             });
@@ -329,6 +507,14 @@ async function recordWorkspaceCommandOperation(recorder, input) {
                 stdout: result.stdout,
                 stderr: result.stderr,
                 system: result.code === 0 ? input.successMessage ?? null : null,
+                metadata: result.stdoutTruncated || result.stderrTruncated
+                    ? {
+                        stdoutTruncated: result.stdoutTruncated,
+                        stderrTruncated: result.stderrTruncated,
+                        stdoutBytes: result.stdoutBytes,
+                        stderrBytes: result.stderrBytes,
+                    }
+                    : null,
             };
         },
     });
@@ -343,9 +529,11 @@ async function provisionExecutionWorktree(input) {
     const provisionCommand = asString(input.strategy.provisionCommand, "").trim();
     if (!provisionCommand)
         return;
+    const resolvedProvisionCommand = resolveRepoManagedWorkspaceCommand(provisionCommand, input.repoRoot);
     await recordWorkspaceCommandOperation(input.recorder, {
         phase: "workspace_provision",
         command: provisionCommand,
+        resolvedCommand: resolvedProvisionCommand,
         cwd: input.worktreePath,
         env: buildWorkspaceCommandEnv({
             base: input.base,
@@ -362,6 +550,7 @@ async function provisionExecutionWorktree(input) {
             worktreePath: input.worktreePath,
             branchName: input.branchName,
             created: input.created,
+            resolvedCommand: resolvedProvisionCommand === provisionCommand ? null : resolvedProvisionCommand,
         },
         successMessage: `Provisioned workspace at ${input.worktreePath}\n`,
     });
@@ -539,6 +728,9 @@ export async function realizeExecutionWorkspace(input) {
 export async function cleanupExecutionWorkspaceArtifacts(input) {
     const warnings = [];
     const workspacePath = input.workspace.providerRef ?? input.workspace.cwd;
+    const repoRoot = input.workspace.providerType === "git_worktree" && workspacePath
+        ? await resolveGitRepoRootForWorkspaceCleanup(workspacePath, input.projectWorkspace?.cwd ?? null)
+        : null;
     const cleanupEnv = buildExecutionWorkspaceCleanupEnv({
         workspace: input.workspace,
         projectWorkspaceCwd: input.projectWorkspace?.cwd ?? null,
@@ -553,9 +745,13 @@ export async function cleanupExecutionWorkspaceArtifacts(input) {
         .filter(Boolean);
     for (const command of cleanupCommands) {
         try {
+            const resolvedCommand = repoRoot
+                ? resolveRepoManagedWorkspaceCommand(command, repoRoot)
+                : command;
             await recordWorkspaceCommandOperation(input.recorder, {
                 phase: "workspace_teardown",
                 command,
+                resolvedCommand,
                 cwd: workspacePath ?? input.projectWorkspace?.cwd ?? process.cwd(),
                 env: cleanupEnv,
                 label: `Execution workspace cleanup command "${command}"`,
@@ -564,6 +760,7 @@ export async function cleanupExecutionWorkspaceArtifacts(input) {
                     workspacePath,
                     branchName: input.workspace.branchName,
                     providerType: input.workspace.providerType,
+                    resolvedCommand: resolvedCommand === command ? null : resolvedCommand,
                 },
                 successMessage: `Completed cleanup command "${command}"\n`,
             });
@@ -573,7 +770,6 @@ export async function cleanupExecutionWorkspaceArtifacts(input) {
         }
     }
     if (input.workspace.providerType === "git_worktree" && workspacePath) {
-        const repoRoot = await resolveGitRepoRootForWorkspaceCleanup(workspacePath, input.projectWorkspace?.cwd ?? null);
         const worktreeExists = await directoryExists(workspacePath);
         if (worktreeExists) {
             if (!repoRoot) {
@@ -801,6 +997,17 @@ async function waitForReadiness(input) {
         await delay(intervalMs);
     }
     throw new Error(`Readiness check failed for ${input.url}: ${lastError}`);
+}
+async function isRuntimeServiceUrlHealthy(url) {
+    if (!url)
+        return true;
+    try {
+        const response = await fetch(url, { signal: AbortSignal.timeout(2_000) });
+        return response.ok;
+    }
+    catch {
+        return false;
+    }
 }
 function toPersistedWorkspaceRuntimeService(record) {
     return {
@@ -1052,6 +1259,9 @@ async function startLocalRuntimeService(input) {
             throw new Error(`Runtime service "${serviceName}" could not start because port ${identityPort} is already in use by pid ${ownerPid}`);
         }
     }
+    await ensureServerWorkspaceLinksCurrent(serviceCwd, {
+        onLog: input.onLog,
+    });
     const shell = resolveShell();
     const child = spawn(shell, ["-lc", command], {
         cwd: serviceCwd,
@@ -1458,50 +1668,56 @@ export async function reconcilePersistedRuntimeServicesOnStartup(db) {
             profileKind: "workspace-runtime",
         });
         if (adoptedRecord) {
-            const record = {
-                id: row.id,
-                companyId: row.companyId,
-                projectId: row.projectId ?? null,
-                projectWorkspaceId: row.projectWorkspaceId ?? null,
-                executionWorkspaceId: row.executionWorkspaceId ?? null,
-                issueId: row.issueId ?? null,
-                serviceName: row.serviceName,
-                status: "running",
-                lifecycle: row.lifecycle,
-                scopeType: row.scopeType,
-                scopeId: row.scopeId ?? null,
-                reuseKey: row.reuseKey ?? null,
-                command: row.command ?? null,
-                cwd: row.cwd ?? null,
-                port: adoptedRecord.port ?? row.port ?? null,
-                url: adoptedRecord.url ?? row.url ?? null,
-                provider: "local_process",
-                providerRef: String(adoptedRecord.pid),
-                ownerAgentId: row.ownerAgentId ?? null,
-                startedByRunId: row.startedByRunId ?? null,
-                lastUsedAt: new Date().toISOString(),
-                startedAt: row.startedAt.toISOString(),
-                stoppedAt: null,
-                stopPolicy: row.stopPolicy ?? null,
-                healthStatus: "healthy",
-                reused: true,
-                db,
-                child: null,
-                leaseRunIds: new Set(),
-                idleTimer: null,
-                envFingerprint: row.reuseKey ?? "",
-                serviceKey: adoptedRecord.serviceKey,
-                profileKind: "workspace-runtime",
-                processGroupId: adoptedRecord.processGroupId ?? null,
-            };
-            registerRuntimeService(db, record);
-            await touchLocalServiceRegistryRecord(adoptedRecord.serviceKey, {
-                runtimeServiceId: row.id,
-                lastSeenAt: record.lastUsedAt,
-            });
-            await persistRuntimeServiceRecord(db, record);
-            adopted += 1;
-            continue;
+            const adoptedUrl = adoptedRecord.url ?? row.url ?? null;
+            if (!(await isRuntimeServiceUrlHealthy(adoptedUrl))) {
+                await removeLocalServiceRegistryRecord(adoptedRecord.serviceKey);
+            }
+            else {
+                const record = {
+                    id: row.id,
+                    companyId: row.companyId,
+                    projectId: row.projectId ?? null,
+                    projectWorkspaceId: row.projectWorkspaceId ?? null,
+                    executionWorkspaceId: row.executionWorkspaceId ?? null,
+                    issueId: row.issueId ?? null,
+                    serviceName: row.serviceName,
+                    status: "running",
+                    lifecycle: row.lifecycle,
+                    scopeType: row.scopeType,
+                    scopeId: row.scopeId ?? null,
+                    reuseKey: row.reuseKey ?? null,
+                    command: row.command ?? null,
+                    cwd: row.cwd ?? null,
+                    port: adoptedRecord.port ?? row.port ?? null,
+                    url: adoptedRecord.url ?? row.url ?? null,
+                    provider: "local_process",
+                    providerRef: String(adoptedRecord.pid),
+                    ownerAgentId: row.ownerAgentId ?? null,
+                    startedByRunId: row.startedByRunId ?? null,
+                    lastUsedAt: new Date().toISOString(),
+                    startedAt: row.startedAt.toISOString(),
+                    stoppedAt: null,
+                    stopPolicy: row.stopPolicy ?? null,
+                    healthStatus: "healthy",
+                    reused: true,
+                    db,
+                    child: null,
+                    leaseRunIds: new Set(),
+                    idleTimer: null,
+                    envFingerprint: row.reuseKey ?? "",
+                    serviceKey: adoptedRecord.serviceKey,
+                    profileKind: "workspace-runtime",
+                    processGroupId: adoptedRecord.processGroupId ?? null,
+                };
+                registerRuntimeService(db, record);
+                await touchLocalServiceRegistryRecord(adoptedRecord.serviceKey, {
+                    runtimeServiceId: row.id,
+                    lastSeenAt: record.lastUsedAt,
+                });
+                await persistRuntimeServiceRecord(db, record);
+                adopted += 1;
+                continue;
+            }
         }
         const now = new Date();
         await db

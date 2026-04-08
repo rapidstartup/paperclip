@@ -10,15 +10,15 @@ export declare const issueExecutionWorkspaceSettingsSchema: z.ZodObject<{
         provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strict", z.ZodTypeAny, {
-        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
+        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         branchTemplate?: string | null | undefined;
         worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
     }, {
-        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
+        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         branchTemplate?: string | null | undefined;
         worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
@@ -28,8 +28,8 @@ export declare const issueExecutionWorkspaceSettingsSchema: z.ZodObject<{
 }, "strict", z.ZodTypeAny, {
     mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
     workspaceStrategy?: {
-        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
+        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         branchTemplate?: string | null | undefined;
         worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
@@ -39,8 +39,8 @@ export declare const issueExecutionWorkspaceSettingsSchema: z.ZodObject<{
 }, {
     mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
     workspaceStrategy?: {
-        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         baseRef?: string | null | undefined;
+        type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
         branchTemplate?: string | null | undefined;
         worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
@@ -58,11 +58,283 @@ export declare const issueAssigneeAdapterOverridesSchema: z.ZodObject<{
     adapterConfig?: Record<string, unknown> | undefined;
     useProjectWorkspace?: boolean | undefined;
 }>;
+export declare const issueExecutionStagePrincipalSchema: z.ZodEffects<z.ZodObject<{
+    type: z.ZodEnum<["agent", "user"]>;
+    agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    type: "agent" | "user";
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}, {
+    type: "agent" | "user";
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}>, {
+    type: "agent" | "user";
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}, {
+    type: "agent" | "user";
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}>;
+export declare const issueExecutionStageParticipantSchema: z.ZodEffects<z.ZodObject<{
+    type: z.ZodEnum<["agent", "user"]>;
+    agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+} & {
+    id: z.ZodOptional<z.ZodString>;
+}, "strip", z.ZodTypeAny, {
+    type: "agent" | "user";
+    id?: string | undefined;
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}, {
+    type: "agent" | "user";
+    id?: string | undefined;
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}>, {
+    type: "agent" | "user";
+    id?: string | undefined;
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}, {
+    type: "agent" | "user";
+    id?: string | undefined;
+    agentId?: string | null | undefined;
+    userId?: string | null | undefined;
+}>;
+export declare const issueExecutionStageSchema: z.ZodObject<{
+    id: z.ZodOptional<z.ZodString>;
+    type: z.ZodEnum<["review", "approval"]>;
+    approvalsNeeded: z.ZodDefault<z.ZodOptional<z.ZodLiteral<1>>>;
+    participants: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodObject<{
+        type: z.ZodEnum<["agent", "user"]>;
+        agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    } & {
+        id: z.ZodOptional<z.ZodString>;
+    }, "strip", z.ZodTypeAny, {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>, {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>, "many">>;
+}, "strip", z.ZodTypeAny, {
+    type: "review" | "approval";
+    approvalsNeeded: 1;
+    participants: {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }[];
+    id?: string | undefined;
+}, {
+    type: "review" | "approval";
+    id?: string | undefined;
+    approvalsNeeded?: 1 | undefined;
+    participants?: {
+        type: "agent" | "user";
+        id?: string | undefined;
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }[] | undefined;
+}>;
+export declare const issueExecutionPolicySchema: z.ZodObject<{
+    mode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["normal", "auto"]>>>;
+    commentRequired: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+    stages: z.ZodDefault<z.ZodArray<z.ZodObject<{
+        id: z.ZodOptional<z.ZodString>;
+        type: z.ZodEnum<["review", "approval"]>;
+        approvalsNeeded: z.ZodDefault<z.ZodOptional<z.ZodLiteral<1>>>;
+        participants: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodObject<{
+            type: z.ZodEnum<["agent", "user"]>;
+            agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+            userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        } & {
+            id: z.ZodOptional<z.ZodString>;
+        }, "strip", z.ZodTypeAny, {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }, {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }>, {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }, {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        type: "review" | "approval";
+        approvalsNeeded: 1;
+        participants: {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }[];
+        id?: string | undefined;
+    }, {
+        type: "review" | "approval";
+        id?: string | undefined;
+        approvalsNeeded?: 1 | undefined;
+        participants?: {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }[] | undefined;
+    }>, "many">>;
+}, "strip", z.ZodTypeAny, {
+    mode: "auto" | "normal";
+    commentRequired: boolean;
+    stages: {
+        type: "review" | "approval";
+        approvalsNeeded: 1;
+        participants: {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }[];
+        id?: string | undefined;
+    }[];
+}, {
+    mode?: "auto" | "normal" | undefined;
+    commentRequired?: boolean | undefined;
+    stages?: {
+        type: "review" | "approval";
+        id?: string | undefined;
+        approvalsNeeded?: 1 | undefined;
+        participants?: {
+            type: "agent" | "user";
+            id?: string | undefined;
+            agentId?: string | null | undefined;
+            userId?: string | null | undefined;
+        }[] | undefined;
+    }[] | undefined;
+}>;
+export declare const issueExecutionStateSchema: z.ZodObject<{
+    status: z.ZodEnum<["idle", "pending", "changes_requested", "completed"]>;
+    currentStageId: z.ZodNullable<z.ZodString>;
+    currentStageIndex: z.ZodNullable<z.ZodNumber>;
+    currentStageType: z.ZodNullable<z.ZodEnum<["review", "approval"]>>;
+    currentParticipant: z.ZodNullable<z.ZodEffects<z.ZodObject<{
+        type: z.ZodEnum<["agent", "user"]>;
+        agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>>;
+    returnAssignee: z.ZodNullable<z.ZodEffects<z.ZodObject<{
+        type: z.ZodEnum<["agent", "user"]>;
+        agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }, {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    }>>;
+    completedStageIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
+    lastDecisionId: z.ZodNullable<z.ZodString>;
+    lastDecisionOutcome: z.ZodNullable<z.ZodEnum<["approved", "changes_requested"]>>;
+}, "strip", z.ZodTypeAny, {
+    status: "idle" | "pending" | "changes_requested" | "completed";
+    currentStageId: string | null;
+    currentStageIndex: number | null;
+    currentStageType: "review" | "approval" | null;
+    currentParticipant: {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    } | null;
+    returnAssignee: {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    } | null;
+    completedStageIds: string[];
+    lastDecisionId: string | null;
+    lastDecisionOutcome: "changes_requested" | "approved" | null;
+}, {
+    status: "idle" | "pending" | "changes_requested" | "completed";
+    currentStageId: string | null;
+    currentStageIndex: number | null;
+    currentStageType: "review" | "approval" | null;
+    currentParticipant: {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    } | null;
+    returnAssignee: {
+        type: "agent" | "user";
+        agentId?: string | null | undefined;
+        userId?: string | null | undefined;
+    } | null;
+    lastDecisionId: string | null;
+    lastDecisionOutcome: "changes_requested" | "approved" | null;
+    completedStageIds?: string[] | undefined;
+}>;
 export declare const createIssueSchema: z.ZodObject<{
     projectId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     projectWorkspaceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     goalId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     parentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    blockedByIssueIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
     inheritExecutionWorkspaceFromIssueId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     title: z.ZodString;
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -82,6 +354,90 @@ export declare const createIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     }>>>;
+    executionPolicy: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        mode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["normal", "auto"]>>>;
+        commentRequired: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+        stages: z.ZodDefault<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            type: z.ZodEnum<["review", "approval"]>;
+            approvalsNeeded: z.ZodDefault<z.ZodOptional<z.ZodLiteral<1>>>;
+            participants: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodObject<{
+                type: z.ZodEnum<["agent", "user"]>;
+                agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+                userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+            } & {
+                id: z.ZodOptional<z.ZodString>;
+            }, "strip", z.ZodTypeAny, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }>, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }>, "many">>;
+        }, "strip", z.ZodTypeAny, {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }, {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        mode: "auto" | "normal";
+        commentRequired: boolean;
+        stages: {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }[];
+    }, {
+        mode?: "auto" | "normal" | undefined;
+        commentRequired?: boolean | undefined;
+        stages?: {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }[] | undefined;
+    }>>>;
     executionWorkspaceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     executionWorkspacePreference: z.ZodNullable<z.ZodOptional<z.ZodEnum<["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"]>>>;
     executionWorkspaceSettings: z.ZodNullable<z.ZodOptional<z.ZodObject<{
@@ -94,15 +450,15 @@ export declare const createIssueSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
         }, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -112,8 +468,8 @@ export declare const createIssueSchema: z.ZodObject<{
     }, "strict", z.ZodTypeAny, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -123,8 +479,8 @@ export declare const createIssueSchema: z.ZodObject<{
     }, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -138,11 +494,12 @@ export declare const createIssueSchema: z.ZodObject<{
     title: string;
     priority: "critical" | "high" | "medium" | "low";
     requestDepth: number;
-    description?: string | null | undefined;
     projectId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     parentId?: string | null | undefined;
+    blockedByIssueIds?: string[] | undefined;
     inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     assigneeAgentId?: string | null | undefined;
     assigneeUserId?: string | null | undefined;
@@ -151,13 +508,28 @@ export declare const createIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     } | null | undefined;
+    executionPolicy?: {
+        mode: "auto" | "normal";
+        commentRequired: boolean;
+        stages: {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }[];
+    } | null | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -169,11 +541,12 @@ export declare const createIssueSchema: z.ZodObject<{
 }, {
     title: string;
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
-    description?: string | null | undefined;
     projectId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     parentId?: string | null | undefined;
+    blockedByIssueIds?: string[] | undefined;
     inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
     assigneeAgentId?: string | null | undefined;
@@ -184,13 +557,28 @@ export declare const createIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     } | null | undefined;
+    executionPolicy?: {
+        mode?: "auto" | "normal" | undefined;
+        commentRequired?: boolean | undefined;
+        stages?: {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }[] | undefined;
+    } | null | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -217,6 +605,7 @@ export declare const updateIssueSchema: z.ZodObject<{
     projectWorkspaceId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     goalId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     parentId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
+    blockedByIssueIds: z.ZodOptional<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     inheritExecutionWorkspaceFromIssueId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     title: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
@@ -236,6 +625,90 @@ export declare const updateIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     }>>>>;
+    executionPolicy: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        mode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["normal", "auto"]>>>;
+        commentRequired: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
+        stages: z.ZodDefault<z.ZodArray<z.ZodObject<{
+            id: z.ZodOptional<z.ZodString>;
+            type: z.ZodEnum<["review", "approval"]>;
+            approvalsNeeded: z.ZodDefault<z.ZodOptional<z.ZodLiteral<1>>>;
+            participants: z.ZodDefault<z.ZodArray<z.ZodEffects<z.ZodObject<{
+                type: z.ZodEnum<["agent", "user"]>;
+                agentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+                userId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+            } & {
+                id: z.ZodOptional<z.ZodString>;
+            }, "strip", z.ZodTypeAny, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }>, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }, {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }>, "many">>;
+        }, "strip", z.ZodTypeAny, {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }, {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }>, "many">>;
+    }, "strip", z.ZodTypeAny, {
+        mode: "auto" | "normal";
+        commentRequired: boolean;
+        stages: {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }[];
+    }, {
+        mode?: "auto" | "normal" | undefined;
+        commentRequired?: boolean | undefined;
+        stages?: {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }[] | undefined;
+    }>>>>;
     executionWorkspaceId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     executionWorkspacePreference: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodEnum<["inherit", "shared_workspace", "isolated_workspace", "operator_branch", "reuse_existing", "agent_default"]>>>>;
     executionWorkspaceSettings: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodObject<{
@@ -248,15 +721,15 @@ export declare const updateIssueSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
         }, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -266,8 +739,8 @@ export declare const updateIssueSchema: z.ZodObject<{
     }, "strict", z.ZodTypeAny, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -277,8 +750,8 @@ export declare const updateIssueSchema: z.ZodObject<{
     }, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -295,11 +768,12 @@ export declare const updateIssueSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     comment?: string | undefined;
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
-    description?: string | null | undefined;
     projectId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     parentId?: string | null | undefined;
+    blockedByIssueIds?: string[] | undefined;
     inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
@@ -311,13 +785,28 @@ export declare const updateIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     } | null | undefined;
+    executionPolicy?: {
+        mode: "auto" | "normal";
+        commentRequired: boolean;
+        stages: {
+            type: "review" | "approval";
+            approvalsNeeded: 1;
+            participants: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[];
+            id?: string | undefined;
+        }[];
+    } | null | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -332,11 +821,12 @@ export declare const updateIssueSchema: z.ZodObject<{
 }, {
     comment?: string | undefined;
     status?: "backlog" | "todo" | "in_progress" | "in_review" | "done" | "blocked" | "cancelled" | undefined;
-    description?: string | null | undefined;
     projectId?: string | null | undefined;
     projectWorkspaceId?: string | null | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     parentId?: string | null | undefined;
+    blockedByIssueIds?: string[] | undefined;
     inheritExecutionWorkspaceFromIssueId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
@@ -348,13 +838,28 @@ export declare const updateIssueSchema: z.ZodObject<{
         adapterConfig?: Record<string, unknown> | undefined;
         useProjectWorkspace?: boolean | undefined;
     } | null | undefined;
+    executionPolicy?: {
+        mode?: "auto" | "normal" | undefined;
+        commentRequired?: boolean | undefined;
+        stages?: {
+            type: "review" | "approval";
+            id?: string | undefined;
+            approvalsNeeded?: 1 | undefined;
+            participants?: {
+                type: "agent" | "user";
+                id?: string | undefined;
+                agentId?: string | null | undefined;
+                userId?: string | null | undefined;
+            }[] | undefined;
+        }[] | undefined;
+    } | null | undefined;
     executionWorkspaceId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;

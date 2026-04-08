@@ -9,7 +9,7 @@ export declare const createGoalSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     status: "active" | "cancelled" | "planned" | "achieved";
     title: string;
-    level: "agent" | "company" | "team" | "task";
+    level: "company" | "team" | "agent" | "task";
     description?: string | null | undefined;
     parentId?: string | null | undefined;
     ownerAgentId?: string | null | undefined;
@@ -19,7 +19,7 @@ export declare const createGoalSchema: z.ZodObject<{
     description?: string | null | undefined;
     parentId?: string | null | undefined;
     ownerAgentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
+    level?: "company" | "team" | "agent" | "task" | undefined;
 }>;
 export type CreateGoal = z.infer<typeof createGoalSchema>;
 export declare const updateGoalSchema: z.ZodObject<{
@@ -35,14 +35,14 @@ export declare const updateGoalSchema: z.ZodObject<{
     parentId?: string | null | undefined;
     title?: string | undefined;
     ownerAgentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
+    level?: "company" | "team" | "agent" | "task" | undefined;
 }, {
     status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
     parentId?: string | null | undefined;
     title?: string | undefined;
     ownerAgentId?: string | null | undefined;
-    level?: "agent" | "company" | "team" | "task" | undefined;
+    level?: "company" | "team" | "agent" | "task" | undefined;
 }>;
 export type UpdateGoal = z.infer<typeof updateGoalSchema>;
 //# sourceMappingURL=goal.d.ts.map

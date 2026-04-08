@@ -271,6 +271,7 @@ export function routineRoutes(db) {
         const result = await svc.firePublicTrigger(req.params.publicId, {
             authorizationHeader: req.header("authorization"),
             signatureHeader: req.header("x-paperclip-signature"),
+            hubSignatureHeader: req.header("x-hub-signature-256"),
             timestampHeader: req.header("x-paperclip-timestamp"),
             idempotencyKey: req.header("idempotency-key"),
             rawBody: req.rawBody ?? null,

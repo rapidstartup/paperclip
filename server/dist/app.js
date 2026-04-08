@@ -27,6 +27,7 @@ import { assetRoutes } from "./routes/assets.js";
 import { accessRoutes } from "./routes/access.js";
 import { vibedashRoutes } from "./routes/vibedash.js";
 import { pluginRoutes } from "./routes/plugins.js";
+import { adapterRoutes } from "./routes/adapters.js";
 import { pluginUiStaticRoutes } from "./routes/plugin-ui-static.js";
 import { applyUiBranding } from "./ui-branding.js";
 import { logger } from "./middleware/logger.js";
@@ -93,7 +94,7 @@ export async function createApp(db, opts) {
         });
     });
     if (opts.betterAuthHandler) {
-        app.all("/api/auth/*authPath", opts.betterAuthHandler);
+        app.all("/api/auth/{*authPath}", opts.betterAuthHandler);
     }
     app.use(llmRoutes(db));
     // Mount API routes
@@ -175,6 +176,7 @@ export async function createApp(db, opts) {
         },
     });
     api.use(pluginRoutes(db, loader, { scheduler, jobStore }, { workerManager }, { toolDispatcher }, { workerManager }));
+    api.use(adapterRoutes());
     api.use(accessRoutes(db, {
         deploymentMode: opts.deploymentMode,
         deploymentExposure: opts.deploymentExposure,

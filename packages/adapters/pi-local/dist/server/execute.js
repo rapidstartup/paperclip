@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { isPiUnknownSessionError, parsePiJsonl } from "./parse.js";
 import { ensurePiModelConfiguredAndAvailable } from "./models.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -118,6 +118,7 @@ export async function execute(ctx) {
     const linkedIssueIds = Array.isArray(context.issueIds)
         ? context.issueIds.filter((value) => typeof value === "string" && value.trim().length > 0)
         : [];
+    const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
     if (wakeTaskId)
         env.PAPERCLIP_TASK_ID = wakeTaskId;
     if (wakeReason)
@@ -130,6 +131,8 @@ export async function execute(ctx) {
         env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
     if (linkedIssueIds.length > 0)
         env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+    if (wakePayloadJson)
+        env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
     if (workspaceCwd)
         env.PAPERCLIP_WORKSPACE_CWD = workspaceCwd;
     if (workspaceSource)
@@ -235,13 +238,16 @@ export async function execute(ctx) {
         context,
     };
     const renderedSystemPromptExtension = renderTemplate(systemPromptExtension, templateData);
-    const renderedHeartbeatPrompt = renderTemplate(promptTemplate, templateData);
     const renderedBootstrapPrompt = !canResumeSession && bootstrapPromptTemplate.trim().length > 0
         ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
         : "";
+    const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: canResumeSession });
+    const shouldUseResumeDeltaPrompt = canResumeSession && wakePrompt.length > 0;
+    const renderedHeartbeatPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
     const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
     const userPrompt = joinPromptSections([
         renderedBootstrapPrompt,
+        wakePrompt,
         sessionHandoffNote,
         renderedHeartbeatPrompt,
     ]);
@@ -249,6 +255,7 @@ export async function execute(ctx) {
         systemPromptChars: renderedSystemPromptExtension.length,
         promptChars: userPrompt.length,
         bootstrapPromptChars: renderedBootstrapPrompt.length,
+        wakePromptChars: wakePrompt.length,
         sessionHandoffChars: sessionHandoffNote.length,
         heartbeatPromptChars: renderedHeartbeatPrompt.length,
     };
@@ -357,12 +364,14 @@ export async function execute(ctx) {
             : null;
         const stderrLine = firstNonEmptyLine(attempt.proc.stderr);
         const rawExitCode = attempt.proc.exitCode;
-        const fallbackErrorMessage = stderrLine || `Pi exited with code ${rawExitCode ?? -1}`;
+        const parsedError = attempt.parsed.errors.find((error) => error.trim().length > 0) ?? "";
+        const effectiveExitCode = (rawExitCode ?? 0) === 0 && parsedError ? 1 : rawExitCode;
+        const fallbackErrorMessage = parsedError || stderrLine || `Pi exited with code ${rawExitCode ?? -1}`;
         return {
-            exitCode: rawExitCode,
+            exitCode: effectiveExitCode,
             signal: attempt.proc.signal,
             timedOut: false,
-            errorMessage: (rawExitCode ?? 0) === 0 ? null : fallbackErrorMessage,
+            errorMessage: (effectiveExitCode ?? 0) === 0 ? null : fallbackErrorMessage,
             usage: {
                 inputTokens: attempt.parsed.usage.inputTokens,
                 outputTokens: attempt.parsed.usage.outputTokens,

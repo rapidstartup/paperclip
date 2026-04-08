@@ -1,5 +1,5 @@
 import type { Db } from "@paperclipai/db";
-import type { SecretProvider } from "@paperclipai/shared";
+import type { AgentEnvConfig, SecretProvider } from "@paperclipai/shared";
 export declare function secretService(db: Db): {
     listProviders: () => import("@paperclipai/shared").SecretProviderDescriptor[];
     list: (companyId: string) => Omit<import("drizzle-orm/pg-core").PgSelectBase<"company_secrets", {
@@ -494,6 +494,10 @@ export declare function secretService(db: Db): {
     }) => Promise<{
         [x: string]: unknown;
     }>;
+    normalizeEnvBindingsForPersistence: (companyId: string, envValue: unknown, opts?: {
+        strictMode?: boolean;
+        fieldPath?: string;
+    }) => Promise<AgentEnvConfig>;
     normalizeHireApprovalPayloadForPersistence: (companyId: string, payload: Record<string, unknown>, opts?: {
         strictMode?: boolean;
     }) => Promise<{

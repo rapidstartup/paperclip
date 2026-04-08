@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, renderTemplate, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
 import { describeGeminiFailure, detectGeminiAuthRequired, isGeminiTurnLimitResult, isGeminiUnknownSessionError, parseGeminiJsonl, } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
@@ -128,6 +128,7 @@ export async function execute(ctx) {
     const linkedIssueIds = Array.isArray(context.issueIds)
         ? context.issueIds.filter((value) => typeof value === "string" && value.trim().length > 0)
         : [];
+    const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
     if (wakeTaskId)
         env.PAPERCLIP_TASK_ID = wakeTaskId;
     if (wakeReason)
@@ -140,6 +141,8 @@ export async function execute(ctx) {
         env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
     if (linkedIssueIds.length > 0)
         env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+    if (wakePayloadJson)
+        env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
     if (effectiveWorkspaceCwd)
         env.PAPERCLIP_WORKSPACE_CWD = effectiveWorkspaceCwd;
     if (workspaceSource)
@@ -226,16 +229,19 @@ export async function execute(ctx) {
         run: { id: runId, source: "on_demand" },
         context,
     };
-    const renderedPrompt = renderTemplate(promptTemplate, templateData);
     const renderedBootstrapPrompt = !sessionId && bootstrapPromptTemplate.trim().length > 0
         ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
         : "";
+    const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: Boolean(sessionId) });
+    const shouldUseResumeDeltaPrompt = Boolean(sessionId) && wakePrompt.length > 0;
+    const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
     const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
     const paperclipEnvNote = renderPaperclipEnvNote(env);
     const apiAccessNote = renderApiAccessNote(env);
     const prompt = joinPromptSections([
         instructionsPrefix,
         renderedBootstrapPrompt,
+        wakePrompt,
         sessionHandoffNote,
         paperclipEnvNote,
         apiAccessNote,
@@ -245,6 +251,7 @@ export async function execute(ctx) {
         promptChars: prompt.length,
         instructionsChars: instructionsPrefix.length,
         bootstrapPromptChars: renderedBootstrapPrompt.length,
+        wakePromptChars: wakePrompt.length,
         sessionHandoffChars: sessionHandoffNote.length,
         runtimeNoteChars: paperclipEnvNote.length + apiAccessNote.length,
         heartbeatPromptChars: renderedPrompt.length,

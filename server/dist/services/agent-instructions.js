@@ -83,14 +83,21 @@ function resolvePathWithinRoot(rootPath, relativePath) {
 function resolveManagedInstructionsRoot(agent) {
     return path.resolve(resolvePaperclipInstanceRoot(), "companies", agent.companyId, "agents", agent.id, "instructions");
 }
-function resolveLegacyInstructionsPath(candidatePath, config) {
+function resolveLegacyInstructionsPath(candidatePath, config, agent) {
     if (path.isAbsolute(candidatePath))
         return candidatePath;
     const cwd = asString(config.cwd);
-    if (!cwd || !path.isAbsolute(cwd)) {
-        throw unprocessable("Legacy relative instructionsFilePath requires adapterConfig.cwd to be set to an absolute path");
+    if (cwd && path.isAbsolute(cwd)) {
+        return path.resolve(cwd, candidatePath);
     }
-    return path.resolve(cwd, candidatePath);
+    // Relative legacy paths normally resolve against adapter cwd. When cwd is unset (common for
+    // UI-created agents that only store a relative instructionsFilePath), fall back to the
+    // per-agent managed instructions directory so sync/patch can migrate to bundle metadata.
+    if (agent) {
+        const safeRelative = normalizeRelativeFilePath(candidatePath.replaceAll("\\", "/"));
+        return path.resolve(resolveManagedInstructionsRoot(agent), safeRelative);
+    }
+    throw unprocessable("Legacy relative instructionsFilePath requires adapterConfig.cwd to be set to an absolute path");
 }
 async function statIfExists(targetPath) {
     return fs.stat(targetPath).catch(() => null);
@@ -147,7 +154,7 @@ async function readLegacyInstructions(agent, config) {
     const instructionsFilePath = asString(config[FILE_KEY]);
     if (instructionsFilePath) {
         try {
-            const resolvedPath = resolveLegacyInstructionsPath(instructionsFilePath, config);
+            const resolvedPath = resolveLegacyInstructionsPath(instructionsFilePath, config, agent);
             return await fs.readFile(resolvedPath, "utf8");
         }
         catch {
@@ -176,7 +183,7 @@ function deriveBundleState(agent) {
     }
     if (!rootPath && legacyInstructionsPath) {
         try {
-            const resolvedLegacyPath = resolveLegacyInstructionsPath(legacyInstructionsPath, config);
+            const resolvedLegacyPath = resolveLegacyInstructionsPath(legacyInstructionsPath, config, agent);
             rootPath = path.dirname(resolvedLegacyPath);
             entryFile = path.basename(resolvedLegacyPath);
             mode = resolvedLegacyPath.startsWith(`${resolveManagedInstructionsRoot(agent)}${path.sep}`)
@@ -335,7 +342,7 @@ export function syncInstructionsBundleConfigFromFilePath(agent, adapterConfig) {
         delete next[ENTRY_KEY];
         return next;
     }
-    const resolvedPath = resolveLegacyInstructionsPath(instructionsFilePath, adapterConfig);
+    const resolvedPath = resolveLegacyInstructionsPath(instructionsFilePath, adapterConfig, agent);
     const rootPath = path.dirname(resolvedPath);
     const entryFile = path.basename(resolvedPath);
     const mode = resolvedPath.startsWith(`${resolveManagedInstructionsRoot(agent)}${path.sep}`)

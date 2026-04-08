@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { and, desc, eq, gte, inArray, lt, ne, sql } from "drizzle-orm";
-import { agents, agentConfigRevisions, agentApiKeys, agentRuntimeState, agentTaskSessions, agentWakeupRequests, costEvents, heartbeatRunEvents, heartbeatRuns, } from "@paperclipai/db";
+import { and, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
+import { agents, agentConfigRevisions, agentApiKeys, agentRuntimeState, agentTaskSessions, agentWakeupRequests, activityLog, costEvents, heartbeatRunEvents, heartbeatRuns, issueExecutionDecisions, issues, issueComments, } from "@paperclipai/db";
 import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { normalizeAgentPermissions } from "./agent-permissions.js";
@@ -372,8 +372,15 @@ export function agentService(db) {
                 return null;
             return db.transaction(async (tx) => {
                 await tx.update(agents).set({ reportsTo: null }).where(eq(agents.reportsTo, id));
+                await tx
+                    .update(issues)
+                    .set({ assigneeAgentId: null, createdByAgentId: null })
+                    .where(or(eq(issues.assigneeAgentId, id), eq(issues.createdByAgentId, id)));
                 await tx.delete(heartbeatRunEvents).where(eq(heartbeatRunEvents.agentId, id));
                 await tx.delete(agentTaskSessions).where(eq(agentTaskSessions.agentId, id));
+                await tx.delete(activityLog).where(or(eq(activityLog.agentId, id), sql `${activityLog.runId} in (select ${heartbeatRuns.id} from ${heartbeatRuns} where ${heartbeatRuns.agentId} = ${id})`));
+                await tx.delete(issueExecutionDecisions).where(eq(issueExecutionDecisions.actorAgentId, id));
+                await tx.delete(issueComments).where(eq(issueComments.authorAgentId, id));
                 await tx.delete(heartbeatRuns).where(eq(heartbeatRuns.agentId, id));
                 await tx.delete(agentWakeupRequests).where(eq(agentWakeupRequests.agentId, id));
                 await tx.delete(agentApiKeys).where(eq(agentApiKeys.agentId, id));

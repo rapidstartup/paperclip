@@ -4,13 +4,13 @@ export declare const configMetaSchema: z.ZodObject<{
     updatedAt: z.ZodString;
     source: z.ZodEnum<["onboard", "configure", "doctor"]>;
 }, "strip", z.ZodTypeAny, {
-    version: 1;
     updatedAt: string;
     source: "onboard" | "configure" | "doctor";
+    version: 1;
 }, {
-    version: 1;
     updatedAt: string;
     source: "onboard" | "configure" | "doctor";
+    version: 1;
 }>;
 export declare const llmConfigSchema: z.ZodObject<{
     provider: z.ZodEnum<["claude", "openai"]>;
@@ -100,17 +100,17 @@ export declare const serverConfigSchema: z.ZodObject<{
     allowedHostnames: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
     serveUi: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
+    port: number;
     deploymentMode: "local_trusted" | "authenticated";
     exposure: "private" | "public";
     host: string;
-    port: number;
     allowedHostnames: string[];
     serveUi: boolean;
 }, {
+    port?: number | undefined;
     deploymentMode?: "local_trusted" | "authenticated" | undefined;
     exposure?: "private" | "public" | undefined;
     host?: string | undefined;
-    port?: number | undefined;
     allowedHostnames?: string[] | undefined;
     serveUi?: boolean | undefined;
 }>;
@@ -141,14 +141,14 @@ export declare const storageS3ConfigSchema: z.ZodObject<{
     prefix: z.ZodDefault<z.ZodString>;
     forcePathStyle: z.ZodDefault<z.ZodBoolean>;
 }, "strip", z.ZodTypeAny, {
-    bucket: string;
     region: string;
+    bucket: string;
     prefix: string;
     forcePathStyle: boolean;
     endpoint?: string | undefined;
 }, {
-    bucket?: string | undefined;
     region?: string | undefined;
+    bucket?: string | undefined;
     endpoint?: string | undefined;
     prefix?: string | undefined;
     forcePathStyle?: boolean | undefined;
@@ -169,22 +169,22 @@ export declare const storageConfigSchema: z.ZodObject<{
         prefix: z.ZodDefault<z.ZodString>;
         forcePathStyle: z.ZodDefault<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
-        bucket: string;
         region: string;
+        bucket: string;
         prefix: string;
         forcePathStyle: boolean;
         endpoint?: string | undefined;
     }, {
-        bucket?: string | undefined;
         region?: string | undefined;
+        bucket?: string | undefined;
         endpoint?: string | undefined;
         prefix?: string | undefined;
         forcePathStyle?: boolean | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
     s3: {
-        bucket: string;
         region: string;
+        bucket: string;
         prefix: string;
         forcePathStyle: boolean;
         endpoint?: string | undefined;
@@ -195,8 +195,8 @@ export declare const storageConfigSchema: z.ZodObject<{
     };
 }, {
     s3?: {
-        bucket?: string | undefined;
         region?: string | undefined;
+        bucket?: string | undefined;
         endpoint?: string | undefined;
         prefix?: string | undefined;
         forcePathStyle?: boolean | undefined;
@@ -249,13 +249,13 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         updatedAt: z.ZodString;
         source: z.ZodEnum<["onboard", "configure", "doctor"]>;
     }, "strip", z.ZodTypeAny, {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     }, {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     }>;
     llm: z.ZodOptional<z.ZodObject<{
         provider: z.ZodEnum<["claude", "openai"]>;
@@ -329,17 +329,17 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         allowedHostnames: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
         serveUi: z.ZodDefault<z.ZodBoolean>;
     }, "strip", z.ZodTypeAny, {
+        port: number;
         deploymentMode: "local_trusted" | "authenticated";
         exposure: "private" | "public";
         host: string;
-        port: number;
         allowedHostnames: string[];
         serveUi: boolean;
     }, {
+        port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
         host?: string | undefined;
-        port?: number | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     }>;
@@ -379,22 +379,22 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
             prefix: z.ZodDefault<z.ZodString>;
             forcePathStyle: z.ZodDefault<z.ZodBoolean>;
         }, "strip", z.ZodTypeAny, {
-            bucket: string;
             region: string;
+            bucket: string;
             prefix: string;
             forcePathStyle: boolean;
             endpoint?: string | undefined;
         }, {
-            bucket?: string | undefined;
             region?: string | undefined;
+            bucket?: string | undefined;
             endpoint?: string | undefined;
             prefix?: string | undefined;
             forcePathStyle?: boolean | undefined;
         }>>;
     }, "strip", z.ZodTypeAny, {
         s3: {
-            bucket: string;
             region: string;
+            bucket: string;
             prefix: string;
             forcePathStyle: boolean;
             endpoint?: string | undefined;
@@ -405,8 +405,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         };
     }, {
         s3?: {
-            bucket?: string | undefined;
             region?: string | undefined;
+            bucket?: string | undefined;
             endpoint?: string | undefined;
             prefix?: string | undefined;
             forcePathStyle?: boolean | undefined;
@@ -453,19 +453,19 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         connectionString?: string | undefined;
     };
     $meta: {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     };
     logging: {
         mode: "file" | "cloud";
         logDir: string;
     };
     server: {
+        port: number;
         deploymentMode: "local_trusted" | "authenticated";
         exposure: "private" | "public";
         host: string;
-        port: number;
         allowedHostnames: string[];
         serveUi: boolean;
     };
@@ -479,8 +479,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     };
     storage: {
         s3: {
-            bucket: string;
             region: string;
+            bucket: string;
             prefix: string;
             forcePathStyle: boolean;
             endpoint?: string | undefined;
@@ -515,19 +515,19 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
     };
     $meta: {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     };
     logging: {
         mode: "file" | "cloud";
         logDir?: string | undefined;
     };
     server: {
+        port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
         host?: string | undefined;
-        port?: number | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     };
@@ -545,8 +545,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     } | undefined;
     storage?: {
         s3?: {
-            bucket?: string | undefined;
             region?: string | undefined;
+            bucket?: string | undefined;
             endpoint?: string | undefined;
             prefix?: string | undefined;
             forcePathStyle?: boolean | undefined;
@@ -577,19 +577,19 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         connectionString?: string | undefined;
     };
     $meta: {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     };
     logging: {
         mode: "file" | "cloud";
         logDir: string;
     };
     server: {
+        port: number;
         deploymentMode: "local_trusted" | "authenticated";
         exposure: "private" | "public";
         host: string;
-        port: number;
         allowedHostnames: string[];
         serveUi: boolean;
     };
@@ -603,8 +603,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     };
     storage: {
         s3: {
-            bucket: string;
             region: string;
+            bucket: string;
             prefix: string;
             forcePathStyle: boolean;
             endpoint?: string | undefined;
@@ -639,19 +639,19 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         } | undefined;
     };
     $meta: {
-        version: 1;
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
+        version: 1;
     };
     logging: {
         mode: "file" | "cloud";
         logDir?: string | undefined;
     };
     server: {
+        port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
         host?: string | undefined;
-        port?: number | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     };
@@ -669,8 +669,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     } | undefined;
     storage?: {
         s3?: {
-            bucket?: string | undefined;
             region?: string | undefined;
+            bucket?: string | undefined;
             endpoint?: string | undefined;
             prefix?: string | undefined;
             forcePathStyle?: boolean | undefined;

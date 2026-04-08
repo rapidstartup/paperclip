@@ -1,16 +1,16 @@
 import { z } from "zod";
 export declare const createApprovalSchema: z.ZodObject<{
-    type: z.ZodEnum<["hire_agent", "approve_ceo_strategy", "budget_override_required"]>;
+    type: z.ZodEnum<["hire_agent", "approve_ceo_strategy", "budget_override_required", "request_board_approval"]>;
     requestedByAgentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     payload: z.ZodRecord<z.ZodString, z.ZodUnknown>;
     issueIds: z.ZodOptional<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
-    type: "hire_agent" | "approve_ceo_strategy" | "budget_override_required";
+    type: "hire_agent" | "approve_ceo_strategy" | "budget_override_required" | "request_board_approval";
     payload: Record<string, unknown>;
     requestedByAgentId?: string | null | undefined;
     issueIds?: string[] | undefined;
 }, {
-    type: "hire_agent" | "approve_ceo_strategy" | "budget_override_required";
+    type: "hire_agent" | "approve_ceo_strategy" | "budget_override_required" | "request_board_approval";
     payload: Record<string, unknown>;
     requestedByAgentId?: string | null | undefined;
     issueIds?: string[] | undefined;

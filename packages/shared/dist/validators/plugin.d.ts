@@ -87,32 +87,32 @@ export declare const pluginUiSlotDeclarationSchema: z.ZodEffects<z.ZodObject<{
     routePath: z.ZodOptional<z.ZodString>;
     order: z.ZodOptional<z.ZodNumber>;
 }, "strip", z.ZodTypeAny, {
-    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     id: string;
+    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     displayName: string;
     exportName: string;
     entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
     routePath?: string | undefined;
     order?: number | undefined;
 }, {
-    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     id: string;
+    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     displayName: string;
     exportName: string;
     entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
     routePath?: string | undefined;
     order?: number | undefined;
 }>, {
-    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     id: string;
+    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     displayName: string;
     exportName: string;
     entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
     routePath?: string | undefined;
     order?: number | undefined;
 }, {
-    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     id: string;
+    type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
     displayName: string;
     exportName: string;
     entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -508,32 +508,32 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             routePath: z.ZodOptional<z.ZodString>;
             order: z.ZodOptional<z.ZodNumber>;
         }, "strip", z.ZodTypeAny, {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
             routePath?: string | undefined;
             order?: number | undefined;
         }, {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
             routePath?: string | undefined;
             order?: number | undefined;
         }>, {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
             routePath?: string | undefined;
             order?: number | undefined;
         }, {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -674,8 +674,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -702,8 +702,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -712,10 +712,10 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
         }[] | undefined;
     }>>;
 }, "strip", z.ZodTypeAny, {
-    version: string;
     id: string;
     description: string;
     capabilities: ("companies.read" | "projects.read" | "project.workspaces.read" | "issues.read" | "issue.comments.read" | "issue.documents.read" | "agents.read" | "goals.read" | "goals.create" | "goals.update" | "activity.read" | "costs.read" | "issues.create" | "issues.update" | "issue.comments.create" | "issue.documents.write" | "agents.pause" | "agents.resume" | "agents.invoke" | "agent.sessions.create" | "agent.sessions.list" | "agent.sessions.send" | "agent.sessions.close" | "activity.log.write" | "metrics.write" | "telemetry.track" | "plugin.state.read" | "plugin.state.write" | "events.subscribe" | "events.emit" | "jobs.schedule" | "webhooks.receive" | "http.outbound" | "secrets.read-ref" | "agent.tools.register" | "instance.settings.register" | "ui.sidebar.register" | "ui.page.register" | "ui.detailTab.register" | "ui.dashboardWidget.register" | "ui.commentAnnotation.register" | "ui.action.register")[];
+    version: string;
     displayName: string;
     apiVersion: 1;
     author: string;
@@ -744,8 +744,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -792,10 +792,10 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
         } | undefined;
     }[] | undefined;
 }, {
-    version: string;
     id: string;
     description: string;
     capabilities: ("companies.read" | "projects.read" | "project.workspaces.read" | "issues.read" | "issue.comments.read" | "issue.documents.read" | "agents.read" | "goals.read" | "goals.create" | "goals.update" | "activity.read" | "costs.read" | "issues.create" | "issues.update" | "issue.comments.create" | "issue.documents.write" | "agents.pause" | "agents.resume" | "agents.invoke" | "agent.sessions.create" | "agent.sessions.list" | "agent.sessions.send" | "agent.sessions.close" | "activity.log.write" | "metrics.write" | "telemetry.track" | "plugin.state.read" | "plugin.state.write" | "events.subscribe" | "events.emit" | "jobs.schedule" | "webhooks.receive" | "http.outbound" | "secrets.read-ref" | "agent.tools.register" | "instance.settings.register" | "ui.sidebar.register" | "ui.page.register" | "ui.detailTab.register" | "ui.dashboardWidget.register" | "ui.commentAnnotation.register" | "ui.action.register")[];
+    version: string;
     displayName: string;
     apiVersion: 1;
     author: string;
@@ -824,8 +824,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -872,10 +872,10 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
         } | undefined;
     }[] | undefined;
 }>, {
-    version: string;
     id: string;
     description: string;
     capabilities: ("companies.read" | "projects.read" | "project.workspaces.read" | "issues.read" | "issue.comments.read" | "issue.documents.read" | "agents.read" | "goals.read" | "goals.create" | "goals.update" | "activity.read" | "costs.read" | "issues.create" | "issues.update" | "issue.comments.create" | "issue.documents.write" | "agents.pause" | "agents.resume" | "agents.invoke" | "agent.sessions.create" | "agent.sessions.list" | "agent.sessions.send" | "agent.sessions.close" | "activity.log.write" | "metrics.write" | "telemetry.track" | "plugin.state.read" | "plugin.state.write" | "events.subscribe" | "events.emit" | "jobs.schedule" | "webhooks.receive" | "http.outbound" | "secrets.read-ref" | "agent.tools.register" | "instance.settings.register" | "ui.sidebar.register" | "ui.page.register" | "ui.detailTab.register" | "ui.dashboardWidget.register" | "ui.commentAnnotation.register" | "ui.action.register")[];
+    version: string;
     displayName: string;
     apiVersion: 1;
     author: string;
@@ -904,8 +904,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -952,10 +952,10 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
         } | undefined;
     }[] | undefined;
 }, {
-    version: string;
     id: string;
     description: string;
     capabilities: ("companies.read" | "projects.read" | "project.workspaces.read" | "issues.read" | "issue.comments.read" | "issue.documents.read" | "agents.read" | "goals.read" | "goals.create" | "goals.update" | "activity.read" | "costs.read" | "issues.create" | "issues.update" | "issue.comments.create" | "issue.documents.write" | "agents.pause" | "agents.resume" | "agents.invoke" | "agent.sessions.create" | "agent.sessions.list" | "agent.sessions.send" | "agent.sessions.close" | "activity.log.write" | "metrics.write" | "telemetry.track" | "plugin.state.read" | "plugin.state.write" | "events.subscribe" | "events.emit" | "jobs.schedule" | "webhooks.receive" | "http.outbound" | "secrets.read-ref" | "agent.tools.register" | "instance.settings.register" | "ui.sidebar.register" | "ui.page.register" | "ui.detailTab.register" | "ui.dashboardWidget.register" | "ui.commentAnnotation.register" | "ui.action.register")[];
+    version: string;
     displayName: string;
     apiVersion: 1;
     author: string;
@@ -984,8 +984,8 @@ export declare const pluginManifestV1Schema: z.ZodEffects<z.ZodObject<{
             } | undefined;
         }[] | undefined;
         slots?: {
-            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             id: string;
+            type: "page" | "detailTab" | "taskDetailView" | "dashboardWidget" | "sidebar" | "sidebarPanel" | "projectSidebarItem" | "globalToolbarButton" | "toolbarButton" | "contextMenuItem" | "commentAnnotation" | "commentContextMenuItem" | "settingsPage";
             displayName: string;
             exportName: string;
             entityTypes?: ("agent" | "project" | "issue" | "goal" | "run" | "comment")[] | undefined;
@@ -1117,12 +1117,12 @@ export declare const pluginStateScopeKeySchema: z.ZodObject<{
     namespace: z.ZodOptional<z.ZodString>;
     stateKey: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    scopeKind: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
+    scopeKind: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
     stateKey: string;
     scopeId?: string | undefined;
     namespace?: string | undefined;
 }, {
-    scopeKind: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
+    scopeKind: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
     stateKey: string;
     scopeId?: string | undefined;
     namespace?: string | undefined;
@@ -1139,13 +1139,13 @@ export declare const setPluginStateSchema: z.ZodObject<{
     /** JSON-serializable value to store. */
     value: z.ZodUnknown;
 }, "strip", z.ZodTypeAny, {
-    scopeKind: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
+    scopeKind: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
     stateKey: string;
     value?: unknown;
     scopeId?: string | undefined;
     namespace?: string | undefined;
 }, {
-    scopeKind: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
+    scopeKind: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace";
     stateKey: string;
     value?: unknown;
     scopeId?: string | undefined;
@@ -1163,11 +1163,11 @@ export declare const listPluginStateSchema: z.ZodObject<{
 }, "strip", z.ZodTypeAny, {
     scopeId?: string | undefined;
     namespace?: string | undefined;
-    scopeKind?: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace" | undefined;
+    scopeKind?: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace" | undefined;
 }, {
     scopeId?: string | undefined;
     namespace?: string | undefined;
-    scopeKind?: "agent" | "company" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace" | undefined;
+    scopeKind?: "company" | "agent" | "project" | "issue" | "goal" | "run" | "instance" | "project_workspace" | undefined;
 }>;
 export type ListPluginState = z.infer<typeof listPluginStateSchema>;
 //# sourceMappingURL=plugin.d.ts.map

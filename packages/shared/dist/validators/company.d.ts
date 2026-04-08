@@ -29,8 +29,8 @@ export declare const updateCompanySchema: z.ZodObject<{
     logoAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     githubToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    status?: "active" | "paused" | "archived" | undefined;
     name?: string | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
     description?: string | null | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
@@ -43,8 +43,8 @@ export declare const updateCompanySchema: z.ZodObject<{
     logoAssetId?: string | null | undefined;
     githubToken?: string | null | undefined;
 }, {
-    status?: "active" | "paused" | "archived" | undefined;
     name?: string | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
     description?: string | null | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;

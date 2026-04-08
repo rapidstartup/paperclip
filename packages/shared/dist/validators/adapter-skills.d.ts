@@ -101,6 +101,7 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
+    mode: "unsupported" | "persistent" | "ephemeral";
     entries: {
         managed: boolean;
         key: string;
@@ -117,12 +118,12 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         targetPath?: string | null | undefined;
         detail?: string | null | undefined;
     }[];
-    mode: "unsupported" | "persistent" | "ephemeral";
     adapterType: string;
     supported: boolean;
     warnings: string[];
     desiredSkills: string[];
 }, {
+    mode: "unsupported" | "persistent" | "ephemeral";
     entries: {
         managed: boolean;
         key: string;
@@ -139,7 +140,6 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         targetPath?: string | null | undefined;
         detail?: string | null | undefined;
     }[];
-    mode: "unsupported" | "persistent" | "ephemeral";
     adapterType: string;
     supported: boolean;
     warnings: string[];

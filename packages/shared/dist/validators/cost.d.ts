@@ -16,8 +16,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: z.ZodNumber;
     occurredAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    provider: string;
     agentId: string;
+    provider: string;
     billingType: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown";
     model: string;
     inputTokens: number;
@@ -32,8 +32,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
 }, {
-    provider: string;
     agentId: string;
+    provider: string;
     model: string;
     costCents: number;
     occurredAt: string;
@@ -49,8 +49,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     outputTokens?: number | undefined;
 }>, {
     biller: string;
-    provider: string;
     agentId: string;
+    provider: string;
     billingType: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown";
     model: string;
     inputTokens: number;
@@ -64,8 +64,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
 }, {
-    provider: string;
     agentId: string;
+    provider: string;
     model: string;
     costCents: number;
     occurredAt: string;

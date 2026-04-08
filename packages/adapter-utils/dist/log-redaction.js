@@ -58,6 +58,7 @@ export function redactTranscriptEntryPaths(entry, opts) {
         case "stderr":
         case "system":
         case "stdout":
+        case "diff":
             return { ...entry, text: redactHomePathUserSegments(entry.text, opts) };
         case "tool_call":
             return {

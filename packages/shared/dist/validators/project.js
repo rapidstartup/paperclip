@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { PROJECT_STATUSES } from "../constants.js";
+import { envConfigSchema } from "./secret.js";
 const executionWorkspaceStrategySchema = z
     .object({
     type: z.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
@@ -87,6 +88,7 @@ const projectFields = {
     leadAgentId: z.string().uuid().optional().nullable(),
     targetDate: z.string().optional().nullable(),
     color: z.string().optional().nullable(),
+    env: envConfigSchema.optional().nullable(),
     executionWorkspacePolicy: projectExecutionWorkspacePolicySchema.optional().nullable(),
     archivedAt: z.string().datetime().optional().nullable(),
 };

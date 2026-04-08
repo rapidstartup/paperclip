@@ -1,5 +1,6 @@
 import type { Db } from "@paperclipai/db";
 import { issues, labels } from "@paperclipai/db";
+import type { IssueRelationIssueSummary } from "@paperclipai/shared";
 export interface IssueFilters {
     status?: string;
     assigneeAgentId?: string;
@@ -16,6 +17,7 @@ export interface IssueFilters {
     originId?: string;
     includeRoutineExecutions?: boolean;
     q?: string;
+    limit?: number;
 }
 type IssueRow = typeof issues.$inferSelect;
 type IssueLabelRow = typeof labels.$inferSelect;
@@ -44,7 +46,12 @@ type IssueUserContextInput = {
 };
 type IssueCreateInput = Omit<typeof issues.$inferInsert, "companyId"> & {
     labelIds?: string[];
+    blockedByIssueIds?: string[];
     inheritExecutionWorkspaceFromIssueId?: string | null;
+};
+type IssueRelationSummaryMap = {
+    blockedBy: IssueRelationIssueSummary[];
+    blocks: IssueRelationIssueSummary[];
 };
 /** Decodes HTML character references in a raw @mention capture so UI-encoded bodies match agent names. */
 export declare function normalizeAgentMentionToken(raw: string): string;
@@ -90,10 +97,24 @@ export declare function issueService(db: Db): {
     }>;
     getById: (raw: string) => Promise<IssueWithLabels | null>;
     getByIdentifier: (identifier: string) => Promise<IssueWithLabels | null>;
+    getRelationSummaries: (issueId: string) => Promise<IssueRelationSummaryMap>;
+    listWakeableBlockedDependents: (blockerIssueId: string) => Promise<{
+        id: string;
+        assigneeAgentId: string;
+        blockerIssueIds: string[];
+    }[]>;
+    getWakeableParentAfterChildCompletion: (parentIssueId: string) => Promise<{
+        id: string;
+        assigneeAgentId: string;
+        childIssueIds: string[];
+    } | null>;
     create: (companyId: string, data: IssueCreateInput) => Promise<IssueWithLabels>;
     update: (id: string, data: Partial<typeof issues.$inferInsert> & {
         labelIds?: string[];
-    }) => Promise<IssueWithLabels | null>;
+        blockedByIssueIds?: string[];
+        actorAgentId?: string | null;
+        actorUserId?: string | null;
+    }, dbOrTx?: any) => Promise<IssueWithLabels | null>;
     remove: (id: string) => Promise<IssueWithLabels | null>;
     checkout: (id: string, agentId: string, expectedStatuses: string[], checkoutRunId: string | null) => Promise<{
         id: string;
@@ -122,6 +143,8 @@ export declare function issueService(db: Db): {
         requestDepth: number;
         billingCode: string | null;
         assigneeAdapterOverrides: Record<string, unknown> | null;
+        executionPolicy: Record<string, unknown> | null;
+        executionState: Record<string, unknown> | null;
         executionWorkspaceId: string | null;
         executionWorkspacePreference: string | null;
         executionWorkspaceSettings: Record<string, unknown> | null;
@@ -394,9 +417,9 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
-        issueId: string;
         body: string;
         createdByRunId: string | null;
+        issueId: string;
         authorAgentId: string | null;
         authorUserId: string | null;
     }[]>;
@@ -410,9 +433,9 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
-        issueId: string;
         body: string;
         createdByRunId: string | null;
+        issueId: string;
         authorAgentId: string | null;
         authorUserId: string | null;
     } | null>;
@@ -425,9 +448,9 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
-        issueId: string;
         body: string;
         createdByRunId: string | null;
+        issueId: string;
         authorAgentId: string | null;
         authorUserId: string | null;
     }>;

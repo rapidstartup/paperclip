@@ -4,9 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { and, asc, eq } from "drizzle-orm";
 import { companySkills } from "@paperclipai/db";
-import { readPaperclipSkillSyncPreference, writePaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
+import { readPaperclipSkillSyncPreference } from "@paperclipai/adapter-utils/server-utils";
 import { normalizeAgentUrlKey } from "@paperclipai/shared";
-import { findServerAdapter } from "../adapters/index.js";
+import { findActiveServerAdapter } from "../adapters/index.js";
 import { resolvePaperclipInstanceRoot } from "../home-paths.js";
 import { notFound, unprocessable } from "../errors.js";
 import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";
@@ -1342,7 +1342,7 @@ export function companySkillService(db) {
             return desiredSkills.includes(key);
         });
         return Promise.all(desiredAgents.map(async (agent) => {
-            const adapter = findServerAdapter(agent.adapterType);
+            const adapter = findActiveServerAdapter(agent.adapterType);
             let actualState = null;
             if (!adapter?.listSkills) {
                 actualState = "unsupported";
@@ -2010,25 +2010,19 @@ export function companySkillService(db) {
         if (!row)
             return null;
         const skill = toCompanySkill(row);
-        // Remove from any agent desiredSkills that reference this skill
-        const agentRows = await agents.list(companyId);
-        const allSkills = await listFull(companyId);
-        for (const agent of agentRows) {
-            const config = agent.adapterConfig;
-            const preference = readPaperclipSkillSyncPreference(config);
-            const referencesSkill = preference.desiredSkills.some((ref) => {
-                const resolved = resolveSkillReference(allSkills, ref);
-                return resolved.skill?.id === skillId;
+        const usedByAgents = await usage(companyId, skill.key);
+        if (usedByAgents.length > 0) {
+            const agentNames = usedByAgents.map((agent) => agent.name).sort((left, right) => left.localeCompare(right));
+            throw unprocessable(`Cannot delete skill "${skill.name}" while it is still used by ${agentNames.join(", ")}. Detach it from those agents first.`, {
+                skillId: skill.id,
+                skillKey: skill.key,
+                usedByAgents: usedByAgents.map((agent) => ({
+                    id: agent.id,
+                    name: agent.name,
+                    urlKey: agent.urlKey,
+                    adapterType: agent.adapterType,
+                })),
             });
-            if (referencesSkill) {
-                const filtered = preference.desiredSkills.filter((ref) => {
-                    const resolved = resolveSkillReference(allSkills, ref);
-                    return resolved.skill?.id !== skillId;
-                });
-                await agents.update(agent.id, {
-                    adapterConfig: writePaperclipSkillSyncPreference(config, filtered),
-                });
-            }
         }
         // Delete DB row
         await db

@@ -424,8 +424,8 @@ export function startWorkerRpcHost(options) {
                 async listComments(issueId, companyId) {
                     return callHost("issues.listComments", { issueId, companyId });
                 },
-                async createComment(issueId, body, companyId) {
-                    return callHost("issues.createComment", { issueId, body, companyId });
+                async createComment(issueId, body, companyId, options) {
+                    return callHost("issues.createComment", { issueId, body, companyId, authorAgentId: options?.authorAgentId });
                 },
                 documents: {
                     async list(issueId, companyId) {

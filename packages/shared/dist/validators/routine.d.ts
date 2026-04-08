@@ -7,32 +7,32 @@ export declare const routineVariableSchema: z.ZodEffects<z.ZodObject<{
     required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
 }, "strip", z.ZodTypeAny, {
-    options: string[];
-    type: "number" | "boolean" | "text" | "textarea" | "select";
     required: boolean;
     name: string;
+    options: string[];
+    type: "number" | "boolean" | "text" | "textarea" | "select";
     label?: string | null | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }, {
     name: string;
-    options?: string[] | undefined;
-    type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
     label?: string | null | undefined;
     required?: boolean | undefined;
+    options?: string[] | undefined;
+    type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }>, {
-    options: string[];
-    type: "number" | "boolean" | "text" | "textarea" | "select";
     required: boolean;
     name: string;
+    options: string[];
+    type: "number" | "boolean" | "text" | "textarea" | "select";
     label?: string | null | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }, {
     name: string;
-    options?: string[] | undefined;
-    type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
     label?: string | null | undefined;
     required?: boolean | undefined;
+    options?: string[] | undefined;
+    type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }>;
 export declare const createRoutineSchema: z.ZodObject<{
@@ -54,32 +54,32 @@ export declare const createRoutineSchema: z.ZodObject<{
         required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
         options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     }, "strip", z.ZodTypeAny, {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }>, {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }>, "many">>>;
 }, "strip", z.ZodTypeAny, {
@@ -91,10 +91,10 @@ export declare const createRoutineSchema: z.ZodObject<{
     concurrencyPolicy: "coalesce_if_active" | "always_enqueue" | "skip_if_active";
     catchUpPolicy: "skip_missed" | "enqueue_missed_with_cap";
     variables: {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[];
@@ -114,10 +114,10 @@ export declare const createRoutineSchema: z.ZodObject<{
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
     variables?: {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[] | undefined;
 }>;
@@ -141,38 +141,38 @@ export declare const updateRoutineSchema: z.ZodObject<{
         required: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
         options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     }, "strip", z.ZodTypeAny, {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }>, {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }>, "many">>>>;
 }, "strip", z.ZodTypeAny, {
     status?: "active" | "paused" | "archived" | undefined;
-    description?: string | null | undefined;
     projectId?: string | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
@@ -181,17 +181,17 @@ export declare const updateRoutineSchema: z.ZodObject<{
     concurrencyPolicy?: "coalesce_if_active" | "always_enqueue" | "skip_if_active" | undefined;
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
     variables?: {
-        options: string[];
-        type: "number" | "boolean" | "text" | "textarea" | "select";
         required: boolean;
         name: string;
+        options: string[];
+        type: "number" | "boolean" | "text" | "textarea" | "select";
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[] | undefined;
 }, {
     status?: "active" | "paused" | "archived" | undefined;
-    description?: string | null | undefined;
     projectId?: string | undefined;
+    description?: string | null | undefined;
     goalId?: string | null | undefined;
     title?: string | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
@@ -201,10 +201,10 @@ export declare const updateRoutineSchema: z.ZodObject<{
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
     variables?: {
         name: string;
-        options?: string[] | undefined;
-        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         label?: string | null | undefined;
         required?: boolean | undefined;
+        options?: string[] | undefined;
+        type?: "number" | "boolean" | "text" | "textarea" | "select" | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[] | undefined;
 }>;
@@ -217,35 +217,35 @@ export declare const createRoutineTriggerSchema: z.ZodDiscriminatedUnion<"kind",
     cronExpression: z.ZodString;
     timezone: z.ZodDefault<z.ZodString>;
 }, "strip", z.ZodTypeAny, {
-    enabled: boolean;
     kind: "schedule";
+    enabled: boolean;
     cronExpression: string;
     timezone: string;
     label?: string | null | undefined;
 }, {
     kind: "schedule";
     cronExpression: string;
-    enabled?: boolean | undefined;
     label?: string | null | undefined;
+    enabled?: boolean | undefined;
     timezone?: string | undefined;
 }>, z.ZodObject<{
     label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     enabled: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 } & {
     kind: z.ZodLiteral<"webhook">;
-    signingMode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["bearer", "hmac_sha256"]>>>;
+    signingMode: z.ZodDefault<z.ZodOptional<z.ZodEnum<["bearer", "hmac_sha256", "github_hmac", "none"]>>>;
     replayWindowSec: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
-    enabled: boolean;
     kind: "webhook";
-    signingMode: "bearer" | "hmac_sha256";
+    enabled: boolean;
+    signingMode: "bearer" | "hmac_sha256" | "github_hmac" | "none";
     replayWindowSec: number;
     label?: string | null | undefined;
 }, {
     kind: "webhook";
-    enabled?: boolean | undefined;
     label?: string | null | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | undefined;
+    enabled?: boolean | undefined;
+    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | undefined;
     replayWindowSec?: number | undefined;
 }>, z.ZodObject<{
     label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -253,13 +253,13 @@ export declare const createRoutineTriggerSchema: z.ZodDiscriminatedUnion<"kind",
 } & {
     kind: z.ZodLiteral<"api">;
 }, "strip", z.ZodTypeAny, {
-    enabled: boolean;
     kind: "api";
+    enabled: boolean;
     label?: string | null | undefined;
 }, {
     kind: "api";
-    enabled?: boolean | undefined;
     label?: string | null | undefined;
+    enabled?: boolean | undefined;
 }>]>;
 export type CreateRoutineTrigger = z.infer<typeof createRoutineTriggerSchema>;
 export declare const updateRoutineTriggerSchema: z.ZodObject<{
@@ -267,21 +267,21 @@ export declare const updateRoutineTriggerSchema: z.ZodObject<{
     enabled: z.ZodOptional<z.ZodBoolean>;
     cronExpression: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     timezone: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    signingMode: z.ZodNullable<z.ZodOptional<z.ZodEnum<["bearer", "hmac_sha256"]>>>;
+    signingMode: z.ZodNullable<z.ZodOptional<z.ZodEnum<["bearer", "hmac_sha256", "github_hmac", "none"]>>>;
     replayWindowSec: z.ZodNullable<z.ZodOptional<z.ZodNumber>>;
 }, "strip", z.ZodTypeAny, {
-    enabled?: boolean | undefined;
     label?: string | null | undefined;
+    enabled?: boolean | undefined;
     cronExpression?: string | null | undefined;
     timezone?: string | null | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | null | undefined;
+    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | null | undefined;
     replayWindowSec?: number | null | undefined;
 }, {
-    enabled?: boolean | undefined;
     label?: string | null | undefined;
+    enabled?: boolean | undefined;
     cronExpression?: string | null | undefined;
     timezone?: string | null | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | null | undefined;
+    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | null | undefined;
     replayWindowSec?: number | null | undefined;
 }>;
 export type UpdateRoutineTrigger = z.infer<typeof updateRoutineTriggerSchema>;
@@ -303,15 +303,15 @@ export declare const runRoutineSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
         }, {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -321,8 +321,8 @@ export declare const runRoutineSchema: z.ZodObject<{
     }, "strict", z.ZodTypeAny, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -332,8 +332,8 @@ export declare const runRoutineSchema: z.ZodObject<{
     }, {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -348,8 +348,8 @@ export declare const runRoutineSchema: z.ZodObject<{
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
@@ -368,8 +368,8 @@ export declare const runRoutineSchema: z.ZodObject<{
     executionWorkspaceSettings?: {
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             baseRef?: string | null | undefined;
+            type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
             branchTemplate?: string | null | undefined;
             worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;

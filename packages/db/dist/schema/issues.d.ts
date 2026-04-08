@@ -446,6 +446,44 @@ export declare const issues: import("drizzle-orm/pg-core").PgTableWithColumns<{
         }, {}, {
             $type: Record<string, unknown>;
         }>;
+        executionPolicy: import("drizzle-orm/pg-core").PgColumn<{
+            name: "execution_policy";
+            tableName: "issues";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: Record<string, unknown>;
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: Record<string, unknown>;
+        }>;
+        executionState: import("drizzle-orm/pg-core").PgColumn<{
+            name: "execution_state";
+            tableName: "issues";
+            dataType: "json";
+            columnType: "PgJsonb";
+            data: Record<string, unknown>;
+            driverParam: unknown;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {
+            $type: Record<string, unknown>;
+        }>;
         executionWorkspaceId: import("drizzle-orm/pg-core").PgColumn<{
             name: "execution_workspace_id";
             tableName: "issues";

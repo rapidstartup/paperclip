@@ -3,9 +3,20 @@ import type { ExecutionWorkspace, ExecutionWorkspaceConfig } from "@paperclipai/
 import { agents } from "@paperclipai/db";
 import type { AdapterSessionCodec } from "../adapters/index.js";
 import { type BudgetEnforcementScope } from "./budgets.js";
+import { secretService } from "./secrets.js";
 import { type ExecutionWorkspaceInput, type RealizedExecutionWorkspace } from "./workspace-runtime.js";
 import { resolveExecutionWorkspaceMode } from "./execution-workspace-policy.js";
 import { type SessionCompactionPolicy } from "@paperclipai/adapter-utils";
+type RuntimeConfigSecretResolver = Pick<ReturnType<typeof secretService>, "resolveAdapterConfigForRuntime" | "resolveEnvBindings">;
+export declare function resolveExecutionRunAdapterConfig(input: {
+    companyId: string;
+    executionRunConfig: Record<string, unknown>;
+    projectEnv: unknown;
+    secretsSvc: RuntimeConfigSecretResolver;
+}): Promise<{
+    resolvedConfig: Record<string, unknown>;
+    secretKeys: Set<string>;
+}>;
 export declare function applyPersistedExecutionWorkspaceConfig(input: {
     config: Record<string, unknown>;
     workspaceConfig: ExecutionWorkspaceConfig | null;
@@ -88,6 +99,8 @@ export declare function formatRuntimeWorkspaceWarningLog(warning: string): {
     stream: "stdout";
     chunk: string;
 };
+export declare function extractWakeCommentIds(contextSnapshot: Record<string, unknown> | null | undefined): string[];
+export declare function mergeCoalescedContextSnapshot(existingRaw: unknown, incoming: Record<string, unknown>): Record<string, unknown>;
 export declare function heartbeatService(db: Db): {
     list: (companyId: string, agentId?: string, limit?: number) => Promise<{
         resultJson: Record<string, unknown> | null;
@@ -156,6 +169,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     }>;
     getRuntimeState: (agentId: string) => Promise<{
@@ -424,9 +440,9 @@ export declare function heartbeatService(db: Db): {
         payload: Record<string, unknown> | null;
         agentId: string;
         runId: string;
-        level: string | null;
-        color: string | null;
         message: string | null;
+        color: string | null;
+        level: string | null;
         seq: number;
         eventType: string;
         stream: string | null;
@@ -684,6 +700,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     } | null>;
     wakeup: (agentId: string, opts?: WakeupOptions) => Promise<{
@@ -719,6 +738,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     } | null>;
     reportRunActivity: (runId: string) => Promise<{
@@ -752,6 +774,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
         createdAt: Date;
         updatedAt: Date;
@@ -801,6 +826,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     }>;
     cancelActiveForAgent: (agentId: string) => Promise<number>;
@@ -838,6 +866,9 @@ export declare function heartbeatService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     }>;
 };

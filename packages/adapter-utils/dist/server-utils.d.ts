@@ -50,6 +50,39 @@ export declare function appendWithCap(prev: string, chunk: string, cap?: number)
 export declare function resolvePathValue(obj: Record<string, unknown>, dottedPath: string): string;
 export declare function renderTemplate(template: string, data: Record<string, unknown>): string;
 export declare function joinPromptSections(sections: Array<string | null | undefined>, separator?: string): string;
+type PaperclipWakeIssue = {
+    id: string | null;
+    identifier: string | null;
+    title: string | null;
+    status: string | null;
+    priority: string | null;
+};
+type PaperclipWakeComment = {
+    id: string | null;
+    issueId: string | null;
+    body: string;
+    bodyTruncated: boolean;
+    createdAt: string | null;
+    authorType: string | null;
+    authorId: string | null;
+};
+type PaperclipWakePayload = {
+    reason: string | null;
+    issue: PaperclipWakeIssue | null;
+    commentIds: string[];
+    latestCommentId: string | null;
+    comments: PaperclipWakeComment[];
+    requestedCount: number;
+    includedCount: number;
+    missingCount: number;
+    truncated: boolean;
+    fallbackFetchNeeded: boolean;
+};
+export declare function normalizePaperclipWakePayload(value: unknown): PaperclipWakePayload | null;
+export declare function stringifyPaperclipWakePayload(value: unknown): string | null;
+export declare function renderPaperclipWakePrompt(value: unknown, options?: {
+    resumedSession?: boolean;
+}): string;
 export declare function redactEnvForLogs(env: Record<string, string>): Record<string, string>;
 export declare function buildInvocationEnvForLogs(env: Record<string, string>, options?: {
     runtimeEnv?: NodeJS.ProcessEnv | Record<string, string>;

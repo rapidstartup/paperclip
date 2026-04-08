@@ -768,7 +768,9 @@ export interface PluginIssuesClient {
     }): Promise<Issue>;
     update(issueId: string, patch: Partial<Pick<Issue, "title" | "description" | "status" | "priority" | "assigneeAgentId">>, companyId: string): Promise<Issue>;
     listComments(issueId: string, companyId: string): Promise<IssueComment[]>;
-    createComment(issueId: string, body: string, companyId: string): Promise<IssueComment>;
+    createComment(issueId: string, body: string, companyId: string, options?: {
+        authorAgentId?: string;
+    }): Promise<IssueComment>;
     /** Read and write issue documents. Requires `issue.documents.read` / `issue.documents.write`. */
     documents: PluginIssueDocumentsClient;
 }

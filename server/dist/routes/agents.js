@@ -10,7 +10,7 @@ import { validate } from "../middleware/validate.js";
 import { agentService, agentInstructionsService, accessService, approvalService, companySkillService, budgetService, heartbeatService, issueApprovalService, issueService, logActivity, secretService, syncInstructionsBundleConfigFromFilePath, workspaceOperationService, } from "../services/index.js";
 import { conflict, forbidden, notFound, unprocessable } from "../errors.js";
 import { assertBoard, assertCompanyAccess, assertInstanceAdmin, getActorInfo } from "./authz.js";
-import { findServerAdapter, listAdapterModels, detectAdapterModel } from "../adapters/index.js";
+import { detectAdapterModel, findActiveServerAdapter, findServerAdapter, listAdapterModels, requireServerAdapter, } from "../adapters/index.js";
 import { redactEventPayload } from "../redaction.js";
 import { redactCurrentUserValue } from "../log-redaction.js";
 import { renderOrgChartSvg, renderOrgChartPng, ORG_CHART_STYLES } from "./org-chart-svg.js";
@@ -27,7 +27,9 @@ export function agentRoutes(db) {
     const DEFAULT_INSTRUCTIONS_PATH_KEYS = {
         claude_local: "instructionsFilePath",
         codex_local: "instructionsFilePath",
+        droid_local: "instructionsFilePath",
         gemini_local: "instructionsFilePath",
+        hermes_local: "instructionsFilePath",
         opencode_local: "instructionsFilePath",
         cursor: "instructionsFilePath",
         pi_local: "instructionsFilePath",
@@ -263,6 +265,19 @@ export function agentRoutes(db) {
             throw forbidden("Agent key cannot access another company");
         }
     }
+    function assertKnownAdapterType(type) {
+        const adapterType = typeof type === "string" ? type.trim() : "";
+        if (!adapterType) {
+            throw unprocessable("Adapter type is required");
+        }
+        if (!findServerAdapter(adapterType)) {
+            throw unprocessable(`Unknown adapter type: ${adapterType}`);
+        }
+        return adapterType;
+    }
+    function hasOwn(value, key) {
+        return Object.hasOwn(value, key);
+    }
     async function resolveCompanyIdForAgentReference(req) {
         const companyIdQuery = req.query.companyId;
         const requestedCompanyId = typeof companyIdQuery === "string" && companyIdQuery.trim().length > 0
@@ -424,6 +439,117 @@ export function agentRoutes(db) {
             ...adapterConfig,
             env: { ...existingEnv, OPENCODE_API_KEY: { type: "secret_ref", secretId: secret.id } },
         };
+    }
+    /** Hermes CLI reads provider keys from the process environment (no TTY setup wizard). */
+    const HERMES_DEFAULT_SECRET_ENV_KEYS = [
+        "OPENROUTER_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+    ];
+    /**
+     * Company secrets are keyed by an operator-chosen name; UI often uses e.g. `openrouter_api_key`
+     * while the runtime env var must be `OPENROUTER_API_KEY`. Try canonical and common aliases.
+     */
+    const HERMES_ENV_SECRET_NAME_ALIASES = {
+        OPENROUTER_API_KEY: ["OPENROUTER_API_KEY", "openrouter_api_key", "openrouter"],
+        OPENAI_API_KEY: ["OPENAI_API_KEY", "openai_api_key", "openai"],
+        ANTHROPIC_API_KEY: ["ANTHROPIC_API_KEY", "anthropic_api_key", "anthropic"],
+    };
+    async function findCompanySecretForHermesEnvKey(companyId, envKey) {
+        const aliases = HERMES_ENV_SECRET_NAME_ALIASES[envKey];
+        if (!aliases)
+            return null;
+        for (const name of aliases) {
+            const secret = await secretsSvc.getByName(companyId, name);
+            if (secret)
+                return secret;
+        }
+        return null;
+    }
+    async function injectDefaultEnvBindingsForHermes(companyId, adapterType, adapterConfig) {
+        if (adapterType !== "hermes_local")
+            return adapterConfig;
+        const existingEnv = asRecord(adapterConfig.env) ?? {};
+        const nextEnv = { ...existingEnv };
+        let added = false;
+        for (const key of HERMES_DEFAULT_SECRET_ENV_KEYS) {
+            if (nextEnv[key] !== undefined)
+                continue;
+            const secret = await findCompanySecretForHermesEnvKey(companyId, key);
+            if (!secret)
+                continue;
+            nextEnv[key] = { type: "secret_ref", secretId: secret.id };
+            added = true;
+        }
+        if (!added)
+            return adapterConfig;
+        return { ...adapterConfig, env: nextEnv };
+    }
+    async function injectDefaultAdapterSecretEnvBindings(companyId, adapterType, adapterConfig) {
+        let next = await injectDefaultEnvBindingsForOpenCode(companyId, adapterType, adapterConfig);
+        next = await injectDefaultEnvBindingsForHermes(companyId, adapterType, next);
+        return next;
+    }
+    const OPENROUTER_MODELS_URL = "https://openrouter.ai/api/v1/models";
+    const OPENROUTER_HERMES_MODELS_MAX = 800;
+    /**
+     * Hermes ships with models: [] in the adapter; detection only suggests one default.
+     * When the company has an OpenRouter key, fetch the live catalog for the model picker.
+     */
+    async function listOpenRouterHermesModels(companyId) {
+        const secret = await findCompanySecretForHermesEnvKey(companyId, "OPENROUTER_API_KEY");
+        if (!secret)
+            return [];
+        let apiKey;
+        try {
+            apiKey = await secretsSvc.resolveSecretValue(companyId, secret.id, "latest");
+        }
+        catch {
+            return [];
+        }
+        const trimmedKey = apiKey.trim();
+        if (!trimmedKey)
+            return [];
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 20_000);
+        try {
+            const response = await fetch(OPENROUTER_MODELS_URL, {
+                method: "GET",
+                headers: {
+                    Authorization: `Bearer ${trimmedKey}`,
+                    Accept: "application/json",
+                },
+                signal: controller.signal,
+            });
+            if (!response.ok)
+                return [];
+            const body = (await response.json());
+            const rows = Array.isArray(body.data) ? body.data : [];
+            const out = [];
+            for (const row of rows) {
+                if (out.length >= OPENROUTER_HERMES_MODELS_MAX)
+                    break;
+                if (typeof row !== "object" || row === null)
+                    continue;
+                const rec = row;
+                const id = typeof rec.id === "string" ? rec.id.trim() : "";
+                if (!id)
+                    continue;
+                const name = typeof rec.name === "string" ? rec.name.trim() : "";
+                out.push({
+                    id,
+                    label: name && name !== id ? `${id} — ${name}` : id,
+                });
+            }
+            out.sort((a, b) => a.id.localeCompare(b.id));
+            return out;
+        }
+        catch {
+            return [];
+        }
+        finally {
+            clearTimeout(timeout);
+        }
     }
     async function assertAdapterConfigConstraints(companyId, adapterType, adapterConfig) {
         if (adapterType !== "opencode_local")
@@ -636,26 +762,65 @@ export function agentRoutes(db) {
     router.get("/companies/:companyId/adapters/:type/models", async (req, res) => {
         const companyId = req.params.companyId;
         assertCompanyAccess(req, companyId);
-        const type = req.params.type;
-        const models = await listAdapterModels(type);
+        const type = assertKnownAdapterType(req.params.type);
+        let models = await listAdapterModels(type);
+        if (type === "hermes_local") {
+            const openrouter = await listOpenRouterHermesModels(companyId);
+            if (openrouter.length > 0) {
+                const byId = new Map(models.map((m) => [m.id, m]));
+                for (const m of openrouter) {
+                    if (!byId.has(m.id))
+                        byId.set(m.id, m);
+                }
+                models = [...byId.values()].sort((a, b) => a.id.localeCompare(b.id));
+            }
+        }
         res.json(models);
     });
+    /**
+     * Hermes adapter detectModel() only reads ~/.hermes/config.yaml on the API host.
+     * Paperclip env bindings do not create that file, so headless deploys get null.
+     * Infer a usable default from which company secrets exist (same keys as adapter env).
+     */
+    async function inferHermesModelFromCompanySecrets(companyId) {
+        if (await findCompanySecretForHermesEnvKey(companyId, "OPENROUTER_API_KEY")) {
+            return {
+                model: "anthropic/claude-sonnet-4",
+                provider: "openrouter",
+                source: "inferred-from-secret",
+            };
+        }
+        if (await findCompanySecretForHermesEnvKey(companyId, "OPENAI_API_KEY")) {
+            return {
+                model: "gpt-4o",
+                provider: "auto",
+                source: "inferred-from-secret",
+            };
+        }
+        if (await findCompanySecretForHermesEnvKey(companyId, "ANTHROPIC_API_KEY")) {
+            return {
+                model: "anthropic/claude-sonnet-4",
+                provider: "auto",
+                source: "inferred-from-secret",
+            };
+        }
+        return null;
+    }
     router.get("/companies/:companyId/adapters/:type/detect-model", async (req, res) => {
         const companyId = req.params.companyId;
         assertCompanyAccess(req, companyId);
-        const type = req.params.type;
-        const detected = await detectAdapterModel(type);
+        const type = assertKnownAdapterType(req.params.type);
+        let detected = await detectAdapterModel(type);
+        if (!detected && type === "hermes_local") {
+            detected = await inferHermesModelFromCompanySecrets(companyId);
+        }
         res.json(detected);
     });
     router.post("/companies/:companyId/adapters/:type/test-environment", validate(testAdapterEnvironmentSchema), async (req, res) => {
         const companyId = req.params.companyId;
-        const type = req.params.type;
+        const type = assertKnownAdapterType(req.params.type);
         await assertCanTestAdapterEnvironment(req, companyId);
-        const adapter = findServerAdapter(type);
-        if (!adapter) {
-            res.status(404).json({ error: `Unknown adapter type: ${type}` });
-            return;
-        }
+        const adapter = requireServerAdapter(type);
         const inputAdapterConfig = (req.body?.adapterConfig ?? {});
         const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(companyId, inputAdapterConfig, { strictMode: strictSecretsMode });
         const { config: runtimeAdapterConfig } = await secretsSvc.resolveAdapterConfigForRuntime(companyId, normalizedAdapterConfig);
@@ -674,7 +839,7 @@ export function agentRoutes(db) {
             return;
         }
         await assertCanReadConfigurations(req, agent.companyId);
-        const adapter = findServerAdapter(agent.adapterType);
+        const adapter = findActiveServerAdapter(agent.adapterType);
         if (!adapter?.listSkills) {
             const preference = readPaperclipSkillSyncPreference(agent.adapterConfig);
             const runtimeSkillEntries = await companySkills.listRuntimeSkillEntries(agent.companyId, {
@@ -723,7 +888,7 @@ export function agentRoutes(db) {
             res.status(404).json({ error: "Agent not found" });
             return;
         }
-        const adapter = findServerAdapter(updated.adapterType);
+        const adapter = findActiveServerAdapter(updated.adapterType);
         const { config: runtimeConfig } = await secretsSvc.resolveAdapterConfigForRuntime(updated.companyId, updated.adapterConfig);
         const runtimeSkillConfig = {
             ...runtimeConfig,
@@ -1056,7 +1221,8 @@ export function agentRoutes(db) {
         await assertCanCreateAgentsForCompany(req, companyId);
         const sourceIssueIds = parseSourceIssueIds(req.body);
         const { desiredSkills: requestedDesiredSkills, sourceIssueId: _sourceIssueId, sourceIssueIds: _sourceIssueIds, ...hireInput } = req.body;
-        const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(companyId, hireInput.adapterType, applyCreateDefaultsByAdapterType(hireInput.adapterType, (hireInput.adapterConfig ?? {})));
+        hireInput.adapterType = assertKnownAdapterType(hireInput.adapterType);
+        const requestedAdapterConfig = await injectDefaultAdapterSecretEnvBindings(companyId, hireInput.adapterType, applyCreateDefaultsByAdapterType(hireInput.adapterType, (hireInput.adapterConfig ?? {})));
         const desiredSkillAssignment = await resolveDesiredSkillAssignment(companyId, hireInput.adapterType, requestedAdapterConfig, Array.isArray(requestedDesiredSkills) ? requestedDesiredSkills : undefined);
         const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(companyId, desiredSkillAssignment.adapterConfig, { strictMode: strictSecretsMode });
         await assertAdapterConfigConstraints(companyId, hireInput.adapterType, normalizedAdapterConfig);
@@ -1175,7 +1341,8 @@ export function agentRoutes(db) {
             assertBoard(req);
         }
         const { desiredSkills: requestedDesiredSkills, ...createInput } = req.body;
-        const requestedAdapterConfig = await injectDefaultEnvBindingsForOpenCode(companyId, createInput.adapterType, applyCreateDefaultsByAdapterType(createInput.adapterType, (createInput.adapterConfig ?? {})));
+        createInput.adapterType = assertKnownAdapterType(createInput.adapterType);
+        const requestedAdapterConfig = await injectDefaultAdapterSecretEnvBindings(companyId, createInput.adapterType, applyCreateDefaultsByAdapterType(createInput.adapterType, (createInput.adapterConfig ?? {})));
         const desiredSkillAssignment = await resolveDesiredSkillAssignment(companyId, createInput.adapterType, requestedAdapterConfig, Array.isArray(requestedDesiredSkills) ? requestedDesiredSkills : undefined);
         const normalizedAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(companyId, desiredSkillAssignment.adapterConfig, { strictMode: strictSecretsMode });
         await assertAdapterConfigConstraints(companyId, createInput.adapterType, normalizedAdapterConfig);
@@ -1461,14 +1628,14 @@ export function agentRoutes(db) {
             return;
         }
         await assertCanUpdateAgent(req, existing);
-        if (Object.prototype.hasOwnProperty.call(req.body, "permissions")) {
+        if (hasOwn(req.body, "permissions")) {
             res.status(422).json({ error: "Use /api/agents/:id/permissions for permission changes" });
             return;
         }
         const patchData = { ...req.body };
         const replaceAdapterConfig = patchData.replaceAdapterConfig === true;
         delete patchData.replaceAdapterConfig;
-        if (Object.prototype.hasOwnProperty.call(patchData, "adapterConfig")) {
+        if (hasOwn(patchData, "adapterConfig")) {
             const adapterConfig = asRecord(patchData.adapterConfig);
             if (!adapterConfig) {
                 res.status(422).json({ error: "adapterConfig must be an object" });
@@ -1480,13 +1647,15 @@ export function agentRoutes(db) {
             }
             patchData.adapterConfig = adapterConfig;
         }
-        const requestedAdapterType = typeof patchData.adapterType === "string" ? patchData.adapterType : existing.adapterType;
-        const touchesAdapterConfiguration = Object.prototype.hasOwnProperty.call(patchData, "adapterType") ||
-            Object.prototype.hasOwnProperty.call(patchData, "adapterConfig");
+        const requestedAdapterType = hasOwn(patchData, "adapterType")
+            ? assertKnownAdapterType(patchData.adapterType)
+            : existing.adapterType;
+        const touchesAdapterConfiguration = hasOwn(patchData, "adapterType") ||
+            hasOwn(patchData, "adapterConfig");
         if (touchesAdapterConfiguration) {
             const existingAdapterConfig = asRecord(existing.adapterConfig) ?? {};
             const changingAdapterType = typeof patchData.adapterType === "string" && patchData.adapterType !== existing.adapterType;
-            const requestedAdapterConfig = Object.prototype.hasOwnProperty.call(patchData, "adapterConfig")
+            const requestedAdapterConfig = hasOwn(patchData, "adapterConfig")
                 ? (asRecord(patchData.adapterConfig) ?? {})
                 : null;
             if (requestedAdapterConfig
@@ -1513,7 +1682,8 @@ export function agentRoutes(db) {
                 }
                 rawEffectiveAdapterConfig = preserveInstructionsBundleConfig(existingAdapterConfig, rawEffectiveAdapterConfig);
             }
-            const effectiveAdapterConfig = applyCreateDefaultsByAdapterType(requestedAdapterType, rawEffectiveAdapterConfig);
+            let effectiveAdapterConfig = applyCreateDefaultsByAdapterType(requestedAdapterType, rawEffectiveAdapterConfig);
+            effectiveAdapterConfig = await injectDefaultAdapterSecretEnvBindings(existing.companyId, requestedAdapterType, effectiveAdapterConfig);
             const normalizedEffectiveAdapterConfig = await secretsSvc.normalizeAdapterConfigForPersistence(existing.companyId, effectiveAdapterConfig, { strictMode: strictSecretsMode });
             patchData.adapterConfig = syncInstructionsBundleConfigFromFilePath(existing, normalizedEffectiveAdapterConfig);
         }

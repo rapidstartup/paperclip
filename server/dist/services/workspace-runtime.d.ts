@@ -57,6 +57,9 @@ export interface RuntimeServiceRef {
     reused: boolean;
 }
 export declare function resetRuntimeServicesForTests(): Promise<void>;
+export declare function ensureServerWorkspaceLinksCurrent(startCwd: string, opts?: {
+    onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
+}): Promise<void>;
 export declare function sanitizeRuntimeServiceBaseEnv(baseEnv: NodeJS.ProcessEnv): NodeJS.ProcessEnv;
 export declare function realizeExecutionWorkspace(input: {
     base: ExecutionWorkspaceInput;
@@ -145,22 +148,22 @@ export declare function listWorkspaceRuntimeServicesForProjectWorkspaces(db: Db,
     scopeType: string;
     scopeId: string | null;
     startedAt: Date;
-    ownerAgentId: string | null;
+    url: string | null;
     projectId: string | null;
-    cwd: string | null;
     projectWorkspaceId: string | null;
-    executionWorkspaceId: string | null;
+    cwd: string | null;
     providerRef: string | null;
+    executionWorkspaceId: string | null;
+    healthStatus: string;
     issueId: string | null;
     serviceName: string;
     lifecycle: string;
     reuseKey: string | null;
     port: number | null;
-    url: string | null;
+    ownerAgentId: string | null;
     startedByRunId: string | null;
     stoppedAt: Date | null;
     stopPolicy: Record<string, unknown> | null;
-    healthStatus: string;
 }[]>>;
 export declare function reconcilePersistedRuntimeServicesOnStartup(db: Db): Promise<{
     reconciled: number;

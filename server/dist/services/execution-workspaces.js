@@ -3,8 +3,9 @@ import fs from "node:fs/promises";
 import path from "node:path";
 import { promisify } from "node:util";
 import { and, desc, eq, inArray } from "drizzle-orm";
-import { executionWorkspaces, issues, projects, projectWorkspaces, workspaceRuntimeServices } from "@paperclipai/db";
+import { executionWorkspaces, issues, projects, projectWorkspaces } from "@paperclipai/db";
 import { parseProjectExecutionWorkspacePolicy } from "./execution-workspace-policy.js";
+import { listCurrentRuntimeServicesForExecutionWorkspaces, listCurrentRuntimeServicesForProjectWorkspaces, } from "./workspace-runtime-read-model.js";
 const execFileAsync = promisify(execFile);
 const TERMINAL_ISSUE_STATUSES = new Set(["done", "cancelled"]);
 function isRecord(value) {
@@ -274,6 +275,25 @@ function toExecutionWorkspace(row, runtimeServices = []) {
         updatedAt: row.updatedAt,
     };
 }
+function usesInheritedProjectRuntimeServices(row) {
+    if (row.mode !== "shared_workspace" || !row.projectWorkspaceId)
+        return false;
+    return !readExecutionWorkspaceConfig(row.metadata ?? null)?.workspaceRuntime;
+}
+async function loadEffectiveRuntimeServicesByExecutionWorkspace(db, companyId, rows) {
+    const executionRuntimeServices = await listCurrentRuntimeServicesForExecutionWorkspaces(db, companyId, rows.map((row) => row.id));
+    const projectWorkspaceIds = rows
+        .filter((row) => usesInheritedProjectRuntimeServices(row))
+        .map((row) => row.projectWorkspaceId)
+        .filter((value) => Boolean(value));
+    const projectRuntimeServices = await listCurrentRuntimeServicesForProjectWorkspaces(db, companyId, [...new Set(projectWorkspaceIds)]);
+    return new Map(rows.map((row) => [
+        row.id,
+        usesInheritedProjectRuntimeServices(row)
+            ? (projectRuntimeServices.get(row.projectWorkspaceId) ?? [])
+            : (executionRuntimeServices.get(row.id) ?? []),
+    ]));
+}
 export function executionWorkspaceService(db) {
     return {
         list: async (companyId, filters) => {
@@ -300,7 +320,8 @@ export function executionWorkspaceService(db) {
                 .from(executionWorkspaces)
                 .where(and(...conditions))
                 .orderBy(desc(executionWorkspaces.lastUsedAt), desc(executionWorkspaces.createdAt));
-            return rows.map((row) => toExecutionWorkspace(row));
+            const runtimeServicesByWorkspaceId = await loadEffectiveRuntimeServicesByExecutionWorkspace(db, companyId, rows);
+            return rows.map((row) => toExecutionWorkspace(row, (runtimeServicesByWorkspaceId.get(row.id) ?? []).map(toRuntimeService)));
         },
         getById: async (id) => {
             const row = await db
@@ -310,12 +331,8 @@ export function executionWorkspaceService(db) {
                 .then((rows) => rows[0] ?? null);
             if (!row)
                 return null;
-            const runtimeServiceRows = await db
-                .select()
-                .from(workspaceRuntimeServices)
-                .where(eq(workspaceRuntimeServices.executionWorkspaceId, row.id))
-                .orderBy(desc(workspaceRuntimeServices.updatedAt), desc(workspaceRuntimeServices.createdAt));
-            return toExecutionWorkspace(row, runtimeServiceRows.map(toRuntimeService));
+            const runtimeServicesByWorkspaceId = await loadEffectiveRuntimeServicesByExecutionWorkspace(db, row.companyId, [row]);
+            return toExecutionWorkspace(row, (runtimeServicesByWorkspaceId.get(row.id) ?? []).map(toRuntimeService));
         },
         getCloseReadiness: async (id) => {
             const workspace = await db
@@ -325,12 +342,8 @@ export function executionWorkspaceService(db) {
                 .then((rows) => rows[0] ?? null);
             if (!workspace)
                 return null;
-            const runtimeServiceRows = await db
-                .select()
-                .from(workspaceRuntimeServices)
-                .where(eq(workspaceRuntimeServices.executionWorkspaceId, workspace.id))
-                .orderBy(desc(workspaceRuntimeServices.updatedAt), desc(workspaceRuntimeServices.createdAt));
-            const runtimeServices = runtimeServiceRows.map(toRuntimeService);
+            const runtimeServicesByWorkspaceId = await loadEffectiveRuntimeServicesByExecutionWorkspace(db, workspace.companyId, [workspace]);
+            const runtimeServices = (runtimeServicesByWorkspaceId.get(workspace.id) ?? []).map(toRuntimeService);
             const linkedIssues = await db
                 .select({
                 id: issues.id,

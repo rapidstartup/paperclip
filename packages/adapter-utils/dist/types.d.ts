@@ -209,6 +209,27 @@ export interface ProviderQuotaResult {
     error?: string;
     windows: QuotaWindow[];
 }
+export interface ConfigFieldOption {
+    label: string;
+    value: string;
+    /** Optional group key for categorizing options (e.g. provider name) */
+    group?: string;
+}
+export interface ConfigFieldSchema {
+    key: string;
+    label: string;
+    type: "text" | "select" | "toggle" | "number" | "textarea" | "combobox";
+    options?: ConfigFieldOption[];
+    default?: unknown;
+    hint?: string;
+    required?: boolean;
+    group?: string;
+    /** Optional metadata — not rendered, but available to custom UI logic */
+    meta?: Record<string, unknown>;
+}
+export interface AdapterConfigSchema {
+    fields: ConfigFieldSchema[];
+}
 export interface ServerAdapterModule {
     type: string;
     execute(ctx: AdapterExecutionContext): Promise<AdapterExecutionResult>;
@@ -241,6 +262,7 @@ export interface ServerAdapterModule {
         model: string;
         provider: string;
         source: string;
+        candidates?: string[];
     } | null>;
     /**
      * Adapter-level default run timeout in seconds, applied when the agent config
@@ -250,6 +272,13 @@ export interface ServerAdapterModule {
      * 0 or omitted means no server-side deadline is stored.
      */
     defaultTimeoutSec?: number;
+    /**
+     * Optional: return a declarative config schema so the UI can render
+     * adapter-specific form fields without shipping React components.
+     * Dynamic options (e.g. scanning a profiles directory) should be
+     * resolved inside this method — the caller receives a fully hydrated schema.
+     */
+    getConfigSchema?: () => Promise<AdapterConfigSchema> | AdapterConfigSchema;
 }
 export type TranscriptEntry = {
     kind: "assistant";
@@ -306,6 +335,11 @@ export type TranscriptEntry = {
     kind: "stdout";
     ts: string;
     text: string;
+} | {
+    kind: "diff";
+    ts: string;
+    changeType: "add" | "remove" | "context" | "hunk" | "file_header" | "truncation";
+    text: string;
 };
 export type StdoutLineParser = (line: string, ts: string) => TranscriptEntry[];
 export interface CLIAdapterModule {
@@ -353,5 +387,7 @@ export interface CreateConfigValues {
     maxTurnsPerRun: number;
     heartbeatEnabled: boolean;
     intervalSec: number;
+    /** Arbitrary key-value pairs populated by schema-driven config fields. */
+    adapterSchemaValues?: Record<string, unknown>;
 }
 //# sourceMappingURL=types.d.ts.map

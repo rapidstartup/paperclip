@@ -10,7 +10,7 @@ export declare const upsertBudgetPolicySchema: z.ZodObject<{
     notifyEnabled: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
     isActive: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
 }, "strip", z.ZodTypeAny, {
-    scopeType: "agent" | "company" | "project";
+    scopeType: "company" | "agent" | "project";
     scopeId: string;
     metric: "billed_cents";
     windowKind: "calendar_month_utc" | "lifetime";
@@ -20,7 +20,7 @@ export declare const upsertBudgetPolicySchema: z.ZodObject<{
     notifyEnabled: boolean;
     isActive: boolean;
 }, {
-    scopeType: "agent" | "company" | "project";
+    scopeType: "company" | "agent" | "project";
     scopeId: string;
     amount: number;
     metric?: "billed_cents" | undefined;

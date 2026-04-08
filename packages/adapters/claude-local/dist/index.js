@@ -19,7 +19,7 @@ Core fields:
 - chrome (boolean, optional): pass --chrome when running Claude
 - promptTemplate (string, optional): run prompt template
 - maxTurnsPerRun (number, optional): max turns for one run
-- dangerouslySkipPermissions (boolean, optional): pass --dangerously-skip-permissions to claude
+- dangerouslySkipPermissions (boolean, optional, default true): pass --dangerously-skip-permissions to claude; defaults to true because Paperclip runs Claude in headless --print mode where interactive permission prompts cannot be answered
 - runAsNonRoot (boolean, optional): when server runs as root, spawn Claude child process as a non-root uid/gid (default true)
 - runAsUid (number, optional): target uid for Claude process when runAsNonRoot is active (default 1000)
 - runAsGid (number, optional): target gid for Claude process when runAsNonRoot is active (default 1000)

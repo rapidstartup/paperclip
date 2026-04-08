@@ -342,7 +342,7 @@ export function createTestHarness(options) {
                     return [];
                 return issueComments.get(issueId) ?? [];
             },
-            async createComment(issueId, body, companyId) {
+            async createComment(issueId, body, companyId, options) {
                 requireCapability(manifest, capabilitySet, "issue.comments.create");
                 const parentIssue = issues.get(issueId);
                 if (!isInCompany(parentIssue, companyId)) {
@@ -353,7 +353,7 @@ export function createTestHarness(options) {
                     id: randomUUID(),
                     companyId: parentIssue.companyId,
                     issueId,
-                    authorAgentId: null,
+                    authorAgentId: options?.authorAgentId ?? null,
                     authorUserId: null,
                     body,
                     createdAt: now,

@@ -1,4 +1,5 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readFileSync, statSync } from "node:fs";
+const MAX_PERSISTED_DEV_SERVER_STATUS_BYTES = 64 * 1024;
 function normalizeStringArray(value) {
     if (!Array.isArray(value))
         return [];
@@ -18,6 +19,9 @@ export function readPersistedDevServerStatus(env = process.env) {
     if (!filePath || !existsSync(filePath))
         return null;
     try {
+        if (statSync(filePath).size > MAX_PERSISTED_DEV_SERVER_STATUS_BYTES) {
+            return null;
+        }
         const raw = JSON.parse(readFileSync(filePath, "utf8"));
         const changedPathsSample = normalizeStringArray(raw.changedPathsSample).slice(0, 5);
         const pendingMigrations = normalizeStringArray(raw.pendingMigrations);

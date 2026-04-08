@@ -1010,6 +1010,57 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        issueCommentStatus: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_status";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        issueCommentSatisfiedByCommentId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_satisfied_by_comment_id";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        issueCommentRetryQueuedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_retry_queued_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         contextSnapshot: import("drizzle-orm/pg-core").PgColumn<{
             name: "context_snapshot";
             tableName: "heartbeat_runs";
@@ -1096,6 +1147,9 @@ export declare function agentService(db: Db): {
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        issueCommentStatus: string;
+        issueCommentSatisfiedByCommentId: string | null;
+        issueCommentRetryQueuedAt: Date | null;
         contextSnapshot: Record<string, unknown> | null;
     }[], {
         id: import("drizzle-orm/pg-core").PgColumn<{
@@ -1604,6 +1658,57 @@ export declare function agentService(db: Db): {
             driverParam: string | number;
             notNull: true;
             hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        issueCommentStatus: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_status";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        issueCommentSatisfiedByCommentId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_satisfied_by_comment_id";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgUUID";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        issueCommentRetryQueuedAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "issue_comment_retry_queued_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
             hasRuntimeDefault: false;

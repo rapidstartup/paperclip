@@ -19,11 +19,11 @@ export declare function routineService(db: Db, deps?: {
         createdByAgentId: string | null;
         createdByUserId: string | null;
         updatedByUserId: string | null;
-        goalId: string | null;
+        updatedByAgentId: string | null;
         projectId: string;
+        goalId: string | null;
         priority: string;
         assigneeAgentId: string;
-        updatedByAgentId: string | null;
         parentIssueId: string | null;
         concurrencyPolicy: string;
         catchUpPolicy: string;
@@ -89,6 +89,7 @@ export declare function routineService(db: Db, deps?: {
     firePublicTrigger: (publicId: string, input: {
         authorizationHeader?: string | null;
         signatureHeader?: string | null;
+        hubSignatureHeader?: string | null;
         timestampHeader?: string | null;
         idempotencyKey?: string | null;
         rawBody?: Buffer | null;

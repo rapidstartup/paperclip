@@ -690,7 +690,7 @@ export function buildHostServices(db, pluginId, pluginKey, eventBus, notifyWorke
                 const companyId = ensureCompanyId(params.companyId);
                 await ensurePluginAvailableForCompany(companyId);
                 requireInCompany("Issue", await issues.getById(params.issueId), companyId);
-                return (await issues.addComment(params.issueId, params.body, {}));
+                return (await issues.addComment(params.issueId, params.body, { agentId: params.authorAgentId }));
             },
         },
         issueDocuments: {

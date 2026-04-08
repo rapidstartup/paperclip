@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, resolveCommandForLogs, renderTemplate, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, resolveCommandForLogs, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
@@ -49,6 +49,62 @@ async function ensureOpenCodeSkillsInjected(onLog, skillsEntries, desiredSkillNa
         }
         catch (err) {
             await onLog("stderr", `[paperclip] Failed to inject OpenCode skill "${entry.key}" into ${skillsHome}: ${err instanceof Error ? err.message : String(err)}\n`);
+        }
+    }
+}
+async function statIfExists(targetPath) {
+    try {
+        await fs.stat(targetPath);
+        return true;
+    }
+    catch {
+        return false;
+    }
+}
+async function ensureAgentHomeInstructionCompanionFiles(input) {
+    const { agentHome, instructionsRootPath, onLog } = input;
+    if (!agentHome || !path.isAbsolute(agentHome))
+        return;
+    const resolvedInstructionsRootPath = instructionsRootPath && path.isAbsolute(instructionsRootPath) ? instructionsRootPath : "";
+    const companionFiles = ["AGENTS.md", "HEARTBEAT.md", "SOUL.md", "TOOLS.md"];
+    const fallbackCompanionContent = {
+        "AGENTS.md": "# AGENTS.md\n\nFollow project goals, execute carefully, and report concrete outcomes.\n",
+        "HEARTBEAT.md": "# HEARTBEAT.md\n\n1. Review current goal and context.\n2. Execute the highest-impact next step.\n3. Record results and next actions.\n",
+        "SOUL.md": "# SOUL.md\n\nOperate with ownership, clarity, and pragmatic execution.\n",
+        "TOOLS.md": "# TOOLS.md\n\nUse available repo, shell, and browser tools. Prefer minimal-risk, verifiable changes.\n",
+    };
+    await fs.mkdir(agentHome, { recursive: true });
+    for (const fileName of companionFiles) {
+        const sourcePath = path.join(resolvedInstructionsRootPath, fileName);
+        const targetPath = path.join(agentHome, fileName);
+        const hasSource = resolvedInstructionsRootPath ? await statIfExists(sourcePath) : false;
+        if (!hasSource)
+            continue;
+        const hasTarget = await statIfExists(targetPath);
+        if (hasTarget)
+            continue;
+        try {
+            await fs.copyFile(sourcePath, targetPath);
+            await onLog("stdout", `[paperclip] Seeded ${fileName} into AGENT_HOME from managed instructions bundle.\n`);
+        }
+        catch (err) {
+            await onLog("stderr", `[paperclip] Failed to seed ${fileName} into AGENT_HOME: ${err instanceof Error ? err.message : String(err)}\n`);
+        }
+    }
+    for (const fileName of companionFiles) {
+        const targetPath = path.join(agentHome, fileName);
+        const hasTarget = await statIfExists(targetPath);
+        if (hasTarget)
+            continue;
+        const fallback = fallbackCompanionContent[fileName];
+        if (!fallback)
+            continue;
+        try {
+            await fs.writeFile(targetPath, fallback, "utf8");
+            await onLog("stdout", `[paperclip] Created default ${fileName} in AGENT_HOME.\n`);
+        }
+        catch (err) {
+            await onLog("stderr", `[paperclip] Failed to create default ${fileName} in AGENT_HOME: ${err instanceof Error ? err.message : String(err)}\n`);
         }
     }
 }
@@ -98,6 +154,7 @@ export async function execute(ctx) {
     const linkedIssueIds = Array.isArray(context.issueIds)
         ? context.issueIds.filter((value) => typeof value === "string" && value.trim().length > 0)
         : [];
+    const wakePayloadJson = stringifyPaperclipWakePayload(context.paperclipWake);
     if (wakeTaskId)
         env.PAPERCLIP_TASK_ID = wakeTaskId;
     if (wakeReason)
@@ -110,6 +167,8 @@ export async function execute(ctx) {
         env.PAPERCLIP_APPROVAL_STATUS = approvalStatus;
     if (linkedIssueIds.length > 0)
         env.PAPERCLIP_LINKED_ISSUE_IDS = linkedIssueIds.join(",");
+    if (wakePayloadJson)
+        env.PAPERCLIP_WAKE_PAYLOAD_JSON = wakePayloadJson;
     if (effectiveWorkspaceCwd)
         env.PAPERCLIP_WORKSPACE_CWD = effectiveWorkspaceCwd;
     if (workspaceSource)
@@ -127,6 +186,14 @@ export async function execute(ctx) {
     for (const [key, value] of Object.entries(envConfig)) {
         if (typeof value === "string")
             env[key] = value;
+    }
+    const instructionsRootPath = asString(config.instructionsRootPath, "").trim();
+    if (agentHome) {
+        await ensureAgentHomeInstructionCompanionFiles({
+            agentHome,
+            instructionsRootPath,
+            onLog,
+        });
     }
     // Prevent OpenCode from writing an opencode.json config file into the
     // project working directory (which would pollute the git repo).  Model
@@ -222,14 +289,17 @@ export async function execute(ctx) {
             run: { id: runId, source: "on_demand" },
             context,
         };
-        const renderedPrompt = renderTemplate(promptTemplate, templateData);
         const renderedBootstrapPrompt = !sessionId && bootstrapPromptTemplate.trim().length > 0
             ? renderTemplate(bootstrapPromptTemplate, templateData).trim()
             : "";
+        const wakePrompt = renderPaperclipWakePrompt(context.paperclipWake, { resumedSession: Boolean(sessionId) });
+        const shouldUseResumeDeltaPrompt = Boolean(sessionId) && wakePrompt.length > 0;
+        const renderedPrompt = shouldUseResumeDeltaPrompt ? "" : renderTemplate(promptTemplate, templateData);
         const sessionHandoffNote = asString(context.paperclipSessionHandoffMarkdown, "").trim();
         const prompt = joinPromptSections([
             instructionsPrefix,
             renderedBootstrapPrompt,
+            wakePrompt,
             sessionHandoffNote,
             renderedPrompt,
         ]);
@@ -237,6 +307,7 @@ export async function execute(ctx) {
             promptChars: prompt.length,
             instructionsChars: instructionsPrefix.length,
             bootstrapPromptChars: renderedBootstrapPrompt.length,
+            wakePromptChars: wakePrompt.length,
             sessionHandoffChars: sessionHandoffNote.length,
             heartbeatPromptChars: renderedPrompt.length,
         };
