@@ -245,7 +245,9 @@ export function EnvVarEditor({
       })}
       {sealError && <p className="text-[11px] text-destructive">{sealError}</p>}
       <p className="text-[11px] text-muted-foreground/60">
-        PAPERCLIP_* variables are injected automatically at runtime.
+        PAPERCLIP_* variables are injected automatically at runtime. If you set{" "}
+        <span className="font-mono">PAPERCLIP_API_KEY</span> here, it replaces that automatic token and
+        must be a real agent API key (from API Keys below)—not a placeholder or unrelated company secret.
       </p>
     </div>
   );
