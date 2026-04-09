@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { buildPaperclipEnv } from "../adapters/utils.js";
 
 const ORIGINAL_PAPERCLIP_API_URL = process.env.PAPERCLIP_API_URL;
+const ORIGINAL_PAPERCLIP_PUBLIC_URL = process.env.PAPERCLIP_PUBLIC_URL;
+const ORIGINAL_RAILWAY_STATIC_URL = process.env.RAILWAY_STATIC_URL;
+const ORIGINAL_RAILWAY_PUBLIC_DOMAIN = process.env.RAILWAY_PUBLIC_DOMAIN;
 const ORIGINAL_PAPERCLIP_LISTEN_HOST = process.env.PAPERCLIP_LISTEN_HOST;
 const ORIGINAL_PAPERCLIP_LISTEN_PORT = process.env.PAPERCLIP_LISTEN_PORT;
 const ORIGINAL_HOST = process.env.HOST;
@@ -10,6 +13,15 @@ const ORIGINAL_PORT = process.env.PORT;
 afterEach(() => {
   if (ORIGINAL_PAPERCLIP_API_URL === undefined) delete process.env.PAPERCLIP_API_URL;
   else process.env.PAPERCLIP_API_URL = ORIGINAL_PAPERCLIP_API_URL;
+
+  if (ORIGINAL_PAPERCLIP_PUBLIC_URL === undefined) delete process.env.PAPERCLIP_PUBLIC_URL;
+  else process.env.PAPERCLIP_PUBLIC_URL = ORIGINAL_PAPERCLIP_PUBLIC_URL;
+
+  if (ORIGINAL_RAILWAY_STATIC_URL === undefined) delete process.env.RAILWAY_STATIC_URL;
+  else process.env.RAILWAY_STATIC_URL = ORIGINAL_RAILWAY_STATIC_URL;
+
+  if (ORIGINAL_RAILWAY_PUBLIC_DOMAIN === undefined) delete process.env.RAILWAY_PUBLIC_DOMAIN;
+  else process.env.RAILWAY_PUBLIC_DOMAIN = ORIGINAL_RAILWAY_PUBLIC_DOMAIN;
 
   if (ORIGINAL_PAPERCLIP_LISTEN_HOST === undefined) delete process.env.PAPERCLIP_LISTEN_HOST;
   else process.env.PAPERCLIP_LISTEN_HOST = ORIGINAL_PAPERCLIP_LISTEN_HOST;
@@ -29,6 +41,9 @@ describe("buildPaperclipEnv", () => {
     process.env.PAPERCLIP_API_URL = "http://localhost:4100";
     process.env.PAPERCLIP_LISTEN_HOST = "127.0.0.1";
     process.env.PAPERCLIP_LISTEN_PORT = "3101";
+    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.RAILWAY_STATIC_URL;
+    delete process.env.RAILWAY_PUBLIC_DOMAIN;
 
     const env = buildPaperclipEnv({ id: "agent-1", companyId: "company-1" });
 
@@ -37,6 +52,9 @@ describe("buildPaperclipEnv", () => {
 
   it("uses runtime listen host/port when explicit URL is not set", () => {
     delete process.env.PAPERCLIP_API_URL;
+    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.RAILWAY_STATIC_URL;
+    delete process.env.RAILWAY_PUBLIC_DOMAIN;
     process.env.PAPERCLIP_LISTEN_HOST = "0.0.0.0";
     process.env.PAPERCLIP_LISTEN_PORT = "3101";
     process.env.PORT = "3100";
@@ -48,11 +66,38 @@ describe("buildPaperclipEnv", () => {
 
   it("formats IPv6 hosts safely in fallback URL generation", () => {
     delete process.env.PAPERCLIP_API_URL;
+    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.RAILWAY_STATIC_URL;
+    delete process.env.RAILWAY_PUBLIC_DOMAIN;
     process.env.PAPERCLIP_LISTEN_HOST = "::1";
     process.env.PAPERCLIP_LISTEN_PORT = "3101";
 
     const env = buildPaperclipEnv({ id: "agent-1", companyId: "company-1" });
 
     expect(env.PAPERCLIP_API_URL).toBe("http://[::1]:3101");
+  });
+
+  it("uses PAPERCLIP_PUBLIC_URL when PAPERCLIP_API_URL is not set", () => {
+    delete process.env.PAPERCLIP_API_URL;
+    process.env.PAPERCLIP_PUBLIC_URL = "https://desk.example.com/";
+    process.env.PAPERCLIP_LISTEN_HOST = "0.0.0.0";
+    process.env.PAPERCLIP_LISTEN_PORT = "8080";
+
+    const env = buildPaperclipEnv({ id: "agent-1", companyId: "company-1" });
+
+    expect(env.PAPERCLIP_API_URL).toBe("https://desk.example.com");
+  });
+
+  it("uses RAILWAY_PUBLIC_DOMAIN when no explicit or public URL is set", () => {
+    delete process.env.PAPERCLIP_API_URL;
+    delete process.env.PAPERCLIP_PUBLIC_URL;
+    delete process.env.RAILWAY_STATIC_URL;
+    process.env.RAILWAY_PUBLIC_DOMAIN = "paperclip-production-e76b.up.railway.app";
+    process.env.PAPERCLIP_LISTEN_HOST = "0.0.0.0";
+    process.env.PAPERCLIP_LISTEN_PORT = "8080";
+
+    const env = buildPaperclipEnv({ id: "agent-1", companyId: "company-1" });
+
+    expect(env.PAPERCLIP_API_URL).toBe("https://paperclip-production-e76b.up.railway.app");
   });
 });

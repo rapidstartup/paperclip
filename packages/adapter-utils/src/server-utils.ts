@@ -396,6 +396,42 @@ export function buildInvocationEnvForLogs(
   return redactEnvForLogs(merged);
 }
 
+export function stripPaperclipApiUrlTrailingSlashes(value: string): string {
+  return value.replace(/\/+$/, "");
+}
+
+/**
+ * Base URL for agent callbacks to Paperclip (`PAPERCLIP_API_URL`).
+ * Prefer an explicit env value; otherwise use public deploy URL (Railway, etc.);
+ * finally fall back to loopback + listen port.
+ */
+export function resolvePaperclipApiUrlFromProcessEnv(opts: {
+  listenPort: number;
+  runtimeApiHost: string;
+}): string {
+  const preset = process.env.PAPERCLIP_API_URL?.trim();
+  if (preset) return stripPaperclipApiUrlTrailingSlashes(preset);
+
+  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim();
+  if (publicUrl) return stripPaperclipApiUrlTrailingSlashes(publicUrl);
+
+  const staticUrl = process.env.RAILWAY_STATIC_URL?.trim();
+  if (staticUrl && /^https?:\/\//i.test(staticUrl)) {
+    return stripPaperclipApiUrlTrailingSlashes(staticUrl);
+  }
+
+  const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+  if (railwayDomain) {
+    const host = railwayDomain
+      .replace(/^https?:\/\//i, "")
+      .split("/")[0]
+      ?.trim();
+    if (host) return stripPaperclipApiUrlTrailingSlashes(`https://${host}`);
+  }
+
+  return `http://${opts.runtimeApiHost}:${opts.listenPort}`;
+}
+
 export function buildPaperclipEnv(agent: { id: string; companyId: string }): Record<string, string> {
   const resolveHostForUrl = (rawHost: string): string => {
     const host = rawHost.trim();
@@ -410,8 +446,13 @@ export function buildPaperclipEnv(agent: { id: string; companyId: string }): Rec
   const runtimeHost = resolveHostForUrl(
     process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost",
   );
-  const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
-  const apiUrl = process.env.PAPERCLIP_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
+  const runtimePortRaw = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+  const parsedPort = Number.parseInt(runtimePortRaw, 10);
+  const listenPort = Number.isFinite(parsedPort) ? parsedPort : 3100;
+  const apiUrl = resolvePaperclipApiUrlFromProcessEnv({
+    listenPort,
+    runtimeApiHost: runtimeHost,
+  });
   vars.PAPERCLIP_API_URL = apiUrl;
   return vars;
 }

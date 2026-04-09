@@ -15,6 +15,8 @@ All environment variables that Paperclip uses for server configuration.
 | `PAPERCLIP_HOME` | `~/.paperclip` | Base directory for all Paperclip data |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Instance identifier (for multiple local instances) |
 | `PAPERCLIP_DEPLOYMENT_MODE` | `local_trusted` | Runtime mode override |
+| `PAPERCLIP_PUBLIC_URL` | — | Public site URL (e.g. `https://your-service.up.railway.app`). Used for auth and, when `PAPERCLIP_API_URL` is unset, as the API base URL injected into agent processes. |
+| `PAPERCLIP_API_URL` | (derived at startup) | **Optional override** for the API base URL agents use. If unset at process start, the server sets it from `PAPERCLIP_PUBLIC_URL`, then `RAILWAY_STATIC_URL`, then `https://${RAILWAY_PUBLIC_DOMAIN}`, then `http://localhost:${PORT}`. |
 
 ## Secrets
 

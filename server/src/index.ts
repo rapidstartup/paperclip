@@ -24,6 +24,7 @@ import {
   instanceUserRoles,
 } from "@paperclipai/db";
 import detectPort from "detect-port";
+import { resolvePaperclipApiUrlFromProcessEnv } from "@paperclipai/adapter-utils/server-utils";
 import { createApp } from "./app.js";
 import { loadConfig } from "./config.js";
 import { createDatabaseBackupOffloader } from "./database-backup-offloader.js";
@@ -585,7 +586,10 @@ export async function startServer(): Promise<StartedServer> {
       : runtimeListenHost;
   process.env.PAPERCLIP_LISTEN_HOST = runtimeListenHost;
   process.env.PAPERCLIP_LISTEN_PORT = String(listenPort);
-  process.env.PAPERCLIP_API_URL = `http://${runtimeApiHost}:${listenPort}`;
+  process.env.PAPERCLIP_API_URL = resolvePaperclipApiUrlFromProcessEnv({
+    listenPort,
+    runtimeApiHost,
+  });
   
   setupLiveEventsWebSocketServer(server, db as any, {
     deploymentMode: config.deploymentMode,
@@ -821,7 +825,9 @@ export async function startServer(): Promise<StartedServer> {
     server,
     host: config.host,
     listenPort,
-    apiUrl: process.env.PAPERCLIP_API_URL ?? `http://${runtimeApiHost}:${listenPort}`,
+    apiUrl:
+      process.env.PAPERCLIP_API_URL ??
+      resolvePaperclipApiUrlFromProcessEnv({ listenPort, runtimeApiHost }),
     databaseUrl: activeDatabaseConnectionString,
   };
 }
