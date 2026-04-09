@@ -91,6 +91,10 @@ import {
   models as agentBrowserModels,
 } from "@paperclipai/adapter-agent-browser";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
+import {
+  HERMES_PAPERCLIP_DEFAULT_PROMPT_TEMPLATE,
+  shouldReplaceHermesPromptForApiAuth,
+} from "./hermes-paperclip-prompt.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
@@ -134,6 +138,10 @@ function hermesExecuteWithResolvedConfig(ctx: AdapterExecutionContext) {
   merged.env = { ...paperclipEnv, ...adapterEnv };
   if (!hasExplicitApiKey && typeof ctx.authToken === "string" && ctx.authToken.trim().length > 0) {
     (merged.env as Record<string, string>).PAPERCLIP_API_KEY = ctx.authToken;
+  }
+
+  if (shouldReplaceHermesPromptForApiAuth(merged.promptTemplate)) {
+    merged.promptTemplate = HERMES_PAPERCLIP_DEFAULT_PROMPT_TEMPLATE;
   }
 
   const rawExtra = merged.extraArgs;
