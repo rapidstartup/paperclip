@@ -966,6 +966,28 @@ function toCompanySkill(row) {
         metadata: isPlainRecord(row.metadata) ? row.metadata : null,
     };
 }
+function toCompanySkillListRow(row) {
+    return {
+        ...row,
+        description: row.description ?? null,
+        sourceType: row.sourceType,
+        sourceLocator: row.sourceLocator ?? null,
+        sourceRef: row.sourceRef ?? null,
+        trustLevel: row.trustLevel,
+        compatibility: row.compatibility,
+        fileInventory: Array.isArray(row.fileInventory)
+            ? row.fileInventory.flatMap((entry) => {
+                if (!isPlainRecord(entry))
+                    return [];
+                return [{
+                        path: String(entry.path ?? ""),
+                        kind: String(entry.kind ?? "other"),
+                    }];
+            })
+            : [],
+        metadata: isPlainRecord(row.metadata) ? row.metadata : null,
+    };
+}
 function serializeFileInventory(fileInventory) {
     return fileInventory.map((entry) => ({
         path: entry.path,
@@ -1299,7 +1321,29 @@ export function companySkillService(db) {
         }
     }
     async function list(companyId) {
-        const rows = await listFull(companyId);
+        await ensureSkillInventoryCurrent(companyId);
+        const rows = await db
+            .select({
+            id: companySkills.id,
+            companyId: companySkills.companyId,
+            key: companySkills.key,
+            slug: companySkills.slug,
+            name: companySkills.name,
+            description: companySkills.description,
+            sourceType: companySkills.sourceType,
+            sourceLocator: companySkills.sourceLocator,
+            sourceRef: companySkills.sourceRef,
+            trustLevel: companySkills.trustLevel,
+            compatibility: companySkills.compatibility,
+            fileInventory: companySkills.fileInventory,
+            metadata: companySkills.metadata,
+            createdAt: companySkills.createdAt,
+            updatedAt: companySkills.updatedAt,
+        })
+            .from(companySkills)
+            .where(eq(companySkills.companyId, companyId))
+            .orderBy(asc(companySkills.name), asc(companySkills.key))
+            .then((entries) => entries.map((entry) => toCompanySkillListRow(entry)));
         const agentRows = await agents.list(companyId);
         return rows.map((skill) => {
             const attachedAgentCount = agentRows.filter((agent) => {

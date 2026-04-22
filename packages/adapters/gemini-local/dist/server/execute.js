@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asBoolean, asNumber, asString, asStringArray, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, joinPromptSections, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, parseObject, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
 import { describeGeminiFailure, detectGeminiAuthRequired, isGeminiTurnLimitResult, isGeminiUnknownSessionError, parseGeminiJsonl, } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
@@ -84,7 +84,7 @@ async function ensureGeminiSkillsInjected(onLog, skillsEntries, desiredSkillName
 }
 export async function execute(ctx) {
     const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
-    const promptTemplate = asString(config.promptTemplate, "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.");
+    const promptTemplate = asString(config.promptTemplate, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
     const command = asString(config.command, "gemini");
     const model = asString(config.model, DEFAULT_GEMINI_LOCAL_MODEL).trim();
     const sandbox = asBoolean(config.sandbox, false);

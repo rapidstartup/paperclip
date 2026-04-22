@@ -11,7 +11,8 @@
  * - Retrieving UI slot contributions for frontend rendering
  * - Discovering and executing plugin-contributed agent tools
  *
- * All routes require board-level authentication (assertBoard middleware).
+ * All routes require board-level authentication, and sensitive instance-wide
+ * mutations such as install/upgrade require instance-admin privileges.
  *
  * @module server/routes/plugins
  * @see doc/plugins/PLUGIN_SPEC.md for the full plugin specification

@@ -1,14 +1,48 @@
 import { spawn } from "node:child_process";
 import { constants as fsConstants, promises as fs } from "node:fs";
 import path from "node:path";
+function resolveProcessGroupId(child) {
+    if (process.platform === "win32")
+        return null;
+    return typeof child.pid === "number" && child.pid > 0 ? child.pid : null;
+}
+function signalRunningProcess(running, signal) {
+    if (process.platform !== "win32" && running.processGroupId && running.processGroupId > 0) {
+        try {
+            process.kill(-running.processGroupId, signal);
+            return;
+        }
+        catch {
+            // Fall back to the direct child signal if group signaling fails.
+        }
+    }
+    if (!running.child.killed) {
+        running.child.kill(signal);
+    }
+}
 export const runningProcesses = new Map();
 export const MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 export const MAX_EXCERPT_BYTES = 32 * 1024;
+const TERMINAL_RESULT_SCAN_OVERLAP_CHARS = 64 * 1024;
 const SENSITIVE_ENV_KEY = /(key|token|secret|password|passwd|authorization|cookie)/i;
 const PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
     "../../skills",
     "../../../../../skills",
 ];
+export const DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE = [
+    "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.",
+    "",
+    "Execution contract:",
+    "- Start actionable work in this heartbeat; do not stop at a plan unless the issue asks for planning.",
+    "- Leave durable progress in comments, documents, or work products with a clear next action.",
+    "- Use child issues for parallel or long delegated work instead of polling agents, sessions, or processes.",
+    "- If woken by a human comment on a dependency-blocked issue, respond or triage the comment without treating the blocked deliverable work as unblocked.",
+    "- Create child issues directly when you know what needs to be done; use issue-thread interactions when the board/user must choose suggested tasks, answer structured questions, or confirm a proposal.",
+    "- To ask for that input, create an interaction on the current issue with POST /api/issues/{issueId}/interactions using kind suggest_tasks, ask_user_questions, or request_confirmation. Use continuationPolicy wake_assignee when you need to resume after a response; for request_confirmation this resumes only after acceptance.",
+    "- For plan approval, update the plan document first, then create request_confirmation targeting the latest plan revision with idempotencyKey confirmation:{issueId}:plan:{revisionId}. Wait for acceptance before creating implementation subtasks, and create a fresh confirmation after superseding board/user comments if approval is still needed.",
+    "- If blocked, mark the issue blocked and name the unblock owner and action.",
+    "- Respect budget, pause/cancel, approval gates, and company boundaries.",
+].join("\n");
 function normalizePathSlashes(value) {
     return value.replaceAll("\\", "/");
 }
@@ -78,6 +112,22 @@ export function appendWithCap(prev, chunk, cap = MAX_CAPTURE_BYTES) {
     const combined = prev + chunk;
     return combined.length > cap ? combined.slice(combined.length - cap) : combined;
 }
+export function appendWithByteCap(prev, chunk, cap = MAX_CAPTURE_BYTES) {
+    const combined = prev + chunk;
+    const bytes = Buffer.byteLength(combined, "utf8");
+    if (bytes <= cap)
+        return combined;
+    const buffer = Buffer.from(combined, "utf8");
+    let start = Math.max(0, bytes - cap);
+    while (start < buffer.length && (buffer[start] & 0xc0) === 0x80)
+        start += 1;
+    return buffer.subarray(start).toString("utf8");
+}
+function resumeReadable(readable) {
+    if (!readable || readable.destroyed)
+        return;
+    readable.resume();
+}
 export function resolvePathValue(obj, dottedPath) {
     const parts = dottedPath.split(".");
     let cursor = obj;
@@ -142,6 +192,101 @@ function normalizePaperclipWakeComment(value) {
         authorId: asString(author.id, "").trim() || null,
     };
 }
+function normalizePaperclipWakeContinuationSummary(value) {
+    const summary = parseObject(value);
+    const body = asString(summary.body, "").trim();
+    if (!body)
+        return null;
+    return {
+        key: asString(summary.key, "").trim() || null,
+        title: asString(summary.title, "").trim() || null,
+        body,
+        bodyTruncated: asBoolean(summary.bodyTruncated, false),
+        updatedAt: asString(summary.updatedAt, "").trim() || null,
+    };
+}
+function normalizePaperclipWakeLivenessContinuation(value) {
+    const continuation = parseObject(value);
+    const attempt = asNumber(continuation.attempt, 0);
+    const maxAttempts = asNumber(continuation.maxAttempts, 0);
+    const sourceRunId = asString(continuation.sourceRunId, "").trim() || null;
+    const state = asString(continuation.state, "").trim() || null;
+    const reason = asString(continuation.reason, "").trim() || null;
+    const instruction = asString(continuation.instruction, "").trim() || null;
+    if (!attempt && !maxAttempts && !sourceRunId && !state && !reason && !instruction)
+        return null;
+    return {
+        attempt: attempt > 0 ? attempt : null,
+        maxAttempts: maxAttempts > 0 ? maxAttempts : null,
+        sourceRunId,
+        state,
+        reason,
+        instruction,
+    };
+}
+function normalizePaperclipWakeChildIssueSummary(value) {
+    const child = parseObject(value);
+    const id = asString(child.id, "").trim() || null;
+    const identifier = asString(child.identifier, "").trim() || null;
+    const title = asString(child.title, "").trim() || null;
+    const status = asString(child.status, "").trim() || null;
+    const priority = asString(child.priority, "").trim() || null;
+    const summary = asString(child.summary, "").trim() || null;
+    if (!id && !identifier && !title && !status && !summary)
+        return null;
+    return { id, identifier, title, status, priority, summary };
+}
+function normalizePaperclipWakeBlockerSummary(value) {
+    const blocker = parseObject(value);
+    const id = asString(blocker.id, "").trim() || null;
+    const identifier = asString(blocker.identifier, "").trim() || null;
+    const title = asString(blocker.title, "").trim() || null;
+    const status = asString(blocker.status, "").trim() || null;
+    const priority = asString(blocker.priority, "").trim() || null;
+    if (!id && !identifier && !title && !status)
+        return null;
+    return { id, identifier, title, status, priority };
+}
+function normalizePaperclipWakeExecutionPrincipal(value) {
+    const principal = parseObject(value);
+    const typeRaw = asString(principal.type, "").trim().toLowerCase();
+    if (typeRaw !== "agent" && typeRaw !== "user")
+        return null;
+    return {
+        type: typeRaw,
+        agentId: asString(principal.agentId, "").trim() || null,
+        userId: asString(principal.userId, "").trim() || null,
+    };
+}
+function normalizePaperclipWakeExecutionStage(value) {
+    const stage = parseObject(value);
+    const wakeRoleRaw = asString(stage.wakeRole, "").trim().toLowerCase();
+    const wakeRole = wakeRoleRaw === "reviewer" || wakeRoleRaw === "approver" || wakeRoleRaw === "executor"
+        ? wakeRoleRaw
+        : null;
+    const allowedActions = Array.isArray(stage.allowedActions)
+        ? stage.allowedActions
+            .filter((entry) => typeof entry === "string" && entry.trim().length > 0)
+            .map((entry) => entry.trim())
+        : [];
+    const currentParticipant = normalizePaperclipWakeExecutionPrincipal(stage.currentParticipant);
+    const returnAssignee = normalizePaperclipWakeExecutionPrincipal(stage.returnAssignee);
+    const stageId = asString(stage.stageId, "").trim() || null;
+    const stageType = asString(stage.stageType, "").trim() || null;
+    const lastDecisionOutcome = asString(stage.lastDecisionOutcome, "").trim() || null;
+    if (!wakeRole && !stageId && !stageType && !currentParticipant && !returnAssignee && !lastDecisionOutcome && allowedActions.length === 0) {
+        return null;
+    }
+    return {
+        wakeRole,
+        stageId,
+        stageType,
+        currentParticipant,
+        returnAssignee,
+        lastDecisionOutcome,
+        allowedActions,
+    };
+}
 export function normalizePaperclipWakePayload(value) {
     const payload = parseObject(value);
     const comments = Array.isArray(payload.comments)
@@ -155,11 +300,39 @@ export function normalizePaperclipWakePayload(value) {
             .filter((entry) => typeof entry === "string" && entry.trim().length > 0)
             .map((entry) => entry.trim())
         : [];
-    if (comments.length === 0 && commentIds.length === 0)
+    const executionStage = normalizePaperclipWakeExecutionStage(payload.executionStage);
+    const continuationSummary = normalizePaperclipWakeContinuationSummary(payload.continuationSummary);
+    const livenessContinuation = normalizePaperclipWakeLivenessContinuation(payload.livenessContinuation);
+    const childIssueSummaries = Array.isArray(payload.childIssueSummaries)
+        ? payload.childIssueSummaries
+            .map((entry) => normalizePaperclipWakeChildIssueSummary(entry))
+            .filter((entry) => Boolean(entry))
+        : [];
+    const unresolvedBlockerIssueIds = Array.isArray(payload.unresolvedBlockerIssueIds)
+        ? payload.unresolvedBlockerIssueIds
+            .map((entry) => asString(entry, "").trim())
+            .filter(Boolean)
+        : [];
+    const unresolvedBlockerSummaries = Array.isArray(payload.unresolvedBlockerSummaries)
+        ? payload.unresolvedBlockerSummaries
+            .map((entry) => normalizePaperclipWakeBlockerSummary(entry))
+            .filter((entry) => Boolean(entry))
+        : [];
+    if (comments.length === 0 && commentIds.length === 0 && childIssueSummaries.length === 0 && unresolvedBlockerIssueIds.length === 0 && unresolvedBlockerSummaries.length === 0 && !executionStage && !continuationSummary && !livenessContinuation && !normalizePaperclipWakeIssue(payload.issue)) {
         return null;
+    }
     return {
         reason: asString(payload.reason, "").trim() || null,
         issue: normalizePaperclipWakeIssue(payload.issue),
+        checkedOutByHarness: asBoolean(payload.checkedOutByHarness, false),
+        dependencyBlockedInteraction: asBoolean(payload.dependencyBlockedInteraction, false),
+        unresolvedBlockerIssueIds,
+        unresolvedBlockerSummaries,
+        executionStage,
+        continuationSummary,
+        livenessContinuation,
+        childIssueSummaries,
+        childIssueSummaryTruncated: asBoolean(payload.childIssueSummaryTruncated, false),
         commentIds,
         latestCommentId: asString(payload.latestCommentId, "").trim() || null,
         comments,
@@ -181,6 +354,14 @@ export function renderPaperclipWakePrompt(value, options = {}) {
     if (!normalized)
         return "";
     const resumedSession = options.resumedSession === true;
+    const executionStage = normalized.executionStage;
+    const principalLabel = (principal) => {
+        if (!principal || !principal.type)
+            return "unknown";
+        if (principal.type === "agent")
+            return principal.agentId ? `agent ${principal.agentId}` : "agent";
+        return principal.userId ? `user ${principal.userId}` : "user";
+    };
     const lines = resumedSession
         ? [
             "## Paperclip Resume Delta",
@@ -189,6 +370,8 @@ export function renderPaperclipWakePrompt(value, options = {}) {
             "This heartbeat is scoped to the issue below. Do not switch to another issue until you have handled this wake.",
             "Focus on the new wake delta below and continue the current task without restating the full heartbeat boilerplate.",
             "Fetch the API thread only when `fallbackFetchNeeded` is true or you need broader history than this batch.",
+            "",
+            "Execution contract: take concrete action in this heartbeat when the issue is actionable; do not stop at a plan unless planning was requested. Leave durable progress with a clear next action, use child issues instead of polling for long or parallel work, and mark blocked work with the unblock owner/action.",
             "",
             `- reason: ${normalized.reason ?? "unknown"}`,
             `- issue: ${normalized.issue?.identifier ?? normalized.issue?.id ?? "unknown"}${normalized.issue?.title ? ` ${normalized.issue.title}` : ""}`,
@@ -205,6 +388,8 @@ export function renderPaperclipWakePrompt(value, options = {}) {
             "Use this inline wake data first before refetching the issue thread.",
             "Only fetch the API thread when `fallbackFetchNeeded` is true or you need broader history than this batch.",
             "",
+            "Execution contract: take concrete action in this heartbeat when the issue is actionable; do not stop at a plan unless planning was requested. Leave durable progress with a clear next action, use child issues instead of polling for long or parallel work, and mark blocked work with the unblock owner/action.",
+            "",
             `- reason: ${normalized.reason ?? "unknown"}`,
             `- issue: ${normalized.issue?.identifier ?? normalized.issue?.id ?? "unknown"}${normalized.issue?.title ? ` ${normalized.issue.title}` : ""}`,
             `- pending comments: ${normalized.includedCount}/${normalized.requestedCount}`,
@@ -217,10 +402,82 @@ export function renderPaperclipWakePrompt(value, options = {}) {
     if (normalized.issue?.priority) {
         lines.push(`- issue priority: ${normalized.issue.priority}`);
     }
+    if (normalized.checkedOutByHarness) {
+        lines.push("- checkout: already claimed by the harness for this run");
+    }
+    if (normalized.dependencyBlockedInteraction) {
+        lines.push("- dependency-blocked interaction: yes");
+        lines.push("- execution scope: respond or triage the human comment; do not treat blocker-dependent deliverable work as unblocked");
+        if (normalized.unresolvedBlockerSummaries.length > 0) {
+            const blockers = normalized.unresolvedBlockerSummaries
+                .map((blocker) => `${blocker.identifier ?? blocker.id ?? "unknown"}${blocker.title ? ` ${blocker.title}` : ""}${blocker.status ? ` (${blocker.status})` : ""}`)
+                .join("; ");
+            lines.push(`- unresolved blockers: ${blockers}`);
+        }
+        else if (normalized.unresolvedBlockerIssueIds.length > 0) {
+            lines.push(`- unresolved blocker issue ids: ${normalized.unresolvedBlockerIssueIds.join(", ")}`);
+        }
+    }
     if (normalized.missingCount > 0) {
         lines.push(`- omitted comments: ${normalized.missingCount}`);
     }
-    lines.push("", "New comments in order:");
+    if (executionStage) {
+        lines.push(`- execution wake role: ${executionStage.wakeRole ?? "unknown"}`, `- execution stage: ${executionStage.stageType ?? "unknown"}`, `- execution participant: ${principalLabel(executionStage.currentParticipant)}`, `- execution return assignee: ${principalLabel(executionStage.returnAssignee)}`, `- last decision outcome: ${executionStage.lastDecisionOutcome ?? "none"}`);
+        if (executionStage.allowedActions.length > 0) {
+            lines.push(`- allowed actions: ${executionStage.allowedActions.join(", ")}`);
+        }
+        lines.push("");
+        if (executionStage.wakeRole === "reviewer" || executionStage.wakeRole === "approver") {
+            lines.push(`You are waking as the active ${executionStage.wakeRole} for this issue.`, "Do not execute the task itself or continue executor work.", "Review the issue and choose one of the allowed actions above.", "If you request changes, the workflow routes back to the stored return assignee.", "");
+        }
+        else if (executionStage.wakeRole === "executor") {
+            lines.push("You are waking because changes were requested in the execution workflow.", "Address the requested changes on this issue and resubmit when the work is ready.", "");
+        }
+    }
+    if (normalized.continuationSummary) {
+        lines.push("", "Issue continuation summary:", normalized.continuationSummary.body);
+        if (normalized.continuationSummary.bodyTruncated) {
+            lines.push("[continuation summary truncated]");
+        }
+    }
+    if (normalized.livenessContinuation) {
+        const continuation = normalized.livenessContinuation;
+        lines.push("", "Run liveness continuation:");
+        if (continuation.attempt) {
+            lines.push(`- attempt: ${continuation.attempt}${continuation.maxAttempts ? `/${continuation.maxAttempts}` : ""}`);
+        }
+        if (continuation.sourceRunId) {
+            lines.push(`- source run: ${continuation.sourceRunId}`);
+        }
+        if (continuation.state) {
+            lines.push(`- liveness state: ${continuation.state}`);
+        }
+        if (continuation.reason) {
+            lines.push(`- reason: ${continuation.reason}`);
+        }
+        if (continuation.instruction) {
+            lines.push(`- instruction: ${continuation.instruction}`);
+        }
+    }
+    if (normalized.childIssueSummaries.length > 0) {
+        lines.push("", "Direct child issue summaries:");
+        for (const child of normalized.childIssueSummaries) {
+            const label = child.identifier ?? child.id ?? "unknown";
+            lines.push(`- ${label}${child.title ? ` ${child.title}` : ""}${child.status ? ` (${child.status})` : ""}`);
+            if (child.summary) {
+                lines.push(`  ${child.summary}`);
+            }
+        }
+        if (normalized.childIssueSummaryTruncated) {
+            lines.push("[child issue summaries truncated]");
+        }
+    }
+    if (normalized.checkedOutByHarness) {
+        lines.push("", "The harness already checked out this issue for the current run.", "Do not call `/api/issues/{id}/checkout` again unless you intentionally switch to a different task.", "");
+    }
+    if (normalized.comments.length > 0) {
+        lines.push("New comments in order:");
+    }
     for (const [index, comment] of normalized.comments.entries()) {
         const authorLabel = comment.authorId
             ? `${comment.authorType ?? "unknown"} ${comment.authorId}`
@@ -257,6 +514,36 @@ export function buildInvocationEnvForLogs(env, options = {}) {
     }
     return redactEnvForLogs(merged);
 }
+export function stripPaperclipApiUrlTrailingSlashes(value) {
+    return value.replace(/\/+$/, "");
+}
+/**
+ * Base URL for agent callbacks to Paperclip (`PAPERCLIP_API_URL`).
+ * Prefer an explicit env value; otherwise use public deploy URL (Railway, etc.);
+ * finally fall back to loopback + listen port.
+ */
+export function resolvePaperclipApiUrlFromProcessEnv(opts) {
+    const preset = process.env.PAPERCLIP_API_URL?.trim();
+    if (preset)
+        return stripPaperclipApiUrlTrailingSlashes(preset);
+    const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim();
+    if (publicUrl)
+        return stripPaperclipApiUrlTrailingSlashes(publicUrl);
+    const staticUrl = process.env.RAILWAY_STATIC_URL?.trim();
+    if (staticUrl && /^https?:\/\//i.test(staticUrl)) {
+        return stripPaperclipApiUrlTrailingSlashes(staticUrl);
+    }
+    const railwayDomain = process.env.RAILWAY_PUBLIC_DOMAIN?.trim();
+    if (railwayDomain) {
+        const host = railwayDomain
+            .replace(/^https?:\/\//i, "")
+            .split("/")[0]
+            ?.trim();
+        if (host)
+            return stripPaperclipApiUrlTrailingSlashes(`https://${host}`);
+    }
+    return `http://${opts.runtimeApiHost}:${opts.listenPort}`;
+}
 export function buildPaperclipEnv(agent) {
     const resolveHostForUrl = (rawHost) => {
         const host = rawHost.trim();
@@ -271,8 +558,13 @@ export function buildPaperclipEnv(agent) {
         PAPERCLIP_COMPANY_ID: agent.companyId,
     };
     const runtimeHost = resolveHostForUrl(process.env.PAPERCLIP_LISTEN_HOST ?? process.env.HOST ?? "localhost");
-    const runtimePort = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
-    const apiUrl = process.env.PAPERCLIP_API_URL ?? `http://${runtimeHost}:${runtimePort}`;
+    const runtimePortRaw = process.env.PAPERCLIP_LISTEN_PORT ?? process.env.PORT ?? "3100";
+    const parsedPort = Number.parseInt(runtimePortRaw, 10);
+    const listenPort = Number.isFinite(parsedPort) ? parsedPort : 3100;
+    const apiUrl = resolvePaperclipApiUrlFromProcessEnv({
+        listenPort,
+        runtimeApiHost: runtimeHost,
+    });
     vars.PAPERCLIP_API_URL = apiUrl;
     return vars;
 }
@@ -715,6 +1007,7 @@ export async function runChildProcess(runId, command, args, opts) {
             const spawnOpts = {
                 cwd: opts.cwd,
                 env: mergedEnv,
+                detached: process.platform !== "win32",
                 shell: false,
                 stdio,
             };
@@ -724,48 +1017,125 @@ export async function runChildProcess(runId, command, args, opts) {
             }
             const child = spawn(target.command, target.args, spawnOpts);
             const startedAt = new Date().toISOString();
-            if (opts.stdin != null && child.stdin) {
-                child.stdin.write(opts.stdin);
-                child.stdin.end();
-            }
-            if (typeof child.pid === "number" && child.pid > 0 && opts.onSpawn) {
-                void opts.onSpawn({ pid: child.pid, startedAt }).catch((err) => {
+            const processGroupId = resolveProcessGroupId(child);
+            const spawnPersistPromise = typeof child.pid === "number" && child.pid > 0 && opts.onSpawn
+                ? opts.onSpawn({ pid: child.pid, processGroupId, startedAt }).catch((err) => {
                     onLogError(err, runId, "failed to record child process metadata");
-                });
-            }
-            runningProcesses.set(runId, { child, graceSec: opts.graceSec });
+                })
+                : Promise.resolve();
+            runningProcesses.set(runId, { child, graceSec: opts.graceSec, processGroupId });
             let timedOut = false;
             let stdout = "";
             let stderr = "";
             let logChain = Promise.resolve();
+            let terminalResultSeen = false;
+            let terminalCleanupStarted = false;
+            let terminalCleanupTimer = null;
+            let terminalCleanupKillTimer = null;
+            let terminalResultStdoutScanOffset = 0;
+            let terminalResultStderrScanOffset = 0;
+            const clearTerminalCleanupTimers = () => {
+                if (terminalCleanupTimer)
+                    clearTimeout(terminalCleanupTimer);
+                if (terminalCleanupKillTimer)
+                    clearTimeout(terminalCleanupKillTimer);
+                terminalCleanupTimer = null;
+                terminalCleanupKillTimer = null;
+            };
+            const maybeArmTerminalResultCleanup = () => {
+                const terminalCleanup = opts.terminalResultCleanup;
+                if (!terminalCleanup || terminalCleanupStarted || timedOut)
+                    return;
+                if (!terminalResultSeen) {
+                    const stdoutStart = Math.max(0, terminalResultStdoutScanOffset - TERMINAL_RESULT_SCAN_OVERLAP_CHARS);
+                    const stderrStart = Math.max(0, terminalResultStderrScanOffset - TERMINAL_RESULT_SCAN_OVERLAP_CHARS);
+                    const scanOutput = {
+                        stdout: stdout.slice(stdoutStart),
+                        stderr: stderr.slice(stderrStart),
+                    };
+                    terminalResultStdoutScanOffset = stdout.length;
+                    terminalResultStderrScanOffset = stderr.length;
+                    if (scanOutput.stdout.length === 0 && scanOutput.stderr.length === 0)
+                        return;
+                    try {
+                        terminalResultSeen = terminalCleanup.hasTerminalResult(scanOutput);
+                    }
+                    catch (err) {
+                        onLogError(err, runId, "failed to inspect terminal adapter output");
+                    }
+                }
+                if (!terminalResultSeen)
+                    return;
+                if (terminalCleanupTimer)
+                    return;
+                const graceMs = Math.max(0, terminalCleanup.graceMs ?? 5_000);
+                terminalCleanupTimer = setTimeout(() => {
+                    terminalCleanupTimer = null;
+                    if (terminalCleanupStarted || timedOut)
+                        return;
+                    terminalCleanupStarted = true;
+                    signalRunningProcess({ child, processGroupId }, "SIGTERM");
+                    terminalCleanupKillTimer = setTimeout(() => {
+                        terminalCleanupKillTimer = null;
+                        signalRunningProcess({ child, processGroupId }, "SIGKILL");
+                    }, Math.max(1, opts.graceSec) * 1000);
+                }, graceMs);
+            };
             const timeout = opts.timeoutSec > 0
                 ? setTimeout(() => {
                     timedOut = true;
-                    child.kill("SIGTERM");
+                    clearTerminalCleanupTimers();
+                    signalRunningProcess({ child, processGroupId }, "SIGTERM");
                     setTimeout(() => {
-                        if (!child.killed) {
-                            child.kill("SIGKILL");
-                        }
+                        signalRunningProcess({ child, processGroupId }, "SIGKILL");
                     }, Math.max(1, opts.graceSec) * 1000);
                 }, opts.timeoutSec * 1000)
                 : null;
             child.stdout?.on("data", (chunk) => {
+                const readable = child.stdout;
+                if (!readable)
+                    return;
+                readable.pause();
                 const text = String(chunk);
                 stdout = appendWithCap(stdout, text);
+                maybeArmTerminalResultCleanup();
                 logChain = logChain
                     .then(() => opts.onLog("stdout", text))
-                    .catch((err) => onLogError(err, runId, "failed to append stdout log chunk"));
+                    .catch((err) => onLogError(err, runId, "failed to append stdout log chunk"))
+                    .finally(() => {
+                    maybeArmTerminalResultCleanup();
+                    resumeReadable(readable);
+                });
             });
             child.stderr?.on("data", (chunk) => {
+                const readable = child.stderr;
+                if (!readable)
+                    return;
+                readable.pause();
                 const text = String(chunk);
                 stderr = appendWithCap(stderr, text);
+                maybeArmTerminalResultCleanup();
                 logChain = logChain
                     .then(() => opts.onLog("stderr", text))
-                    .catch((err) => onLogError(err, runId, "failed to append stderr log chunk"));
+                    .catch((err) => onLogError(err, runId, "failed to append stderr log chunk"))
+                    .finally(() => {
+                    maybeArmTerminalResultCleanup();
+                    resumeReadable(readable);
+                });
             });
+            const stdin = child.stdin;
+            if (opts.stdin != null && stdin) {
+                void spawnPersistPromise.finally(() => {
+                    if (child.killed || stdin.destroyed)
+                        return;
+                    stdin.write(opts.stdin);
+                    stdin.end();
+                });
+            }
             child.on("error", (err) => {
                 if (timeout)
                     clearTimeout(timeout);
+                clearTerminalCleanupTimers();
                 runningProcesses.delete(runId);
                 const errno = err.code;
                 const pathValue = mergedEnv.PATH ?? mergedEnv.Path ?? "";
@@ -774,9 +1144,13 @@ export async function runChildProcess(runId, command, args, opts) {
                     : `Failed to start command "${command}" in "${opts.cwd}": ${err.message}`;
                 reject(new Error(msg));
             });
+            child.on("exit", () => {
+                maybeArmTerminalResultCleanup();
+            });
             child.on("close", (code, signal) => {
                 if (timeout)
                     clearTimeout(timeout);
+                clearTerminalCleanupTimers();
                 runningProcesses.delete(runId);
                 void logChain.finally(() => {
                     resolve({

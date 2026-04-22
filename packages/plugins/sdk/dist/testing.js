@@ -49,13 +49,18 @@ export function createTestHarness(options) {
     const activity = [];
     const metrics = [];
     const telemetry = [];
+    const dbQueries = [];
+    const dbExecutes = [];
     const state = new Map();
     const entities = new Map();
     const entityExternalIndex = new Map();
     const companies = new Map();
     const projects = new Map();
     const issues = new Map();
+    const blockedByIssueIds = new Map();
     const issueComments = new Map();
+    const issueInteractions = new Map();
+    const issueDocuments = new Map();
     const agents = new Map();
     const goals = new Map();
     const projectWorkspaces = new Map();
@@ -67,6 +72,44 @@ export function createTestHarness(options) {
     const dataHandlers = new Map();
     const actionHandlers = new Map();
     const toolHandlers = new Map();
+    function issueRelationSummary(issueId) {
+        const issue = issues.get(issueId);
+        if (!issue)
+            throw new Error(`Issue not found: ${issueId}`);
+        const summarize = (candidateId) => {
+            const related = issues.get(candidateId);
+            if (!related || related.companyId !== issue.companyId)
+                return null;
+            return {
+                id: related.id,
+                identifier: related.identifier,
+                title: related.title,
+                status: related.status,
+                priority: related.priority,
+                assigneeAgentId: related.assigneeAgentId,
+                assigneeUserId: related.assigneeUserId,
+            };
+        };
+        const blockedBy = (blockedByIssueIds.get(issueId) ?? [])
+            .map(summarize)
+            .filter((value) => value !== null);
+        const blocks = [...blockedByIssueIds.entries()]
+            .filter(([, blockers]) => blockers.includes(issueId))
+            .map(([blockedIssueId]) => summarize(blockedIssueId))
+            .filter((value) => value !== null);
+        return { blockedBy, blocks };
+    }
+    const defaultPluginOriginKind = `plugin:${manifest.id}`;
+    function normalizePluginOriginKind(originKind = defaultPluginOriginKind) {
+        if (originKind == null || originKind === "")
+            return defaultPluginOriginKind;
+        if (typeof originKind !== "string")
+            throw new Error("Plugin issue originKind must be a string");
+        if (originKind === defaultPluginOriginKind || originKind.startsWith(`${defaultPluginOriginKind}:`)) {
+            return originKind;
+        }
+        throw new Error(`Plugin may only use originKind values under ${defaultPluginOriginKind}`);
+    }
     const ctx = {
         manifest,
         config: {
@@ -107,6 +150,19 @@ export function createTestHarness(options) {
         launchers: {
             register(launcher) {
                 launchers.set(launcher.id, launcher);
+            },
+        },
+        db: {
+            namespace: manifest.database ? `test_${manifest.id.replace(/[^a-z0-9_]+/g, "_")}` : "",
+            async query(sql, params) {
+                requireCapability(manifest, capabilitySet, "database.namespace.read");
+                dbQueries.push({ sql, params });
+                return [];
+            },
+            async execute(sql, params) {
+                requireCapability(manifest, capabilitySet, "database.namespace.write");
+                dbExecutes.push({ sql, params });
+                return { rowCount: 0 };
             },
         },
         http: {
@@ -270,6 +326,13 @@ export function createTestHarness(options) {
                     out = out.filter((issue) => issue.projectId === input.projectId);
                 if (input?.assigneeAgentId)
                     out = out.filter((issue) => issue.assigneeAgentId === input.assigneeAgentId);
+                if (input?.originKind) {
+                    if (input.originKind.startsWith("plugin:"))
+                        normalizePluginOriginKind(input.originKind);
+                    out = out.filter((issue) => issue.originKind === input.originKind);
+                }
+                if (input?.originId)
+                    out = out.filter((issue) => issue.originId === input.originId);
                 if (input?.status)
                     out = out.filter((issue) => issue.status === input.status);
                 if (input?.offset)
@@ -295,10 +358,10 @@ export function createTestHarness(options) {
                     parentId: input.parentId ?? null,
                     title: input.title,
                     description: input.description ?? null,
-                    status: "todo",
+                    status: input.status ?? "todo",
                     priority: input.priority ?? "medium",
                     assigneeAgentId: input.assigneeAgentId ?? null,
-                    assigneeUserId: null,
+                    assigneeUserId: input.assigneeUserId ?? null,
                     checkoutRunId: null,
                     executionRunId: null,
                     executionAgentNameKey: null,
@@ -307,12 +370,15 @@ export function createTestHarness(options) {
                     createdByUserId: null,
                     issueNumber: null,
                     identifier: null,
-                    requestDepth: 0,
-                    billingCode: null,
+                    originKind: normalizePluginOriginKind(input.originKind),
+                    originId: input.originId ?? null,
+                    originRunId: input.originRunId ?? null,
+                    requestDepth: input.requestDepth ?? 0,
+                    billingCode: input.billingCode ?? null,
                     assigneeAdapterOverrides: null,
-                    executionWorkspaceId: null,
-                    executionWorkspacePreference: null,
-                    executionWorkspaceSettings: null,
+                    executionWorkspaceId: input.executionWorkspaceId ?? null,
+                    executionWorkspacePreference: input.executionWorkspacePreference ?? null,
+                    executionWorkspaceSettings: input.executionWorkspaceSettings ?? null,
                     startedAt: null,
                     completedAt: null,
                     cancelledAt: null,
@@ -321,6 +387,8 @@ export function createTestHarness(options) {
                     updatedAt: now,
                 };
                 issues.set(record.id, record);
+                if (input.blockedByIssueIds)
+                    blockedByIssueIds.set(record.id, [...new Set(input.blockedByIssueIds)]);
                 return record;
             },
             async update(issueId, patch, companyId) {
@@ -328,13 +396,72 @@ export function createTestHarness(options) {
                 const record = issues.get(issueId);
                 if (!isInCompany(record, companyId))
                     throw new Error(`Issue not found: ${issueId}`);
+                const { blockedByIssueIds: nextBlockedByIssueIds, ...issuePatch } = patch;
+                if (issuePatch.originKind !== undefined) {
+                    issuePatch.originKind = normalizePluginOriginKind(issuePatch.originKind);
+                }
                 const updated = {
                     ...record,
-                    ...patch,
+                    ...issuePatch,
                     updatedAt: new Date(),
                 };
                 issues.set(issueId, updated);
+                if (nextBlockedByIssueIds !== undefined) {
+                    blockedByIssueIds.set(issueId, [...new Set(nextBlockedByIssueIds)]);
+                }
                 return updated;
+            },
+            async assertCheckoutOwner(input) {
+                requireCapability(manifest, capabilitySet, "issues.checkout");
+                const record = issues.get(input.issueId);
+                if (!isInCompany(record, input.companyId))
+                    throw new Error(`Issue not found: ${input.issueId}`);
+                if (record.status !== "in_progress" ||
+                    record.assigneeAgentId !== input.actorAgentId ||
+                    (record.checkoutRunId !== null && record.checkoutRunId !== input.actorRunId)) {
+                    throw new Error("Issue run ownership conflict");
+                }
+                return {
+                    issueId: record.id,
+                    status: record.status,
+                    assigneeAgentId: record.assigneeAgentId,
+                    checkoutRunId: record.checkoutRunId,
+                    adoptedFromRunId: null,
+                };
+            },
+            async requestWakeup(issueId, companyId) {
+                requireCapability(manifest, capabilitySet, "issues.wakeup");
+                const record = issues.get(issueId);
+                if (!isInCompany(record, companyId))
+                    throw new Error(`Issue not found: ${issueId}`);
+                if (!record.assigneeAgentId)
+                    throw new Error("Issue has no assigned agent to wake");
+                if (["backlog", "done", "cancelled"].includes(record.status)) {
+                    throw new Error(`Issue is not wakeable in status: ${record.status}`);
+                }
+                const unresolved = issueRelationSummary(issueId).blockedBy.filter((blocker) => blocker.status !== "done");
+                if (unresolved.length > 0)
+                    throw new Error("Issue is blocked by unresolved blockers");
+                return { queued: true, runId: randomUUID() };
+            },
+            async requestWakeups(issueIds, companyId) {
+                requireCapability(manifest, capabilitySet, "issues.wakeup");
+                const results = [];
+                for (const issueId of issueIds) {
+                    const record = issues.get(issueId);
+                    if (!isInCompany(record, companyId))
+                        throw new Error(`Issue not found: ${issueId}`);
+                    if (!record.assigneeAgentId)
+                        throw new Error("Issue has no assigned agent to wake");
+                    if (["backlog", "done", "cancelled"].includes(record.status)) {
+                        throw new Error(`Issue is not wakeable in status: ${record.status}`);
+                    }
+                    const unresolved = issueRelationSummary(issueId).blockedBy.filter((blocker) => blocker.status !== "done");
+                    if (unresolved.length > 0)
+                        throw new Error("Issue is blocked by unresolved blockers");
+                    results.push({ issueId, queued: true, runId: randomUUID() });
+                }
+                return results;
             },
             async listComments(issueId, companyId) {
                 requireCapability(manifest, capabilitySet, "issue.comments.read");
@@ -364,18 +491,65 @@ export function createTestHarness(options) {
                 issueComments.set(issueId, current);
                 return comment;
             },
+            async createInteraction(issueId, interaction, companyId, options) {
+                requireCapability(manifest, capabilitySet, "issue.interactions.create");
+                const parentIssue = issues.get(issueId);
+                if (!isInCompany(parentIssue, companyId)) {
+                    throw new Error(`Issue not found: ${issueId}`);
+                }
+                const now = new Date();
+                const current = issueInteractions.get(issueId) ?? [];
+                if (interaction.idempotencyKey) {
+                    const existing = current.find((entry) => entry.idempotencyKey === interaction.idempotencyKey);
+                    if (existing)
+                        return existing;
+                }
+                const created = {
+                    id: randomUUID(),
+                    companyId: parentIssue.companyId,
+                    issueId,
+                    kind: interaction.kind,
+                    status: "pending",
+                    continuationPolicy: interaction.continuationPolicy ?? "wake_assignee",
+                    idempotencyKey: interaction.idempotencyKey ?? null,
+                    sourceCommentId: interaction.sourceCommentId ?? null,
+                    sourceRunId: interaction.sourceRunId ?? null,
+                    title: interaction.title ?? null,
+                    summary: interaction.summary ?? null,
+                    createdByAgentId: options?.authorAgentId ?? null,
+                    createdByUserId: null,
+                    payload: interaction.payload,
+                    result: null,
+                    createdAt: now,
+                    updatedAt: now,
+                };
+                current.push(created);
+                issueInteractions.set(issueId, current);
+                return created;
+            },
+            async suggestTasks(issueId, interaction, companyId, options) {
+                return this.createInteraction(issueId, { ...interaction, kind: "suggest_tasks" }, companyId, options);
+            },
+            async askUserQuestions(issueId, interaction, companyId, options) {
+                return this.createInteraction(issueId, { ...interaction, kind: "ask_user_questions" }, companyId, options);
+            },
+            async requestConfirmation(issueId, interaction, companyId, options) {
+                return this.createInteraction(issueId, { ...interaction, kind: "request_confirmation" }, companyId, options);
+            },
             documents: {
                 async list(issueId, companyId) {
                     requireCapability(manifest, capabilitySet, "issue.documents.read");
                     if (!isInCompany(issues.get(issueId), companyId))
                         return [];
-                    return [];
+                    return [...issueDocuments.values()]
+                        .filter((document) => document.issueId === issueId && document.companyId === companyId)
+                        .map(({ body: _body, ...summary }) => summary);
                 },
-                async get(issueId, _key, companyId) {
+                async get(issueId, key, companyId) {
                     requireCapability(manifest, capabilitySet, "issue.documents.read");
                     if (!isInCompany(issues.get(issueId), companyId))
                         return null;
-                    return null;
+                    return issueDocuments.get(`${issueId}|${key}`) ?? null;
                 },
                 async upsert(input) {
                     requireCapability(manifest, capabilitySet, "issue.documents.write");
@@ -383,7 +557,27 @@ export function createTestHarness(options) {
                     if (!isInCompany(parentIssue, input.companyId)) {
                         throw new Error(`Issue not found: ${input.issueId}`);
                     }
-                    throw new Error("documents.upsert is not implemented in test context");
+                    const now = new Date();
+                    const existing = issueDocuments.get(`${input.issueId}|${input.key}`);
+                    const document = {
+                        id: existing?.id ?? randomUUID(),
+                        companyId: input.companyId,
+                        issueId: input.issueId,
+                        key: input.key,
+                        title: input.title ?? existing?.title ?? null,
+                        format: "markdown",
+                        latestRevisionId: randomUUID(),
+                        latestRevisionNumber: (existing?.latestRevisionNumber ?? 0) + 1,
+                        createdByAgentId: existing?.createdByAgentId ?? null,
+                        createdByUserId: existing?.createdByUserId ?? null,
+                        updatedByAgentId: null,
+                        updatedByUserId: null,
+                        createdAt: existing?.createdAt ?? now,
+                        updatedAt: now,
+                        body: input.body,
+                    };
+                    issueDocuments.set(`${input.issueId}|${input.key}`, document);
+                    return document;
                 },
                 async delete(issueId, _key, companyId) {
                     requireCapability(manifest, capabilitySet, "issue.documents.write");
@@ -391,6 +585,108 @@ export function createTestHarness(options) {
                     if (!isInCompany(parentIssue, companyId)) {
                         throw new Error(`Issue not found: ${issueId}`);
                     }
+                    issueDocuments.delete(`${issueId}|${_key}`);
+                },
+            },
+            relations: {
+                async get(issueId, companyId) {
+                    requireCapability(manifest, capabilitySet, "issue.relations.read");
+                    if (!isInCompany(issues.get(issueId), companyId))
+                        throw new Error(`Issue not found: ${issueId}`);
+                    return issueRelationSummary(issueId);
+                },
+                async setBlockedBy(issueId, nextBlockedByIssueIds, companyId) {
+                    requireCapability(manifest, capabilitySet, "issue.relations.write");
+                    if (!isInCompany(issues.get(issueId), companyId))
+                        throw new Error(`Issue not found: ${issueId}`);
+                    blockedByIssueIds.set(issueId, [...new Set(nextBlockedByIssueIds)]);
+                    return issueRelationSummary(issueId);
+                },
+                async addBlockers(issueId, blockerIssueIds, companyId) {
+                    requireCapability(manifest, capabilitySet, "issue.relations.write");
+                    if (!isInCompany(issues.get(issueId), companyId))
+                        throw new Error(`Issue not found: ${issueId}`);
+                    const next = new Set(blockedByIssueIds.get(issueId) ?? []);
+                    for (const blockerIssueId of blockerIssueIds)
+                        next.add(blockerIssueId);
+                    blockedByIssueIds.set(issueId, [...next]);
+                    return issueRelationSummary(issueId);
+                },
+                async removeBlockers(issueId, blockerIssueIds, companyId) {
+                    requireCapability(manifest, capabilitySet, "issue.relations.write");
+                    if (!isInCompany(issues.get(issueId), companyId))
+                        throw new Error(`Issue not found: ${issueId}`);
+                    const removals = new Set(blockerIssueIds);
+                    blockedByIssueIds.set(issueId, (blockedByIssueIds.get(issueId) ?? []).filter((blockerIssueId) => !removals.has(blockerIssueId)));
+                    return issueRelationSummary(issueId);
+                },
+            },
+            async getSubtree(issueId, companyId, options) {
+                requireCapability(manifest, capabilitySet, "issue.subtree.read");
+                const root = issues.get(issueId);
+                if (!isInCompany(root, companyId))
+                    throw new Error(`Issue not found: ${issueId}`);
+                const includeRoot = options?.includeRoot !== false;
+                const allIds = [root.id];
+                let frontier = [root.id];
+                while (frontier.length > 0) {
+                    const children = [...issues.values()]
+                        .filter((issue) => issue.companyId === companyId && frontier.includes(issue.parentId ?? ""))
+                        .map((issue) => issue.id)
+                        .filter((id) => !allIds.includes(id));
+                    allIds.push(...children);
+                    frontier = children;
+                }
+                const issueIds = includeRoot ? allIds : allIds.filter((id) => id !== root.id);
+                const subtreeIssues = issueIds.map((id) => issues.get(id)).filter((candidate) => Boolean(candidate));
+                return {
+                    rootIssueId: root.id,
+                    companyId,
+                    issueIds,
+                    issues: subtreeIssues,
+                    ...(options?.includeRelations
+                        ? { relations: Object.fromEntries(issueIds.map((id) => [id, issueRelationSummary(id)])) }
+                        : {}),
+                    ...(options?.includeDocuments ? { documents: Object.fromEntries(issueIds.map((id) => [id, []])) } : {}),
+                    ...(options?.includeActiveRuns ? { activeRuns: Object.fromEntries(issueIds.map((id) => [id, []])) } : {}),
+                    ...(options?.includeAssignees ? { assignees: {} } : {}),
+                };
+            },
+            summaries: {
+                async getOrchestration(input) {
+                    requireCapability(manifest, capabilitySet, "issues.orchestration.read");
+                    const root = issues.get(input.issueId);
+                    if (!isInCompany(root, input.companyId))
+                        throw new Error(`Issue not found: ${input.issueId}`);
+                    const subtreeIssueIds = [root.id];
+                    if (input.includeSubtree) {
+                        let frontier = [root.id];
+                        while (frontier.length > 0) {
+                            const children = [...issues.values()]
+                                .filter((issue) => issue.companyId === input.companyId && frontier.includes(issue.parentId ?? ""))
+                                .map((issue) => issue.id)
+                                .filter((id) => !subtreeIssueIds.includes(id));
+                            subtreeIssueIds.push(...children);
+                            frontier = children;
+                        }
+                    }
+                    return {
+                        issueId: root.id,
+                        companyId: input.companyId,
+                        subtreeIssueIds,
+                        relations: Object.fromEntries(subtreeIssueIds.map((id) => [id, issueRelationSummary(id)])),
+                        approvals: [],
+                        runs: [],
+                        costs: {
+                            costCents: 0,
+                            inputTokens: 0,
+                            cachedInputTokens: 0,
+                            outputTokens: 0,
+                            billingCode: input.billingCode ?? null,
+                        },
+                        openBudgetIncidents: [],
+                        invocationBlocks: [],
+                    };
                 },
             },
         },
@@ -615,8 +911,12 @@ export function createTestHarness(options) {
                 companies.set(row.id, row);
             for (const row of input.projects ?? [])
                 projects.set(row.id, row);
-            for (const row of input.issues ?? [])
+            for (const row of input.issues ?? []) {
                 issues.set(row.id, row);
+                if (row.blockedBy) {
+                    blockedByIssueIds.set(row.id, row.blockedBy.map((blocker) => blocker.id));
+                }
+            }
             for (const row of input.issueComments ?? []) {
                 const list = issueComments.get(row.issueId) ?? [];
                 list.push(row);
@@ -702,6 +1002,8 @@ export function createTestHarness(options) {
         activity,
         metrics,
         telemetry,
+        dbQueries,
+        dbExecutes,
     };
     return harness;
 }

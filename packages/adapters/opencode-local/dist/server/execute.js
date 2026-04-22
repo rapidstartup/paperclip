@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, resolveCommandForLogs, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, resolveCommandForLogs, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE, runChildProcess, readPaperclipRuntimeSkillEntries, resolvePaperclipDesiredSkillNames, } from "@paperclipai/adapter-utils/server-utils";
 import { isOpenCodeUnknownSessionError, parseOpenCodeJsonl } from "./parse.js";
 import { ensureOpenCodeModelConfiguredAndAvailable } from "./models.js";
 import { removeMaintainerOnlySkillSymlinks } from "@paperclipai/adapter-utils/server-utils";
@@ -110,7 +110,7 @@ async function ensureAgentHomeInstructionCompanionFiles(input) {
 }
 export async function execute(ctx) {
     const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
-    const promptTemplate = asString(config.promptTemplate, "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.");
+    const promptTemplate = asString(config.promptTemplate, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
     const command = asString(config.command, "opencode");
     const model = asString(config.model, "").trim();
     const variant = asString(config.variant, "").trim();

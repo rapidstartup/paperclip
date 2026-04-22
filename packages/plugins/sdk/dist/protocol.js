@@ -74,6 +74,7 @@ export const HOST_TO_WORKER_OPTIONAL_METHODS = [
     "onEvent",
     "runJob",
     "handleWebhook",
+    "handleApiRequest",
     "getData",
     "performAction",
     "executeTool",

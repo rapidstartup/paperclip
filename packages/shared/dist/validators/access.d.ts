@@ -1,14 +1,17 @@
 import { z } from "zod";
 export declare const createCompanyInviteSchema: z.ZodObject<{
     allowedJoinTypes: z.ZodDefault<z.ZodEnum<["human", "agent", "both"]>>;
+    humanRole: z.ZodNullable<z.ZodOptional<z.ZodEnum<["owner", "admin", "operator", "viewer"]>>>;
     defaultsPayload: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     agentMessage: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     allowedJoinTypes: "agent" | "human" | "both";
+    humanRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
     defaultsPayload?: Record<string, unknown> | null | undefined;
     agentMessage?: string | null | undefined;
 }, {
     allowedJoinTypes?: "agent" | "human" | "both" | undefined;
+    humanRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
     defaultsPayload?: Record<string, unknown> | null | undefined;
     agentMessage?: string | null | undefined;
 }>;
@@ -60,13 +63,27 @@ export declare const listJoinRequestsQuerySchema: z.ZodObject<{
     status: z.ZodOptional<z.ZodEnum<["pending_approval", "approved", "rejected"]>>;
     requestType: z.ZodOptional<z.ZodEnum<["human", "agent"]>>;
 }, "strip", z.ZodTypeAny, {
-    status?: "pending_approval" | "approved" | "rejected" | undefined;
+    status?: "pending_approval" | "rejected" | "approved" | undefined;
     requestType?: "agent" | "human" | undefined;
 }, {
-    status?: "pending_approval" | "approved" | "rejected" | undefined;
+    status?: "pending_approval" | "rejected" | "approved" | undefined;
     requestType?: "agent" | "human" | undefined;
 }>;
 export type ListJoinRequestsQuery = z.infer<typeof listJoinRequestsQuerySchema>;
+export declare const listCompanyInvitesQuerySchema: z.ZodObject<{
+    state: z.ZodOptional<z.ZodEnum<["active", "revoked", "accepted", "expired"]>>;
+    limit: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+    offset: z.ZodDefault<z.ZodOptional<z.ZodNumber>>;
+}, "strip", z.ZodTypeAny, {
+    limit: number;
+    offset: number;
+    state?: "active" | "accepted" | "expired" | "revoked" | undefined;
+}, {
+    state?: "active" | "accepted" | "expired" | "revoked" | undefined;
+    limit?: number | undefined;
+    offset?: number | undefined;
+}>;
+export type ListCompanyInvitesQuery = z.infer<typeof listCompanyInvitesQuerySchema>;
 export declare const claimJoinRequestApiKeySchema: z.ZodObject<{
     claimSecret: z.ZodString;
 }, "strip", z.ZodTypeAny, {
@@ -104,27 +121,120 @@ export declare const resolveCliAuthChallengeSchema: z.ZodObject<{
 export type ResolveCliAuthChallenge = z.infer<typeof resolveCliAuthChallengeSchema>;
 export declare const updateMemberPermissionsSchema: z.ZodObject<{
     grants: z.ZodArray<z.ZodObject<{
-        permissionKey: z.ZodEnum<["agents:create", "users:invite", "users:manage_permissions", "tasks:assign", "tasks:assign_scope", "joins:approve"]>;
+        permissionKey: z.ZodEnum<["agents:create", "users:invite", "users:manage_permissions", "tasks:assign", "tasks:assign_scope", "tasks:manage_active_checkouts", "joins:approve"]>;
         scope: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strip", z.ZodTypeAny, {
-        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve";
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
         scope?: Record<string, unknown> | null | undefined;
     }, {
-        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve";
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
         scope?: Record<string, unknown> | null | undefined;
     }>, "many">;
 }, "strip", z.ZodTypeAny, {
     grants: {
-        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve";
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
         scope?: Record<string, unknown> | null | undefined;
     }[];
 }, {
     grants: {
-        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve";
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
         scope?: Record<string, unknown> | null | undefined;
     }[];
 }>;
 export type UpdateMemberPermissions = z.infer<typeof updateMemberPermissionsSchema>;
+export declare const updateCompanyMemberSchema: z.ZodEffects<z.ZodObject<{
+    membershipRole: z.ZodNullable<z.ZodOptional<z.ZodEnum<["owner", "admin", "operator", "viewer"]>>>;
+    status: z.ZodOptional<z.ZodEnum<["pending", "active", "suspended"]>>;
+}, "strip", z.ZodTypeAny, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}>, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}>;
+export type UpdateCompanyMember = z.infer<typeof updateCompanyMemberSchema>;
+export declare const updateCompanyMemberWithPermissionsSchema: z.ZodEffects<z.ZodObject<{
+    membershipRole: z.ZodNullable<z.ZodOptional<z.ZodEnum<["owner", "admin", "operator", "viewer"]>>>;
+    status: z.ZodOptional<z.ZodEnum<["pending", "active", "suspended"]>>;
+    grants: z.ZodDefault<z.ZodArray<z.ZodObject<{
+        permissionKey: z.ZodEnum<["agents:create", "users:invite", "users:manage_permissions", "tasks:assign", "tasks:assign_scope", "tasks:manage_active_checkouts", "joins:approve"]>;
+        scope: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
+    }, "strip", z.ZodTypeAny, {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }, {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }>, "many">>;
+}, "strip", z.ZodTypeAny, {
+    grants: {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }[];
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    grants?: {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }[] | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}>, {
+    grants: {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }[];
+    status?: "active" | "pending" | "suspended" | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}, {
+    status?: "active" | "pending" | "suspended" | undefined;
+    grants?: {
+        permissionKey: "agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve";
+        scope?: Record<string, unknown> | null | undefined;
+    }[] | undefined;
+    membershipRole?: "owner" | "admin" | "operator" | "viewer" | null | undefined;
+}>;
+export type UpdateCompanyMemberWithPermissions = z.infer<typeof updateCompanyMemberWithPermissionsSchema>;
+export declare const archiveCompanyMemberSchema: z.ZodEffects<z.ZodObject<{
+    reassignment: z.ZodNullable<z.ZodOptional<z.ZodObject<{
+        assigneeAgentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+        assigneeUserId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    }, "strip", z.ZodTypeAny, {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    }, {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    }>>>;
+}, "strip", z.ZodTypeAny, {
+    reassignment?: {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    } | null | undefined;
+}, {
+    reassignment?: {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    } | null | undefined;
+}>, {
+    reassignment?: {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    } | null | undefined;
+}, {
+    reassignment?: {
+        assigneeAgentId?: string | null | undefined;
+        assigneeUserId?: string | null | undefined;
+    } | null | undefined;
+}>;
+export type ArchiveCompanyMember = z.infer<typeof archiveCompanyMemberSchema>;
 export declare const updateUserCompanyAccessSchema: z.ZodObject<{
     companyIds: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
 }, "strip", z.ZodTypeAny, {
@@ -133,4 +243,91 @@ export declare const updateUserCompanyAccessSchema: z.ZodObject<{
     companyIds?: string[] | undefined;
 }>;
 export type UpdateUserCompanyAccess = z.infer<typeof updateUserCompanyAccessSchema>;
+export declare const searchAdminUsersQuerySchema: z.ZodObject<{
+    query: z.ZodDefault<z.ZodOptional<z.ZodString>>;
+}, "strip", z.ZodTypeAny, {
+    query: string;
+}, {
+    query?: string | undefined;
+}>;
+export type SearchAdminUsersQuery = z.infer<typeof searchAdminUsersQuerySchema>;
+export declare const currentUserProfileSchema: z.ZodObject<{
+    id: z.ZodString;
+    email: z.ZodNullable<z.ZodString>;
+    name: z.ZodNullable<z.ZodString>;
+    image: z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>;
+}, "strip", z.ZodTypeAny, {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+}, {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+}>;
+export type CurrentUserProfile = z.infer<typeof currentUserProfileSchema>;
+export declare const authSessionSchema: z.ZodObject<{
+    session: z.ZodObject<{
+        id: z.ZodString;
+        userId: z.ZodString;
+    }, "strip", z.ZodTypeAny, {
+        id: string;
+        userId: string;
+    }, {
+        id: string;
+        userId: string;
+    }>;
+    user: z.ZodObject<{
+        id: z.ZodString;
+        email: z.ZodNullable<z.ZodString>;
+        name: z.ZodNullable<z.ZodString>;
+        image: z.ZodNullable<z.ZodEffects<z.ZodString, string, string>>;
+    }, "strip", z.ZodTypeAny, {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+    }, {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+    }>;
+}, "strip", z.ZodTypeAny, {
+    user: {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+    };
+    session: {
+        id: string;
+        userId: string;
+    };
+}, {
+    user: {
+        id: string;
+        name: string | null;
+        email: string | null;
+        image: string | null;
+    };
+    session: {
+        id: string;
+        userId: string;
+    };
+}>;
+export type AuthSession = z.infer<typeof authSessionSchema>;
+export declare const updateCurrentUserProfileSchema: z.ZodObject<{
+    name: z.ZodString;
+    image: z.ZodEffects<z.ZodOptional<z.ZodUnion<[z.ZodEffects<z.ZodString, string, string>, z.ZodLiteral<"">, z.ZodNull]>>, string | null | undefined, string | null | undefined>;
+}, "strip", z.ZodTypeAny, {
+    name: string;
+    image?: string | null | undefined;
+}, {
+    name: string;
+    image?: string | null | undefined;
+}>;
+export type UpdateCurrentUserProfile = z.infer<typeof updateCurrentUserProfileSchema>;
 //# sourceMappingURL=access.d.ts.map

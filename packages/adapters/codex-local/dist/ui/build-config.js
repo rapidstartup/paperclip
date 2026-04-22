@@ -91,6 +91,7 @@ export function buildCodexLocalConfig(v) {
     if (Object.keys(env).length > 0)
         ac.env = env;
     ac.search = v.search;
+    ac.fastMode = v.fastMode;
     ac.dangerouslyBypassApprovalsAndSandbox =
         typeof v.dangerouslyBypassSandbox === "boolean"
             ? v.dangerouslyBypassSandbox

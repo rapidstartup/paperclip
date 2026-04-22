@@ -20,10 +20,10 @@ export declare function routineService(db: Db, deps?: {
         createdByUserId: string | null;
         updatedByUserId: string | null;
         updatedByAgentId: string | null;
-        projectId: string;
+        projectId: string | null;
         goalId: string | null;
         priority: string;
-        assigneeAgentId: string;
+        assigneeAgentId: string | null;
         parentIssueId: string | null;
         concurrencyPolicy: string;
         catchUpPolicy: string;
@@ -79,6 +79,7 @@ export declare function routineService(db: Db, deps?: {
         triggeredAt: Date;
         idempotencyKey: string | null;
         triggerPayload: Record<string, unknown> | null;
+        dispatchFingerprint: string | null;
         linkedIssueId: string | null;
         coalescedIntoRunId: string | null;
         failureReason: string | null;
@@ -104,6 +105,7 @@ export declare function routineService(db: Db, deps?: {
         triggeredAt: Date;
         idempotencyKey: string | null;
         triggerPayload: Record<string, unknown> | null;
+        dispatchFingerprint: string | null;
         linkedIssueId: string | null;
         coalescedIntoRunId: string | null;
         failureReason: string | null;
@@ -125,6 +127,7 @@ export declare function routineService(db: Db, deps?: {
         triggeredAt: Date;
         idempotencyKey: string | null;
         triggerPayload: Record<string, unknown> | null;
+        dispatchFingerprint: string | null;
         linkedIssueId: string | null;
         coalescedIntoRunId: string | null;
         failureReason: string | null;

@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import { pgTable, uuid, text, timestamp, jsonb, index, uniqueIndex } from "drizzle-orm/pg-core";
 import { companies } from "./companies.js";
 import { invites } from "./invites.js";
@@ -28,5 +29,11 @@ export const joinRequests = pgTable("join_requests", {
 }, (table) => ({
     inviteUniqueIdx: uniqueIndex("join_requests_invite_unique_idx").on(table.inviteId),
     companyStatusTypeCreatedIdx: index("join_requests_company_status_type_created_idx").on(table.companyId, table.status, table.requestType, table.createdAt),
+    pendingHumanUserUniqueIdx: uniqueIndex("join_requests_pending_human_user_uq")
+        .on(table.companyId, table.requestingUserId)
+        .where(sql `${table.requestType} = 'human' AND ${table.status} = 'pending_approval' AND ${table.requestingUserId} IS NOT NULL`),
+    pendingHumanEmailUniqueIdx: uniqueIndex("join_requests_pending_human_email_uq")
+        .on(table.companyId, sql `lower(${table.requestEmailSnapshot})`)
+        .where(sql `${table.requestType} = 'human' AND ${table.status} = 'pending_approval' AND ${table.requestEmailSnapshot} IS NOT NULL`),
 }));
 //# sourceMappingURL=join_requests.js.map

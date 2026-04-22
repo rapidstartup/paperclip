@@ -10,6 +10,7 @@ export const asBoolean = serverUtils.asBoolean;
 export const asStringArray = serverUtils.asStringArray;
 export const parseJson = serverUtils.parseJson;
 export const appendWithCap = serverUtils.appendWithCap;
+export const appendWithByteCap = serverUtils.appendWithByteCap;
 export const resolvePathValue = serverUtils.resolvePathValue;
 export const renderTemplate = serverUtils.renderTemplate;
 export const redactEnvForLogs = serverUtils.redactEnvForLogs;
@@ -20,7 +21,6 @@ export const ensureAbsoluteDirectory = serverUtils.ensureAbsoluteDirectory;
 export const ensureCommandResolvable = serverUtils.ensureCommandResolvable;
 export const resolveCommandForLogs = serverUtils.resolveCommandForLogs;
 export function buildInvocationEnvForLogs(env, options = {}) {
-    // TODO: Remove this fallback once @paperclipai/adapter-utils exports buildInvocationEnvForLogs everywhere we consume it.
     const maybeBuildInvocationEnvForLogs = serverUtils.buildInvocationEnvForLogs;
     if (typeof maybeBuildInvocationEnvForLogs === "function") {
         return maybeBuildInvocationEnvForLogs(env, options);

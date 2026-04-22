@@ -5,7 +5,26 @@ export type ExecutionWorkspaceProviderType = "local_fs" | "git_worktree" | "adap
 export type ExecutionWorkspaceStatus = "active" | "idle" | "in_review" | "archived" | "cleanup_failed";
 export type ExecutionWorkspaceCloseReadinessState = "ready" | "ready_with_warnings" | "blocked";
 export type ExecutionWorkspaceCloseActionKind = "archive_record" | "stop_runtime_services" | "cleanup_command" | "teardown_command" | "git_worktree_remove" | "git_branch_delete" | "remove_local_directory";
-export type WorkspaceRuntimeDesiredState = "running" | "stopped";
+export type WorkspaceRuntimeDesiredState = "running" | "stopped" | "manual";
+export type WorkspaceRuntimeServiceStateMap = Record<string, WorkspaceRuntimeDesiredState>;
+export type WorkspaceCommandKind = "service" | "job";
+export interface WorkspaceCommandSource {
+    type: "paperclip";
+    key: "commands" | "services" | "jobs";
+    index: number;
+}
+export interface WorkspaceCommandDefinition {
+    id: string;
+    name: string;
+    kind: WorkspaceCommandKind;
+    command: string | null;
+    cwd: string | null;
+    lifecycle: "shared" | "ephemeral" | null;
+    serviceIndex: number | null;
+    disabledReason: string | null;
+    rawConfig: Record<string, unknown>;
+    source: WorkspaceCommandSource;
+}
 export interface ExecutionWorkspaceStrategy {
     type: ExecutionWorkspaceStrategyType;
     baseRef?: string | null;
@@ -20,10 +39,17 @@ export interface ExecutionWorkspaceConfig {
     cleanupCommand: string | null;
     workspaceRuntime: Record<string, unknown> | null;
     desiredState: WorkspaceRuntimeDesiredState | null;
+    serviceStates?: WorkspaceRuntimeServiceStateMap | null;
 }
 export interface ProjectWorkspaceRuntimeConfig {
     workspaceRuntime: Record<string, unknown> | null;
     desiredState: WorkspaceRuntimeDesiredState | null;
+    serviceStates?: WorkspaceRuntimeServiceStateMap | null;
+}
+export interface WorkspaceRuntimeControlTarget {
+    workspaceCommandId?: string | null;
+    runtimeServiceId?: string | null;
+    serviceIndex?: number | null;
 }
 export interface ExecutionWorkspaceCloseAction {
     kind: ExecutionWorkspaceCloseActionKind;
@@ -82,6 +108,12 @@ export interface IssueExecutionWorkspaceSettings {
     workspaceStrategy?: ExecutionWorkspaceStrategy | null;
     workspaceRuntime?: Record<string, unknown> | null;
 }
+export interface ExecutionWorkspaceSummary {
+    id: string;
+    name: string;
+    mode: Exclude<ExecutionWorkspaceMode, "inherit" | "reuse_existing" | "agent_default"> | "adapter_managed" | "cloud_sandbox";
+    projectWorkspaceId: string | null;
+}
 export interface ExecutionWorkspace {
     id: string;
     companyId: string;
@@ -136,6 +168,7 @@ export interface WorkspaceRuntimeService {
     stoppedAt: Date | null;
     stopPolicy: Record<string, unknown> | null;
     healthStatus: "unknown" | "healthy" | "unhealthy";
+    configIndex?: number | null;
     createdAt: Date;
     updatedAt: Date;
 }

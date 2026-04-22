@@ -1,7 +1,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import { and, desc, eq, gte, inArray, lt, ne, or, sql } from "drizzle-orm";
 import { agents, agentConfigRevisions, agentApiKeys, agentRuntimeState, agentTaskSessions, agentWakeupRequests, activityLog, costEvents, heartbeatRunEvents, heartbeatRuns, issueExecutionDecisions, issues, issueComments, } from "@paperclipai/db";
-import { isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, isUuidLike, normalizeAgentUrlKey } from "@paperclipai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 import { normalizeAgentPermissions } from "./agent-permissions.js";
 import { REDACTED_EVENT_VALUE, sanitizeRecord } from "../redaction.js";
@@ -63,6 +63,25 @@ function containsRedactedMarker(value) {
 }
 function hasConfigPatchFields(data) {
     return CONFIG_REVISION_FIELDS.some((field) => Object.prototype.hasOwnProperty.call(data, field));
+}
+function parseFiniteNumberLike(value) {
+    if (typeof value === "number" && Number.isFinite(value))
+        return value;
+    if (typeof value !== "string")
+        return null;
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : null;
+}
+function normalizeRuntimeConfigForNewAgent(runtimeConfig) {
+    const normalizedRuntimeConfig = isPlainRecord(runtimeConfig) ? { ...runtimeConfig } : {};
+    const heartbeat = isPlainRecord(normalizedRuntimeConfig.heartbeat)
+        ? { ...normalizedRuntimeConfig.heartbeat }
+        : {};
+    if (parseFiniteNumberLike(heartbeat.maxConcurrentRuns) == null) {
+        heartbeat.maxConcurrentRuns = AGENT_DEFAULT_MAX_CONCURRENT_RUNS;
+    }
+    normalizedRuntimeConfig.heartbeat = heartbeat;
+    return normalizedRuntimeConfig;
 }
 function diffConfigSnapshot(before, after) {
     return CONFIG_REVISION_FIELDS.filter((field) => !jsonEqual(before[field], after[field]));
@@ -149,7 +168,7 @@ export function agentService(db) {
         const rows = await db
             .select({
             agentId: costEvents.agentId,
-            spentMonthlyCents: sql `coalesce(sum(${costEvents.costCents}), 0)::int`,
+            spentMonthlyCents: sql `coalesce(sum(${costEvents.costCents}), 0)::double precision`,
         })
             .from(costEvents)
             .where(and(eq(costEvents.companyId, companyId), inArray(costEvents.agentId, agentIds), gte(costEvents.occurredAt, start), lt(costEvents.occurredAt, end)))
@@ -298,9 +317,10 @@ export function agentService(db) {
             const uniqueName = deduplicateAgentName(data.name, existingAgents);
             const role = data.role ?? "general";
             const normalizedPermissions = normalizeAgentPermissions(data.permissions, role);
+            const runtimeConfig = normalizeRuntimeConfigForNewAgent(data.runtimeConfig);
             const created = await db
                 .insert(agents)
-                .values({ ...data, name: uniqueName, companyId, role, permissions: normalizedPermissions })
+                .values({ ...data, name: uniqueName, companyId, role, permissions: normalizedPermissions, runtimeConfig })
                 .returning()
                 .then((rows) => rows[0]);
             return normalizeAgentRow(created);
@@ -394,18 +414,17 @@ export function agentService(db) {
             });
         },
         activatePendingApproval: async (id) => {
-            const existing = await getById(id);
-            if (!existing)
-                return null;
-            if (existing.status !== "pending_approval")
-                return existing;
             const updated = await db
                 .update(agents)
                 .set({ status: "idle", updatedAt: new Date() })
-                .where(eq(agents.id, id))
+                .where(and(eq(agents.id, id), eq(agents.status, "pending_approval")))
                 .returning()
                 .then((rows) => rows[0] ?? null);
-            return updated ? normalizeAgentRow(updated) : null;
+            if (updated) {
+                return { agent: normalizeAgentRow(updated), activated: true };
+            }
+            const existing = await getById(id);
+            return existing ? { agent: existing, activated: false } : null;
         },
         updatePermissions: async (id, permissions) => {
             const existing = await getById(id);
@@ -491,11 +510,23 @@ export function agentService(db) {
         })
             .from(agentApiKeys)
             .where(eq(agentApiKeys.agentId, id)),
-        revokeKey: async (keyId) => {
+        getKeyById: async (keyId) => db
+            .select({
+            id: agentApiKeys.id,
+            agentId: agentApiKeys.agentId,
+            companyId: agentApiKeys.companyId,
+            name: agentApiKeys.name,
+            createdAt: agentApiKeys.createdAt,
+            revokedAt: agentApiKeys.revokedAt,
+        })
+            .from(agentApiKeys)
+            .where(eq(agentApiKeys.id, keyId))
+            .then((rows) => rows[0] ?? null),
+        revokeKey: async (agentId, keyId) => {
             const rows = await db
                 .update(agentApiKeys)
                 .set({ revokedAt: new Date() })
-                .where(eq(agentApiKeys.id, keyId))
+                .where(and(eq(agentApiKeys.id, keyId), eq(agentApiKeys.agentId, agentId)))
                 .returning();
             return rows[0] ?? null;
         },

@@ -16,8 +16,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     costCents: z.ZodNumber;
     occurredAt: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    agentId: string;
     provider: string;
+    agentId: string;
     billingType: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown";
     model: string;
     inputTokens: number;
@@ -25,22 +25,22 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     outputTokens: number;
     costCents: number;
     occurredAt: string;
+    issueId?: string | null | undefined;
     projectId?: string | null | undefined;
     goalId?: string | null | undefined;
     billingCode?: string | null | undefined;
-    issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
 }, {
-    agentId: string;
     provider: string;
+    agentId: string;
     model: string;
     costCents: number;
     occurredAt: string;
+    issueId?: string | null | undefined;
     projectId?: string | null | undefined;
     goalId?: string | null | undefined;
     billingCode?: string | null | undefined;
-    issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
     billingType?: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown" | undefined;
@@ -49,8 +49,8 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     outputTokens?: number | undefined;
 }>, {
     biller: string;
-    agentId: string;
     provider: string;
+    agentId: string;
     billingType: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown";
     model: string;
     inputTokens: number;
@@ -58,21 +58,21 @@ export declare const createCostEventSchema: z.ZodEffects<z.ZodObject<{
     outputTokens: number;
     costCents: number;
     occurredAt: string;
+    issueId?: string | null | undefined;
     projectId?: string | null | undefined;
     goalId?: string | null | undefined;
     billingCode?: string | null | undefined;
-    issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
 }, {
-    agentId: string;
     provider: string;
+    agentId: string;
     model: string;
     costCents: number;
     occurredAt: string;
+    issueId?: string | null | undefined;
     projectId?: string | null | undefined;
     goalId?: string | null | undefined;
     billingCode?: string | null | undefined;
-    issueId?: string | null | undefined;
     heartbeatRunId?: string | null | undefined;
     biller?: string | undefined;
     billingType?: "metered_api" | "subscription_included" | "subscription_overage" | "credits" | "fixed" | "unknown" | undefined;

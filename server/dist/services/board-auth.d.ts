@@ -16,6 +16,11 @@ export declare function boardAuthService(db: Db): {
             email: string;
         };
         companyIds: string[];
+        memberships: {
+            companyId: string;
+            membershipRole: string | null;
+            status: string;
+        }[];
         isInstanceAdmin: boolean;
     }>;
     findBoardApiKeyByToken: (token: string) => Promise<{

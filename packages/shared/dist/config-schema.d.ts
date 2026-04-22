@@ -95,6 +95,8 @@ export declare const loggingConfigSchema: z.ZodObject<{
 export declare const serverConfigSchema: z.ZodObject<{
     deploymentMode: z.ZodDefault<z.ZodEnum<["local_trusted", "authenticated"]>>;
     exposure: z.ZodDefault<z.ZodEnum<["private", "public"]>>;
+    bind: z.ZodOptional<z.ZodEnum<["loopback", "lan", "tailnet", "custom"]>>;
+    customBindHost: z.ZodOptional<z.ZodString>;
     host: z.ZodDefault<z.ZodString>;
     port: z.ZodDefault<z.ZodNumber>;
     allowedHostnames: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -106,10 +108,14 @@ export declare const serverConfigSchema: z.ZodObject<{
     host: string;
     allowedHostnames: string[];
     serveUi: boolean;
+    customBindHost?: string | undefined;
+    bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
 }, {
+    customBindHost?: string | undefined;
     port?: number | undefined;
     deploymentMode?: "local_trusted" | "authenticated" | undefined;
     exposure?: "private" | "public" | undefined;
+    bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
     host?: string | undefined;
     allowedHostnames?: string[] | undefined;
     serveUi?: boolean | undefined;
@@ -324,6 +330,8 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
     server: z.ZodObject<{
         deploymentMode: z.ZodDefault<z.ZodEnum<["local_trusted", "authenticated"]>>;
         exposure: z.ZodDefault<z.ZodEnum<["private", "public"]>>;
+        bind: z.ZodOptional<z.ZodEnum<["loopback", "lan", "tailnet", "custom"]>>;
+        customBindHost: z.ZodOptional<z.ZodString>;
         host: z.ZodDefault<z.ZodString>;
         port: z.ZodDefault<z.ZodNumber>;
         allowedHostnames: z.ZodDefault<z.ZodArray<z.ZodString, "many">>;
@@ -335,10 +343,14 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         host: string;
         allowedHostnames: string[];
         serveUi: boolean;
+        customBindHost?: string | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
     }, {
+        customBindHost?: string | undefined;
         port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
         host?: string | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
@@ -452,6 +464,11 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         };
         connectionString?: string | undefined;
     };
+    auth: {
+        baseUrlMode: "auto" | "explicit";
+        disableSignUp: boolean;
+        publicBaseUrl?: string | undefined;
+    };
     $meta: {
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
@@ -468,14 +485,11 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         host: string;
         allowedHostnames: string[];
         serveUi: boolean;
+        customBindHost?: string | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
     };
     telemetry: {
         enabled: boolean;
-    };
-    auth: {
-        baseUrlMode: "auto" | "explicit";
-        disableSignUp: boolean;
-        publicBaseUrl?: string | undefined;
     };
     storage: {
         s3: {
@@ -524,24 +538,26 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         logDir?: string | undefined;
     };
     server: {
+        customBindHost?: string | undefined;
         port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
         host?: string | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     };
+    auth?: {
+        baseUrlMode?: "auto" | "explicit" | undefined;
+        publicBaseUrl?: string | undefined;
+        disableSignUp?: boolean | undefined;
+    } | undefined;
     llm?: {
         provider: "claude" | "openai";
         apiKey?: string | undefined;
     } | undefined;
     telemetry?: {
         enabled?: boolean | undefined;
-    } | undefined;
-    auth?: {
-        baseUrlMode?: "auto" | "explicit" | undefined;
-        publicBaseUrl?: string | undefined;
-        disableSignUp?: boolean | undefined;
     } | undefined;
     storage?: {
         s3?: {
@@ -576,6 +592,11 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         };
         connectionString?: string | undefined;
     };
+    auth: {
+        baseUrlMode: "auto" | "explicit";
+        disableSignUp: boolean;
+        publicBaseUrl?: string | undefined;
+    };
     $meta: {
         updatedAt: string;
         source: "onboard" | "configure" | "doctor";
@@ -592,14 +613,11 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         host: string;
         allowedHostnames: string[];
         serveUi: boolean;
+        customBindHost?: string | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
     };
     telemetry: {
         enabled: boolean;
-    };
-    auth: {
-        baseUrlMode: "auto" | "explicit";
-        disableSignUp: boolean;
-        publicBaseUrl?: string | undefined;
     };
     storage: {
         s3: {
@@ -648,24 +666,26 @@ export declare const paperclipConfigSchema: z.ZodEffects<z.ZodObject<{
         logDir?: string | undefined;
     };
     server: {
+        customBindHost?: string | undefined;
         port?: number | undefined;
         deploymentMode?: "local_trusted" | "authenticated" | undefined;
         exposure?: "private" | "public" | undefined;
+        bind?: "loopback" | "lan" | "tailnet" | "custom" | undefined;
         host?: string | undefined;
         allowedHostnames?: string[] | undefined;
         serveUi?: boolean | undefined;
     };
+    auth?: {
+        baseUrlMode?: "auto" | "explicit" | undefined;
+        publicBaseUrl?: string | undefined;
+        disableSignUp?: boolean | undefined;
+    } | undefined;
     llm?: {
         provider: "claude" | "openai";
         apiKey?: string | undefined;
     } | undefined;
     telemetry?: {
         enabled?: boolean | undefined;
-    } | undefined;
-    auth?: {
-        baseUrlMode?: "auto" | "explicit" | undefined;
-        publicBaseUrl?: string | undefined;
-        disableSignUp?: boolean | undefined;
     } | undefined;
     storage?: {
         s3?: {

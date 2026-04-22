@@ -1,5 +1,6 @@
 import type { AdapterRuntimeServiceReport } from "@paperclipai/adapter-utils";
 import type { Db } from "@paperclipai/db";
+import { type WorkspaceRuntimeDesiredState, type WorkspaceRuntimeServiceStateMap } from "@paperclipai/shared";
 import type { WorkspaceOperationRecorder } from "./workspace-operations.js";
 export declare function resolveShell(): string;
 export interface ExecutionWorkspaceInput {
@@ -68,6 +69,26 @@ export declare function realizeExecutionWorkspace(input: {
     agent: ExecutionWorkspaceAgentRef;
     recorder?: WorkspaceOperationRecorder | null;
 }): Promise<RealizedExecutionWorkspace>;
+export declare function ensurePersistedExecutionWorkspaceAvailable(input: {
+    base: ExecutionWorkspaceInput;
+    workspace: {
+        mode: string | null | undefined;
+        strategyType: string | null | undefined;
+        cwd: string | null | undefined;
+        providerRef: string | null | undefined;
+        projectId: string | null | undefined;
+        projectWorkspaceId: string | null | undefined;
+        repoUrl: string | null | undefined;
+        baseRef: string | null | undefined;
+        branchName: string | null | undefined;
+        config?: {
+            provisionCommand?: string | null;
+        } | null;
+    };
+    issue: ExecutionWorkspaceIssueRef | null;
+    agent: ExecutionWorkspaceAgentRef;
+    recorder?: WorkspaceOperationRecorder | null;
+}): Promise<RealizedExecutionWorkspace | null>;
 export declare function cleanupExecutionWorkspaceArtifacts(input: {
     workspace: {
         id: string;
@@ -94,6 +115,16 @@ export declare function cleanupExecutionWorkspaceArtifacts(input: {
     cleaned: boolean;
     warnings: string[];
 }>;
+export declare function runWorkspaceJobForControl(input: {
+    actor: ExecutionWorkspaceAgentRef;
+    issue: ExecutionWorkspaceIssueRef | null;
+    workspace: RealizedExecutionWorkspace;
+    command: Record<string, unknown>;
+    adapterEnv?: Record<string, string>;
+    recorder?: WorkspaceOperationRecorder | null;
+    metadata?: Record<string, unknown> | null;
+}): Promise<import("@paperclipai/shared").WorkspaceOperation | null>;
+export declare function resolveWorkspaceRuntimeReadinessTimeoutSec(service: Record<string, unknown>): number;
 export declare function normalizeAdapterManagedRuntimeServices(input: {
     adapterType: string;
     runId: string;
@@ -104,6 +135,17 @@ export declare function normalizeAdapterManagedRuntimeServices(input: {
     reports: AdapterRuntimeServiceReport[];
     now?: Date;
 }): RuntimeServiceRef[];
+export declare function listConfiguredRuntimeServiceEntries(config: Record<string, unknown>): Record<string, unknown>[];
+export declare function buildWorkspaceRuntimeDesiredStatePatch(input: {
+    config: Record<string, unknown>;
+    currentDesiredState: WorkspaceRuntimeDesiredState | null;
+    currentServiceStates: WorkspaceRuntimeServiceStateMap | null | undefined;
+    action: "start" | "stop" | "restart";
+    serviceIndex?: number | null;
+}): {
+    desiredState: WorkspaceRuntimeDesiredState;
+    serviceStates: WorkspaceRuntimeServiceStateMap | null;
+};
 export declare function ensureRuntimeServicesForRun(input: {
     db?: Db;
     runId: string;
@@ -125,16 +167,20 @@ export declare function startRuntimeServicesForWorkspaceControl(input: {
     config: Record<string, unknown>;
     adapterEnv: Record<string, string>;
     onLog?: (stream: "stdout" | "stderr", chunk: string) => Promise<void>;
+    serviceIndex?: number | null;
+    respectDesiredStates?: boolean;
 }): Promise<RuntimeServiceRef[]>;
 export declare function releaseRuntimeServicesForRun(runId: string): Promise<void>;
 export declare function stopRuntimeServicesForExecutionWorkspace(input: {
     db?: Db;
     executionWorkspaceId: string;
     workspaceCwd?: string | null;
+    runtimeServiceId?: string | null;
 }): Promise<void>;
 export declare function stopRuntimeServicesForProjectWorkspace(input: {
     db?: Db;
     projectWorkspaceId: string;
+    runtimeServiceId?: string | null;
 }): Promise<void>;
 export declare function listWorkspaceRuntimeServicesForProjectWorkspaces(db: Db, companyId: string, projectWorkspaceIds: string[]): Promise<Map<string, {
     id: string;
@@ -149,21 +195,21 @@ export declare function listWorkspaceRuntimeServicesForProjectWorkspaces(db: Db,
     scopeId: string | null;
     startedAt: Date;
     url: string | null;
+    issueId: string | null;
     projectId: string | null;
     projectWorkspaceId: string | null;
-    cwd: string | null;
-    providerRef: string | null;
     executionWorkspaceId: string | null;
-    healthStatus: string;
-    issueId: string | null;
     serviceName: string;
     lifecycle: string;
     reuseKey: string | null;
+    cwd: string | null;
     port: number | null;
+    providerRef: string | null;
     ownerAgentId: string | null;
     startedByRunId: string | null;
     stoppedAt: Date | null;
     stopPolicy: Record<string, unknown> | null;
+    healthStatus: string;
 }[]>>;
 export declare function reconcilePersistedRuntimeServicesOnStartup(db: Db): Promise<{
     reconciled: number;

@@ -9,13 +9,22 @@ export interface RunProcessResult {
     pid: number | null;
     startedAt: string | null;
 }
+export interface TerminalResultCleanupOptions {
+    hasTerminalResult: (output: {
+        stdout: string;
+        stderr: string;
+    }) => boolean;
+    graceMs?: number;
+}
 interface RunningProcess {
     child: ChildProcess;
     graceSec: number;
+    processGroupId: number | null;
 }
 export declare const runningProcesses: Map<string, RunningProcess>;
 export declare const MAX_CAPTURE_BYTES: number;
 export declare const MAX_EXCERPT_BYTES: number;
+export declare const DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE: string;
 export interface PaperclipSkillEntry {
     key: string;
     runtimeName: string;
@@ -47,6 +56,7 @@ export declare function asBoolean(value: unknown, fallback: boolean): boolean;
 export declare function asStringArray(value: unknown): string[];
 export declare function parseJson(value: string): Record<string, unknown> | null;
 export declare function appendWithCap(prev: string, chunk: string, cap?: number): string;
+export declare function appendWithByteCap(prev: string, chunk: string, cap?: number): string;
 export declare function resolvePathValue(obj: Record<string, unknown>, dottedPath: string): string;
 export declare function renderTemplate(template: string, data: Record<string, unknown>): string;
 export declare function joinPromptSections(sections: Array<string | null | undefined>, separator?: string): string;
@@ -57,6 +67,20 @@ type PaperclipWakeIssue = {
     status: string | null;
     priority: string | null;
 };
+type PaperclipWakeExecutionPrincipal = {
+    type: "agent" | "user" | null;
+    agentId: string | null;
+    userId: string | null;
+};
+type PaperclipWakeExecutionStage = {
+    wakeRole: "reviewer" | "approver" | "executor" | null;
+    stageId: string | null;
+    stageType: string | null;
+    currentParticipant: PaperclipWakeExecutionPrincipal | null;
+    returnAssignee: PaperclipWakeExecutionPrincipal | null;
+    lastDecisionOutcome: string | null;
+    allowedActions: string[];
+};
 type PaperclipWakeComment = {
     id: string | null;
     issueId: string | null;
@@ -66,9 +90,48 @@ type PaperclipWakeComment = {
     authorType: string | null;
     authorId: string | null;
 };
+type PaperclipWakeContinuationSummary = {
+    key: string | null;
+    title: string | null;
+    body: string;
+    bodyTruncated: boolean;
+    updatedAt: string | null;
+};
+type PaperclipWakeLivenessContinuation = {
+    attempt: number | null;
+    maxAttempts: number | null;
+    sourceRunId: string | null;
+    state: string | null;
+    reason: string | null;
+    instruction: string | null;
+};
+type PaperclipWakeChildIssueSummary = {
+    id: string | null;
+    identifier: string | null;
+    title: string | null;
+    status: string | null;
+    priority: string | null;
+    summary: string | null;
+};
+type PaperclipWakeBlockerSummary = {
+    id: string | null;
+    identifier: string | null;
+    title: string | null;
+    status: string | null;
+    priority: string | null;
+};
 type PaperclipWakePayload = {
     reason: string | null;
     issue: PaperclipWakeIssue | null;
+    checkedOutByHarness: boolean;
+    dependencyBlockedInteraction: boolean;
+    unresolvedBlockerIssueIds: string[];
+    unresolvedBlockerSummaries: PaperclipWakeBlockerSummary[];
+    executionStage: PaperclipWakeExecutionStage | null;
+    continuationSummary: PaperclipWakeContinuationSummary | null;
+    livenessContinuation: PaperclipWakeLivenessContinuation | null;
+    childIssueSummaries: PaperclipWakeChildIssueSummary[];
+    childIssueSummaryTruncated: boolean;
     commentIds: string[];
     latestCommentId: string | null;
     comments: PaperclipWakeComment[];
@@ -90,6 +153,16 @@ export declare function buildInvocationEnvForLogs(env: Record<string, string>, o
     resolvedCommand?: string | null;
     resolvedCommandEnvKey?: string;
 }): Record<string, string>;
+export declare function stripPaperclipApiUrlTrailingSlashes(value: string): string;
+/**
+ * Base URL for agent callbacks to Paperclip (`PAPERCLIP_API_URL`).
+ * Prefer an explicit env value; otherwise use public deploy URL (Railway, etc.);
+ * finally fall back to loopback + listen port.
+ */
+export declare function resolvePaperclipApiUrlFromProcessEnv(opts: {
+    listenPort: number;
+    runtimeApiHost: string;
+}): string;
 export declare function buildPaperclipEnv(agent: {
     id: string;
     companyId: string;
@@ -128,8 +201,10 @@ export declare function runChildProcess(runId: string, command: string, args: st
     onLogError?: (err: unknown, runId: string, message: string) => void;
     onSpawn?: (meta: {
         pid: number;
+        processGroupId: number | null;
         startedAt: string;
     }) => Promise<void>;
+    terminalResultCleanup?: TerminalResultCleanupOptions;
     stdin?: string;
     runAsUser?: {
         uid: number;

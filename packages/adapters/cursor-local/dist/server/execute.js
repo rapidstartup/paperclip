@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE, joinPromptSections, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "../index.js";
 import { parseCursorJsonl, isCursorUnknownSessionError } from "./parse.js";
 import { normalizeCursorStreamLine } from "../shared/stream.js";
@@ -109,7 +109,7 @@ export async function ensureCursorSkillsInjected(onLog, options = {}) {
 }
 export async function execute(ctx) {
     const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
-    const promptTemplate = asString(config.promptTemplate, "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.");
+    const promptTemplate = asString(config.promptTemplate, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
     const command = asString(config.command, "agent");
     const model = asString(config.model, DEFAULT_CURSOR_LOCAL_MODEL).trim();
     const mode = normalizeMode(asString(config.mode, ""));

@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { inferOpenAiCompatibleBiller } from "@paperclipai/adapter-utils";
-import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
+import { asString, asNumber, asStringArray, parseObject, buildPaperclipEnv, joinPromptSections, buildInvocationEnvForLogs, ensureAbsoluteDirectory, ensureCommandResolvable, ensurePaperclipSkillSymlink, ensurePathInEnv, readPaperclipRuntimeSkillEntries, resolveCommandForLogs, resolvePaperclipDesiredSkillNames, removeMaintainerOnlySkillSymlinks, renderTemplate, renderPaperclipWakePrompt, stringifyPaperclipWakePayload, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE, runChildProcess, } from "@paperclipai/adapter-utils/server-utils";
 import { isPiUnknownSessionError, parsePiJsonl } from "./parse.js";
 import { ensurePiModelConfiguredAndAvailable } from "./models.js";
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -67,7 +67,7 @@ function buildSessionPath(agentId, timestamp) {
 }
 export async function execute(ctx) {
     const { runId, agent, runtime, config, context, onLog, onMeta, onSpawn, authToken } = ctx;
-    const promptTemplate = asString(config.promptTemplate, "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.");
+    const promptTemplate = asString(config.promptTemplate, DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE);
     const command = asString(config.command, "pi");
     const model = asString(config.model, "").trim();
     const thinking = asString(config.thinking, "").trim();
@@ -214,7 +214,7 @@ export async function execute(ctx) {
                 `${instructionsContents}\n\n` +
                     `The above agent instructions were loaded from ${resolvedInstructionsFilePath}. ` +
                     `Resolve any relative file references from ${instructionsFileDir}.\n\n` +
-                    `You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.`;
+                    DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE;
         }
         catch (err) {
             instructionsReadFailed = true;

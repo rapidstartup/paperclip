@@ -7,6 +7,20 @@ import { sanitizeRecord } from "../redaction.js";
 import { logger } from "../middleware/logger.js";
 import { instanceSettingsService } from "./instance-settings.js";
 const PLUGIN_EVENT_SET = new Set(PLUGIN_EVENT_TYPES);
+const ACTIVITY_ACTION_TO_PLUGIN_EVENT = {
+    issue_comment_added: "issue.comment.created",
+    issue_comment_created: "issue.comment.created",
+    issue_document_created: "issue.document.created",
+    issue_document_updated: "issue.document.updated",
+    issue_document_deleted: "issue.document.deleted",
+    issue_blockers_updated: "issue.relations.updated",
+    approval_approved: "approval.decided",
+    approval_rejected: "approval.decided",
+    approval_revision_requested: "approval.decided",
+    budget_soft_threshold_crossed: "budget.incident.opened",
+    budget_hard_threshold_crossed: "budget.incident.opened",
+    budget_incident_resolved: "budget.incident.resolved",
+};
 let _pluginEventBus = null;
 /** Wire the plugin event bus so domain events are forwarded to plugins. */
 export function setPluginEventBus(bus) {
@@ -14,6 +28,20 @@ export function setPluginEventBus(bus) {
         logger.warn("setPluginEventBus called more than once, replacing existing bus");
     }
     _pluginEventBus = bus;
+}
+function eventTypeForActivityAction(action) {
+    if (PLUGIN_EVENT_SET.has(action))
+        return action;
+    return ACTIVITY_ACTION_TO_PLUGIN_EVENT[action.replaceAll(".", "_")] ?? null;
+}
+export function publishPluginDomainEvent(event) {
+    if (!_pluginEventBus)
+        return;
+    void _pluginEventBus.emit(event).then(({ errors }) => {
+        for (const { pluginId, error } of errors) {
+            logger.warn({ pluginId, eventType: event.eventType, err: error }, "plugin event handler failed");
+        }
+    }).catch(() => { });
 }
 export async function logActivity(db, input) {
     const currentUserRedactionOptions = {
@@ -48,10 +76,11 @@ export async function logActivity(db, input) {
             details: redactedDetails,
         },
     });
-    if (_pluginEventBus && PLUGIN_EVENT_SET.has(input.action)) {
+    const pluginEventType = eventTypeForActivityAction(input.action);
+    if (pluginEventType) {
         const event = {
             eventId: randomUUID(),
-            eventType: input.action,
+            eventType: pluginEventType,
             occurredAt: new Date().toISOString(),
             actorId: input.actorId,
             actorType: input.actorType,
@@ -64,11 +93,7 @@ export async function logActivity(db, input) {
                 runId: input.runId ?? null,
             },
         };
-        void _pluginEventBus.emit(event).then(({ errors }) => {
-            for (const { pluginId, error } of errors) {
-                logger.warn({ pluginId, eventType: event.eventType, err: error }, "plugin event handler failed");
-            }
-        }).catch(() => { });
+        publishPluginDomainEvent(event);
     }
 }
 //# sourceMappingURL=activity-log.js.map

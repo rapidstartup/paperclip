@@ -24,6 +24,7 @@ export const defaultCreateValues: CreateConfigValues = {
   headed: false,
   dangerouslySkipPermissions: false,
   search: false,
+  fastMode: false,
   dangerouslyBypassSandbox: false,
   command: "",
   args: "",

@@ -4,6 +4,8 @@ export declare function documentService(db: Db): {
     getIssueDocumentPayload: (issue: {
         id: string;
         description: string | null;
+    }, options?: {
+        includeSystem?: boolean;
     }) => Promise<{
         planDocument: {
             latestRevisionId: string | null;
@@ -45,7 +47,9 @@ export declare function documentService(db: Db): {
             source: "issue_description";
         } | null;
     }>;
-    listIssueDocuments: (issueId: string) => Promise<{
+    listIssueDocuments: (issueId: string, options?: {
+        includeSystem?: boolean;
+    }) => Promise<{
         latestRevisionId: string | null;
         latestRevisionNumber: number;
         createdByAgentId: string | null;

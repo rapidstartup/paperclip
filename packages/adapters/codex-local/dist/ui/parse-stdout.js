@@ -109,6 +109,41 @@ function parseFileChangeItem(item, ts) {
     const more = entries.length > 6 ? ` (+${entries.length - 6} more)` : "";
     return [{ kind: "system", ts, text: `file changes: ${preview}${more}` }];
 }
+function parseToolUseItem(item, ts, phase) {
+    const name = asString(item.name, "unknown");
+    const toolUseId = asString(item.id, name || "tool_use");
+    if (phase === "started") {
+        return [{
+                kind: "tool_call",
+                ts,
+                name,
+                toolUseId,
+                input: item.input ?? {},
+            }];
+    }
+    const status = asString(item.status);
+    const isError = item.is_error === true ||
+        status === "failed" ||
+        status === "errored" ||
+        status === "error" ||
+        status === "cancelled";
+    const rawContent = item.content ??
+        item.output ??
+        item.result ??
+        item.error ??
+        item.message;
+    const content = asString(rawContent) ||
+        errorText(rawContent) ||
+        stringifyUnknown(rawContent) ||
+        `${name} ${isError ? "failed" : "completed"}`;
+    return [{
+            kind: "tool_result",
+            ts,
+            toolUseId,
+            content,
+            isError,
+        }];
+}
 function parseCodexItem(item, ts, phase) {
     const itemType = asString(item.type);
     if (itemType === "agent_message") {
@@ -130,13 +165,7 @@ function parseCodexItem(item, ts, phase) {
         return parseFileChangeItem(item, ts);
     }
     if (itemType === "tool_use") {
-        return [{
-                kind: "tool_call",
-                ts,
-                name: asString(item.name, "unknown"),
-                toolUseId: asString(item.id),
-                input: item.input ?? {},
-            }];
+        return parseToolUseItem(item, ts, phase);
     }
     if (itemType === "tool_result" && phase === "completed") {
         const toolUseId = asString(item.tool_use_id, asString(item.id));

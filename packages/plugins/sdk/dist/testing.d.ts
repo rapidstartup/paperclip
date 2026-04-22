@@ -56,6 +56,14 @@ export interface TestHarness {
         eventName: string;
         dimensions?: Record<string, string | number | boolean>;
     }>;
+    dbQueries: Array<{
+        sql: string;
+        params?: unknown[];
+    }>;
+    dbExecutes: Array<{
+        sql: string;
+        params?: unknown[];
+    }>;
 }
 /**
  * Create an in-memory host harness for plugin worker tests.

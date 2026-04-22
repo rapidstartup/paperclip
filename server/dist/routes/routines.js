@@ -27,7 +27,7 @@ export function routineRoutes(db) {
             return;
         if (req.actor.type !== "agent" || !req.actor.agentId)
             throw unauthorized();
-        if (assigneeAgentId && assigneeAgentId !== req.actor.agentId) {
+        if (assigneeAgentId !== req.actor.agentId) {
             throw forbidden("Agents can only manage routines assigned to themselves");
         }
     }
@@ -103,7 +103,9 @@ export function routineRoutes(db) {
         if (statusWillActivate) {
             await assertBoardCanAssignTasks(req, routine.companyId);
         }
-        if (req.actor.type === "agent" && req.body.assigneeAgentId && req.body.assigneeAgentId !== req.actor.agentId) {
+        if (req.actor.type === "agent" &&
+            req.body.assigneeAgentId !== undefined &&
+            req.body.assigneeAgentId !== req.actor.agentId) {
             throw forbidden("Agents can only assign routines to themselves");
         }
         const updated = await svc.update(routine.id, req.body, {

@@ -8,11 +8,9 @@ export const createApprovalSchema = z.object({
 });
 export const resolveApprovalSchema = z.object({
     decisionNote: z.string().optional().nullable(),
-    decidedByUserId: z.string().optional().default("board"),
 });
 export const requestApprovalRevisionSchema = z.object({
     decisionNote: z.string().optional().nullable(),
-    decidedByUserId: z.string().optional().default("board"),
 });
 export const resubmitApprovalSchema = z.object({
     payload: z.record(z.unknown()).optional(),

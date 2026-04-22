@@ -11,7 +11,7 @@ RUN apt-get update \
   && mkdir -p -m 755 /etc/apt/sources.list.d \
   && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" > /etc/apt/sources.list.d/github-cli.list \
   && apt-get update \
-  && apt-get install -y --no-install-recommends gh \
+  && apt-get install -y --no-install-recommends gh openssh-client jq \
   && rm -rf /var/lib/apt/lists/* \
   && corepack enable
 
@@ -79,6 +79,7 @@ ENV NODE_ENV=production \
   PAPERCLIP_DEPLOYMENT_EXPOSURE=private \
   OPENCODE_ALLOW_ALL_MODELS=true
 
+VOLUME ["/paperclip"]
 EXPOSE 3100
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]

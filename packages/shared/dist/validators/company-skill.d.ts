@@ -40,6 +40,7 @@ export declare const companySkillSchema: z.ZodObject<{
     createdAt: z.ZodDate;
     updatedAt: z.ZodDate;
 }, "strip", z.ZodTypeAny, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -47,7 +48,6 @@ export declare const companySkillSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -60,6 +60,7 @@ export declare const companySkillSchema: z.ZodObject<{
         path: string;
     }[];
 }, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -67,7 +68,6 @@ export declare const companySkillSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -113,6 +113,7 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     sourceLabel: z.ZodNullable<z.ZodString>;
     sourceBadge: z.ZodEnum<["paperclip", "github", "local", "url", "catalog", "skills_sh"]>;
 }, "strip", z.ZodTypeAny, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -120,7 +121,6 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -138,6 +138,7 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     sourceLabel: string | null;
     sourceBadge: "github" | "url" | "catalog" | "skills_sh" | "paperclip" | "local";
 }, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -145,7 +146,6 @@ export declare const companySkillListItemSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -240,6 +240,7 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     sourceLabel: z.ZodNullable<z.ZodString>;
     sourceBadge: z.ZodEnum<["paperclip", "github", "local", "url", "catalog", "skills_sh"]>;
 }, "strip", z.ZodTypeAny, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -247,7 +248,6 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -273,6 +273,7 @@ export declare const companySkillDetailSchema: z.ZodObject<{
         actualState: string | null;
     }[];
 }, {
+    description: string | null;
     markdown: string;
     id: string;
     companyId: string;
@@ -280,7 +281,6 @@ export declare const companySkillDetailSchema: z.ZodObject<{
     updatedAt: Date;
     name: string;
     metadata: Record<string, unknown> | null;
-    description: string | null;
     key: string;
     slug: string;
     sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -353,18 +353,18 @@ export declare const companySkillProjectScanSkippedSchema: z.ZodObject<{
     path: z.ZodNullable<z.ZodString>;
     reason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    projectId: string;
-    reason: string;
     path: string | null;
-    projectName: string;
+    projectId: string;
     workspaceId: string | null;
+    reason: string;
+    projectName: string;
     workspaceName: string | null;
 }, {
-    projectId: string;
-    reason: string;
     path: string | null;
-    projectName: string;
+    projectId: string;
     workspaceId: string | null;
+    reason: string;
+    projectName: string;
     workspaceName: string | null;
 }>;
 export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
@@ -380,25 +380,25 @@ export declare const companySkillProjectScanConflictSchema: z.ZodObject<{
     existingSourceLocator: z.ZodNullable<z.ZodString>;
     reason: z.ZodString;
 }, "strip", z.ZodTypeAny, {
-    projectId: string;
-    reason: string;
     path: string;
+    projectId: string;
+    workspaceId: string;
     key: string;
+    reason: string;
     slug: string;
     projectName: string;
-    workspaceId: string;
     workspaceName: string;
     existingSkillId: string;
     existingSkillKey: string;
     existingSourceLocator: string | null;
 }, {
-    projectId: string;
-    reason: string;
     path: string;
+    projectId: string;
+    workspaceId: string;
     key: string;
+    reason: string;
     slug: string;
     projectName: string;
-    workspaceId: string;
     workspaceName: string;
     existingSkillId: string;
     existingSkillKey: string;
@@ -435,6 +435,7 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         createdAt: z.ZodDate;
         updatedAt: z.ZodDate;
     }, "strip", z.ZodTypeAny, {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -442,7 +443,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -455,6 +455,7 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: string;
         }[];
     }, {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -462,7 +463,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -502,6 +502,7 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         createdAt: z.ZodDate;
         updatedAt: z.ZodDate;
     }, "strip", z.ZodTypeAny, {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -509,7 +510,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -522,6 +522,7 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: string;
         }[];
     }, {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -529,7 +530,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -550,18 +550,18 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         path: z.ZodNullable<z.ZodString>;
         reason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        projectId: string;
-        reason: string;
         path: string | null;
-        projectName: string;
+        projectId: string;
         workspaceId: string | null;
+        reason: string;
+        projectName: string;
         workspaceName: string | null;
     }, {
-        projectId: string;
-        reason: string;
         path: string | null;
-        projectName: string;
+        projectId: string;
         workspaceId: string | null;
+        reason: string;
+        projectName: string;
         workspaceName: string | null;
     }>, "many">;
     conflicts: z.ZodArray<z.ZodObject<{
@@ -577,25 +577,25 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         existingSourceLocator: z.ZodNullable<z.ZodString>;
         reason: z.ZodString;
     }, "strip", z.ZodTypeAny, {
-        projectId: string;
-        reason: string;
         path: string;
+        projectId: string;
+        workspaceId: string;
         key: string;
+        reason: string;
         slug: string;
         projectName: string;
-        workspaceId: string;
         workspaceName: string;
         existingSkillId: string;
         existingSkillKey: string;
         existingSourceLocator: string | null;
     }, {
-        projectId: string;
-        reason: string;
         path: string;
+        projectId: string;
+        workspaceId: string;
         key: string;
+        reason: string;
         slug: string;
         projectName: string;
-        workspaceId: string;
         workspaceName: string;
         existingSkillId: string;
         existingSkillKey: string;
@@ -604,14 +604,15 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
     skipped: {
-        projectId: string;
-        reason: string;
         path: string | null;
-        projectName: string;
+        projectId: string;
         workspaceId: string | null;
+        reason: string;
+        projectName: string;
         workspaceName: string | null;
     }[];
     updated: {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -619,7 +620,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -632,10 +632,12 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: string;
         }[];
     }[];
+    warnings: string[];
     scannedProjects: number;
     scannedWorkspaces: number;
     discovered: number;
     imported: {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -643,7 +645,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -657,29 +658,29 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         }[];
     }[];
     conflicts: {
-        projectId: string;
-        reason: string;
         path: string;
+        projectId: string;
+        workspaceId: string;
         key: string;
+        reason: string;
         slug: string;
         projectName: string;
-        workspaceId: string;
         workspaceName: string;
         existingSkillId: string;
         existingSkillKey: string;
         existingSourceLocator: string | null;
     }[];
-    warnings: string[];
 }, {
     skipped: {
-        projectId: string;
-        reason: string;
         path: string | null;
-        projectName: string;
+        projectId: string;
         workspaceId: string | null;
+        reason: string;
+        projectName: string;
         workspaceName: string | null;
     }[];
     updated: {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -687,7 +688,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -700,10 +700,12 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
             path: string;
         }[] | undefined;
     }[];
+    warnings: string[];
     scannedProjects: number;
     scannedWorkspaces: number;
     discovered: number;
     imported: {
+        description: string | null;
         markdown: string;
         id: string;
         companyId: string;
@@ -711,7 +713,6 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         updatedAt: Date;
         name: string;
         metadata: Record<string, unknown> | null;
-        description: string | null;
         key: string;
         slug: string;
         sourceType: "local_path" | "github" | "url" | "catalog" | "skills_sh";
@@ -725,19 +726,18 @@ export declare const companySkillProjectScanResultSchema: z.ZodObject<{
         }[] | undefined;
     }[];
     conflicts: {
-        projectId: string;
-        reason: string;
         path: string;
+        projectId: string;
+        workspaceId: string;
         key: string;
+        reason: string;
         slug: string;
         projectName: string;
-        workspaceId: string;
         workspaceName: string;
         existingSkillId: string;
         existingSkillKey: string;
         existingSourceLocator: string | null;
     }[];
-    warnings: string[];
 }>;
 export declare const companySkillCreateSchema: z.ZodObject<{
     name: z.ZodString;
@@ -746,13 +746,13 @@ export declare const companySkillCreateSchema: z.ZodObject<{
     markdown: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     name: string;
-    markdown?: string | null | undefined;
     description?: string | null | undefined;
+    markdown?: string | null | undefined;
     slug?: string | null | undefined;
 }, {
     name: string;
-    markdown?: string | null | undefined;
     description?: string | null | undefined;
+    markdown?: string | null | undefined;
     slug?: string | null | undefined;
 }>;
 export declare const companySkillFileDetailSchema: z.ZodObject<{

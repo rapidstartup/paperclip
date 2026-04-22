@@ -9,8 +9,8 @@ export declare function getDefaultCompanyGoal(db: GoalReader, companyId: string)
     updatedAt: Date;
     companyId: string;
     title: string;
-    parentId: string | null;
     ownerAgentId: string | null;
+    parentId: string | null;
     level: string;
 }>;
 export declare function goalService(db: Db): {
@@ -193,8 +193,8 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        parentId: string | null;
         ownerAgentId: string | null;
+        parentId: string | null;
         level: string;
     }[], {
         id: import("drizzle-orm/pg-core").PgColumn<{
@@ -376,8 +376,8 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        parentId: string | null;
         ownerAgentId: string | null;
+        parentId: string | null;
         level: string;
     }>;
     getDefaultCompanyGoal: (companyId: string) => Promise<{
@@ -388,8 +388,8 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        parentId: string | null;
         ownerAgentId: string | null;
+        parentId: string | null;
         level: string;
     }>;
     create: (companyId: string, data: Omit<typeof goals.$inferInsert, "companyId">) => Promise<{
@@ -400,8 +400,8 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        parentId: string | null;
         ownerAgentId: string | null;
+        parentId: string | null;
         level: string;
     }>;
     update: (id: string, data: Partial<typeof goals.$inferInsert>) => Promise<{
@@ -424,8 +424,8 @@ export declare function goalService(db: Db): {
         updatedAt: Date;
         companyId: string;
         title: string;
-        parentId: string | null;
         ownerAgentId: string | null;
+        parentId: string | null;
         level: string;
     }>;
 };

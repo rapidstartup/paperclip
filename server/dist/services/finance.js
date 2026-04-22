@@ -22,9 +22,9 @@ function rangeConditions(companyId, range) {
     return conditions;
 }
 export function financeService(db) {
-    const debitExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'debit' then ${financeEvents.amountCents} else 0 end), 0)::int`;
-    const creditExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'credit' then ${financeEvents.amountCents} else 0 end), 0)::int`;
-    const estimatedDebitExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'debit' and ${financeEvents.estimated} = true then ${financeEvents.amountCents} else 0 end), 0)::int`;
+    const debitExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'debit' then ${financeEvents.amountCents} else 0 end), 0)::double precision`;
+    const creditExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'credit' then ${financeEvents.amountCents} else 0 end), 0)::double precision`;
+    const estimatedDebitExpr = sql `coalesce(sum(case when ${financeEvents.direction} = 'debit' and ${financeEvents.estimated} = true then ${financeEvents.amountCents} else 0 end), 0)::double precision`;
     return {
         createEvent: async (companyId, data) => {
             if (data.agentId)
@@ -82,12 +82,12 @@ export function financeService(db) {
                 estimatedDebitCents: estimatedDebitExpr,
                 eventCount: sql `count(*)::int`,
                 kindCount: sql `count(distinct ${financeEvents.eventKind})::int`,
-                netCents: sql `(${debitExpr} - ${creditExpr})::int`,
+                netCents: sql `(${debitExpr} - ${creditExpr})::double precision`,
             })
                 .from(financeEvents)
                 .where(and(...conditions))
                 .groupBy(financeEvents.biller)
-                .orderBy(desc(sql `(${debitExpr} - ${creditExpr})::int`), financeEvents.biller);
+                .orderBy(desc(sql `(${debitExpr} - ${creditExpr})::double precision`), financeEvents.biller);
         },
         byKind: async (companyId, range) => {
             const conditions = rangeConditions(companyId, range);
@@ -99,12 +99,12 @@ export function financeService(db) {
                 estimatedDebitCents: estimatedDebitExpr,
                 eventCount: sql `count(*)::int`,
                 billerCount: sql `count(distinct ${financeEvents.biller})::int`,
-                netCents: sql `(${debitExpr} - ${creditExpr})::int`,
+                netCents: sql `(${debitExpr} - ${creditExpr})::double precision`,
             })
                 .from(financeEvents)
                 .where(and(...conditions))
                 .groupBy(financeEvents.eventKind)
-                .orderBy(desc(sql `(${debitExpr} - ${creditExpr})::int`), financeEvents.eventKind);
+                .orderBy(desc(sql `(${debitExpr} - ${creditExpr})::double precision`), financeEvents.eventKind);
         },
         list: async (companyId, range, limit = 100) => {
             const conditions = rangeConditions(companyId, range);

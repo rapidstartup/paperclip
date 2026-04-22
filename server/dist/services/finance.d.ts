@@ -12,10 +12,10 @@ export declare function financeService(db: Db): {
         companyId: string;
         provider: string | null;
         agentId: string | null;
+        issueId: string | null;
         projectId: string | null;
         goalId: string | null;
         billingCode: string | null;
-        issueId: string | null;
         heartbeatRunId: string | null;
         biller: string;
         model: string | null;
@@ -67,10 +67,10 @@ export declare function financeService(db: Db): {
         companyId: string;
         provider: string | null;
         agentId: string | null;
+        issueId: string | null;
         projectId: string | null;
         goalId: string | null;
         billingCode: string | null;
-        issueId: string | null;
         heartbeatRunId: string | null;
         biller: string;
         model: string | null;

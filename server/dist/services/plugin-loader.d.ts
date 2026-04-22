@@ -65,6 +65,8 @@ export interface PluginLoaderOptions {
      * Defaults to ~/.paperclip/plugins/
      */
     localPluginDir?: string;
+    /** Optional direct Postgres connection used for plugin DDL migrations. */
+    migrationDb?: Db;
     /**
      * Whether to scan the local filesystem directory for plugins.
      * Defaults to true.

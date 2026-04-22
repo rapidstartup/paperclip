@@ -1,6 +1,9 @@
 import type { Db } from "@paperclipai/db";
 import { issues, labels } from "@paperclipai/db";
 import type { IssueRelationIssueSummary } from "@paperclipai/shared";
+export declare const ISSUE_LIST_DEFAULT_LIMIT = 500;
+export declare const ISSUE_LIST_MAX_LIMIT = 1000;
+export declare const MAX_CHILD_ISSUES_CREATED_BY_HELPER = 25;
 export interface IssueFilters {
     status?: string;
     assigneeAgentId?: string;
@@ -10,12 +13,14 @@ export interface IssueFilters {
     inboxArchivedByUserId?: string;
     unreadForUserId?: string;
     projectId?: string;
+    workspaceId?: string;
     executionWorkspaceId?: string;
     parentId?: string;
     labelId?: string;
     originKind?: string;
     originId?: string;
     includeRoutineExecutions?: boolean;
+    excludeRoutineExecutions?: boolean;
     q?: string;
     limit?: number;
 }
@@ -49,10 +54,36 @@ type IssueCreateInput = Omit<typeof issues.$inferInsert, "companyId"> & {
     blockedByIssueIds?: string[];
     inheritExecutionWorkspaceFromIssueId?: string | null;
 };
+type IssueChildCreateInput = IssueCreateInput & {
+    acceptanceCriteria?: string[];
+    blockParentUntilDone?: boolean;
+    actorAgentId?: string | null;
+    actorUserId?: string | null;
+};
 type IssueRelationSummaryMap = {
     blockedBy: IssueRelationIssueSummary[];
     blocks: IssueRelationIssueSummary[];
 };
+export type IssueDependencyReadiness = {
+    issueId: string;
+    blockerIssueIds: string[];
+    unresolvedBlockerIssueIds: string[];
+    unresolvedBlockerCount: number;
+    allBlockersDone: boolean;
+    isDependencyReady: boolean;
+};
+export type ChildIssueCompletionSummary = {
+    id: string;
+    identifier: string | null;
+    title: string;
+    status: string;
+    priority: string;
+    assigneeAgentId: string | null;
+    assigneeUserId: string | null;
+    updatedAt: Date;
+    summary: string | null;
+};
+export declare function clampIssueListLimit(limit: number): number;
 /** Decodes HTML character references in a raw @mention capture so UI-encoded bodies match agent names. */
 export declare function normalizeAgentMentionToken(raw: string): string;
 export declare function deriveIssueUserContext(issue: IssueUserContextInput, userId: string, stats: {
@@ -83,8 +114,8 @@ export declare function issueService(db: Db): {
         updatedAt: Date;
         companyId: string;
         userId: string;
-        archivedAt: Date;
         issueId: string;
+        archivedAt: Date;
     }>;
     unarchiveInbox: (companyId: string, issueId: string, userId: string) => Promise<{
         id: string;
@@ -92,12 +123,14 @@ export declare function issueService(db: Db): {
         updatedAt: Date;
         companyId: string;
         userId: string;
-        archivedAt: Date;
         issueId: string;
+        archivedAt: Date;
     }>;
     getById: (raw: string) => Promise<IssueWithLabels | null>;
     getByIdentifier: (identifier: string) => Promise<IssueWithLabels | null>;
     getRelationSummaries: (issueId: string) => Promise<IssueRelationSummaryMap>;
+    getDependencyReadiness: (issueId: string, dbOrTx?: any) => Promise<IssueDependencyReadiness>;
+    listDependencyReadiness: (companyId: string, issueIds: string[], dbOrTx?: any) => Promise<Map<string, IssueDependencyReadiness>>;
     listWakeableBlockedDependents: (blockerIssueId: string) => Promise<{
         id: string;
         assigneeAgentId: string;
@@ -107,7 +140,13 @@ export declare function issueService(db: Db): {
         id: string;
         assigneeAgentId: string;
         childIssueIds: string[];
+        childIssueSummaries: ChildIssueCompletionSummary[];
+        childIssueSummaryTruncated: boolean;
     } | null>;
+    createChild: (parentIssueId: string, data: IssueChildCreateInput) => Promise<{
+        issue: IssueWithLabels;
+        parentBlockerAdded: boolean;
+    }>;
     create: (companyId: string, data: IssueCreateInput) => Promise<IssueWithLabels>;
     update: (id: string, data: Partial<typeof issues.$inferInsert> & {
         labelIds?: string[];
@@ -140,6 +179,7 @@ export declare function issueService(db: Db): {
         originKind: string;
         originId: string | null;
         originRunId: string | null;
+        originFingerprint: string;
         requestDepth: number;
         billingCode: string | null;
         assigneeAdapterOverrides: Record<string, unknown> | null;
@@ -417,9 +457,9 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
+        issueId: string;
         body: string;
         createdByRunId: string | null;
-        issueId: string;
         authorAgentId: string | null;
         authorUserId: string | null;
     }[]>;
@@ -433,9 +473,20 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
+        issueId: string;
         body: string;
         createdByRunId: string | null;
+        authorAgentId: string | null;
+        authorUserId: string | null;
+    } | null>;
+    removeComment: (commentId: string) => Promise<{
+        id: string;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
         issueId: string;
+        body: string;
+        createdByRunId: string | null;
         authorAgentId: string | null;
         authorUserId: string | null;
     } | null>;
@@ -448,9 +499,9 @@ export declare function issueService(db: Db): {
         createdAt: Date;
         updatedAt: Date;
         companyId: string;
+        issueId: string;
         body: string;
         createdByRunId: string | null;
-        issueId: string;
         authorAgentId: string | null;
         authorUserId: string | null;
     }>;
@@ -534,7 +585,9 @@ export declare function issueService(db: Db): {
         updatedAt: Date;
     } | null>;
     findMentionedAgents: (companyId: string, body: string) => Promise<string[]>;
-    findMentionedProjectIds: (issueId: string) => Promise<string[]>;
+    findMentionedProjectIds: (issueId: string, opts?: {
+        includeCommentBodies?: boolean;
+    }) => Promise<string[]>;
     getAncestors: (issueId: string) => Promise<{
         project: {
             id: string;

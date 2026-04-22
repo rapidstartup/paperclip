@@ -21,10 +21,33 @@ import { agentConfigurationDoc as hermesAgentConfigurationDoc, models as hermesM
 import { execute as agentBrowserExecute, testEnvironment as agentBrowserTestEnvironment, sessionCodec as agentBrowserSessionCodec, } from "@paperclipai/adapter-agent-browser/server";
 import { agentConfigurationDoc as agentBrowserAgentConfigurationDoc, models as agentBrowserModels, } from "@paperclipai/adapter-agent-browser";
 import { BUILTIN_ADAPTER_TYPES } from "./builtin-adapter-types.js";
+import { HERMES_PAPERCLIP_DEFAULT_PROMPT_TEMPLATE, shouldReplaceHermesPromptForApiAuth, } from "./hermes-paperclip-prompt.js";
 import { buildExternalAdapters } from "./plugin-loader.js";
 import { getDisabledAdapterTypes } from "../services/adapter-plugin-store.js";
 import { processAdapter } from "./process/index.js";
 import { httpAdapter } from "./http/index.js";
+function normalizeHermesConfig(ctx) {
+    const config = ctx && typeof ctx === "object" && "config" in ctx && ctx.config && typeof ctx.config === "object"
+        ? ctx.config
+        : null;
+    const agent = ctx && typeof ctx === "object" && "agent" in ctx && ctx.agent && typeof ctx.agent === "object"
+        ? ctx.agent
+        : null;
+    const agentAdapterConfig = agent?.adapterConfig && typeof agent.adapterConfig === "object"
+        ? agent.adapterConfig
+        : null;
+    const configCommand = typeof config?.command === "string" && config.command.length > 0 ? config.command : undefined;
+    const agentCommand = typeof agentAdapterConfig?.command === "string" && agentAdapterConfig.command.length > 0
+        ? agentAdapterConfig.command
+        : undefined;
+    if (config && !config.hermesCommand && configCommand) {
+        config.hermesCommand = configCommand;
+    }
+    if (agentAdapterConfig && !agentAdapterConfig.hermesCommand && agentCommand) {
+        agentAdapterConfig.hermesCommand = agentCommand;
+    }
+    return ctx;
+}
 function asHermesEnvStringMap(value) {
     if (typeof value !== "object" || value === null || Array.isArray(value))
         return {};
@@ -48,6 +71,7 @@ function asHermesEnvStringMap(value) {
  * those prompts (same idea as Codex bypass flags).
  */
 function hermesExecuteWithResolvedConfig(ctx) {
+    normalizeHermesConfig(ctx);
     const base = typeof ctx.agent.adapterConfig === "object" && ctx.agent.adapterConfig !== null
         && !Array.isArray(ctx.agent.adapterConfig)
         ? ctx.agent.adapterConfig
@@ -61,6 +85,9 @@ function hermesExecuteWithResolvedConfig(ctx) {
     merged.env = { ...paperclipEnv, ...adapterEnv };
     if (!hasExplicitApiKey && typeof ctx.authToken === "string" && ctx.authToken.trim().length > 0) {
         merged.env.PAPERCLIP_API_KEY = ctx.authToken;
+    }
+    if (shouldReplaceHermesPromptForApiAuth(merged.promptTemplate)) {
+        merged.promptTemplate = HERMES_PAPERCLIP_DEFAULT_PROMPT_TEMPLATE;
     }
     const rawExtra = merged.extraArgs;
     const extra = Array.isArray(rawExtra)
@@ -89,6 +116,9 @@ const claudeLocalAdapter = {
     models: claudeModels,
     listModels: listClaudeModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: false,
     agentConfigurationDoc: claudeAgentConfigurationDoc,
     getQuotaWindows: claudeGetQuotaWindows,
 };
@@ -103,6 +133,9 @@ const codexLocalAdapter = {
     models: codexModels,
     listModels: listCodexModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: false,
     agentConfigurationDoc: codexAgentConfigurationDoc,
     getQuotaWindows: codexGetQuotaWindows,
 };
@@ -117,6 +150,9 @@ const cursorLocalAdapter = {
     models: cursorModels,
     listModels: listCursorModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: true,
     agentConfigurationDoc: cursorAgentConfigurationDoc,
 };
 const geminiLocalAdapter = {
@@ -129,6 +165,9 @@ const geminiLocalAdapter = {
     sessionManagement: getAdapterSessionManagement("gemini_local") ?? undefined,
     models: geminiModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: true,
     agentConfigurationDoc: geminiAgentConfigurationDoc,
 };
 const openclawGatewayAdapter = {
@@ -137,6 +176,8 @@ const openclawGatewayAdapter = {
     testEnvironment: openclawGatewayTestEnvironment,
     models: openclawGatewayModels,
     supportsLocalAgentJwt: false,
+    supportsInstructionsBundle: false,
+    requiresMaterializedRuntimeSkills: false,
     agentConfigurationDoc: openclawGatewayAgentConfigurationDoc,
 };
 const openCodeLocalAdapter = {
@@ -150,6 +191,9 @@ const openCodeLocalAdapter = {
     sessionManagement: getAdapterSessionManagement("opencode_local") ?? undefined,
     listModels: listOpenCodeModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: true,
     agentConfigurationDoc: openCodeAgentConfigurationDoc,
     // opencode_local defaults to 7200s when no explicit timeoutSec is configured
     defaultTimeoutSec: 7200,
@@ -165,17 +209,22 @@ const piLocalAdapter = {
     models: [],
     listModels: listPiModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: true,
+    instructionsPathKey: "instructionsFilePath",
+    requiresMaterializedRuntimeSkills: true,
     agentConfigurationDoc: piAgentConfigurationDoc,
 };
 const hermesLocalAdapter = {
     type: "hermes_local",
     execute: hermesExecuteWithResolvedConfig,
-    testEnvironment: hermesTestEnvironment,
+    testEnvironment: (ctx) => hermesTestEnvironment(normalizeHermesConfig(ctx)),
     sessionCodec: hermesSessionCodec,
     listSkills: hermesListSkills,
     syncSkills: hermesSyncSkills,
     models: hermesModels,
     supportsLocalAgentJwt: true,
+    supportsInstructionsBundle: false,
+    requiresMaterializedRuntimeSkills: false,
     agentConfigurationDoc: hermesAgentConfigurationDoc,
     detectModel: () => detectModelFromHermes(),
 };

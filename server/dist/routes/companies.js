@@ -3,7 +3,7 @@ import { DEFAULT_FEEDBACK_DATA_SHARING_TERMS_VERSION, companyPortabilityExportSc
 import { badRequest, forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { accessService, agentService, budgetService, companyPortabilityService, companyService, feedbackService, logActivity, } from "../services/index.js";
-import { assertBoard, assertCompanyAccess, getActorInfo } from "./authz.js";
+import { assertBoard, assertCompanyAccess, assertInstanceAdmin, getActorInfo } from "./authz.js";
 export function companyRoutes(db, storage) {
     const router = Router();
     const svc = companyService(db);
@@ -23,6 +23,13 @@ export function companyRoutes(db, storage) {
             throw badRequest(`Invalid ${field} query value`);
         }
         return parsed;
+    }
+    function assertImportTargetAccess(req, target) {
+        if (target.mode === "new_company") {
+            assertInstanceAdmin(req);
+            return;
+        }
+        assertCompanyAccess(req, target.companyId);
     }
     async function assertCanUpdateBranding(req, companyId) {
         assertCompanyAccess(req, companyId);
@@ -122,23 +129,19 @@ export function companyRoutes(db, storage) {
     });
     router.post("/:companyId/export", validate(companyPortabilityExportSchema), async (req, res) => {
         const companyId = req.params.companyId;
-        assertCompanyAccess(req, companyId);
+        await assertCanManagePortability(req, companyId, "exports");
         const result = await portability.exportBundle(companyId, req.body);
         res.json(result);
     });
     router.post("/import/preview", validate(companyPortabilityPreviewSchema), async (req, res) => {
         assertBoard(req);
-        if (req.body.target.mode === "existing_company") {
-            assertCompanyAccess(req, req.body.target.companyId);
-        }
+        assertImportTargetAccess(req, req.body.target);
         const preview = await portability.previewImport(req.body);
         res.json(preview);
     });
     router.post("/import", validate(companyPortabilityImportSchema), async (req, res) => {
         assertBoard(req);
-        if (req.body.target.mode === "existing_company") {
-            assertCompanyAccess(req, req.body.target.companyId);
-        }
+        assertImportTargetAccess(req, req.body.target);
         const actor = getActorInfo(req);
         const result = await portability.importBundle(req.body, req.actor.type === "board" ? req.actor.userId : null);
         await logActivity(db, {

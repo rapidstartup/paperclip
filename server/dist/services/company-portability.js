@@ -2,9 +2,11 @@ import { createHash } from "node:crypto";
 import { execFile } from "node:child_process";
 import path from "node:path";
 import { promisify } from "node:util";
-import { ISSUE_PRIORITIES, ISSUE_STATUSES, PROJECT_STATUSES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_STATUSES, ROUTINE_TRIGGER_KINDS, ROUTINE_TRIGGER_SIGNING_MODES, deriveProjectUrlKey, envConfigSchema, normalizeAgentUrlKey, } from "@paperclipai/shared";
+import { AGENT_DEFAULT_MAX_CONCURRENT_RUNS, ISSUE_PRIORITIES, ISSUE_STATUSES, PROJECT_STATUSES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_STATUSES, ROUTINE_TRIGGER_KINDS, ROUTINE_TRIGGER_SIGNING_MODES, deriveProjectUrlKey, envConfigSchema, normalizeAgentUrlKey, } from "@paperclipai/shared";
 import { readPaperclipSkillSyncPreference, writePaperclipSkillSyncPreference, } from "@paperclipai/adapter-utils/server-utils";
-import { notFound, unprocessable } from "../errors.js";
+import { ensureOpenCodeModelConfiguredAndAvailable } from "@paperclipai/adapter-opencode-local/server";
+import { findServerAdapter } from "../adapters/index.js";
+import { forbidden, notFound, unprocessable } from "../errors.js";
 import { ghFetch, gitHubApiBase, resolveRawGitHubUrl } from "./github-fetch.js";
 import { accessService } from "./access.js";
 import { agentService } from "./agents.js";
@@ -18,6 +20,7 @@ import { validateCron } from "./cron.js";
 import { issueService } from "./issues.js";
 import { projectService } from "./projects.js";
 import { routineService } from "./routines.js";
+import { secretService } from "./secrets.js";
 /** Build OrgNode tree from manifest agent list (slug + reportsToSlug). */
 function buildOrgTreeFromManifest(agents) {
     const ROLE_LABELS = {
@@ -70,6 +73,7 @@ const DEFAULT_INCLUDE = {
     skills: false,
 };
 const DEFAULT_COLLISION_STRATEGY = "rename";
+const IMPORT_FORBIDDEN_ADAPTER_TYPES = new Set(["process", "http"]);
 const execFileAsync = promisify(execFile);
 let bundledSkillsCommitPromise = null;
 function resolveImportMode(options) {
@@ -395,7 +399,7 @@ const RUNTIME_DEFAULT_RULES = [
     { path: ["heartbeat", "wakeOnAssignment"], value: true },
     { path: ["heartbeat", "wakeOnAutomation"], value: true },
     { path: ["heartbeat", "wakeOnDemand"], value: true },
-    { path: ["heartbeat", "maxConcurrentRuns"], value: 3 },
+    { path: ["heartbeat", "maxConcurrentRuns"], value: AGENT_DEFAULT_MAX_CONCURRENT_RUNS },
 ];
 const ADAPTER_DEFAULT_RULES_BY_TYPE = {
     codex_local: [
@@ -547,10 +551,21 @@ function clonePortableRecord(value) {
         return null;
     return structuredClone(value);
 }
+function parseFiniteNumberLike(value) {
+    if (typeof value === "number" && Number.isFinite(value))
+        return value;
+    if (typeof value !== "string")
+        return null;
+    const parsed = Number(value.trim());
+    return Number.isFinite(parsed) ? parsed : null;
+}
 function disableImportedTimerHeartbeat(runtimeConfig) {
     const next = clonePortableRecord(runtimeConfig) ?? {};
     const heartbeat = isPlainRecord(next.heartbeat) ? { ...next.heartbeat } : {};
     heartbeat.enabled = false;
+    if (parseFiniteNumberLike(heartbeat.maxConcurrentRuns) == null) {
+        heartbeat.maxConcurrentRuns = AGENT_DEFAULT_MAX_CONCURRENT_RUNS;
+    }
     next.heartbeat = heartbeat;
     return next;
 }
@@ -2366,6 +2381,70 @@ export function companyPortabilityService(db, storage) {
     const projects = projectService(db);
     const issues = issueService(db);
     const companySkills = companySkillService(db);
+    const secrets = secretService(db);
+    const strictSecretsMode = process.env.PAPERCLIP_SECRETS_STRICT_MODE === "true";
+    function assertKnownImportAdapterType(type) {
+        const adapterType = typeof type === "string" ? type.trim() : "";
+        if (!adapterType) {
+            throw unprocessable("Adapter type is required");
+        }
+        if (!findServerAdapter(adapterType)) {
+            throw unprocessable(`Unknown adapter type: ${adapterType}`);
+        }
+        return adapterType;
+    }
+    async function assertImportAdapterConfigConstraints(companyId, adapterType, adapterConfig) {
+        if (adapterType !== "opencode_local")
+            return;
+        const { config: runtimeConfig } = await secrets.resolveAdapterConfigForRuntime(companyId, adapterConfig);
+        const runtimeEnv = isPlainRecord(runtimeConfig.env) ? runtimeConfig.env : {};
+        try {
+            await ensureOpenCodeModelConfiguredAndAvailable({
+                model: runtimeConfig.model,
+                command: runtimeConfig.command,
+                cwd: runtimeConfig.cwd,
+                env: runtimeEnv,
+            });
+        }
+        catch (err) {
+            const reason = err instanceof Error ? err.message : String(err);
+            throw unprocessable(`Invalid opencode_local adapterConfig: ${reason}`);
+        }
+    }
+    async function prepareImportedAgentAdapter(companyId, adapterType, adapterConfig, desiredSkills, mode) {
+        const effectiveAdapterType = assertKnownImportAdapterType(adapterType);
+        if (mode === "agent_safe" && IMPORT_FORBIDDEN_ADAPTER_TYPES.has(effectiveAdapterType)) {
+            throw forbidden(`Adapter type "${effectiveAdapterType}" is not allowed in safe imports`);
+        }
+        const nextAdapterConfig = writePaperclipSkillSyncPreference({ ...adapterConfig }, desiredSkills);
+        delete nextAdapterConfig.promptTemplate;
+        delete nextAdapterConfig.bootstrapPromptTemplate;
+        delete nextAdapterConfig.instructionsFilePath;
+        delete nextAdapterConfig.instructionsBundleMode;
+        delete nextAdapterConfig.instructionsRootPath;
+        delete nextAdapterConfig.instructionsEntryFile;
+        const normalizedAdapterConfig = await secrets.normalizeAdapterConfigForPersistence(companyId, nextAdapterConfig, { strictMode: strictSecretsMode });
+        await assertImportAdapterConfigConstraints(companyId, effectiveAdapterType, normalizedAdapterConfig);
+        return {
+            adapterType: effectiveAdapterType,
+            adapterConfig: normalizedAdapterConfig,
+        };
+    }
+    function resolveImportedAssigneeAgentId(assigneeSlug, importedSlugToAgentId, existingSlugToAgentId, agentStatusById, warnings, subjectLabel) {
+        if (!assigneeSlug)
+            return null;
+        const assigneeAgentId = importedSlugToAgentId.get(assigneeSlug)
+            ?? existingSlugToAgentId.get(assigneeSlug)
+            ?? null;
+        if (!assigneeAgentId)
+            return null;
+        const assigneeStatus = agentStatusById.get(assigneeAgentId) ?? null;
+        if (assigneeStatus === "pending_approval" || assigneeStatus === "terminated") {
+            warnings.push(`${subjectLabel} assignee ${assigneeSlug} is ${assigneeStatus}; imported work was left unassigned.`);
+            return null;
+        }
+        return assigneeAgentId;
+    }
     async function resolveSource(source) {
         if (source.type === "inline") {
             return buildManifestFromPackageFiles(normalizeFileMap(source.files, source.rootPath));
@@ -2860,9 +2939,9 @@ export function companyPortabilityService(db, storage) {
         }
         for (const routine of selectedRoutineRows) {
             const taskSlug = taskSlugByRoutineId.get(routine.id);
-            const projectSlug = projectSlugById.get(routine.projectId) ?? null;
+            const projectSlug = routine.projectId ? (projectSlugById.get(routine.projectId) ?? null) : null;
             const taskPath = `tasks/${taskSlug}/TASK.md`;
-            const assigneeSlug = idToSlug.get(routine.assigneeAgentId) ?? null;
+            const assigneeSlug = routine.assigneeAgentId ? (idToSlug.get(routine.assigneeAgentId) ?? null) : null;
             files[taskPath] = buildMarkdown({
                 name: routine.title,
                 project: projectSlug,
@@ -3465,9 +3544,11 @@ export function companyPortabilityService(db, storage) {
         const resultProjects = [];
         const importedSlugToAgentId = new Map();
         const existingSlugToAgentId = new Map();
+        const agentStatusById = new Map();
         const existingAgents = await agents.list(targetCompany.id);
         for (const existing of existingAgents) {
             existingSlugToAgentId.set(normalizeAgentUrlKey(existing.name) ?? existing.id, existing.id);
+            agentStatusById.set(existing.id, existing.status);
         }
         const importedSlugToProjectId = new Map();
         const importedProjectWorkspaceIdByProjectSlug = new Map();
@@ -3533,18 +3614,11 @@ export function companyPortabilityService(db, storage) {
                 }
                 // Apply adapter overrides from request if present
                 const adapterOverride = input.adapterOverrides?.[planAgent.slug];
-                const effectiveAdapterType = adapterOverride?.adapterType ?? manifestAgent.adapterType;
                 const baseAdapterConfig = adapterOverride?.adapterConfig
                     ? { ...adapterOverride.adapterConfig }
                     : { ...manifestAgent.adapterConfig };
                 const desiredSkills = (manifestAgent.skills ?? []).map((skillRef) => desiredSkillRefMap.get(skillRef) ?? skillRef);
-                const adapterConfigWithSkills = writePaperclipSkillSyncPreference(baseAdapterConfig, desiredSkills);
-                delete adapterConfigWithSkills.promptTemplate;
-                delete adapterConfigWithSkills.bootstrapPromptTemplate; // deprecated
-                delete adapterConfigWithSkills.instructionsFilePath;
-                delete adapterConfigWithSkills.instructionsBundleMode;
-                delete adapterConfigWithSkills.instructionsRootPath;
-                delete adapterConfigWithSkills.instructionsEntryFile;
+                const normalizedAdapter = await prepareImportedAgentAdapter(targetCompany.id, adapterOverride?.adapterType ?? manifestAgent.adapterType, baseAdapterConfig, desiredSkills, mode);
                 const patch = {
                     name: planAgent.plannedName,
                     role: manifestAgent.role,
@@ -3552,8 +3626,8 @@ export function companyPortabilityService(db, storage) {
                     icon: manifestAgent.icon,
                     capabilities: manifestAgent.capabilities,
                     reportsTo: null,
-                    adapterType: effectiveAdapterType,
-                    adapterConfig: adapterConfigWithSkills,
+                    adapterType: normalizedAdapter.adapterType,
+                    adapterConfig: normalizedAdapter.adapterConfig,
                     runtimeConfig: disableImportedTimerHeartbeat(manifestAgent.runtimeConfig),
                     budgetMonthlyCents: manifestAgent.budgetMonthlyCents,
                     permissions: manifestAgent.permissions,
@@ -3582,6 +3656,7 @@ export function companyPortabilityService(db, storage) {
                     catch (err) {
                         warnings.push(`Failed to materialize instructions bundle for ${manifestAgent.slug}: ${err instanceof Error ? err.message : String(err)}`);
                     }
+                    agentStatusById.set(updated.id, updated.status ?? agentStatusById.get(updated.id) ?? null);
                     importedSlugToAgentId.set(planAgent.slug, updated.id);
                     existingSlugToAgentId.set(normalizeAgentUrlKey(updated.name) ?? updated.id, updated.id);
                     resultAgents.push({
@@ -3593,7 +3668,11 @@ export function companyPortabilityService(db, storage) {
                     });
                     continue;
                 }
-                let created = await agents.create(targetCompany.id, patch);
+                const createdStatus = "idle";
+                let created = await agents.create(targetCompany.id, {
+                    ...patch,
+                    status: createdStatus,
+                });
                 await access.ensureMembership(targetCompany.id, "agent", created.id, "member", "active");
                 await access.setPrincipalPermission(targetCompany.id, "agent", created.id, "tasks:assign", true, actorUserId ?? null);
                 try {
@@ -3606,6 +3685,7 @@ export function companyPortabilityService(db, storage) {
                 catch (err) {
                     warnings.push(`Failed to materialize instructions bundle for ${manifestAgent.slug}: ${err instanceof Error ? err.message : String(err)}`);
                 }
+                agentStatusById.set(created.id, created.status ?? createdStatus);
                 importedSlugToAgentId.set(planAgent.slug, created.id);
                 existingSlugToAgentId.set(normalizeAgentUrlKey(created.name) ?? created.id, created.id);
                 resultAgents.push({
@@ -3742,11 +3822,7 @@ export function companyPortabilityService(db, storage) {
                 const markdownRaw = readPortableTextFile(plan.source.files, manifestIssue.path);
                 const parsed = markdownRaw ? parseFrontmatterMarkdown(markdownRaw) : null;
                 const description = parsed?.body || manifestIssue.description || null;
-                const assigneeAgentId = manifestIssue.assigneeAgentSlug
-                    ? importedSlugToAgentId.get(manifestIssue.assigneeAgentSlug)
-                        ?? existingSlugToAgentId.get(manifestIssue.assigneeAgentSlug)
-                        ?? null
-                    : null;
+                const assigneeAgentId = resolveImportedAssigneeAgentId(manifestIssue.assigneeAgentSlug, importedSlugToAgentId, existingSlugToAgentId, agentStatusById, warnings, `Task ${manifestIssue.slug}`);
                 const projectId = manifestIssue.projectSlug
                     ? importedSlugToProjectId.get(manifestIssue.projectSlug)
                         ?? existingProjectSlugToId.get(manifestIssue.projectSlug)
@@ -3759,8 +3835,8 @@ export function companyPortabilityService(db, storage) {
                     warnings.push(`Task ${manifestIssue.slug} references workspace key ${manifestIssue.projectWorkspaceKey}, but that workspace was not imported.`);
                 }
                 if (manifestIssue.recurring) {
-                    if (!projectId || !assigneeAgentId) {
-                        throw unprocessable(`Recurring task ${manifestIssue.slug} is missing the project or assignee required to create a routine.`);
+                    if (!projectId) {
+                        throw unprocessable(`Recurring task ${manifestIssue.slug} is missing the project required to create a routine.`);
                     }
                     const resolvedRoutine = resolvePortableRoutineDefinition(manifestIssue, parsed?.frontmatter.schedule);
                     if (resolvedRoutine.errors.length > 0) {
@@ -3837,22 +3913,27 @@ export function companyPortabilityService(db, storage) {
                     }
                     continue;
                 }
+                let issueStatus = manifestIssue.status && ISSUE_STATUSES.includes(manifestIssue.status)
+                    ? manifestIssue.status
+                    : "backlog";
+                if (!assigneeAgentId && issueStatus === "in_progress") {
+                    warnings.push(`Task ${manifestIssue.slug} was downgraded to todo because its assignee could not be imported as assignable work.`);
+                    issueStatus = "todo";
+                }
                 await issues.create(targetCompany.id, {
                     projectId,
                     projectWorkspaceId,
                     title: manifestIssue.title,
                     description,
                     assigneeAgentId,
-                    status: manifestIssue.status && ISSUE_STATUSES.includes(manifestIssue.status)
-                        ? manifestIssue.status
-                        : "backlog",
+                    status: issueStatus,
                     priority: manifestIssue.priority && ISSUE_PRIORITIES.includes(manifestIssue.priority)
                         ? manifestIssue.priority
                         : "medium",
                     billingCode: manifestIssue.billingCode,
                     assigneeAdapterOverrides: manifestIssue.assigneeAdapterOverrides,
                     executionWorkspaceSettings: manifestIssue.executionWorkspaceSettings,
-                    labelIds: [],
+                    labelIds: manifestIssue.labelIds ?? [],
                 });
             }
         }

@@ -81,6 +81,9 @@ const METHOD_CAPABILITY_MAP = {
     "state.get": "plugin.state.read",
     "state.set": "plugin.state.write",
     "state.delete": "plugin.state.write",
+    "db.namespace": "database.namespace.read",
+    "db.query": "database.namespace.read",
+    "db.execute": "database.namespace.write",
     // Entities — no specific capability required (plugin-scoped by design)
     "entities.upsert": null,
     "entities.list": null,
@@ -113,8 +116,18 @@ const METHOD_CAPABILITY_MAP = {
     "issues.get": "issues.read",
     "issues.create": "issues.create",
     "issues.update": "issues.update",
+    "issues.relations.get": "issue.relations.read",
+    "issues.relations.setBlockedBy": "issue.relations.write",
+    "issues.relations.addBlockers": "issue.relations.write",
+    "issues.relations.removeBlockers": "issue.relations.write",
+    "issues.assertCheckoutOwner": "issues.checkout",
+    "issues.getSubtree": "issue.subtree.read",
+    "issues.requestWakeup": "issues.wakeup",
+    "issues.requestWakeups": "issues.wakeup",
+    "issues.summaries.getOrchestration": "issues.orchestration.read",
     "issues.listComments": "issue.comments.read",
     "issues.createComment": "issue.comments.create",
+    "issues.createInteraction": "issue.interactions.create",
     // Issue Documents
     "issues.documents.list": "issue.documents.read",
     "issues.documents.get": "issue.documents.read",
@@ -204,6 +217,15 @@ export function createHostClientHandlers(options) {
         "state.delete": gated("state.delete", async (params) => {
             return services.state.delete(params);
         }),
+        "db.namespace": gated("db.namespace", async (params) => {
+            return services.db.namespace(params);
+        }),
+        "db.query": gated("db.query", async (params) => {
+            return services.db.query(params);
+        }),
+        "db.execute": gated("db.execute", async (params) => {
+            return services.db.execute(params);
+        }),
         // Entities
         "entities.upsert": gated("entities.upsert", async (params) => {
             return services.entities.upsert(params);
@@ -278,11 +300,41 @@ export function createHostClientHandlers(options) {
         "issues.update": gated("issues.update", async (params) => {
             return services.issues.update(params);
         }),
+        "issues.relations.get": gated("issues.relations.get", async (params) => {
+            return services.issues.getRelations(params);
+        }),
+        "issues.relations.setBlockedBy": gated("issues.relations.setBlockedBy", async (params) => {
+            return services.issues.setBlockedBy(params);
+        }),
+        "issues.relations.addBlockers": gated("issues.relations.addBlockers", async (params) => {
+            return services.issues.addBlockers(params);
+        }),
+        "issues.relations.removeBlockers": gated("issues.relations.removeBlockers", async (params) => {
+            return services.issues.removeBlockers(params);
+        }),
+        "issues.assertCheckoutOwner": gated("issues.assertCheckoutOwner", async (params) => {
+            return services.issues.assertCheckoutOwner(params);
+        }),
+        "issues.getSubtree": gated("issues.getSubtree", async (params) => {
+            return services.issues.getSubtree(params);
+        }),
+        "issues.requestWakeup": gated("issues.requestWakeup", async (params) => {
+            return services.issues.requestWakeup(params);
+        }),
+        "issues.requestWakeups": gated("issues.requestWakeups", async (params) => {
+            return services.issues.requestWakeups(params);
+        }),
+        "issues.summaries.getOrchestration": gated("issues.summaries.getOrchestration", async (params) => {
+            return services.issues.getOrchestrationSummary(params);
+        }),
         "issues.listComments": gated("issues.listComments", async (params) => {
             return services.issues.listComments(params);
         }),
         "issues.createComment": gated("issues.createComment", async (params) => {
             return services.issues.createComment(params);
+        }),
+        "issues.createInteraction": gated("issues.createInteraction", async (params) => {
+            return services.issues.createInteraction(params);
         }),
         // Issue Documents
         "issues.documents.list": gated("issues.documents.list", async (params) => {

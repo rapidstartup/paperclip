@@ -2,6 +2,22 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { toNodeHandler } from "better-auth/node";
 import { authAccounts, authSessions, authUsers, authVerifications, } from "@paperclipai/db";
+import { resolvePaperclipInstanceId } from "../home-paths.js";
+const AUTH_COOKIE_PREFIX_FALLBACK = "default";
+const AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE = /[^a-zA-Z0-9_-]+/g;
+export function deriveAuthCookiePrefix(instanceId = resolvePaperclipInstanceId()) {
+    const scopedInstanceId = instanceId
+        .trim()
+        .replace(AUTH_COOKIE_PREFIX_INVALID_SEGMENTS_RE, "-")
+        .replace(/^-+|-+$/g, "") || AUTH_COOKIE_PREFIX_FALLBACK;
+    return `paperclip-${scopedInstanceId}`;
+}
+export function buildBetterAuthAdvancedOptions(input) {
+    return {
+        cookiePrefix: deriveAuthCookiePrefix(),
+        ...(input.disableSecureCookies ? { useSecureCookies: false } : {}),
+    };
+}
 function headersFromNodeHeaders(rawHeaders) {
     const headers = new Headers();
     for (const [key, raw] of Object.entries(rawHeaders)) {
@@ -69,7 +85,7 @@ export function createBetterAuthInstance(db, config, trustedOrigins) {
             requireEmailVerification: false,
             disableSignUp: config.authDisableSignUp,
         },
-        ...(isHttpOnly ? { advanced: { useSecureCookies: false } } : {}),
+        advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: isHttpOnly }),
     };
     if (!baseUrl) {
         delete authConfig.baseURL;

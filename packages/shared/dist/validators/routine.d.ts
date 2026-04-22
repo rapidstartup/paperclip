@@ -8,9 +8,9 @@ export declare const routineVariableSchema: z.ZodEffects<z.ZodObject<{
     options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
 }, "strip", z.ZodTypeAny, {
     required: boolean;
-    name: string;
     options: string[];
     type: "number" | "boolean" | "text" | "textarea" | "select";
+    name: string;
     label?: string | null | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }, {
@@ -22,9 +22,9 @@ export declare const routineVariableSchema: z.ZodEffects<z.ZodObject<{
     defaultValue?: string | number | boolean | null | undefined;
 }>, {
     required: boolean;
-    name: string;
     options: string[];
     type: "number" | "boolean" | "text" | "textarea" | "select";
+    name: string;
     label?: string | null | undefined;
     defaultValue?: string | number | boolean | null | undefined;
 }, {
@@ -36,12 +36,12 @@ export declare const routineVariableSchema: z.ZodEffects<z.ZodObject<{
     defaultValue?: string | number | boolean | null | undefined;
 }>;
 export declare const createRoutineSchema: z.ZodObject<{
-    projectId: z.ZodString;
+    projectId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     goalId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     parentIssueId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     title: z.ZodString;
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    assigneeAgentId: z.ZodString;
+    assigneeAgentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     priority: z.ZodDefault<z.ZodOptional<z.ZodEnum<["critical", "high", "medium", "low"]>>>;
     status: z.ZodDefault<z.ZodOptional<z.ZodEnum<["active", "paused", "archived"]>>>;
     concurrencyPolicy: z.ZodDefault<z.ZodOptional<z.ZodEnum<["coalesce_if_active", "always_enqueue", "skip_if_active"]>>>;
@@ -55,9 +55,9 @@ export declare const createRoutineSchema: z.ZodObject<{
         options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     }, "strip", z.ZodTypeAny, {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
@@ -69,9 +69,9 @@ export declare const createRoutineSchema: z.ZodObject<{
         defaultValue?: string | number | boolean | null | undefined;
     }>, {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
@@ -83,32 +83,32 @@ export declare const createRoutineSchema: z.ZodObject<{
         defaultValue?: string | number | boolean | null | undefined;
     }>, "many">>>;
 }, "strip", z.ZodTypeAny, {
-    status: "active" | "paused" | "archived";
-    projectId: string;
     title: string;
+    status: "active" | "paused" | "archived";
     priority: "critical" | "high" | "medium" | "low";
-    assigneeAgentId: string;
     concurrencyPolicy: "coalesce_if_active" | "always_enqueue" | "skip_if_active";
     catchUpPolicy: "skip_missed" | "enqueue_missed_with_cap";
     variables: {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[];
     description?: string | null | undefined;
+    projectId?: string | null | undefined;
     goalId?: string | null | undefined;
+    assigneeAgentId?: string | null | undefined;
     parentIssueId?: string | null | undefined;
 }, {
-    projectId: string;
     title: string;
-    assigneeAgentId: string;
-    status?: "active" | "paused" | "archived" | undefined;
     description?: string | null | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
+    projectId?: string | null | undefined;
     goalId?: string | null | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
+    assigneeAgentId?: string | null | undefined;
     parentIssueId?: string | null | undefined;
     concurrencyPolicy?: "coalesce_if_active" | "always_enqueue" | "skip_if_active" | undefined;
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
@@ -123,12 +123,12 @@ export declare const createRoutineSchema: z.ZodObject<{
 }>;
 export type CreateRoutine = z.infer<typeof createRoutineSchema>;
 export declare const updateRoutineSchema: z.ZodObject<{
-    projectId: z.ZodOptional<z.ZodString>;
+    projectId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     goalId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     parentIssueId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     title: z.ZodOptional<z.ZodString>;
     description: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
-    assigneeAgentId: z.ZodOptional<z.ZodString>;
+    assigneeAgentId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     priority: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<["critical", "high", "medium", "low"]>>>>;
     status: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<["active", "paused", "archived"]>>>>;
     concurrencyPolicy: z.ZodOptional<z.ZodDefault<z.ZodOptional<z.ZodEnum<["coalesce_if_active", "always_enqueue", "skip_if_active"]>>>>;
@@ -142,9 +142,9 @@ export declare const updateRoutineSchema: z.ZodObject<{
         options: z.ZodDefault<z.ZodOptional<z.ZodArray<z.ZodString, "many">>>;
     }, "strip", z.ZodTypeAny, {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
@@ -156,9 +156,9 @@ export declare const updateRoutineSchema: z.ZodObject<{
         defaultValue?: string | number | boolean | null | undefined;
     }>, {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }, {
@@ -170,32 +170,32 @@ export declare const updateRoutineSchema: z.ZodObject<{
         defaultValue?: string | number | boolean | null | undefined;
     }>, "many">>>>;
 }, "strip", z.ZodTypeAny, {
-    status?: "active" | "paused" | "archived" | undefined;
-    projectId?: string | undefined;
-    description?: string | null | undefined;
-    goalId?: string | null | undefined;
     title?: string | undefined;
+    description?: string | null | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
+    projectId?: string | null | undefined;
+    goalId?: string | null | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
-    assigneeAgentId?: string | undefined;
+    assigneeAgentId?: string | null | undefined;
     parentIssueId?: string | null | undefined;
     concurrencyPolicy?: "coalesce_if_active" | "always_enqueue" | "skip_if_active" | undefined;
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
     variables?: {
         required: boolean;
-        name: string;
         options: string[];
         type: "number" | "boolean" | "text" | "textarea" | "select";
+        name: string;
         label?: string | null | undefined;
         defaultValue?: string | number | boolean | null | undefined;
     }[] | undefined;
 }, {
-    status?: "active" | "paused" | "archived" | undefined;
-    projectId?: string | undefined;
-    description?: string | null | undefined;
-    goalId?: string | null | undefined;
     title?: string | undefined;
+    description?: string | null | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
+    projectId?: string | null | undefined;
+    goalId?: string | null | undefined;
     priority?: "critical" | "high" | "medium" | "low" | undefined;
-    assigneeAgentId?: string | undefined;
+    assigneeAgentId?: string | null | undefined;
     parentIssueId?: string | null | undefined;
     concurrencyPolicy?: "coalesce_if_active" | "always_enqueue" | "skip_if_active" | undefined;
     catchUpPolicy?: "skip_missed" | "enqueue_missed_with_cap" | undefined;
@@ -238,14 +238,14 @@ export declare const createRoutineTriggerSchema: z.ZodDiscriminatedUnion<"kind",
 }, "strip", z.ZodTypeAny, {
     kind: "webhook";
     enabled: boolean;
-    signingMode: "bearer" | "hmac_sha256" | "github_hmac" | "none";
+    signingMode: "none" | "bearer" | "hmac_sha256" | "github_hmac";
     replayWindowSec: number;
     label?: string | null | undefined;
 }, {
     kind: "webhook";
     label?: string | null | undefined;
     enabled?: boolean | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | undefined;
+    signingMode?: "none" | "bearer" | "hmac_sha256" | "github_hmac" | undefined;
     replayWindowSec?: number | undefined;
 }>, z.ZodObject<{
     label: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -274,14 +274,14 @@ export declare const updateRoutineTriggerSchema: z.ZodObject<{
     enabled?: boolean | undefined;
     cronExpression?: string | null | undefined;
     timezone?: string | null | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | null | undefined;
+    signingMode?: "none" | "bearer" | "hmac_sha256" | "github_hmac" | null | undefined;
     replayWindowSec?: number | null | undefined;
 }, {
     label?: string | null | undefined;
     enabled?: boolean | undefined;
     cronExpression?: string | null | undefined;
     timezone?: string | null | undefined;
-    signingMode?: "bearer" | "hmac_sha256" | "github_hmac" | "none" | null | undefined;
+    signingMode?: "none" | "bearer" | "hmac_sha256" | "github_hmac" | null | undefined;
     replayWindowSec?: number | null | undefined;
 }>;
 export type UpdateRoutineTrigger = z.infer<typeof updateRoutineTriggerSchema>;
@@ -289,6 +289,8 @@ export declare const runRoutineSchema: z.ZodObject<{
     triggerId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     payload: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     variables: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnion<[z.ZodString, z.ZodNumber, z.ZodBoolean]>>>>;
+    projectId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
+    assigneeAgentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     idempotencyKey: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     source: z.ZodDefault<z.ZodOptional<z.ZodEnum<["manual", "api"]>>>;
     executionWorkspaceId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -303,84 +305,88 @@ export declare const runRoutineSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }>>>;
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strict", z.ZodTypeAny, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
     }, {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
     }>>>;
 }, "strip", z.ZodTypeAny, {
     source: "manual" | "api";
+    idempotencyKey?: string | null | undefined;
+    projectId?: string | null | undefined;
     executionWorkspaceId?: string | null | undefined;
+    assigneeAgentId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
+    payload?: Record<string, unknown> | null | undefined;
     variables?: Record<string, string | number | boolean> | null | undefined;
     triggerId?: string | null | undefined;
-    payload?: Record<string, unknown> | null | undefined;
-    idempotencyKey?: string | null | undefined;
 }, {
-    source?: "manual" | "api" | undefined;
+    idempotencyKey?: string | null | undefined;
+    projectId?: string | null | undefined;
     executionWorkspaceId?: string | null | undefined;
+    source?: "manual" | "api" | undefined;
+    assigneeAgentId?: string | null | undefined;
     executionWorkspacePreference?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | null | undefined;
     executionWorkspaceSettings?: {
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         mode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "inherit" | "reuse_existing" | "agent_default" | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
     } | null | undefined;
+    payload?: Record<string, unknown> | null | undefined;
     variables?: Record<string, string | number | boolean> | null | undefined;
     triggerId?: string | null | undefined;
-    payload?: Record<string, unknown> | null | undefined;
-    idempotencyKey?: string | null | undefined;
 }>;
 export type RunRoutine = z.infer<typeof runRoutineSchema>;
 export declare const rotateRoutineTriggerSecretSchema: z.ZodObject<{}, "strip", z.ZodTypeAny, {}, {}>;

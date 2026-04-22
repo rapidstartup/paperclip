@@ -35,6 +35,7 @@ import { logger } from "../middleware/logger.js";
 import { pluginManifestValidator } from "./plugin-manifest-validator.js";
 import { pluginCapabilityValidator } from "./plugin-capability-validator.js";
 import { pluginRegistryService } from "./plugin-registry.js";
+import { pluginDatabaseService } from "./plugin-database.js";
 const execFileAsync = promisify(execFile);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // ---------------------------------------------------------------------------
@@ -265,7 +266,7 @@ export function getPluginUiContributionMetadata(manifest) {
  * @see PLUGIN_SPEC.md §12 — Process Model
  */
 export function pluginLoader(db, options = {}, runtimeServices) {
-    const { localPluginDir = DEFAULT_LOCAL_PLUGIN_DIR, enableLocalFilesystem = true, enableNpmDiscovery = true, } = options;
+    const { localPluginDir = DEFAULT_LOCAL_PLUGIN_DIR, migrationDb = db, enableLocalFilesystem = true, enableNpmDiscovery = true, } = options;
     const registry = pluginRegistryService(db);
     const manifestValidator = pluginManifestValidator();
     const capabilityValidator = pluginCapabilityValidator();
@@ -995,12 +996,19 @@ export function pluginLoader(db, options = {}, runtimeServices) {
             // 1. Resolve worker entrypoint
             // ------------------------------------------------------------------
             const workerEntrypoint = resolveWorkerEntrypoint(plugin, localPluginDir);
+            const packageRoot = resolvePluginPackageRoot(plugin, localPluginDir);
             // ------------------------------------------------------------------
-            // 2. Build host handlers for this plugin
+            // 2. Apply restricted database migrations before worker startup
+            // ------------------------------------------------------------------
+            const databaseNamespace = manifest.database
+                ? (await pluginDatabaseService(migrationDb).applyMigrations(pluginId, manifest, packageRoot))?.namespaceName ?? null
+                : null;
+            // ------------------------------------------------------------------
+            // 3. Build host handlers for this plugin
             // ------------------------------------------------------------------
             const hostHandlers = buildHostHandlers(pluginId, manifest);
             // ------------------------------------------------------------------
-            // 3. Retrieve plugin config (if any)
+            // 4. Retrieve plugin config (if any)
             // ------------------------------------------------------------------
             let config = {};
             try {
@@ -1014,7 +1022,7 @@ export function pluginLoader(db, options = {}, runtimeServices) {
                 log.debug({ pluginId }, "plugin-loader: no config found, using empty config");
             }
             // ------------------------------------------------------------------
-            // 4. Spawn worker process
+            // 5. Spawn worker process
             // ------------------------------------------------------------------
             const workerOptions = {
                 entrypointPath: workerEntrypoint,
@@ -1022,6 +1030,7 @@ export function pluginLoader(db, options = {}, runtimeServices) {
                 config,
                 instanceInfo,
                 apiVersion: manifest.apiVersion,
+                databaseNamespace,
                 hostHandlers,
                 autoRestart: true,
             };
@@ -1035,7 +1044,7 @@ export function pluginLoader(db, options = {}, runtimeServices) {
             registered.worker = true;
             log.info({ pluginId, pluginKey }, "plugin-loader: worker started");
             // ------------------------------------------------------------------
-            // 5. Sync job declarations and register with scheduler
+            // 6. Sync job declarations and register with scheduler
             // ------------------------------------------------------------------
             const jobDeclarations = manifest.jobs ?? [];
             if (jobDeclarations.length > 0) {
@@ -1176,6 +1185,21 @@ function resolveWorkerEntrypoint(plugin, localPluginDir) {
     throw new Error(`Worker entrypoint not found for plugin "${plugin.pluginKey}". ` +
         `Checked: ${path.resolve(packageDir, workerRelPath)}, ` +
         `${path.resolve(directDir, workerRelPath)}`);
+}
+function resolvePluginPackageRoot(plugin, localPluginDir) {
+    if (plugin.packagePath && existsSync(plugin.packagePath)) {
+        return path.resolve(plugin.packagePath);
+    }
+    const packageName = plugin.packageName;
+    const packageDir = packageName.startsWith("@")
+        ? path.join(localPluginDir, "node_modules", ...packageName.split("/"))
+        : path.join(localPluginDir, "node_modules", packageName);
+    if (existsSync(packageDir))
+        return packageDir;
+    const directDir = path.join(localPluginDir, packageName);
+    if (existsSync(directDir))
+        return directDir;
+    throw new Error(`Package root not found for plugin "${plugin.pluginKey}"`);
 }
 function resolveManagedInstallPackageDir(localPluginDir, packageName) {
     if (packageName.startsWith("@")) {

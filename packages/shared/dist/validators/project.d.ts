@@ -12,19 +12,19 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
         provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     }, "strict", z.ZodTypeAny, {
-        baseRef?: string | null | undefined;
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-        branchTemplate?: string | null | undefined;
-        worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
+        baseRef?: string | null | undefined;
+        branchTemplate?: string | null | undefined;
+        worktreeParentDir?: string | null | undefined;
     }, {
-        baseRef?: string | null | undefined;
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-        branchTemplate?: string | null | undefined;
-        worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
+        baseRef?: string | null | undefined;
+        branchTemplate?: string | null | undefined;
+        worktreeParentDir?: string | null | undefined;
     }>>>;
     workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     branchPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
@@ -33,15 +33,15 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
     cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
 }, "strict", z.ZodTypeAny, {
     enabled: boolean;
+    workspaceRuntime?: Record<string, unknown> | null | undefined;
     workspaceStrategy?: {
-        baseRef?: string | null | undefined;
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-        branchTemplate?: string | null | undefined;
-        worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
+        baseRef?: string | null | undefined;
+        branchTemplate?: string | null | undefined;
+        worktreeParentDir?: string | null | undefined;
     } | null | undefined;
-    workspaceRuntime?: Record<string, unknown> | null | undefined;
     defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
     allowIssueOverride?: boolean | undefined;
     defaultProjectWorkspaceId?: string | null | undefined;
@@ -51,15 +51,15 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
     cleanupPolicy?: Record<string, unknown> | null | undefined;
 }, {
     enabled: boolean;
+    workspaceRuntime?: Record<string, unknown> | null | undefined;
     workspaceStrategy?: {
-        baseRef?: string | null | undefined;
         type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-        branchTemplate?: string | null | undefined;
-        worktreeParentDir?: string | null | undefined;
         provisionCommand?: string | null | undefined;
         teardownCommand?: string | null | undefined;
+        baseRef?: string | null | undefined;
+        branchTemplate?: string | null | undefined;
+        worktreeParentDir?: string | null | undefined;
     } | null | undefined;
-    workspaceRuntime?: Record<string, unknown> | null | undefined;
     defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
     allowIssueOverride?: boolean | undefined;
     defaultProjectWorkspaceId?: string | null | undefined;
@@ -70,13 +70,16 @@ export declare const projectExecutionWorkspacePolicySchema: z.ZodObject<{
 }>;
 export declare const projectWorkspaceRuntimeConfigSchema: z.ZodObject<{
     workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
-    desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+    desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped", "manual"]>>>;
+    serviceStates: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["running", "stopped", "manual"]>>>>;
 }, "strict", z.ZodTypeAny, {
     workspaceRuntime?: Record<string, unknown> | null | undefined;
-    desiredState?: "running" | "stopped" | null | undefined;
+    desiredState?: "running" | "manual" | "stopped" | null | undefined;
+    serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
 }, {
     workspaceRuntime?: Record<string, unknown> | null | undefined;
-    desiredState?: "running" | "stopped" | null | undefined;
+    desiredState?: "running" | "manual" | "stopped" | null | undefined;
+    serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
 }>;
 export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     isPrimary: z.ZodDefault<z.ZodOptional<z.ZodBoolean>>;
@@ -95,86 +98,93 @@ export declare const createProjectWorkspaceSchema: z.ZodEffects<z.ZodObject<{
     metadata: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     runtimeConfig: z.ZodNullable<z.ZodOptional<z.ZodObject<{
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
-        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped", "manual"]>>>;
+        serviceStates: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["running", "stopped", "manual"]>>>>;
     }, "strict", z.ZodTypeAny, {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     }, {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     }>>>;
 }, "strip", z.ZodTypeAny, {
     isPrimary: boolean;
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
     sharedWorkspaceKey?: string | null | undefined;
 }, {
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     isPrimary?: boolean | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
     sharedWorkspaceKey?: string | null | undefined;
 }>, {
     isPrimary: boolean;
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
     sharedWorkspaceKey?: string | null | undefined;
 }, {
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     isPrimary?: boolean | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
@@ -198,48 +208,53 @@ export declare const updateProjectWorkspaceSchema: z.ZodObject<{
     metadata: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>>;
     runtimeConfig: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodObject<{
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
-        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+        desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped", "manual"]>>>;
+        serviceStates: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["running", "stopped", "manual"]>>>>;
     }, "strict", z.ZodTypeAny, {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     }, {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     }>>>>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     isPrimary?: boolean | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
     sharedWorkspaceKey?: string | null | undefined;
 }, {
-    name?: string | undefined;
+    cleanupCommand?: string | null | undefined;
     cwd?: string | null | undefined;
+    name?: string | undefined;
     repoUrl?: string | null | undefined;
     metadata?: Record<string, unknown> | null | undefined;
     sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
     runtimeConfig?: {
         workspaceRuntime?: Record<string, unknown> | null | undefined;
-        desiredState?: "running" | "stopped" | null | undefined;
+        desiredState?: "running" | "manual" | "stopped" | null | undefined;
+        serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
     } | null | undefined;
     repoRef?: string | null | undefined;
     defaultRef?: string | null | undefined;
-    visibility?: "default" | "advanced" | undefined;
+    visibility?: "advanced" | "default" | undefined;
     setupCommand?: string | null | undefined;
-    cleanupCommand?: string | null | undefined;
     isPrimary?: boolean | undefined;
     remoteWorkspaceRef?: string | null | undefined;
     remoteProvider?: string | null | undefined;
@@ -264,86 +279,93 @@ export declare const createProjectSchema: z.ZodObject<{
         metadata: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         runtimeConfig: z.ZodNullable<z.ZodOptional<z.ZodObject<{
             workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
-            desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped"]>>>;
+            desiredState: z.ZodNullable<z.ZodOptional<z.ZodEnum<["running", "stopped", "manual"]>>>;
+            serviceStates: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodEnum<["running", "stopped", "manual"]>>>>;
         }, "strict", z.ZodTypeAny, {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         }, {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         }>>>;
     }, "strip", z.ZodTypeAny, {
         isPrimary: boolean;
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
         sharedWorkspaceKey?: string | null | undefined;
     }, {
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         isPrimary?: boolean | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
         sharedWorkspaceKey?: string | null | undefined;
     }>, {
         isPrimary: boolean;
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
         sharedWorkspaceKey?: string | null | undefined;
     }, {
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         isPrimary?: boolean | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
@@ -393,19 +415,19 @@ export declare const createProjectSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }>>>;
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         branchPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
@@ -414,15 +436,15 @@ export declare const createProjectSchema: z.ZodObject<{
         cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strict", z.ZodTypeAny, {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -432,15 +454,15 @@ export declare const createProjectSchema: z.ZodObject<{
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     }, {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -451,43 +473,44 @@ export declare const createProjectSchema: z.ZodObject<{
     }>>>;
     archivedAt: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    name: string;
     status: "backlog" | "in_progress" | "cancelled" | "completed" | "planned";
+    name: string;
+    description?: string | null | undefined;
     workspace?: {
         isPrimary: boolean;
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
         sharedWorkspaceKey?: string | null | undefined;
     } | undefined;
-    description?: string | null | undefined;
     goalId?: string | null | undefined;
     color?: string | null | undefined;
     targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -509,42 +532,43 @@ export declare const createProjectSchema: z.ZodObject<{
     archivedAt?: string | null | undefined;
 }, {
     name: string;
+    description?: string | null | undefined;
     workspace?: {
-        name?: string | undefined;
+        cleanupCommand?: string | null | undefined;
         cwd?: string | null | undefined;
+        name?: string | undefined;
         repoUrl?: string | null | undefined;
         metadata?: Record<string, unknown> | null | undefined;
         sourceType?: "local_path" | "git_repo" | "remote_managed" | "non_git_path" | undefined;
         runtimeConfig?: {
             workspaceRuntime?: Record<string, unknown> | null | undefined;
-            desiredState?: "running" | "stopped" | null | undefined;
+            desiredState?: "running" | "manual" | "stopped" | null | undefined;
+            serviceStates?: Record<string, "running" | "manual" | "stopped"> | null | undefined;
         } | null | undefined;
         repoRef?: string | null | undefined;
         defaultRef?: string | null | undefined;
-        visibility?: "default" | "advanced" | undefined;
+        visibility?: "advanced" | "default" | undefined;
         setupCommand?: string | null | undefined;
-        cleanupCommand?: string | null | undefined;
         isPrimary?: boolean | undefined;
         remoteWorkspaceRef?: string | null | undefined;
         remoteProvider?: string | null | undefined;
         sharedWorkspaceKey?: string | null | undefined;
     } | undefined;
     status?: "backlog" | "in_progress" | "cancelled" | "completed" | "planned" | undefined;
-    description?: string | null | undefined;
     goalId?: string | null | undefined;
     color?: string | null | undefined;
     targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -610,19 +634,19 @@ export declare const updateProjectSchema: z.ZodObject<{
             provisionCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
             teardownCommand: z.ZodNullable<z.ZodOptional<z.ZodString>>;
         }, "strict", z.ZodTypeAny, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }, {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         }>>>;
         workspaceRuntime: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
         branchPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
@@ -631,15 +655,15 @@ export declare const updateProjectSchema: z.ZodObject<{
         cleanupPolicy: z.ZodNullable<z.ZodOptional<z.ZodRecord<z.ZodString, z.ZodUnknown>>>;
     }, "strict", z.ZodTypeAny, {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -649,15 +673,15 @@ export declare const updateProjectSchema: z.ZodObject<{
         cleanupPolicy?: Record<string, unknown> | null | undefined;
     }, {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -668,23 +692,23 @@ export declare const updateProjectSchema: z.ZodObject<{
     }>>>>;
     archivedAt: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
-    status?: "backlog" | "in_progress" | "cancelled" | "completed" | "planned" | undefined;
     description?: string | null | undefined;
+    status?: "backlog" | "in_progress" | "cancelled" | "completed" | "planned" | undefined;
+    name?: string | undefined;
     goalId?: string | null | undefined;
     color?: string | null | undefined;
     targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;
@@ -705,23 +729,23 @@ export declare const updateProjectSchema: z.ZodObject<{
     leadAgentId?: string | null | undefined;
     archivedAt?: string | null | undefined;
 }, {
-    name?: string | undefined;
-    status?: "backlog" | "in_progress" | "cancelled" | "completed" | "planned" | undefined;
     description?: string | null | undefined;
+    status?: "backlog" | "in_progress" | "cancelled" | "completed" | "planned" | undefined;
+    name?: string | undefined;
     goalId?: string | null | undefined;
     color?: string | null | undefined;
     targetDate?: string | null | undefined;
     executionWorkspacePolicy?: {
         enabled: boolean;
+        workspaceRuntime?: Record<string, unknown> | null | undefined;
         workspaceStrategy?: {
-            baseRef?: string | null | undefined;
             type?: "project_primary" | "git_worktree" | "adapter_managed" | "cloud_sandbox" | undefined;
-            branchTemplate?: string | null | undefined;
-            worktreeParentDir?: string | null | undefined;
             provisionCommand?: string | null | undefined;
             teardownCommand?: string | null | undefined;
+            baseRef?: string | null | undefined;
+            branchTemplate?: string | null | undefined;
+            worktreeParentDir?: string | null | undefined;
         } | null | undefined;
-        workspaceRuntime?: Record<string, unknown> | null | undefined;
         defaultMode?: "shared_workspace" | "isolated_workspace" | "operator_branch" | "adapter_default" | undefined;
         allowIssueOverride?: boolean | undefined;
         defaultProjectWorkspaceId?: string | null | undefined;

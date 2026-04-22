@@ -1,6 +1,6 @@
 import type { Db } from "@paperclipai/db";
 import { executionWorkspaces } from "@paperclipai/db";
-import type { ExecutionWorkspace, ExecutionWorkspaceCloseReadiness, ExecutionWorkspaceConfig, WorkspaceRuntimeService } from "@paperclipai/shared";
+import type { ExecutionWorkspace, ExecutionWorkspaceSummary, ExecutionWorkspaceCloseReadiness, ExecutionWorkspaceConfig, WorkspaceRuntimeService } from "@paperclipai/shared";
 type ExecutionWorkspaceRow = typeof executionWorkspaces.$inferSelect;
 export declare function readExecutionWorkspaceConfig(metadata: Record<string, unknown> | null | undefined): ExecutionWorkspaceConfig | null;
 export declare function mergeExecutionWorkspaceConfig(metadata: Record<string, unknown> | null | undefined, patch: Partial<ExecutionWorkspaceConfig> | null): Record<string, unknown> | null;
@@ -13,6 +13,13 @@ export declare function executionWorkspaceService(db: Db): {
         status?: string;
         reuseEligible?: boolean;
     }) => Promise<ExecutionWorkspace[]>;
+    listSummaries: (companyId: string, filters?: {
+        projectId?: string;
+        projectWorkspaceId?: string;
+        issueId?: string;
+        status?: string;
+        reuseEligible?: boolean;
+    }) => Promise<ExecutionWorkspaceSummary[]>;
     getById: (id: string) => Promise<ExecutionWorkspace | null>;
     getCloseReadiness: (id: string) => Promise<ExecutionWorkspaceCloseReadiness | null>;
     create: (data: typeof executionWorkspaces.$inferInsert) => Promise<ExecutionWorkspace | null>;

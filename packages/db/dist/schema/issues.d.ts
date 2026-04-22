@@ -393,6 +393,23 @@ export declare const issues: import("drizzle-orm/pg-core").PgTableWithColumns<{
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        originFingerprint: import("drizzle-orm/pg-core").PgColumn<{
+            name: "origin_fingerprint";
+            tableName: "issues";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         requestDepth: import("drizzle-orm/pg-core").PgColumn<{
             name: "request_depth";
             tableName: "issues";

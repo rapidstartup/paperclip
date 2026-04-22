@@ -6,11 +6,27 @@ type GrantInput = {
     permissionKey: PermissionKey;
     scope?: Record<string, unknown> | null;
 };
+type MemberArchiveInput = {
+    reassignment?: {
+        assigneeAgentId?: string | null;
+        assigneeUserId?: string | null;
+    } | null;
+};
 export declare function accessService(db: Db): {
     isInstanceAdmin: (userId: string | null | undefined) => Promise<boolean>;
     canUser: (companyId: string, userId: string | null | undefined, permissionKey: PermissionKey) => Promise<boolean>;
     hasPermission: (companyId: string, principalType: PrincipalType, principalId: string, permissionKey: PermissionKey) => Promise<boolean>;
     getMembership: (companyId: string, principalType: PrincipalType, principalId: string) => Promise<MembershipRow | null>;
+    getMemberById: (companyId: string, memberId: string) => Promise<{
+        id: string;
+        status: string;
+        createdAt: Date;
+        updatedAt: Date;
+        companyId: string;
+        principalType: string;
+        principalId: string;
+        membershipRole: string | null;
+    }>;
     ensureMembership: (companyId: string, principalType: PrincipalType, principalId: string, membershipRole?: string | null, status?: "pending" | "active" | "suspended") => Promise<{
         id: string;
         status: string;
@@ -51,6 +67,19 @@ export declare function accessService(db: Db): {
         principalId: string;
         membershipRole: string | null;
     }[]>;
+    archiveMember: (companyId: string, memberId: string, input?: MemberArchiveInput) => Promise<{
+        member: {
+            id: string;
+            status: string;
+            createdAt: Date;
+            updatedAt: Date;
+            companyId: string;
+            principalType: string;
+            principalId: string;
+            membershipRole: string | null;
+        };
+        reassignedIssueCount: number;
+    } | null>;
     setMemberPermissions: (companyId: string, memberId: string, grants: GrantInput[], grantedByUserId: string | null) => Promise<{
         id: string;
         status: string;
@@ -60,6 +89,20 @@ export declare function accessService(db: Db): {
         principalType: string;
         principalId: string;
         membershipRole: string | null;
+    } | null>;
+    updateMemberAndPermissions: (companyId: string, memberId: string, data: {
+        membershipRole?: string | null;
+        status?: "pending" | "active" | "suspended";
+        grants: GrantInput[];
+    }, grantedByUserId: string | null) => Promise<{
+        id: string;
+        companyId: string;
+        principalType: string;
+        principalId: string;
+        status: string;
+        membershipRole: string | null;
+        createdAt: Date;
+        updatedAt: Date;
     } | null>;
     promoteInstanceAdmin: (userId: string) => Promise<{
         id: string;
@@ -85,7 +128,9 @@ export declare function accessService(db: Db): {
         principalId: string;
         membershipRole: string | null;
     }[]>;
-    setUserCompanyAccess: (userId: string, companyIds: string[]) => Promise<{
+    setUserCompanyAccess: (userId: string, companyIds: string[], options?: {
+        actorUserId?: string | null;
+    }) => Promise<{
         id: string;
         status: string;
         createdAt: Date;
@@ -108,6 +153,19 @@ export declare function accessService(db: Db): {
         grantedByUserId: string | null;
     }[]>;
     setPrincipalPermission: (companyId: string, principalType: PrincipalType, principalId: string, permissionKey: PermissionKey, enabled: boolean, grantedByUserId: string | null, scope?: Record<string, unknown> | null) => Promise<void>;
+    updateMember: (companyId: string, memberId: string, data: {
+        membershipRole?: string | null;
+        status?: "pending" | "active" | "suspended";
+    }) => Promise<{
+        id: string;
+        companyId: string;
+        principalType: string;
+        principalId: string;
+        status: string;
+        membershipRole: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+    } | null>;
 };
 export {};
 //# sourceMappingURL=access.d.ts.map

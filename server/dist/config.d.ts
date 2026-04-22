@@ -1,9 +1,11 @@
-import { type AuthBaseUrlMode, type DeploymentExposure, type DeploymentMode, type SecretProvider, type StorageProvider } from "@paperclipai/shared";
+import { type BindMode, type AuthBaseUrlMode, type DeploymentExposure, type DeploymentMode, type SecretProvider, type StorageProvider } from "@paperclipai/shared";
 type DatabaseMode = "embedded-postgres" | "postgres";
 type DatabaseBackupTarget = "local" | "s3";
 export interface Config {
     deploymentMode: DeploymentMode;
     deploymentExposure: DeploymentExposure;
+    bind: BindMode;
+    customBindHost: string | undefined;
     host: string;
     port: number;
     allowedHostnames: string[];
@@ -12,6 +14,7 @@ export interface Config {
     authDisableSignUp: boolean;
     databaseMode: DatabaseMode;
     databaseUrl: string | undefined;
+    databaseMigrationUrl: string | undefined;
     embeddedPostgresDataDir: string;
     embeddedPostgresPort: number;
     databaseBackupEnabled: boolean;

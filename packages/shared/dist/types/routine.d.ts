@@ -33,12 +33,12 @@ export interface RoutineVariable {
 export interface Routine {
     id: string;
     companyId: string;
-    projectId: string;
+    projectId: string | null;
     goalId: string | null;
     parentIssueId: string | null;
     title: string;
     description: string | null;
-    assigneeAgentId: string;
+    assigneeAgentId: string | null;
     priority: string;
     status: string;
     concurrencyPolicy: string;
@@ -87,6 +87,7 @@ export interface RoutineRun {
     triggeredAt: Date;
     idempotencyKey: string | null;
     triggerPayload: Record<string, unknown> | null;
+    dispatchFingerprint: string | null;
     linkedIssueId: string | null;
     coalescedIntoRunId: string | null;
     failureReason: string | null;
@@ -116,7 +117,7 @@ export interface RoutineExecutionIssueOrigin {
     runId: string | null;
 }
 export interface RoutineListItem extends Routine {
-    triggers: Pick<RoutineTrigger, "id" | "kind" | "label" | "enabled" | "nextRunAt" | "lastFiredAt" | "lastResult">[];
+    triggers: Pick<RoutineTrigger, "id" | "kind" | "label" | "enabled" | "cronExpression" | "timezone" | "nextRunAt" | "lastFiredAt" | "lastResult">[];
     lastRun: RoutineRunSummary | null;
     activeIssue: RoutineIssueSummary | null;
 }

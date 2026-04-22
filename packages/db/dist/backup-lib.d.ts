@@ -1,12 +1,18 @@
+export type BackupRetentionPolicy = {
+    dailyDays: number;
+    weeklyWeeks: number;
+    monthlyMonths: number;
+};
 export type RunDatabaseBackupOptions = {
     connectionString: string;
     backupDir: string;
-    retentionDays: number;
+    retention: BackupRetentionPolicy;
     filenamePrefix?: string;
     connectTimeoutSeconds?: number;
     includeMigrationJournal?: boolean;
     excludeTables?: string[];
     nullifyColumns?: Record<string, string[]>;
+    backupEngine?: "auto" | "pg_dump" | "javascript";
 };
 export type RunDatabaseBackupResult = {
     backupFile: string;
@@ -20,6 +26,8 @@ export type RunDatabaseRestoreOptions = {
 };
 export declare function createBufferedTextFileWriter(filePath: string, maxBufferedBytes?: number): {
     emit(line: string): void;
+    drain(): Promise<void>;
+    writeRaw(chunk: string | Buffer): Promise<void>;
     close(): Promise<void>;
     abort(): Promise<void>;
 };

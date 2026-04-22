@@ -1,10 +1,12 @@
 import type { Db } from "@paperclipai/db";
+import type { PluginEvent } from "@paperclipai/plugin-sdk";
 import type { PluginEventBus } from "./plugin-event-bus.js";
 /** Wire the plugin event bus so domain events are forwarded to plugins. */
 export declare function setPluginEventBus(bus: PluginEventBus): void;
+export declare function publishPluginDomainEvent(event: PluginEvent): void;
 export interface LogActivityInput {
     companyId: string;
-    actorType: "agent" | "user" | "system";
+    actorType: "agent" | "user" | "system" | "plugin";
     actorId: string;
     action: string;
     entityType: string;

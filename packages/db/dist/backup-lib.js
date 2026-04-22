@@ -1,10 +1,17 @@
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { createInterface } from "node:readline";
+import { spawn } from "node:child_process";
+import { open as openFile } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { createGunzip, createGzip } from "node:zlib";
 import postgres from "postgres";
 const DRIZZLE_SCHEMA = "drizzle";
 const DRIZZLE_MIGRATIONS_TABLE = "__drizzle_migrations";
 const DEFAULT_BACKUP_WRITE_BUFFER_BYTES = 1024 * 1024;
+const BACKUP_DATA_CURSOR_ROWS = 100;
+const BACKUP_CLI_STDERR_BYTES = 64 * 1024;
+const BACKUP_BREAKPOINT_DETECT_BYTES = 64 * 1024;
 const STATEMENT_BREAKPOINT = "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900";
 function sanitizeRestoreErrorMessage(error) {
     if (error && typeof error === "object") {
@@ -23,23 +30,82 @@ function timestamp(date = new Date()) {
     const pad = (n) => String(n).padStart(2, "0");
     return `${date.getFullYear()}${pad(date.getMonth() + 1)}${pad(date.getDate())}-${pad(date.getHours())}${pad(date.getMinutes())}${pad(date.getSeconds())}`;
 }
-function pruneOldBackups(backupDir, retentionDays, filenamePrefix) {
+/**
+ * ISO week key for grouping backups by calendar week (ISO 8601).
+ */
+function isoWeekKey(date) {
+    const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
+    return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+function monthKey(date) {
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+/**
+ * Tiered backup pruning:
+ * - Daily tier: keep ALL backups from the last `dailyDays` days
+ * - Weekly tier: keep the NEWEST backup per calendar week for `weeklyWeeks` weeks
+ * - Monthly tier: keep the NEWEST backup per calendar month for `monthlyMonths` months
+ * - Everything else is deleted
+ */
+function pruneOldBackups(backupDir, retention, filenamePrefix) {
     if (!existsSync(backupDir))
         return 0;
-    const safeRetention = Math.max(1, Math.trunc(retentionDays));
-    const cutoff = Date.now() - safeRetention * 24 * 60 * 60 * 1000;
-    let pruned = 0;
+    const now = Date.now();
+    const dailyCutoff = now - Math.max(1, retention.dailyDays) * 24 * 60 * 60 * 1000;
+    const weeklyCutoff = now - Math.max(1, retention.weeklyWeeks) * 7 * 24 * 60 * 60 * 1000;
+    const monthlyCutoff = now - Math.max(1, retention.monthlyMonths) * 30 * 24 * 60 * 60 * 1000;
+    const entries = [];
     for (const name of readdirSync(backupDir)) {
-        if (!name.startsWith(`${filenamePrefix}-`) || !name.endsWith(".sql"))
+        if (!name.startsWith(`${filenamePrefix}-`))
+            continue;
+        if (!name.endsWith(".sql") && !name.endsWith(".sql.gz"))
             continue;
         const fullPath = resolve(backupDir, name);
         const stat = statSync(fullPath);
-        if (stat.mtimeMs < cutoff) {
-            unlinkSync(fullPath);
-            pruned++;
-        }
+        entries.push({ name, fullPath, mtimeMs: stat.mtimeMs });
     }
-    return pruned;
+    // Sort newest first so the first entry per week/month bucket is the one we keep
+    entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
+    const keepWeekBuckets = new Set();
+    const keepMonthBuckets = new Set();
+    const toDelete = [];
+    for (const entry of entries) {
+        // Daily tier — keep everything within dailyDays
+        if (entry.mtimeMs >= dailyCutoff)
+            continue;
+        const date = new Date(entry.mtimeMs);
+        const week = isoWeekKey(date);
+        const month = monthKey(date);
+        // Weekly tier — keep newest per calendar week
+        if (entry.mtimeMs >= weeklyCutoff) {
+            if (keepWeekBuckets.has(week)) {
+                toDelete.push(entry.fullPath);
+            }
+            else {
+                keepWeekBuckets.add(week);
+            }
+            continue;
+        }
+        // Monthly tier — keep newest per calendar month
+        if (entry.mtimeMs >= monthlyCutoff) {
+            if (keepMonthBuckets.has(month)) {
+                toDelete.push(entry.fullPath);
+            }
+            else {
+                keepMonthBuckets.add(month);
+            }
+            continue;
+        }
+        // Beyond all retention tiers — delete
+        toDelete.push(entry.fullPath);
+    }
+    for (const filePath of toDelete) {
+        unlinkSync(filePath);
+    }
+    return toDelete.length;
 }
 function formatBackupSize(sizeBytes) {
     if (sizeBytes < 1024)
@@ -87,8 +153,120 @@ function quoteQualifiedName(schemaName, objectName) {
 function tableKey(schemaName, tableName) {
     return `${schemaName}.${tableName}`;
 }
+function hasBackupTransforms(opts) {
+    return opts.includeMigrationJournal === true ||
+        (opts.excludeTables?.length ?? 0) > 0 ||
+        Object.keys(opts.nullifyColumns ?? {}).length > 0;
+}
+function formatSqlValue(rawValue, columnName, nullifiedColumns) {
+    const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
+    if (val === null || val === undefined)
+        return "NULL";
+    if (typeof val === "boolean")
+        return val ? "true" : "false";
+    if (typeof val === "number")
+        return String(val);
+    if (val instanceof Date)
+        return formatSqlLiteral(val.toISOString());
+    if (typeof val === "object")
+        return formatSqlLiteral(JSON.stringify(val));
+    return formatSqlLiteral(String(val));
+}
+function appendCapturedStderr(previous, chunk) {
+    const next = previous + (Buffer.isBuffer(chunk) ? chunk.toString("utf8") : chunk);
+    if (Buffer.byteLength(next, "utf8") <= BACKUP_CLI_STDERR_BYTES)
+        return next;
+    return Buffer.from(next, "utf8").subarray(-BACKUP_CLI_STDERR_BYTES).toString("utf8");
+}
+async function waitForChildExit(child, label) {
+    let stderr = "";
+    child.stderr?.on("data", (chunk) => {
+        stderr = appendCapturedStderr(stderr, chunk);
+    });
+    const result = await new Promise((resolve, reject) => {
+        child.once("error", reject);
+        child.once("exit", (code, signal) => resolve({ code, signal }));
+    });
+    if (result.signal) {
+        throw new Error(`${label} exited via ${result.signal}${stderr.trim() ? `: ${stderr.trim()}` : ""}`);
+    }
+    if (result.code !== 0) {
+        throw new Error(`${label} failed with exit code ${result.code ?? "unknown"}${stderr.trim() ? `: ${stderr.trim()}` : ""}`);
+    }
+}
+async function runPgDumpBackup(opts) {
+    const pgDumpBin = process.env.PAPERCLIP_PG_DUMP_PATH || "pg_dump";
+    const child = spawn(pgDumpBin, [
+        `--dbname=${opts.connectionString}`,
+        "--format=plain",
+        "--clean",
+        "--if-exists",
+        "--no-owner",
+        "--no-privileges",
+        "--schema=public",
+    ], {
+        stdio: ["ignore", "pipe", "pipe"],
+        env: {
+            ...process.env,
+            PGCONNECT_TIMEOUT: String(opts.connectTimeout),
+        },
+    });
+    if (!child.stdout) {
+        throw new Error("pg_dump did not expose stdout");
+    }
+    await Promise.all([
+        pipeline(child.stdout, createGzip(), createWriteStream(opts.backupFile)),
+        waitForChildExit(child, pgDumpBin),
+    ]);
+}
+async function restoreWithPsql(opts, connectTimeout) {
+    const psqlBin = process.env.PAPERCLIP_PSQL_PATH || "psql";
+    const child = spawn(psqlBin, [
+        `--dbname=${opts.connectionString}`,
+        "--set=ON_ERROR_STOP=1",
+        "--quiet",
+        "--no-psqlrc",
+    ], {
+        stdio: ["pipe", "ignore", "pipe"],
+        env: {
+            ...process.env,
+            PGCONNECT_TIMEOUT: String(connectTimeout),
+        },
+    });
+    if (!child.stdin) {
+        throw new Error("psql did not expose stdin");
+    }
+    const input = opts.backupFile.endsWith(".gz")
+        ? createReadStream(opts.backupFile).pipe(createGunzip())
+        : createReadStream(opts.backupFile);
+    await Promise.all([
+        pipeline(input, child.stdin),
+        waitForChildExit(child, psqlBin),
+    ]);
+}
+async function hasStatementBreakpoints(backupFile) {
+    const raw = createReadStream(backupFile);
+    const stream = backupFile.endsWith(".gz") ? raw.pipe(createGunzip()) : raw;
+    let text = "";
+    try {
+        for await (const chunk of stream) {
+            text += Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk);
+            if (text.includes(STATEMENT_BREAKPOINT))
+                return true;
+            if (Buffer.byteLength(text, "utf8") >= BACKUP_BREAKPOINT_DETECT_BYTES)
+                return false;
+        }
+        return text.includes(STATEMENT_BREAKPOINT);
+    }
+    finally {
+        stream.destroy();
+        raw.destroy();
+    }
+}
 async function* readRestoreStatements(backupFile) {
-    const stream = createReadStream(backupFile, { encoding: "utf8" });
+    const raw = createReadStream(backupFile);
+    const stream = backupFile.endsWith(".gz") ? raw.pipe(createGunzip()) : raw;
+    stream.setEncoding("utf8");
     const reader = createInterface({
         input: stream,
         crlfDelay: Infinity,
@@ -118,44 +296,25 @@ async function* readRestoreStatements(backupFile) {
     finally {
         reader.close();
         stream.destroy();
+        raw.destroy();
     }
 }
 export function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAULT_BACKUP_WRITE_BUFFER_BYTES) {
-    const stream = createWriteStream(filePath, { encoding: "utf8" });
+    const filePromise = openFile(filePath, "w");
     const flushThreshold = Math.max(1, Math.trunc(maxBufferedBytes));
     let bufferedLines = [];
     let bufferedBytes = 0;
     let firstChunk = true;
     let closed = false;
-    let streamError = null;
     let pendingWrite = Promise.resolve();
-    stream.on("error", (error) => {
-        streamError = error;
-    });
     const writeChunk = async (chunk) => {
-        if (streamError)
-            throw streamError;
-        const canContinue = stream.write(chunk);
-        if (!canContinue) {
-            await new Promise((resolve, reject) => {
-                const handleDrain = () => {
-                    cleanup();
-                    resolve();
-                };
-                const handleError = (error) => {
-                    cleanup();
-                    reject(error);
-                };
-                const cleanup = () => {
-                    stream.off("drain", handleDrain);
-                    stream.off("error", handleError);
-                };
-                stream.once("drain", handleDrain);
-                stream.once("error", handleError);
-            });
+        const file = await filePromise;
+        if (typeof chunk === "string") {
+            await file.write(chunk, null, "utf8");
         }
-        if (streamError)
-            throw streamError;
+        else {
+            await file.write(chunk);
+        }
     };
     const flushBufferedLines = () => {
         if (bufferedLines.length === 0)
@@ -173,13 +332,27 @@ export function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAUL
             if (closed) {
                 throw new Error(`Cannot write to closed backup file: ${filePath}`);
             }
-            if (streamError)
-                throw streamError;
             bufferedLines.push(line);
             bufferedBytes += Buffer.byteLength(line, "utf8") + 1;
             if (bufferedBytes >= flushThreshold) {
                 flushBufferedLines();
             }
+        },
+        async drain() {
+            if (closed) {
+                throw new Error(`Cannot drain closed backup file: ${filePath}`);
+            }
+            flushBufferedLines();
+            await pendingWrite;
+        },
+        async writeRaw(chunk) {
+            if (closed) {
+                throw new Error(`Cannot write to closed backup file: ${filePath}`);
+            }
+            flushBufferedLines();
+            firstChunk = false;
+            pendingWrite = pendingWrite.then(() => writeChunk(chunk));
+            await pendingWrite;
         },
         async close() {
             if (closed)
@@ -187,20 +360,8 @@ export function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAUL
             closed = true;
             flushBufferedLines();
             await pendingWrite;
-            await new Promise((resolve, reject) => {
-                if (streamError) {
-                    reject(streamError);
-                    return;
-                }
-                stream.end((error) => {
-                    if (error)
-                        reject(error);
-                    else
-                        resolve();
-                });
-            });
-            if (streamError)
-                throw streamError;
+            const file = await filePromise;
+            await file.close();
         },
         async abort() {
             if (closed)
@@ -208,8 +369,8 @@ export function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAUL
             closed = true;
             bufferedLines = [];
             bufferedBytes = 0;
-            stream.destroy();
             await pendingWrite.catch(() => { });
+            await filePromise.then((file) => file.close()).catch(() => { });
             if (existsSync(filePath)) {
                 try {
                     unlinkSync(filePath);
@@ -223,16 +384,58 @@ export function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAUL
 }
 export async function runDatabaseBackup(opts) {
     const filenamePrefix = opts.filenamePrefix ?? "paperclip";
-    const retentionDays = Math.max(1, Math.trunc(opts.retentionDays));
+    const retention = opts.retention;
     const connectTimeout = Math.max(1, Math.trunc(opts.connectTimeoutSeconds ?? 5));
+    const backupEngine = opts.backupEngine ?? "auto";
+    const canUsePgDump = !hasBackupTransforms(opts);
     const includeMigrationJournal = opts.includeMigrationJournal === true;
     const excludedTableNames = normalizeTableNameSet(opts.excludeTables);
     const nullifiedColumnsByTable = normalizeNullifyColumnMap(opts.nullifyColumns);
-    const sql = postgres(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+    let sql = postgres(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+    let sqlClosed = false;
+    const closeSql = async () => {
+        if (sqlClosed)
+            return;
+        sqlClosed = true;
+        await sql.end();
+    };
     mkdirSync(opts.backupDir, { recursive: true });
-    const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp()}.sql`);
-    const writer = createBufferedTextFileWriter(backupFile);
+    const sqlFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp()}.sql`);
+    const backupFile = `${sqlFile}.gz`;
+    const writer = createBufferedTextFileWriter(sqlFile);
     try {
+        if (backupEngine === "pg_dump" || (backupEngine === "auto" && canUsePgDump)) {
+            await sql `SELECT 1`;
+            try {
+                await closeSql();
+                await runPgDumpBackup({
+                    connectionString: opts.connectionString,
+                    backupFile,
+                    connectTimeout,
+                });
+                await writer.abort();
+                const sizeBytes = statSync(backupFile).size;
+                const prunedCount = pruneOldBackups(opts.backupDir, retention, filenamePrefix);
+                return {
+                    backupFile,
+                    sizeBytes,
+                    prunedCount,
+                };
+            }
+            catch (error) {
+                if (existsSync(backupFile)) {
+                    try {
+                        unlinkSync(backupFile);
+                    }
+                    catch { /* ignore */ }
+                }
+                if (backupEngine === "pg_dump") {
+                    throw error;
+                }
+                sql = postgres(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+                sqlClosed = false;
+            }
+        }
         await sql `SELECT 1`;
         const emit = (line) => writer.emit(line);
         const emitStatement = (statement) => {
@@ -512,25 +715,37 @@ export async function runDatabaseBackup(opts) {
       `;
             const colNames = cols.map((c) => `"${c.column_name}"`).join(", ");
             emit(`-- Data for: ${schema_name}.${tablename} (${count[0].n} rows)`);
-            const rows = await sql.unsafe(`SELECT * FROM ${qualifiedTableName}`).values();
             const nullifiedColumns = nullifiedColumnsByTable.get(tablename) ?? new Set();
-            for (const row of rows) {
-                const values = row.map((rawValue, index) => {
-                    const columnName = cols[index]?.column_name;
-                    const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
-                    if (val === null || val === undefined)
-                        return "NULL";
-                    if (typeof val === "boolean")
-                        return val ? "true" : "false";
-                    if (typeof val === "number")
-                        return String(val);
-                    if (val instanceof Date)
-                        return formatSqlLiteral(val.toISOString());
-                    if (typeof val === "object")
-                        return formatSqlLiteral(JSON.stringify(val));
-                    return formatSqlLiteral(String(val));
-                });
-                emitStatement(`INSERT INTO ${qualifiedTableName} (${colNames}) VALUES (${values.join(", ")});`);
+            if (backupEngine !== "javascript" && nullifiedColumns.size === 0) {
+                emit(`COPY ${qualifiedTableName} (${colNames}) FROM stdin;`);
+                await writer.writeRaw("\n");
+                const copySql = postgres(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+                try {
+                    const copyStream = await copySql
+                        .unsafe(`COPY ${qualifiedTableName} (${colNames}) TO STDOUT`)
+                        .readable();
+                    for await (const chunk of copyStream) {
+                        await writer.writeRaw(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+                    }
+                }
+                finally {
+                    await copySql.end();
+                }
+                await writer.writeRaw("\\.\n");
+                emitStatementBoundary();
+                emit("");
+                continue;
+            }
+            const rowCursor = sql
+                .unsafe(`SELECT * FROM ${qualifiedTableName}`)
+                .values()
+                .cursor(BACKUP_DATA_CURSOR_ROWS);
+            for await (const rows of rowCursor) {
+                for (const row of rows) {
+                    const values = row.map((rawValue, index) => formatSqlValue(rawValue, cols[index]?.column_name, nullifiedColumns));
+                    emitStatement(`INSERT INTO ${qualifiedTableName} (${colNames}) VALUES (${values.join(", ")});`);
+                }
+                await writer.drain();
             }
             emit("");
         }
@@ -551,8 +766,13 @@ export async function runDatabaseBackup(opts) {
         emitStatement("COMMIT;");
         emit("");
         await writer.close();
+        // Compress the SQL file with gzip
+        const sqlReadStream = createReadStream(sqlFile);
+        const gzWriteStream = createWriteStream(backupFile);
+        await pipeline(sqlReadStream, createGzip(), gzWriteStream);
+        unlinkSync(sqlFile);
         const sizeBytes = statSync(backupFile).size;
-        const prunedCount = pruneOldBackups(opts.backupDir, retentionDays, filenamePrefix);
+        const prunedCount = pruneOldBackups(opts.backupDir, retention, filenamePrefix);
         return {
             backupFile,
             sizeBytes,
@@ -561,14 +781,35 @@ export async function runDatabaseBackup(opts) {
     }
     catch (error) {
         await writer.abort();
+        if (existsSync(backupFile)) {
+            try {
+                unlinkSync(backupFile);
+            }
+            catch { /* ignore */ }
+        }
+        if (existsSync(sqlFile)) {
+            try {
+                unlinkSync(sqlFile);
+            }
+            catch { /* ignore */ }
+        }
         throw error;
     }
     finally {
-        await sql.end();
+        await closeSql();
     }
 }
 export async function runDatabaseRestore(opts) {
     const connectTimeout = Math.max(1, Math.trunc(opts.connectTimeoutSeconds ?? 5));
+    try {
+        await restoreWithPsql(opts, connectTimeout);
+        return;
+    }
+    catch (error) {
+        if (!(await hasStatementBreakpoints(opts.backupFile))) {
+            throw new Error(`Failed to restore ${basename(opts.backupFile)} with psql: ${sanitizeRestoreErrorMessage(error)}`);
+        }
+    }
     const sql = postgres(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
     try {
         await sql `SELECT 1`;

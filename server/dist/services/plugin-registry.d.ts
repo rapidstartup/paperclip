@@ -1802,7 +1802,7 @@ export declare function pluginRegistryService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-    }, "single", Record<"plugin_entities", "not-null">, false, "where" | "orderBy" | "limit" | "offset", {
+    }, "single", Record<"plugin_entities", "not-null">, false, "limit" | "offset" | "where" | "orderBy", {
         id: string;
         data: Record<string, unknown>;
         status: string | null;
@@ -2006,7 +2006,7 @@ export declare function pluginRegistryService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
-    }>, "where" | "orderBy" | "limit" | "offset">;
+    }>, "limit" | "offset" | "where" | "orderBy">;
     /**
      * Look up a plugin-owned entity mapping by its external identifier.
      *

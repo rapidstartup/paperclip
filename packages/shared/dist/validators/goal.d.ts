@@ -7,18 +7,18 @@ export declare const createGoalSchema: z.ZodObject<{
     parentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     ownerAgentId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    status: "active" | "cancelled" | "planned" | "achieved";
     title: string;
+    status: "active" | "cancelled" | "planned" | "achieved";
     level: "company" | "team" | "agent" | "task";
     description?: string | null | undefined;
-    parentId?: string | null | undefined;
     ownerAgentId?: string | null | undefined;
+    parentId?: string | null | undefined;
 }, {
     title: string;
-    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     description?: string | null | undefined;
-    parentId?: string | null | undefined;
+    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     ownerAgentId?: string | null | undefined;
+    parentId?: string | null | undefined;
     level?: "company" | "team" | "agent" | "task" | undefined;
 }>;
 export type CreateGoal = z.infer<typeof createGoalSchema>;
@@ -30,18 +30,18 @@ export declare const updateGoalSchema: z.ZodObject<{
     parentId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
     ownerAgentId: z.ZodOptional<z.ZodNullable<z.ZodOptional<z.ZodString>>>;
 }, "strip", z.ZodTypeAny, {
-    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
-    description?: string | null | undefined;
-    parentId?: string | null | undefined;
     title?: string | undefined;
+    description?: string | null | undefined;
+    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     ownerAgentId?: string | null | undefined;
+    parentId?: string | null | undefined;
     level?: "company" | "team" | "agent" | "task" | undefined;
 }, {
-    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
-    description?: string | null | undefined;
-    parentId?: string | null | undefined;
     title?: string | undefined;
+    description?: string | null | undefined;
+    status?: "active" | "cancelled" | "planned" | "achieved" | undefined;
     ownerAgentId?: string | null | undefined;
+    parentId?: string | null | undefined;
     level?: "company" | "team" | "agent" | "task" | undefined;
 }>;
 export type UpdateGoal = z.infer<typeof updateGoalSchema>;

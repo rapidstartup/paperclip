@@ -68,7 +68,7 @@ function resolveBackupDir(config) {
     return resolveDefaultBackupDir();
 }
 function resolveRetentionDays(config) {
-    return asPositiveInt(config?.database?.backup?.retentionDays) ?? 30;
+    return asPositiveInt(config?.database?.backup?.retentionDays) ?? 7;
 }
 async function main() {
     const configPath = resolveDefaultConfigPath();
@@ -83,7 +83,7 @@ async function main() {
         const result = await runDatabaseBackup({
             connectionString,
             backupDir,
-            retentionDays,
+            retention: { dailyDays: retentionDays, weeklyWeeks: 4, monthlyMonths: 1 },
             filenamePrefix: "paperclip",
         });
         console.log(`Backup saved: ${formatDatabaseBackupResult(result)}`);

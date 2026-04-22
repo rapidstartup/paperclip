@@ -15,6 +15,13 @@ export type BetterAuthSessionResult = {
     user: BetterAuthSessionUser | null;
 };
 type BetterAuthInstance = ReturnType<typeof betterAuth>;
+export declare function deriveAuthCookiePrefix(instanceId?: string): string;
+export declare function buildBetterAuthAdvancedOptions(input: {
+    disableSecureCookies: boolean;
+}): {
+    useSecureCookies?: boolean | undefined;
+    cookiePrefix: string;
+};
 export declare function deriveAuthTrustedOrigins(config: Config): string[];
 export declare function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?: string[]): BetterAuthInstance;
 export declare function createBetterAuthHandler(auth: BetterAuthInstance): RequestHandler;

@@ -442,6 +442,7 @@ export function createPluginWorkerHandle(pluginId, options) {
             config: options.config,
             instanceInfo: options.instanceInfo,
             apiVersion: options.apiVersion,
+            databaseNamespace: options.databaseNamespace ?? null,
         };
         try {
             const result = await callInternal("initialize", initParams, INITIALIZE_TIMEOUT_MS);

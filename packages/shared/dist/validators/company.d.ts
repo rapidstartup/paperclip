@@ -29,9 +29,9 @@ export declare const updateCompanySchema: z.ZodObject<{
     logoAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     githubToken: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
-    status?: "active" | "paused" | "archived" | undefined;
     description?: string | null | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
+    name?: string | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
     requireBoardApprovalForNewAgents?: boolean | undefined;
@@ -43,9 +43,9 @@ export declare const updateCompanySchema: z.ZodObject<{
     logoAssetId?: string | null | undefined;
     githubToken?: string | null | undefined;
 }, {
-    name?: string | undefined;
-    status?: "active" | "paused" | "archived" | undefined;
     description?: string | null | undefined;
+    status?: "active" | "paused" | "archived" | undefined;
+    name?: string | undefined;
     budgetMonthlyCents?: number | undefined;
     spentMonthlyCents?: number | undefined;
     requireBoardApprovalForNewAgents?: boolean | undefined;
@@ -64,23 +64,23 @@ export declare const updateCompanyBrandingSchema: z.ZodEffects<z.ZodObject<{
     brandColor: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     logoAssetId: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strict", z.ZodTypeAny, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
 }, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
 }>, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
 }, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     brandColor?: string | null | undefined;
     logoAssetId?: string | null | undefined;
 }>;

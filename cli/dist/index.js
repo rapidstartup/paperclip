@@ -10,13 +10,14 @@ var __export = (target, all) => {
 };
 
 // ../packages/shared/src/constants.ts
-var COMPANY_STATUSES, DEPLOYMENT_MODES, DEPLOYMENT_EXPOSURES, AUTH_BASE_URL_MODES, AGENT_STATUSES, AGENT_ADAPTER_TYPES, AGENT_ROLES, AGENT_ICON_NAMES, ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUS_FILTER, ISSUE_PRIORITIES, ISSUE_EXECUTION_POLICY_MODES, ISSUE_EXECUTION_STAGE_TYPES, ISSUE_EXECUTION_STATE_STATUSES, ISSUE_EXECUTION_DECISION_OUTCOMES, GOAL_LEVELS, GOAL_STATUSES, PROJECT_STATUSES, ROUTINE_STATUSES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_TRIGGER_SIGNING_MODES, ROUTINE_VARIABLE_TYPES, APPROVAL_TYPES, SECRET_PROVIDERS, STORAGE_PROVIDERS, BILLING_TYPES, FINANCE_EVENT_KINDS, FINANCE_DIRECTIONS, FINANCE_UNITS, BUDGET_SCOPE_TYPES, BUDGET_METRICS, BUDGET_WINDOW_KINDS, BUDGET_INCIDENT_RESOLUTION_ACTIONS, INVITE_JOIN_TYPES, JOIN_REQUEST_TYPES, JOIN_REQUEST_STATUSES, PERMISSION_KEYS, PLUGIN_STATUSES, PLUGIN_CATEGORIES, PLUGIN_CAPABILITIES, PLUGIN_UI_SLOT_TYPES, PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS, PLUGIN_LAUNCHER_PLACEMENT_ZONES, PLUGIN_LAUNCHER_ACTIONS, PLUGIN_LAUNCHER_BOUNDS, PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS, PLUGIN_UI_SLOT_ENTITY_TYPES, PLUGIN_STATE_SCOPE_KINDS;
+var COMPANY_STATUSES, DEPLOYMENT_MODES, DEPLOYMENT_EXPOSURES, BIND_MODES, AUTH_BASE_URL_MODES, AGENT_STATUSES, AGENT_ADAPTER_TYPES, AGENT_ROLES, AGENT_ICON_NAMES, ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUSES, INBOX_MINE_ISSUE_STATUS_FILTER, ISSUE_PRIORITIES, ISSUE_THREAD_INTERACTION_KINDS, ISSUE_THREAD_INTERACTION_STATUSES, ISSUE_THREAD_INTERACTION_CONTINUATION_POLICIES, ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY, SYSTEM_ISSUE_DOCUMENT_KEYS, SYSTEM_ISSUE_DOCUMENT_KEY_SET, ISSUE_EXECUTION_POLICY_MODES, ISSUE_EXECUTION_STAGE_TYPES, ISSUE_EXECUTION_STATE_STATUSES, ISSUE_EXECUTION_DECISION_OUTCOMES, GOAL_LEVELS, GOAL_STATUSES, PROJECT_STATUSES, ROUTINE_STATUSES, ROUTINE_CONCURRENCY_POLICIES, ROUTINE_CATCH_UP_POLICIES, ROUTINE_TRIGGER_SIGNING_MODES, ROUTINE_VARIABLE_TYPES, APPROVAL_TYPES, SECRET_PROVIDERS, STORAGE_PROVIDERS, BILLING_TYPES, FINANCE_EVENT_KINDS, FINANCE_DIRECTIONS, FINANCE_UNITS, BUDGET_SCOPE_TYPES, BUDGET_METRICS, BUDGET_WINDOW_KINDS, BUDGET_INCIDENT_RESOLUTION_ACTIONS, HUMAN_COMPANY_MEMBERSHIP_ROLES, INVITE_JOIN_TYPES, JOIN_REQUEST_TYPES, JOIN_REQUEST_STATUSES, PERMISSION_KEYS, PLUGIN_STATUSES, PLUGIN_CATEGORIES, PLUGIN_CAPABILITIES, PLUGIN_DATABASE_CORE_READ_TABLES, PLUGIN_API_ROUTE_METHODS, PLUGIN_API_ROUTE_AUTH_MODES, PLUGIN_API_ROUTE_CHECKOUT_POLICIES, PLUGIN_UI_SLOT_TYPES, PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS, PLUGIN_LAUNCHER_PLACEMENT_ZONES, PLUGIN_LAUNCHER_ACTIONS, PLUGIN_LAUNCHER_BOUNDS, PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS, PLUGIN_UI_SLOT_ENTITY_TYPES, PLUGIN_STATE_SCOPE_KINDS;
 var init_constants = __esm({
   "../packages/shared/src/constants.ts"() {
     "use strict";
     COMPANY_STATUSES = ["active", "paused", "archived"];
     DEPLOYMENT_MODES = ["local_trusted", "authenticated"];
     DEPLOYMENT_EXPOSURES = ["private", "public"];
+    BIND_MODES = ["loopback", "lan", "tailnet", "custom"];
     AUTH_BASE_URL_MODES = ["auto", "explicit"];
     AGENT_STATUSES = [
       "active",
@@ -115,6 +116,27 @@ var init_constants = __esm({
     ];
     INBOX_MINE_ISSUE_STATUS_FILTER = INBOX_MINE_ISSUE_STATUSES.join(",");
     ISSUE_PRIORITIES = ["critical", "high", "medium", "low"];
+    ISSUE_THREAD_INTERACTION_KINDS = [
+      "suggest_tasks",
+      "ask_user_questions",
+      "request_confirmation"
+    ];
+    ISSUE_THREAD_INTERACTION_STATUSES = [
+      "pending",
+      "accepted",
+      "rejected",
+      "answered",
+      "expired",
+      "failed"
+    ];
+    ISSUE_THREAD_INTERACTION_CONTINUATION_POLICIES = [
+      "none",
+      "wake_assignee",
+      "wake_assignee_on_accept"
+    ];
+    ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY = "continuation-summary";
+    SYSTEM_ISSUE_DOCUMENT_KEYS = [ISSUE_CONTINUATION_SUMMARY_DOCUMENT_KEY];
+    SYSTEM_ISSUE_DOCUMENT_KEY_SET = new Set(SYSTEM_ISSUE_DOCUMENT_KEYS);
     ISSUE_EXECUTION_POLICY_MODES = ["normal", "auto"];
     ISSUE_EXECUTION_STAGE_TYPES = ["review", "approval"];
     ISSUE_EXECUTION_STATE_STATUSES = ["idle", "pending", "changes_requested", "completed"];
@@ -191,6 +213,12 @@ var init_constants = __esm({
       "keep_paused",
       "raise_budget_and_resume"
     ];
+    HUMAN_COMPANY_MEMBERSHIP_ROLES = [
+      "owner",
+      "admin",
+      "operator",
+      "viewer"
+    ];
     INVITE_JOIN_TYPES = ["human", "agent", "both"];
     JOIN_REQUEST_TYPES = ["human", "agent"];
     JOIN_REQUEST_STATUSES = ["pending_approval", "approved", "rejected"];
@@ -200,6 +228,7 @@ var init_constants = __esm({
       "users:manage_permissions",
       "tasks:assign",
       "tasks:assign_scope",
+      "tasks:manage_active_checkouts",
       "joins:approve"
     ];
     PLUGIN_STATUSES = [
@@ -222,6 +251,8 @@ var init_constants = __esm({
       "projects.read",
       "project.workspaces.read",
       "issues.read",
+      "issue.relations.read",
+      "issue.subtree.read",
       "issue.comments.read",
       "issue.documents.read",
       "agents.read",
@@ -230,10 +261,16 @@ var init_constants = __esm({
       "goals.update",
       "activity.read",
       "costs.read",
+      "issues.orchestration.read",
+      "database.namespace.read",
       // Data Write
       "issues.create",
       "issues.update",
+      "issue.relations.write",
+      "issues.checkout",
+      "issues.wakeup",
       "issue.comments.create",
+      "issue.interactions.create",
       "issue.documents.write",
       "agents.pause",
       "agents.resume",
@@ -245,6 +282,8 @@ var init_constants = __esm({
       "activity.log.write",
       "metrics.write",
       "telemetry.track",
+      "database.namespace.migrate",
+      "database.namespace.write",
       // Plugin State
       "plugin.state.read",
       "plugin.state.write",
@@ -253,6 +292,7 @@ var init_constants = __esm({
       "events.emit",
       "jobs.schedule",
       "webhooks.receive",
+      "api.routes.register",
       "http.outbound",
       "secrets.read-ref",
       // Agent Tools
@@ -265,6 +305,28 @@ var init_constants = __esm({
       "ui.dashboardWidget.register",
       "ui.commentAnnotation.register",
       "ui.action.register"
+    ];
+    PLUGIN_DATABASE_CORE_READ_TABLES = [
+      "companies",
+      "projects",
+      "goals",
+      "agents",
+      "issues",
+      "issue_documents",
+      "issue_relations",
+      "issue_comments",
+      "heartbeat_runs",
+      "cost_events",
+      "approvals",
+      "issue_approvals",
+      "budget_incidents"
+    ];
+    PLUGIN_API_ROUTE_METHODS = ["GET", "POST", "PATCH", "DELETE"];
+    PLUGIN_API_ROUTE_AUTH_MODES = ["board", "agent", "board-or-agent", "webhook"];
+    PLUGIN_API_ROUTE_CHECKOUT_POLICIES = [
+      "none",
+      "required-for-agent-in-progress",
+      "always-for-agent"
     ];
     PLUGIN_UI_SLOT_TYPES = [
       "page",
@@ -370,6 +432,235 @@ var init_adapter_type = __esm({
   }
 });
 
+// ../packages/shared/src/network-bind.ts
+function normalizeHost(host) {
+  const trimmed = host?.trim();
+  return trimmed ? trimmed : void 0;
+}
+function isLoopbackHost(host) {
+  const normalized = normalizeHost(host)?.toLowerCase();
+  return normalized === "127.0.0.1" || normalized === "localhost" || normalized === "::1";
+}
+function isAllInterfacesHost(host) {
+  const normalized = normalizeHost(host)?.toLowerCase();
+  return normalized === "0.0.0.0" || normalized === "::";
+}
+function inferBindModeFromHost(host, opts) {
+  const normalized = normalizeHost(host);
+  const tailnetBindHost = normalizeHost(opts?.tailnetBindHost);
+  if (!normalized || isLoopbackHost(normalized)) return "loopback";
+  if (isAllInterfacesHost(normalized)) return "lan";
+  if (tailnetBindHost && normalized === tailnetBindHost) return "tailnet";
+  return "custom";
+}
+function validateConfiguredBindMode(input) {
+  const bind = input.bind ?? inferBindModeFromHost(input.host);
+  const customBindHost = normalizeHost(input.customBindHost);
+  const errors = [];
+  if (input.deploymentMode === "local_trusted" && bind !== "loopback") {
+    errors.push("local_trusted requires server.bind=loopback");
+  }
+  if (bind === "custom" && !customBindHost) {
+    const legacyHost = normalizeHost(input.host);
+    if (!legacyHost || isLoopbackHost(legacyHost) || isAllInterfacesHost(legacyHost)) {
+      errors.push("server.customBindHost is required when server.bind=custom");
+    }
+  }
+  if (input.deploymentMode === "authenticated" && input.deploymentExposure === "public" && bind === "tailnet") {
+    errors.push("server.bind=tailnet is only supported for authenticated/private deployments");
+  }
+  return errors;
+}
+function resolveRuntimeBind(input) {
+  const bind = input.bind ?? inferBindModeFromHost(input.host, { tailnetBindHost: input.tailnetBindHost });
+  const legacyHost = normalizeHost(input.host);
+  const customBindHost = normalizeHost(input.customBindHost) ?? (bind === "custom" && legacyHost && !isLoopbackHost(legacyHost) && !isAllInterfacesHost(legacyHost) ? legacyHost : void 0);
+  switch (bind) {
+    case "loopback":
+      return { bind, host: LOOPBACK_BIND_HOST, customBindHost, errors: [] };
+    case "lan":
+      return { bind, host: ALL_INTERFACES_BIND_HOST, customBindHost, errors: [] };
+    case "custom":
+      return customBindHost ? { bind, host: customBindHost, customBindHost, errors: [] } : { bind, host: legacyHost ?? LOOPBACK_BIND_HOST, errors: ["server.customBindHost is required when server.bind=custom"] };
+    case "tailnet": {
+      const tailnetBindHost = normalizeHost(input.tailnetBindHost);
+      return tailnetBindHost ? { bind, host: tailnetBindHost, customBindHost, errors: [] } : {
+        bind,
+        host: legacyHost ?? LOOPBACK_BIND_HOST,
+        customBindHost,
+        errors: [
+          "server.bind=tailnet requires a detected Tailscale address or PAPERCLIP_TAILNET_BIND_HOST"
+        ]
+      };
+    }
+  }
+}
+var LOOPBACK_BIND_HOST, ALL_INTERFACES_BIND_HOST;
+var init_network_bind = __esm({
+  "../packages/shared/src/network-bind.ts"() {
+    "use strict";
+    LOOPBACK_BIND_HOST = "127.0.0.1";
+    ALL_INTERFACES_BIND_HOST = "0.0.0.0";
+  }
+});
+
+// ../packages/shared/src/issue-references.ts
+var init_issue_references = __esm({
+  "../packages/shared/src/issue-references.ts"() {
+    "use strict";
+  }
+});
+
+// ../packages/shared/src/validators/sidebar-preferences.ts
+import { z as z2 } from "zod";
+var sidebarOrderedIdSchema, sidebarOrderPreferenceSchema, upsertSidebarOrderPreferenceSchema;
+var init_sidebar_preferences = __esm({
+  "../packages/shared/src/validators/sidebar-preferences.ts"() {
+    "use strict";
+    sidebarOrderedIdSchema = z2.string().uuid();
+    sidebarOrderPreferenceSchema = z2.object({
+      orderedIds: z2.array(sidebarOrderedIdSchema),
+      updatedAt: z2.coerce.date().nullable()
+    });
+    upsertSidebarOrderPreferenceSchema = z2.object({
+      orderedIds: z2.array(sidebarOrderedIdSchema)
+    });
+  }
+});
+
+// ../packages/shared/src/validators/execution-workspace.ts
+import { z as z3 } from "zod";
+var executionWorkspaceStatusSchema, executionWorkspaceConfigSchema, workspaceRuntimeControlTargetSchema, executionWorkspaceCloseReadinessStateSchema, executionWorkspaceCloseActionKindSchema, executionWorkspaceCloseActionSchema, executionWorkspaceCloseLinkedIssueSchema, executionWorkspaceCloseGitReadinessSchema, workspaceRuntimeServiceSchema, executionWorkspaceCloseReadinessSchema, updateExecutionWorkspaceSchema;
+var init_execution_workspace = __esm({
+  "../packages/shared/src/validators/execution-workspace.ts"() {
+    "use strict";
+    executionWorkspaceStatusSchema = z3.enum([
+      "active",
+      "idle",
+      "in_review",
+      "archived",
+      "cleanup_failed"
+    ]);
+    executionWorkspaceConfigSchema = z3.object({
+      provisionCommand: z3.string().optional().nullable(),
+      teardownCommand: z3.string().optional().nullable(),
+      cleanupCommand: z3.string().optional().nullable(),
+      workspaceRuntime: z3.record(z3.unknown()).optional().nullable(),
+      desiredState: z3.enum(["running", "stopped", "manual"]).optional().nullable(),
+      serviceStates: z3.record(z3.enum(["running", "stopped", "manual"])).optional().nullable()
+    }).strict();
+    workspaceRuntimeControlTargetSchema = z3.object({
+      workspaceCommandId: z3.string().min(1).optional().nullable(),
+      runtimeServiceId: z3.string().uuid().optional().nullable(),
+      serviceIndex: z3.number().int().nonnegative().optional().nullable()
+    }).strict();
+    executionWorkspaceCloseReadinessStateSchema = z3.enum([
+      "ready",
+      "ready_with_warnings",
+      "blocked"
+    ]);
+    executionWorkspaceCloseActionKindSchema = z3.enum([
+      "archive_record",
+      "stop_runtime_services",
+      "cleanup_command",
+      "teardown_command",
+      "git_worktree_remove",
+      "git_branch_delete",
+      "remove_local_directory"
+    ]);
+    executionWorkspaceCloseActionSchema = z3.object({
+      kind: executionWorkspaceCloseActionKindSchema,
+      label: z3.string(),
+      description: z3.string(),
+      command: z3.string().nullable()
+    }).strict();
+    executionWorkspaceCloseLinkedIssueSchema = z3.object({
+      id: z3.string().uuid(),
+      identifier: z3.string().nullable(),
+      title: z3.string(),
+      status: z3.string(),
+      isTerminal: z3.boolean()
+    }).strict();
+    executionWorkspaceCloseGitReadinessSchema = z3.object({
+      repoRoot: z3.string().nullable(),
+      workspacePath: z3.string().nullable(),
+      branchName: z3.string().nullable(),
+      baseRef: z3.string().nullable(),
+      hasDirtyTrackedFiles: z3.boolean(),
+      hasUntrackedFiles: z3.boolean(),
+      dirtyEntryCount: z3.number().int().nonnegative(),
+      untrackedEntryCount: z3.number().int().nonnegative(),
+      aheadCount: z3.number().int().nonnegative().nullable(),
+      behindCount: z3.number().int().nonnegative().nullable(),
+      isMergedIntoBase: z3.boolean().nullable(),
+      createdByRuntime: z3.boolean()
+    }).strict();
+    workspaceRuntimeServiceSchema = z3.object({
+      id: z3.string(),
+      companyId: z3.string().uuid(),
+      projectId: z3.string().uuid().nullable(),
+      projectWorkspaceId: z3.string().uuid().nullable(),
+      executionWorkspaceId: z3.string().uuid().nullable(),
+      issueId: z3.string().uuid().nullable(),
+      scopeType: z3.enum(["project_workspace", "execution_workspace", "run", "agent"]),
+      scopeId: z3.string().nullable(),
+      serviceName: z3.string(),
+      status: z3.enum(["starting", "running", "stopped", "failed"]),
+      lifecycle: z3.enum(["shared", "ephemeral"]),
+      reuseKey: z3.string().nullable(),
+      command: z3.string().nullable(),
+      cwd: z3.string().nullable(),
+      port: z3.number().int().nullable(),
+      url: z3.string().nullable(),
+      provider: z3.enum(["local_process", "adapter_managed"]),
+      providerRef: z3.string().nullable(),
+      ownerAgentId: z3.string().uuid().nullable(),
+      startedByRunId: z3.string().uuid().nullable(),
+      lastUsedAt: z3.coerce.date(),
+      startedAt: z3.coerce.date(),
+      stoppedAt: z3.coerce.date().nullable(),
+      stopPolicy: z3.record(z3.unknown()).nullable(),
+      healthStatus: z3.enum(["unknown", "healthy", "unhealthy"]),
+      configIndex: z3.number().int().nonnegative().nullable().optional(),
+      createdAt: z3.coerce.date(),
+      updatedAt: z3.coerce.date()
+    }).strict();
+    executionWorkspaceCloseReadinessSchema = z3.object({
+      workspaceId: z3.string().uuid(),
+      state: executionWorkspaceCloseReadinessStateSchema,
+      blockingReasons: z3.array(z3.string()),
+      warnings: z3.array(z3.string()),
+      linkedIssues: z3.array(executionWorkspaceCloseLinkedIssueSchema),
+      plannedActions: z3.array(executionWorkspaceCloseActionSchema),
+      isDestructiveCloseAllowed: z3.boolean(),
+      isSharedWorkspace: z3.boolean(),
+      isProjectPrimaryWorkspace: z3.boolean(),
+      git: executionWorkspaceCloseGitReadinessSchema.nullable(),
+      runtimeServices: z3.array(workspaceRuntimeServiceSchema)
+    }).strict();
+    updateExecutionWorkspaceSchema = z3.object({
+      name: z3.string().min(1).optional(),
+      cwd: z3.string().optional().nullable(),
+      repoUrl: z3.string().optional().nullable(),
+      baseRef: z3.string().optional().nullable(),
+      branchName: z3.string().optional().nullable(),
+      providerRef: z3.string().optional().nullable(),
+      status: executionWorkspaceStatusSchema.optional(),
+      cleanupEligibleAt: z3.string().datetime().optional().nullable(),
+      cleanupReason: z3.string().optional().nullable(),
+      config: executionWorkspaceConfigSchema.optional().nullable(),
+      metadata: z3.record(z3.unknown()).optional().nullable()
+    }).strict();
+  }
+});
+
+// ../packages/shared/src/workspace-commands.ts
+var init_workspace_commands = __esm({
+  "../packages/shared/src/workspace-commands.ts"() {
+    "use strict";
+  }
+});
+
 // ../packages/shared/src/types/feedback.ts
 var FEEDBACK_TARGET_TYPES, FEEDBACK_VOTE_VALUES, FEEDBACK_DATA_SHARING_PREFERENCES, DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE, FEEDBACK_TRACE_STATUSES;
 var init_feedback = __esm({
@@ -383,6 +674,22 @@ var init_feedback = __esm({
   }
 });
 
+// ../packages/shared/src/types/instance.ts
+var DAILY_RETENTION_PRESETS, WEEKLY_RETENTION_PRESETS, MONTHLY_RETENTION_PRESETS, DEFAULT_BACKUP_RETENTION;
+var init_instance = __esm({
+  "../packages/shared/src/types/instance.ts"() {
+    "use strict";
+    DAILY_RETENTION_PRESETS = [3, 7, 14];
+    WEEKLY_RETENTION_PRESETS = [1, 2, 4];
+    MONTHLY_RETENTION_PRESETS = [1, 3, 6];
+    DEFAULT_BACKUP_RETENTION = {
+      dailyDays: 7,
+      weeklyWeeks: 4,
+      monthlyMonths: 1
+    };
+  }
+});
+
 // ../packages/shared/src/execution-workspace-guards.ts
 var init_execution_workspace_guards = __esm({
   "../packages/shared/src/execution-workspace-guards.ts"() {
@@ -391,76 +698,89 @@ var init_execution_workspace_guards = __esm({
 });
 
 // ../packages/shared/src/validators/feedback.ts
-import { z as z2 } from "zod";
+import { z as z4 } from "zod";
 var feedbackTargetTypeSchema, feedbackTraceStatusSchema, feedbackVoteValueSchema, feedbackDataSharingPreferenceSchema, upsertIssueFeedbackVoteSchema;
 var init_feedback2 = __esm({
   "../packages/shared/src/validators/feedback.ts"() {
     "use strict";
     init_feedback();
-    feedbackTargetTypeSchema = z2.enum(FEEDBACK_TARGET_TYPES);
-    feedbackTraceStatusSchema = z2.enum(FEEDBACK_TRACE_STATUSES);
-    feedbackVoteValueSchema = z2.enum(FEEDBACK_VOTE_VALUES);
-    feedbackDataSharingPreferenceSchema = z2.enum(FEEDBACK_DATA_SHARING_PREFERENCES);
-    upsertIssueFeedbackVoteSchema = z2.object({
+    feedbackTargetTypeSchema = z4.enum(FEEDBACK_TARGET_TYPES);
+    feedbackTraceStatusSchema = z4.enum(FEEDBACK_TRACE_STATUSES);
+    feedbackVoteValueSchema = z4.enum(FEEDBACK_VOTE_VALUES);
+    feedbackDataSharingPreferenceSchema = z4.enum(FEEDBACK_DATA_SHARING_PREFERENCES);
+    upsertIssueFeedbackVoteSchema = z4.object({
       targetType: feedbackTargetTypeSchema,
-      targetId: z2.string().uuid(),
+      targetId: z4.string().uuid(),
       vote: feedbackVoteValueSchema,
-      reason: z2.string().trim().max(1e3).optional(),
-      allowSharing: z2.boolean().optional()
+      reason: z4.string().trim().max(1e3).optional(),
+      allowSharing: z4.boolean().optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/instance.ts
-import { z as z3 } from "zod";
-var instanceGeneralSettingsSchema, patchInstanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, patchInstanceExperimentalSettingsSchema;
-var init_instance = __esm({
+import { z as z5 } from "zod";
+function presetSchema(presets, label) {
+  return z5.number().refine(
+    (v) => presets.includes(v),
+    { message: `${label} must be one of: ${presets.join(", ")}` }
+  );
+}
+var backupRetentionPolicySchema, instanceGeneralSettingsSchema, patchInstanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, patchInstanceExperimentalSettingsSchema;
+var init_instance2 = __esm({
   "../packages/shared/src/validators/instance.ts"() {
     "use strict";
     init_feedback();
+    init_instance();
     init_feedback2();
-    instanceGeneralSettingsSchema = z3.object({
-      censorUsernameInLogs: z3.boolean().default(false),
-      keyboardShortcuts: z3.boolean().default(false),
+    backupRetentionPolicySchema = z5.object({
+      dailyDays: presetSchema(DAILY_RETENTION_PRESETS, "dailyDays").default(DEFAULT_BACKUP_RETENTION.dailyDays),
+      weeklyWeeks: presetSchema(WEEKLY_RETENTION_PRESETS, "weeklyWeeks").default(DEFAULT_BACKUP_RETENTION.weeklyWeeks),
+      monthlyMonths: presetSchema(MONTHLY_RETENTION_PRESETS, "monthlyMonths").default(DEFAULT_BACKUP_RETENTION.monthlyMonths)
+    });
+    instanceGeneralSettingsSchema = z5.object({
+      censorUsernameInLogs: z5.boolean().default(false),
+      keyboardShortcuts: z5.boolean().default(false),
       feedbackDataSharingPreference: feedbackDataSharingPreferenceSchema.default(
         DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE
-      )
+      ),
+      backupRetention: backupRetentionPolicySchema.default(DEFAULT_BACKUP_RETENTION)
     }).strict();
     patchInstanceGeneralSettingsSchema = instanceGeneralSettingsSchema.partial();
-    instanceExperimentalSettingsSchema = z3.object({
-      enableIsolatedWorkspaces: z3.boolean().default(false),
-      autoRestartDevServerWhenIdle: z3.boolean().default(false)
+    instanceExperimentalSettingsSchema = z5.object({
+      enableIsolatedWorkspaces: z5.boolean().default(false),
+      autoRestartDevServerWhenIdle: z5.boolean().default(false)
     }).strict();
     patchInstanceExperimentalSettingsSchema = instanceExperimentalSettingsSchema.partial();
   }
 });
 
 // ../packages/shared/src/validators/budget.ts
-import { z as z4 } from "zod";
+import { z as z6 } from "zod";
 var upsertBudgetPolicySchema, resolveBudgetIncidentSchema;
 var init_budget = __esm({
   "../packages/shared/src/validators/budget.ts"() {
     "use strict";
     init_constants();
-    upsertBudgetPolicySchema = z4.object({
-      scopeType: z4.enum(BUDGET_SCOPE_TYPES),
-      scopeId: z4.string().uuid(),
-      metric: z4.enum(BUDGET_METRICS).optional().default("billed_cents"),
-      windowKind: z4.enum(BUDGET_WINDOW_KINDS).optional().default("calendar_month_utc"),
-      amount: z4.number().int().nonnegative(),
-      warnPercent: z4.number().int().min(1).max(99).optional().default(80),
-      hardStopEnabled: z4.boolean().optional().default(true),
-      notifyEnabled: z4.boolean().optional().default(true),
-      isActive: z4.boolean().optional().default(true)
+    upsertBudgetPolicySchema = z6.object({
+      scopeType: z6.enum(BUDGET_SCOPE_TYPES),
+      scopeId: z6.string().uuid(),
+      metric: z6.enum(BUDGET_METRICS).optional().default("billed_cents"),
+      windowKind: z6.enum(BUDGET_WINDOW_KINDS).optional().default("calendar_month_utc"),
+      amount: z6.number().int().nonnegative(),
+      warnPercent: z6.number().int().min(1).max(99).optional().default(80),
+      hardStopEnabled: z6.boolean().optional().default(true),
+      notifyEnabled: z6.boolean().optional().default(true),
+      isActive: z6.boolean().optional().default(true)
     });
-    resolveBudgetIncidentSchema = z4.object({
-      action: z4.enum(BUDGET_INCIDENT_RESOLUTION_ACTIONS),
-      amount: z4.number().int().nonnegative().optional(),
-      decisionNote: z4.string().optional().nullable()
+    resolveBudgetIncidentSchema = z6.object({
+      action: z6.enum(BUDGET_INCIDENT_RESOLUTION_ACTIONS),
+      amount: z6.number().int().nonnegative().optional(),
+      decisionNote: z6.string().optional().nullable()
     }).superRefine((value, ctx) => {
       if (value.action === "raise_budget_and_resume" && typeof value.amount !== "number") {
         ctx.addIssue({
-          code: z4.ZodIssueCode.custom,
+          code: z6.ZodIssueCode.custom,
           message: "amount is required when raising a budget",
           path: ["amount"]
         });
@@ -470,35 +790,35 @@ var init_budget = __esm({
 });
 
 // ../packages/shared/src/validators/company.ts
-import { z as z5 } from "zod";
+import { z as z7 } from "zod";
 var logoAssetIdSchema, brandColorSchema, feedbackDataSharingTermsVersionSchema, createCompanySchema, updateCompanySchema, updateCompanyBrandingSchema;
 var init_company = __esm({
   "../packages/shared/src/validators/company.ts"() {
     "use strict";
     init_constants();
-    logoAssetIdSchema = z5.string().uuid().nullable().optional();
-    brandColorSchema = z5.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
-    feedbackDataSharingTermsVersionSchema = z5.string().min(1).nullable().optional();
-    createCompanySchema = z5.object({
-      name: z5.string().min(1),
-      description: z5.string().optional().nullable(),
-      budgetMonthlyCents: z5.number().int().nonnegative().optional().default(0)
+    logoAssetIdSchema = z7.string().uuid().nullable().optional();
+    brandColorSchema = z7.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional();
+    feedbackDataSharingTermsVersionSchema = z7.string().min(1).nullable().optional();
+    createCompanySchema = z7.object({
+      name: z7.string().min(1),
+      description: z7.string().optional().nullable(),
+      budgetMonthlyCents: z7.number().int().nonnegative().optional().default(0)
     });
     updateCompanySchema = createCompanySchema.partial().extend({
-      status: z5.enum(COMPANY_STATUSES).optional(),
-      spentMonthlyCents: z5.number().int().nonnegative().optional(),
-      requireBoardApprovalForNewAgents: z5.boolean().optional(),
-      feedbackDataSharingEnabled: z5.boolean().optional(),
-      feedbackDataSharingConsentAt: z5.coerce.date().nullable().optional(),
-      feedbackDataSharingConsentByUserId: z5.string().min(1).nullable().optional(),
+      status: z7.enum(COMPANY_STATUSES).optional(),
+      spentMonthlyCents: z7.number().int().nonnegative().optional(),
+      requireBoardApprovalForNewAgents: z7.boolean().optional(),
+      feedbackDataSharingEnabled: z7.boolean().optional(),
+      feedbackDataSharingConsentAt: z7.coerce.date().nullable().optional(),
+      feedbackDataSharingConsentByUserId: z7.string().min(1).nullable().optional(),
       feedbackDataSharingTermsVersion: feedbackDataSharingTermsVersionSchema,
       brandColor: brandColorSchema,
       logoAssetId: logoAssetIdSchema,
-      githubToken: z5.string().nullable().optional()
+      githubToken: z7.string().nullable().optional()
     });
-    updateCompanyBrandingSchema = z5.object({
-      name: z5.string().min(1).optional(),
-      description: z5.string().nullable().optional(),
+    updateCompanyBrandingSchema = z7.object({
+      name: z7.string().min(1).optional(),
+      description: z7.string().nullable().optional(),
       brandColor: brandColorSchema,
       logoAssetId: logoAssetIdSchema
     }).strict().refine(
@@ -509,135 +829,135 @@ var init_company = __esm({
 });
 
 // ../packages/shared/src/validators/company-skill.ts
-import { z as z6 } from "zod";
+import { z as z8 } from "zod";
 var companySkillSourceTypeSchema, companySkillTrustLevelSchema, companySkillCompatibilitySchema, companySkillSourceBadgeSchema, companySkillFileInventoryEntrySchema, companySkillSchema, companySkillListItemSchema, companySkillUsageAgentSchema, companySkillDetailSchema, companySkillUpdateStatusSchema, companySkillImportSchema, companySkillProjectScanRequestSchema, companySkillProjectScanSkippedSchema, companySkillProjectScanConflictSchema, companySkillProjectScanResultSchema, companySkillCreateSchema, companySkillFileDetailSchema, companySkillFileUpdateSchema;
 var init_company_skill = __esm({
   "../packages/shared/src/validators/company-skill.ts"() {
     "use strict";
-    companySkillSourceTypeSchema = z6.enum(["local_path", "github", "url", "catalog", "skills_sh"]);
-    companySkillTrustLevelSchema = z6.enum(["markdown_only", "assets", "scripts_executables"]);
-    companySkillCompatibilitySchema = z6.enum(["compatible", "unknown", "invalid"]);
-    companySkillSourceBadgeSchema = z6.enum(["paperclip", "github", "local", "url", "catalog", "skills_sh"]);
-    companySkillFileInventoryEntrySchema = z6.object({
-      path: z6.string().min(1),
-      kind: z6.enum(["skill", "markdown", "reference", "script", "asset", "other"])
+    companySkillSourceTypeSchema = z8.enum(["local_path", "github", "url", "catalog", "skills_sh"]);
+    companySkillTrustLevelSchema = z8.enum(["markdown_only", "assets", "scripts_executables"]);
+    companySkillCompatibilitySchema = z8.enum(["compatible", "unknown", "invalid"]);
+    companySkillSourceBadgeSchema = z8.enum(["paperclip", "github", "local", "url", "catalog", "skills_sh"]);
+    companySkillFileInventoryEntrySchema = z8.object({
+      path: z8.string().min(1),
+      kind: z8.enum(["skill", "markdown", "reference", "script", "asset", "other"])
     });
-    companySkillSchema = z6.object({
-      id: z6.string().uuid(),
-      companyId: z6.string().uuid(),
-      key: z6.string().min(1),
-      slug: z6.string().min(1),
-      name: z6.string().min(1),
-      description: z6.string().nullable(),
-      markdown: z6.string(),
+    companySkillSchema = z8.object({
+      id: z8.string().uuid(),
+      companyId: z8.string().uuid(),
+      key: z8.string().min(1),
+      slug: z8.string().min(1),
+      name: z8.string().min(1),
+      description: z8.string().nullable(),
+      markdown: z8.string(),
       sourceType: companySkillSourceTypeSchema,
-      sourceLocator: z6.string().nullable(),
-      sourceRef: z6.string().nullable(),
+      sourceLocator: z8.string().nullable(),
+      sourceRef: z8.string().nullable(),
       trustLevel: companySkillTrustLevelSchema,
       compatibility: companySkillCompatibilitySchema,
-      fileInventory: z6.array(companySkillFileInventoryEntrySchema).default([]),
-      metadata: z6.record(z6.unknown()).nullable(),
-      createdAt: z6.coerce.date(),
-      updatedAt: z6.coerce.date()
+      fileInventory: z8.array(companySkillFileInventoryEntrySchema).default([]),
+      metadata: z8.record(z8.unknown()).nullable(),
+      createdAt: z8.coerce.date(),
+      updatedAt: z8.coerce.date()
     });
     companySkillListItemSchema = companySkillSchema.extend({
-      attachedAgentCount: z6.number().int().nonnegative(),
-      editable: z6.boolean(),
-      editableReason: z6.string().nullable(),
-      sourceLabel: z6.string().nullable(),
+      attachedAgentCount: z8.number().int().nonnegative(),
+      editable: z8.boolean(),
+      editableReason: z8.string().nullable(),
+      sourceLabel: z8.string().nullable(),
       sourceBadge: companySkillSourceBadgeSchema
     });
-    companySkillUsageAgentSchema = z6.object({
-      id: z6.string().uuid(),
-      name: z6.string().min(1),
-      urlKey: z6.string().min(1),
-      adapterType: z6.string().min(1),
-      desired: z6.boolean(),
-      actualState: z6.string().nullable()
+    companySkillUsageAgentSchema = z8.object({
+      id: z8.string().uuid(),
+      name: z8.string().min(1),
+      urlKey: z8.string().min(1),
+      adapterType: z8.string().min(1),
+      desired: z8.boolean(),
+      actualState: z8.string().nullable()
     });
     companySkillDetailSchema = companySkillSchema.extend({
-      attachedAgentCount: z6.number().int().nonnegative(),
-      usedByAgents: z6.array(companySkillUsageAgentSchema).default([]),
-      editable: z6.boolean(),
-      editableReason: z6.string().nullable(),
-      sourceLabel: z6.string().nullable(),
+      attachedAgentCount: z8.number().int().nonnegative(),
+      usedByAgents: z8.array(companySkillUsageAgentSchema).default([]),
+      editable: z8.boolean(),
+      editableReason: z8.string().nullable(),
+      sourceLabel: z8.string().nullable(),
       sourceBadge: companySkillSourceBadgeSchema
     });
-    companySkillUpdateStatusSchema = z6.object({
-      supported: z6.boolean(),
-      reason: z6.string().nullable(),
-      trackingRef: z6.string().nullable(),
-      currentRef: z6.string().nullable(),
-      latestRef: z6.string().nullable(),
-      hasUpdate: z6.boolean()
+    companySkillUpdateStatusSchema = z8.object({
+      supported: z8.boolean(),
+      reason: z8.string().nullable(),
+      trackingRef: z8.string().nullable(),
+      currentRef: z8.string().nullable(),
+      latestRef: z8.string().nullable(),
+      hasUpdate: z8.boolean()
     });
-    companySkillImportSchema = z6.object({
-      source: z6.string().min(1)
+    companySkillImportSchema = z8.object({
+      source: z8.string().min(1)
     });
-    companySkillProjectScanRequestSchema = z6.object({
-      projectIds: z6.array(z6.string().uuid()).optional(),
-      workspaceIds: z6.array(z6.string().uuid()).optional()
+    companySkillProjectScanRequestSchema = z8.object({
+      projectIds: z8.array(z8.string().uuid()).optional(),
+      workspaceIds: z8.array(z8.string().uuid()).optional()
     });
-    companySkillProjectScanSkippedSchema = z6.object({
-      projectId: z6.string().uuid(),
-      projectName: z6.string().min(1),
-      workspaceId: z6.string().uuid().nullable(),
-      workspaceName: z6.string().nullable(),
-      path: z6.string().nullable(),
-      reason: z6.string().min(1)
+    companySkillProjectScanSkippedSchema = z8.object({
+      projectId: z8.string().uuid(),
+      projectName: z8.string().min(1),
+      workspaceId: z8.string().uuid().nullable(),
+      workspaceName: z8.string().nullable(),
+      path: z8.string().nullable(),
+      reason: z8.string().min(1)
     });
-    companySkillProjectScanConflictSchema = z6.object({
-      slug: z6.string().min(1),
-      key: z6.string().min(1),
-      projectId: z6.string().uuid(),
-      projectName: z6.string().min(1),
-      workspaceId: z6.string().uuid(),
-      workspaceName: z6.string().min(1),
-      path: z6.string().min(1),
-      existingSkillId: z6.string().uuid(),
-      existingSkillKey: z6.string().min(1),
-      existingSourceLocator: z6.string().nullable(),
-      reason: z6.string().min(1)
+    companySkillProjectScanConflictSchema = z8.object({
+      slug: z8.string().min(1),
+      key: z8.string().min(1),
+      projectId: z8.string().uuid(),
+      projectName: z8.string().min(1),
+      workspaceId: z8.string().uuid(),
+      workspaceName: z8.string().min(1),
+      path: z8.string().min(1),
+      existingSkillId: z8.string().uuid(),
+      existingSkillKey: z8.string().min(1),
+      existingSourceLocator: z8.string().nullable(),
+      reason: z8.string().min(1)
     });
-    companySkillProjectScanResultSchema = z6.object({
-      scannedProjects: z6.number().int().nonnegative(),
-      scannedWorkspaces: z6.number().int().nonnegative(),
-      discovered: z6.number().int().nonnegative(),
-      imported: z6.array(companySkillSchema),
-      updated: z6.array(companySkillSchema),
-      skipped: z6.array(companySkillProjectScanSkippedSchema),
-      conflicts: z6.array(companySkillProjectScanConflictSchema),
-      warnings: z6.array(z6.string())
+    companySkillProjectScanResultSchema = z8.object({
+      scannedProjects: z8.number().int().nonnegative(),
+      scannedWorkspaces: z8.number().int().nonnegative(),
+      discovered: z8.number().int().nonnegative(),
+      imported: z8.array(companySkillSchema),
+      updated: z8.array(companySkillSchema),
+      skipped: z8.array(companySkillProjectScanSkippedSchema),
+      conflicts: z8.array(companySkillProjectScanConflictSchema),
+      warnings: z8.array(z8.string())
     });
-    companySkillCreateSchema = z6.object({
-      name: z6.string().min(1),
-      slug: z6.string().min(1).nullable().optional(),
-      description: z6.string().nullable().optional(),
-      markdown: z6.string().nullable().optional()
+    companySkillCreateSchema = z8.object({
+      name: z8.string().min(1),
+      slug: z8.string().min(1).nullable().optional(),
+      description: z8.string().nullable().optional(),
+      markdown: z8.string().nullable().optional()
     });
-    companySkillFileDetailSchema = z6.object({
-      skillId: z6.string().uuid(),
-      path: z6.string().min(1),
-      kind: z6.enum(["skill", "markdown", "reference", "script", "asset", "other"]),
-      content: z6.string(),
-      language: z6.string().nullable(),
-      markdown: z6.boolean(),
-      editable: z6.boolean()
+    companySkillFileDetailSchema = z8.object({
+      skillId: z8.string().uuid(),
+      path: z8.string().min(1),
+      kind: z8.enum(["skill", "markdown", "reference", "script", "asset", "other"]),
+      content: z8.string(),
+      language: z8.string().nullable(),
+      markdown: z8.boolean(),
+      editable: z8.boolean()
     });
-    companySkillFileUpdateSchema = z6.object({
-      path: z6.string().min(1),
-      content: z6.string()
+    companySkillFileUpdateSchema = z8.object({
+      path: z8.string().min(1),
+      content: z8.string()
     });
   }
 });
 
 // ../packages/shared/src/validators/adapter-skills.ts
-import { z as z7 } from "zod";
+import { z as z9 } from "zod";
 var agentSkillStateSchema, agentSkillOriginSchema, agentSkillSyncModeSchema, agentSkillEntrySchema, agentSkillSnapshotSchema, agentSkillSyncSchema;
 var init_adapter_skills = __esm({
   "../packages/shared/src/validators/adapter-skills.ts"() {
     "use strict";
-    agentSkillStateSchema = z7.enum([
+    agentSkillStateSchema = z9.enum([
       "available",
       "configured",
       "installed",
@@ -645,50 +965,50 @@ var init_adapter_skills = __esm({
       "stale",
       "external"
     ]);
-    agentSkillOriginSchema = z7.enum([
+    agentSkillOriginSchema = z9.enum([
       "company_managed",
       "paperclip_required",
       "user_installed",
       "external_unknown"
     ]);
-    agentSkillSyncModeSchema = z7.enum([
+    agentSkillSyncModeSchema = z9.enum([
       "unsupported",
       "persistent",
       "ephemeral"
     ]);
-    agentSkillEntrySchema = z7.object({
-      key: z7.string().min(1),
-      runtimeName: z7.string().min(1).nullable(),
-      desired: z7.boolean(),
-      managed: z7.boolean(),
-      required: z7.boolean().optional(),
-      requiredReason: z7.string().nullable().optional(),
+    agentSkillEntrySchema = z9.object({
+      key: z9.string().min(1),
+      runtimeName: z9.string().min(1).nullable(),
+      desired: z9.boolean(),
+      managed: z9.boolean(),
+      required: z9.boolean().optional(),
+      requiredReason: z9.string().nullable().optional(),
       state: agentSkillStateSchema,
       origin: agentSkillOriginSchema.optional(),
-      originLabel: z7.string().nullable().optional(),
-      locationLabel: z7.string().nullable().optional(),
-      readOnly: z7.boolean().optional(),
-      sourcePath: z7.string().nullable().optional(),
-      targetPath: z7.string().nullable().optional(),
-      detail: z7.string().nullable().optional()
+      originLabel: z9.string().nullable().optional(),
+      locationLabel: z9.string().nullable().optional(),
+      readOnly: z9.boolean().optional(),
+      sourcePath: z9.string().nullable().optional(),
+      targetPath: z9.string().nullable().optional(),
+      detail: z9.string().nullable().optional()
     });
-    agentSkillSnapshotSchema = z7.object({
-      adapterType: z7.string().min(1),
-      supported: z7.boolean(),
+    agentSkillSnapshotSchema = z9.object({
+      adapterType: z9.string().min(1),
+      supported: z9.boolean(),
       mode: agentSkillSyncModeSchema,
-      desiredSkills: z7.array(z7.string().min(1)),
-      entries: z7.array(agentSkillEntrySchema),
-      warnings: z7.array(z7.string())
+      desiredSkills: z9.array(z9.string().min(1)),
+      entries: z9.array(agentSkillEntrySchema),
+      warnings: z9.array(z9.string())
     });
-    agentSkillSyncSchema = z7.object({
-      desiredSkills: z7.array(z7.string().min(1))
+    agentSkillSyncSchema = z9.object({
+      desiredSkills: z9.array(z9.string().min(1))
     });
   }
 });
 
 // ../packages/shared/src/validators/issue.ts
-import { z as z8 } from "zod";
-var ISSUE_EXECUTION_WORKSPACE_PREFERENCES, executionWorkspaceStrategySchema, issueExecutionWorkspaceSettingsSchema, issueAssigneeAdapterOverridesSchema, issueExecutionStagePrincipalBaseSchema, issueExecutionStagePrincipalSchema, issueExecutionStageParticipantSchema, issueExecutionStageSchema, issueExecutionPolicySchema, issueExecutionStateSchema, createIssueSchema, createIssueLabelSchema, updateIssueSchema, checkoutIssueSchema, addIssueCommentSchema, linkIssueApprovalSchema, createIssueAttachmentMetadataSchema, ISSUE_DOCUMENT_FORMATS, issueDocumentFormatSchema, issueDocumentKeySchema, upsertIssueDocumentSchema, restoreIssueDocumentRevisionSchema;
+import { z as z10 } from "zod";
+var ISSUE_EXECUTION_WORKSPACE_PREFERENCES, executionWorkspaceStrategySchema, issueExecutionWorkspaceSettingsSchema, issueAssigneeAdapterOverridesSchema, issueExecutionStagePrincipalBaseSchema, issueExecutionStagePrincipalSchema, issueExecutionStageParticipantSchema, issueExecutionStageSchema, issueExecutionPolicySchema, issueExecutionStateSchema, createIssueSchema, createChildIssueSchema, createIssueLabelSchema, updateIssueSchema, checkoutIssueSchema, addIssueCommentSchema, issueThreadInteractionStatusSchema, issueThreadInteractionKindSchema, issueThreadInteractionContinuationPolicySchema, issueDocumentKeySchema, suggestedTaskDraftSchema, suggestTasksPayloadSchema, suggestTasksResultCreatedTaskSchema, suggestTasksResultSchema, askUserQuestionsQuestionOptionSchema, askUserQuestionsQuestionSchema, askUserQuestionsPayloadSchema, askUserQuestionsAnswerSchema, askUserQuestionsResultSchema, requestConfirmationHrefSchema, requestConfirmationTargetBaseSchema, requestConfirmationIssueDocumentTargetSchema, requestConfirmationCustomTargetSchema, requestConfirmationTargetSchema, requestConfirmationPayloadSchema, requestConfirmationResultSchema, createIssueThreadInteractionSchema, acceptIssueThreadInteractionSchema, rejectIssueThreadInteractionSchema, respondIssueThreadInteractionSchema, linkIssueApprovalSchema, createIssueAttachmentMetadataSchema, ISSUE_DOCUMENT_FORMATS, issueDocumentFormatSchema, upsertIssueDocumentSchema, restoreIssueDocumentRevisionSchema;
 var init_issue = __esm({
   "../packages/shared/src/validators/issue.ts"() {
     "use strict";
@@ -701,174 +1021,394 @@ var init_issue = __esm({
       "reuse_existing",
       "agent_default"
     ];
-    executionWorkspaceStrategySchema = z8.object({
-      type: z8.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
-      baseRef: z8.string().optional().nullable(),
-      branchTemplate: z8.string().optional().nullable(),
-      worktreeParentDir: z8.string().optional().nullable(),
-      provisionCommand: z8.string().optional().nullable(),
-      teardownCommand: z8.string().optional().nullable()
+    executionWorkspaceStrategySchema = z10.object({
+      type: z10.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
+      baseRef: z10.string().optional().nullable(),
+      branchTemplate: z10.string().optional().nullable(),
+      worktreeParentDir: z10.string().optional().nullable(),
+      provisionCommand: z10.string().optional().nullable(),
+      teardownCommand: z10.string().optional().nullable()
     }).strict();
-    issueExecutionWorkspaceSettingsSchema = z8.object({
-      mode: z8.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional(),
+    issueExecutionWorkspaceSettingsSchema = z10.object({
+      mode: z10.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional(),
       workspaceStrategy: executionWorkspaceStrategySchema.optional().nullable(),
-      workspaceRuntime: z8.record(z8.unknown()).optional().nullable()
+      workspaceRuntime: z10.record(z10.unknown()).optional().nullable()
     }).strict();
-    issueAssigneeAdapterOverridesSchema = z8.object({
-      adapterConfig: z8.record(z8.unknown()).optional(),
-      useProjectWorkspace: z8.boolean().optional()
+    issueAssigneeAdapterOverridesSchema = z10.object({
+      adapterConfig: z10.record(z10.unknown()).optional(),
+      useProjectWorkspace: z10.boolean().optional()
     }).strict();
-    issueExecutionStagePrincipalBaseSchema = z8.object({
-      type: z8.enum(["agent", "user"]),
-      agentId: z8.string().uuid().optional().nullable(),
-      userId: z8.string().optional().nullable()
+    issueExecutionStagePrincipalBaseSchema = z10.object({
+      type: z10.enum(["agent", "user"]),
+      agentId: z10.string().uuid().optional().nullable(),
+      userId: z10.string().optional().nullable()
     });
     issueExecutionStagePrincipalSchema = issueExecutionStagePrincipalBaseSchema.superRefine((value, ctx) => {
       if (value.type === "agent") {
         if (!value.agentId) {
-          ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "Agent participants require agentId", path: ["agentId"] });
+          ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "Agent participants require agentId", path: ["agentId"] });
         }
         if (value.userId) {
-          ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "Agent participants cannot set userId", path: ["userId"] });
+          ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "Agent participants cannot set userId", path: ["userId"] });
         }
         return;
       }
       if (!value.userId) {
-        ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "User participants require userId", path: ["userId"] });
+        ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "User participants require userId", path: ["userId"] });
       }
       if (value.agentId) {
-        ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "User participants cannot set agentId", path: ["agentId"] });
+        ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "User participants cannot set agentId", path: ["agentId"] });
       }
     });
     issueExecutionStageParticipantSchema = issueExecutionStagePrincipalBaseSchema.extend({
-      id: z8.string().uuid().optional()
+      id: z10.string().uuid().optional()
     }).superRefine((value, ctx) => {
       if (value.type === "agent") {
         if (!value.agentId) {
-          ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "Agent participants require agentId", path: ["agentId"] });
+          ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "Agent participants require agentId", path: ["agentId"] });
         }
         if (value.userId) {
-          ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "Agent participants cannot set userId", path: ["userId"] });
+          ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "Agent participants cannot set userId", path: ["userId"] });
         }
         return;
       }
       if (!value.userId) {
-        ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "User participants require userId", path: ["userId"] });
+        ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "User participants require userId", path: ["userId"] });
       }
       if (value.agentId) {
-        ctx.addIssue({ code: z8.ZodIssueCode.custom, message: "User participants cannot set agentId", path: ["agentId"] });
+        ctx.addIssue({ code: z10.ZodIssueCode.custom, message: "User participants cannot set agentId", path: ["agentId"] });
       }
     });
-    issueExecutionStageSchema = z8.object({
-      id: z8.string().uuid().optional(),
-      type: z8.enum(ISSUE_EXECUTION_STAGE_TYPES),
-      approvalsNeeded: z8.literal(1).optional().default(1),
-      participants: z8.array(issueExecutionStageParticipantSchema).default([])
+    issueExecutionStageSchema = z10.object({
+      id: z10.string().uuid().optional(),
+      type: z10.enum(ISSUE_EXECUTION_STAGE_TYPES),
+      approvalsNeeded: z10.literal(1).optional().default(1),
+      participants: z10.array(issueExecutionStageParticipantSchema).default([])
     });
-    issueExecutionPolicySchema = z8.object({
-      mode: z8.enum(ISSUE_EXECUTION_POLICY_MODES).optional().default("normal"),
-      commentRequired: z8.boolean().optional().default(true),
-      stages: z8.array(issueExecutionStageSchema).default([])
+    issueExecutionPolicySchema = z10.object({
+      mode: z10.enum(ISSUE_EXECUTION_POLICY_MODES).optional().default("normal"),
+      commentRequired: z10.boolean().optional().default(true),
+      stages: z10.array(issueExecutionStageSchema).default([])
     });
-    issueExecutionStateSchema = z8.object({
-      status: z8.enum(ISSUE_EXECUTION_STATE_STATUSES),
-      currentStageId: z8.string().uuid().nullable(),
-      currentStageIndex: z8.number().int().nonnegative().nullable(),
-      currentStageType: z8.enum(ISSUE_EXECUTION_STAGE_TYPES).nullable(),
+    issueExecutionStateSchema = z10.object({
+      status: z10.enum(ISSUE_EXECUTION_STATE_STATUSES),
+      currentStageId: z10.string().uuid().nullable(),
+      currentStageIndex: z10.number().int().nonnegative().nullable(),
+      currentStageType: z10.enum(ISSUE_EXECUTION_STAGE_TYPES).nullable(),
       currentParticipant: issueExecutionStagePrincipalSchema.nullable(),
       returnAssignee: issueExecutionStagePrincipalSchema.nullable(),
-      completedStageIds: z8.array(z8.string().uuid()).default([]),
-      lastDecisionId: z8.string().uuid().nullable(),
-      lastDecisionOutcome: z8.enum(ISSUE_EXECUTION_DECISION_OUTCOMES).nullable()
+      completedStageIds: z10.array(z10.string().uuid()).default([]),
+      lastDecisionId: z10.string().uuid().nullable(),
+      lastDecisionOutcome: z10.enum(ISSUE_EXECUTION_DECISION_OUTCOMES).nullable()
     });
-    createIssueSchema = z8.object({
-      projectId: z8.string().uuid().optional().nullable(),
-      projectWorkspaceId: z8.string().uuid().optional().nullable(),
-      goalId: z8.string().uuid().optional().nullable(),
-      parentId: z8.string().uuid().optional().nullable(),
-      blockedByIssueIds: z8.array(z8.string().uuid()).optional(),
-      inheritExecutionWorkspaceFromIssueId: z8.string().uuid().optional().nullable(),
-      title: z8.string().min(1),
-      description: z8.string().optional().nullable(),
-      status: z8.enum(ISSUE_STATUSES).optional().default("backlog"),
-      priority: z8.enum(ISSUE_PRIORITIES).optional().default("medium"),
-      assigneeAgentId: z8.string().uuid().optional().nullable(),
-      assigneeUserId: z8.string().optional().nullable(),
-      requestDepth: z8.number().int().nonnegative().optional().default(0),
-      billingCode: z8.string().optional().nullable(),
+    createIssueSchema = z10.object({
+      projectId: z10.string().uuid().optional().nullable(),
+      projectWorkspaceId: z10.string().uuid().optional().nullable(),
+      goalId: z10.string().uuid().optional().nullable(),
+      parentId: z10.string().uuid().optional().nullable(),
+      blockedByIssueIds: z10.array(z10.string().uuid()).optional(),
+      inheritExecutionWorkspaceFromIssueId: z10.string().uuid().optional().nullable(),
+      title: z10.string().min(1),
+      description: z10.string().optional().nullable(),
+      status: z10.enum(ISSUE_STATUSES).optional().default("backlog"),
+      priority: z10.enum(ISSUE_PRIORITIES).optional().default("medium"),
+      assigneeAgentId: z10.string().uuid().optional().nullable(),
+      assigneeUserId: z10.string().optional().nullable(),
+      requestDepth: z10.number().int().nonnegative().optional().default(0),
+      billingCode: z10.string().optional().nullable(),
       assigneeAdapterOverrides: issueAssigneeAdapterOverridesSchema.optional().nullable(),
       executionPolicy: issueExecutionPolicySchema.optional().nullable(),
-      executionWorkspaceId: z8.string().uuid().optional().nullable(),
-      executionWorkspacePreference: z8.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
+      executionWorkspaceId: z10.string().uuid().optional().nullable(),
+      executionWorkspacePreference: z10.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
       executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable(),
-      labelIds: z8.array(z8.string().uuid()).optional()
+      labelIds: z10.array(z10.string().uuid()).optional()
     });
-    createIssueLabelSchema = z8.object({
-      name: z8.string().trim().min(1).max(48),
-      color: z8.string().regex(/^#(?:[0-9a-fA-F]{6})$/, "Color must be a 6-digit hex value")
+    createChildIssueSchema = createIssueSchema.omit({
+      parentId: true,
+      inheritExecutionWorkspaceFromIssueId: true
+    }).extend({
+      acceptanceCriteria: z10.array(z10.string().trim().min(1).max(500)).max(20).optional(),
+      blockParentUntilDone: z10.boolean().optional().default(false)
+    });
+    createIssueLabelSchema = z10.object({
+      name: z10.string().trim().min(1).max(48),
+      color: z10.string().regex(/^#(?:[0-9a-fA-F]{6})$/, "Color must be a 6-digit hex value")
     });
     updateIssueSchema = createIssueSchema.partial().extend({
-      comment: z8.string().min(1).optional(),
-      reopen: z8.boolean().optional(),
-      interrupt: z8.boolean().optional(),
-      hiddenAt: z8.string().datetime().nullable().optional()
+      assigneeAgentId: z10.string().trim().min(1).optional().nullable(),
+      comment: z10.string().min(1).optional(),
+      reopen: z10.boolean().optional(),
+      interrupt: z10.boolean().optional(),
+      hiddenAt: z10.string().datetime().nullable().optional()
     });
-    checkoutIssueSchema = z8.object({
-      agentId: z8.string().uuid(),
-      expectedStatuses: z8.array(z8.enum(ISSUE_STATUSES)).nonempty()
+    checkoutIssueSchema = z10.object({
+      agentId: z10.string().uuid(),
+      expectedStatuses: z10.array(z10.enum(ISSUE_STATUSES)).nonempty()
     });
-    addIssueCommentSchema = z8.object({
-      body: z8.string().min(1),
-      reopen: z8.boolean().optional(),
-      interrupt: z8.boolean().optional()
+    addIssueCommentSchema = z10.object({
+      body: z10.string().min(1),
+      reopen: z10.boolean().optional(),
+      interrupt: z10.boolean().optional()
     });
-    linkIssueApprovalSchema = z8.object({
-      approvalId: z8.string().uuid()
+    issueThreadInteractionStatusSchema = z10.enum(ISSUE_THREAD_INTERACTION_STATUSES);
+    issueThreadInteractionKindSchema = z10.enum(ISSUE_THREAD_INTERACTION_KINDS);
+    issueThreadInteractionContinuationPolicySchema = z10.enum(
+      ISSUE_THREAD_INTERACTION_CONTINUATION_POLICIES
+    );
+    issueDocumentKeySchema = z10.string().trim().min(1).max(64).regex(/^[a-z0-9][a-z0-9_-]*$/, "Document key must be lowercase letters, numbers, _ or -");
+    suggestedTaskDraftSchema = z10.object({
+      clientKey: z10.string().trim().min(1).max(120),
+      parentClientKey: z10.string().trim().min(1).max(120).nullable().optional(),
+      parentId: z10.string().uuid().nullable().optional(),
+      title: z10.string().trim().min(1).max(240),
+      description: z10.string().trim().max(2e4).nullable().optional(),
+      priority: z10.enum(ISSUE_PRIORITIES).nullable().optional(),
+      assigneeAgentId: z10.string().uuid().nullable().optional(),
+      assigneeUserId: z10.string().trim().min(1).nullable().optional(),
+      projectId: z10.string().uuid().nullable().optional(),
+      goalId: z10.string().uuid().nullable().optional(),
+      billingCode: z10.string().trim().max(120).nullable().optional(),
+      labels: z10.array(z10.string().trim().min(1).max(48)).max(20).optional(),
+      hiddenInPreview: z10.boolean().optional()
+    }).superRefine((value, ctx) => {
+      if (value.assigneeAgentId && value.assigneeUserId) {
+        ctx.addIssue({
+          code: z10.ZodIssueCode.custom,
+          message: "Suggested tasks can only target one assignee",
+          path: ["assigneeAgentId"]
+        });
+      }
     });
-    createIssueAttachmentMetadataSchema = z8.object({
-      issueCommentId: z8.string().uuid().optional().nullable()
+    suggestTasksPayloadSchema = z10.object({
+      version: z10.literal(1),
+      defaultParentId: z10.string().uuid().nullable().optional(),
+      tasks: z10.array(suggestedTaskDraftSchema).min(1).max(50)
+    }).superRefine((value, ctx) => {
+      const seenClientKeys = /* @__PURE__ */ new Set();
+      for (const [index64, task] of value.tasks.entries()) {
+        if (seenClientKeys.has(task.clientKey)) {
+          ctx.addIssue({
+            code: z10.ZodIssueCode.custom,
+            message: "clientKey must be unique within one interaction",
+            path: ["tasks", index64, "clientKey"]
+          });
+          continue;
+        }
+        seenClientKeys.add(task.clientKey);
+      }
+    });
+    suggestTasksResultCreatedTaskSchema = z10.object({
+      clientKey: z10.string().trim().min(1).max(120),
+      issueId: z10.string().uuid(),
+      identifier: z10.string().trim().min(1).nullable().optional(),
+      title: z10.string().trim().min(1).nullable().optional(),
+      parentIssueId: z10.string().uuid().nullable().optional(),
+      parentIdentifier: z10.string().trim().min(1).nullable().optional()
+    });
+    suggestTasksResultSchema = z10.object({
+      version: z10.literal(1),
+      createdTasks: z10.array(suggestTasksResultCreatedTaskSchema).max(50).optional(),
+      skippedClientKeys: z10.array(z10.string().trim().min(1).max(120)).max(50).optional(),
+      rejectionReason: z10.string().trim().max(4e3).nullable().optional()
+    });
+    askUserQuestionsQuestionOptionSchema = z10.object({
+      id: z10.string().trim().min(1).max(120),
+      label: z10.string().trim().min(1).max(120),
+      description: z10.string().trim().max(500).nullable().optional()
+    });
+    askUserQuestionsQuestionSchema = z10.object({
+      id: z10.string().trim().min(1).max(120),
+      prompt: z10.string().trim().min(1).max(500),
+      helpText: z10.string().trim().max(1e3).nullable().optional(),
+      selectionMode: z10.enum(["single", "multi"]),
+      required: z10.boolean().optional(),
+      options: z10.array(askUserQuestionsQuestionOptionSchema).min(1).max(10)
+    });
+    askUserQuestionsPayloadSchema = z10.object({
+      version: z10.literal(1),
+      title: z10.string().trim().max(240).nullable().optional(),
+      submitLabel: z10.string().trim().max(120).nullable().optional(),
+      questions: z10.array(askUserQuestionsQuestionSchema).min(1).max(10)
+    }).superRefine((value, ctx) => {
+      const seenQuestionIds = /* @__PURE__ */ new Set();
+      for (const [questionIndex, question] of value.questions.entries()) {
+        if (seenQuestionIds.has(question.id)) {
+          ctx.addIssue({
+            code: z10.ZodIssueCode.custom,
+            message: "Question ids must be unique within one interaction",
+            path: ["questions", questionIndex, "id"]
+          });
+        }
+        seenQuestionIds.add(question.id);
+        const seenOptionIds = /* @__PURE__ */ new Set();
+        for (const [optionIndex, option] of question.options.entries()) {
+          if (seenOptionIds.has(option.id)) {
+            ctx.addIssue({
+              code: z10.ZodIssueCode.custom,
+              message: "Option ids must be unique within one question",
+              path: ["questions", questionIndex, "options", optionIndex, "id"]
+            });
+          }
+          seenOptionIds.add(option.id);
+        }
+      }
+    });
+    askUserQuestionsAnswerSchema = z10.object({
+      questionId: z10.string().trim().min(1).max(120),
+      optionIds: z10.array(z10.string().trim().min(1).max(120)).max(20)
+    });
+    askUserQuestionsResultSchema = z10.object({
+      version: z10.literal(1),
+      answers: z10.array(askUserQuestionsAnswerSchema).max(20),
+      summaryMarkdown: z10.string().max(2e4).nullable().optional()
+    });
+    requestConfirmationHrefSchema = z10.string().trim().min(1).max(2e3).refine((value) => {
+      const lower = value.toLowerCase();
+      return !lower.startsWith("javascript:") && !lower.startsWith("data:") && !value.startsWith("//");
+    }, "href must not use javascript:, data:, or protocol-relative URLs");
+    requestConfirmationTargetBaseSchema = z10.object({
+      label: z10.string().trim().min(1).max(120).nullable().optional(),
+      href: requestConfirmationHrefSchema.nullable().optional()
+    });
+    requestConfirmationIssueDocumentTargetSchema = requestConfirmationTargetBaseSchema.extend({
+      type: z10.literal("issue_document"),
+      issueId: z10.string().uuid().nullable().optional(),
+      documentId: z10.string().uuid().nullable().optional(),
+      key: issueDocumentKeySchema,
+      revisionId: z10.string().uuid(),
+      revisionNumber: z10.number().int().positive().nullable().optional()
+    });
+    requestConfirmationCustomTargetSchema = requestConfirmationTargetBaseSchema.extend({
+      type: z10.literal("custom"),
+      key: z10.string().trim().min(1).max(120),
+      revisionId: z10.string().trim().min(1).max(255).nullable().optional(),
+      revisionNumber: z10.number().int().positive().nullable().optional()
+    });
+    requestConfirmationTargetSchema = z10.discriminatedUnion("type", [
+      requestConfirmationIssueDocumentTargetSchema,
+      requestConfirmationCustomTargetSchema
+    ]);
+    requestConfirmationPayloadSchema = z10.object({
+      version: z10.literal(1),
+      prompt: z10.string().trim().min(1).max(1e3),
+      acceptLabel: z10.string().trim().min(1).max(80).nullable().optional(),
+      rejectLabel: z10.string().trim().min(1).max(80).nullable().optional(),
+      rejectRequiresReason: z10.boolean().optional(),
+      rejectReasonLabel: z10.string().trim().min(1).max(160).nullable().optional(),
+      allowDeclineReason: z10.boolean().optional().default(true),
+      declineReasonPlaceholder: z10.string().trim().min(1).max(240).nullable().optional(),
+      detailsMarkdown: z10.string().max(2e4).nullable().optional(),
+      supersedeOnUserComment: z10.boolean().optional(),
+      target: requestConfirmationTargetSchema.nullable().optional()
+    });
+    requestConfirmationResultSchema = z10.object({
+      version: z10.literal(1),
+      outcome: z10.enum(["accepted", "rejected", "superseded_by_comment", "stale_target"]),
+      reason: z10.string().trim().max(4e3).nullable().optional(),
+      commentId: z10.string().uuid().nullable().optional(),
+      staleTarget: requestConfirmationTargetSchema.nullable().optional()
+    });
+    createIssueThreadInteractionSchema = z10.discriminatedUnion("kind", [
+      z10.object({
+        kind: z10.literal("suggest_tasks"),
+        idempotencyKey: z10.string().trim().max(255).nullable().optional(),
+        sourceCommentId: z10.string().uuid().nullable().optional(),
+        sourceRunId: z10.string().uuid().nullable().optional(),
+        title: z10.string().trim().max(240).nullable().optional(),
+        summary: z10.string().trim().max(1e3).nullable().optional(),
+        continuationPolicy: issueThreadInteractionContinuationPolicySchema.optional().default("wake_assignee"),
+        payload: suggestTasksPayloadSchema
+      }),
+      z10.object({
+        kind: z10.literal("ask_user_questions"),
+        idempotencyKey: z10.string().trim().max(255).nullable().optional(),
+        sourceCommentId: z10.string().uuid().nullable().optional(),
+        sourceRunId: z10.string().uuid().nullable().optional(),
+        title: z10.string().trim().max(240).nullable().optional(),
+        summary: z10.string().trim().max(1e3).nullable().optional(),
+        continuationPolicy: issueThreadInteractionContinuationPolicySchema.optional().default("wake_assignee"),
+        payload: askUserQuestionsPayloadSchema
+      }),
+      z10.object({
+        kind: z10.literal("request_confirmation"),
+        idempotencyKey: z10.string().trim().max(255).nullable().optional(),
+        sourceCommentId: z10.string().uuid().nullable().optional(),
+        sourceRunId: z10.string().uuid().nullable().optional(),
+        title: z10.string().trim().max(240).nullable().optional(),
+        summary: z10.string().trim().max(1e3).nullable().optional(),
+        continuationPolicy: issueThreadInteractionContinuationPolicySchema.optional().default("none"),
+        payload: requestConfirmationPayloadSchema
+      })
+    ]);
+    acceptIssueThreadInteractionSchema = z10.object({
+      selectedClientKeys: z10.array(z10.string().trim().min(1).max(120)).min(1).max(50).optional()
+    }).superRefine((value, ctx) => {
+      const seenClientKeys = /* @__PURE__ */ new Set();
+      for (const [index64, clientKey] of (value.selectedClientKeys ?? []).entries()) {
+        if (seenClientKeys.has(clientKey)) {
+          ctx.addIssue({
+            code: z10.ZodIssueCode.custom,
+            message: "selectedClientKeys must be unique",
+            path: ["selectedClientKeys", index64]
+          });
+          continue;
+        }
+        seenClientKeys.add(clientKey);
+      }
+    });
+    rejectIssueThreadInteractionSchema = z10.object({
+      reason: z10.string().trim().max(4e3).optional()
+    });
+    respondIssueThreadInteractionSchema = z10.object({
+      answers: z10.array(askUserQuestionsAnswerSchema).max(20),
+      summaryMarkdown: z10.string().max(2e4).nullable().optional()
+    });
+    linkIssueApprovalSchema = z10.object({
+      approvalId: z10.string().uuid()
+    });
+    createIssueAttachmentMetadataSchema = z10.object({
+      issueCommentId: z10.string().uuid().optional().nullable()
     });
     ISSUE_DOCUMENT_FORMATS = ["markdown"];
-    issueDocumentFormatSchema = z8.enum(ISSUE_DOCUMENT_FORMATS);
-    issueDocumentKeySchema = z8.string().trim().min(1).max(64).regex(/^[a-z0-9][a-z0-9_-]*$/, "Document key must be lowercase letters, numbers, _ or -");
-    upsertIssueDocumentSchema = z8.object({
-      title: z8.string().trim().max(200).nullable().optional(),
+    issueDocumentFormatSchema = z10.enum(ISSUE_DOCUMENT_FORMATS);
+    upsertIssueDocumentSchema = z10.object({
+      title: z10.string().trim().max(200).nullable().optional(),
       format: issueDocumentFormatSchema,
-      body: z8.string().max(524288),
-      changeSummary: z8.string().trim().max(500).nullable().optional(),
-      baseRevisionId: z8.string().uuid().nullable().optional()
+      body: z10.string().max(524288),
+      changeSummary: z10.string().trim().max(500).nullable().optional(),
+      baseRevisionId: z10.string().uuid().nullable().optional()
     });
-    restoreIssueDocumentRevisionSchema = z8.object({});
+    restoreIssueDocumentRevisionSchema = z10.object({});
   }
 });
 
 // ../packages/shared/src/validators/routine.ts
-import { z as z9 } from "zod";
+import { z as z11 } from "zod";
 var routineVariableValueSchema, routineVariableSchema, createRoutineSchema, updateRoutineSchema, baseTriggerSchema, createRoutineTriggerSchema, updateRoutineTriggerSchema, runRoutineSchema, rotateRoutineTriggerSecretSchema;
 var init_routine = __esm({
   "../packages/shared/src/validators/routine.ts"() {
     "use strict";
     init_constants();
     init_issue();
-    routineVariableValueSchema = z9.union([z9.string(), z9.number().finite(), z9.boolean()]);
-    routineVariableSchema = z9.object({
-      name: z9.string().trim().regex(/^[A-Za-z][A-Za-z0-9_]*$/),
-      label: z9.string().trim().max(120).optional().nullable(),
-      type: z9.enum(ROUTINE_VARIABLE_TYPES).optional().default("text"),
+    routineVariableValueSchema = z11.union([z11.string(), z11.number().finite(), z11.boolean()]);
+    routineVariableSchema = z11.object({
+      name: z11.string().trim().regex(/^[A-Za-z][A-Za-z0-9_]*$/),
+      label: z11.string().trim().max(120).optional().nullable(),
+      type: z11.enum(ROUTINE_VARIABLE_TYPES).optional().default("text"),
       defaultValue: routineVariableValueSchema.optional().nullable(),
-      required: z9.boolean().optional().default(true),
-      options: z9.array(z9.string().trim().min(1).max(120)).max(50).optional().default([])
+      required: z11.boolean().optional().default(true),
+      options: z11.array(z11.string().trim().min(1).max(120)).max(50).optional().default([])
     }).superRefine((value, ctx) => {
       if (value.type === "select" && value.options.length === 0) {
         ctx.addIssue({
-          code: z9.ZodIssueCode.custom,
+          code: z11.ZodIssueCode.custom,
           path: ["options"],
           message: "Select variables require at least one option"
         });
       }
       if (value.type !== "select" && value.options.length > 0) {
         ctx.addIssue({
-          code: z9.ZodIssueCode.custom,
+          code: z11.ZodIssueCode.custom,
           path: ["options"],
           message: "Only select variables can define options"
         });
@@ -876,332 +1416,334 @@ var init_routine = __esm({
       if (value.type === "select" && value.defaultValue != null) {
         if (typeof value.defaultValue !== "string" || !value.options.includes(value.defaultValue)) {
           ctx.addIssue({
-            code: z9.ZodIssueCode.custom,
+            code: z11.ZodIssueCode.custom,
             path: ["defaultValue"],
             message: "Select variable defaults must match one of the allowed options"
           });
         }
       }
     });
-    createRoutineSchema = z9.object({
-      projectId: z9.string().uuid(),
-      goalId: z9.string().uuid().optional().nullable(),
-      parentIssueId: z9.string().uuid().optional().nullable(),
-      title: z9.string().trim().min(1).max(200),
-      description: z9.string().optional().nullable(),
-      assigneeAgentId: z9.string().uuid(),
-      priority: z9.enum(ISSUE_PRIORITIES).optional().default("medium"),
-      status: z9.enum(ROUTINE_STATUSES).optional().default("active"),
-      concurrencyPolicy: z9.enum(ROUTINE_CONCURRENCY_POLICIES).optional().default("coalesce_if_active"),
-      catchUpPolicy: z9.enum(ROUTINE_CATCH_UP_POLICIES).optional().default("skip_missed"),
-      variables: z9.array(routineVariableSchema).optional().default([])
+    createRoutineSchema = z11.object({
+      projectId: z11.string().uuid().optional().nullable(),
+      goalId: z11.string().uuid().optional().nullable(),
+      parentIssueId: z11.string().uuid().optional().nullable(),
+      title: z11.string().trim().min(1).max(200),
+      description: z11.string().optional().nullable(),
+      assigneeAgentId: z11.string().uuid().optional().nullable(),
+      priority: z11.enum(ISSUE_PRIORITIES).optional().default("medium"),
+      status: z11.enum(ROUTINE_STATUSES).optional().default("active"),
+      concurrencyPolicy: z11.enum(ROUTINE_CONCURRENCY_POLICIES).optional().default("coalesce_if_active"),
+      catchUpPolicy: z11.enum(ROUTINE_CATCH_UP_POLICIES).optional().default("skip_missed"),
+      variables: z11.array(routineVariableSchema).optional().default([])
     });
     updateRoutineSchema = createRoutineSchema.partial();
-    baseTriggerSchema = z9.object({
-      label: z9.string().trim().max(120).optional().nullable(),
-      enabled: z9.boolean().optional().default(true)
+    baseTriggerSchema = z11.object({
+      label: z11.string().trim().max(120).optional().nullable(),
+      enabled: z11.boolean().optional().default(true)
     });
-    createRoutineTriggerSchema = z9.discriminatedUnion("kind", [
+    createRoutineTriggerSchema = z11.discriminatedUnion("kind", [
       baseTriggerSchema.extend({
-        kind: z9.literal("schedule"),
-        cronExpression: z9.string().trim().min(1),
-        timezone: z9.string().trim().min(1).default("UTC")
+        kind: z11.literal("schedule"),
+        cronExpression: z11.string().trim().min(1),
+        timezone: z11.string().trim().min(1).default("UTC")
       }),
       baseTriggerSchema.extend({
-        kind: z9.literal("webhook"),
-        signingMode: z9.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().default("bearer"),
-        replayWindowSec: z9.number().int().min(30).max(86400).optional().default(300)
+        kind: z11.literal("webhook"),
+        signingMode: z11.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().default("bearer"),
+        replayWindowSec: z11.number().int().min(30).max(86400).optional().default(300)
       }),
       baseTriggerSchema.extend({
-        kind: z9.literal("api")
+        kind: z11.literal("api")
       })
     ]);
-    updateRoutineTriggerSchema = z9.object({
-      label: z9.string().trim().max(120).optional().nullable(),
-      enabled: z9.boolean().optional(),
-      cronExpression: z9.string().trim().min(1).optional().nullable(),
-      timezone: z9.string().trim().min(1).optional().nullable(),
-      signingMode: z9.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().nullable(),
-      replayWindowSec: z9.number().int().min(30).max(86400).optional().nullable()
+    updateRoutineTriggerSchema = z11.object({
+      label: z11.string().trim().max(120).optional().nullable(),
+      enabled: z11.boolean().optional(),
+      cronExpression: z11.string().trim().min(1).optional().nullable(),
+      timezone: z11.string().trim().min(1).optional().nullable(),
+      signingMode: z11.enum(ROUTINE_TRIGGER_SIGNING_MODES).optional().nullable(),
+      replayWindowSec: z11.number().int().min(30).max(86400).optional().nullable()
     });
-    runRoutineSchema = z9.object({
-      triggerId: z9.string().uuid().optional().nullable(),
-      payload: z9.record(z9.unknown()).optional().nullable(),
-      variables: z9.record(routineVariableValueSchema).optional().nullable(),
-      idempotencyKey: z9.string().trim().max(255).optional().nullable(),
-      source: z9.enum(["manual", "api"]).optional().default("manual"),
-      executionWorkspaceId: z9.string().uuid().optional().nullable(),
-      executionWorkspacePreference: z9.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
+    runRoutineSchema = z11.object({
+      triggerId: z11.string().uuid().optional().nullable(),
+      payload: z11.record(z11.unknown()).optional().nullable(),
+      variables: z11.record(routineVariableValueSchema).optional().nullable(),
+      projectId: z11.string().uuid().optional().nullable(),
+      assigneeAgentId: z11.string().uuid().optional().nullable(),
+      idempotencyKey: z11.string().trim().max(255).optional().nullable(),
+      source: z11.enum(["manual", "api"]).optional().default("manual"),
+      executionWorkspaceId: z11.string().uuid().optional().nullable(),
+      executionWorkspacePreference: z11.enum(ISSUE_EXECUTION_WORKSPACE_PREFERENCES).optional().nullable(),
       executionWorkspaceSettings: issueExecutionWorkspaceSettingsSchema.optional().nullable()
     });
-    rotateRoutineTriggerSecretSchema = z9.object({});
+    rotateRoutineTriggerSecretSchema = z11.object({});
   }
 });
 
 // ../packages/shared/src/validators/company-portability.ts
-import { z as z10 } from "zod";
+import { z as z12 } from "zod";
 var portabilityIncludeSchema, portabilityEnvInputSchema, portabilityFileEntrySchema, portabilityCompanyManifestEntrySchema, portabilitySidebarOrderSchema, portabilityAgentManifestEntrySchema, portabilitySkillManifestEntrySchema, portabilityProjectManifestEntrySchema, portabilityIssueRoutineTriggerManifestEntrySchema, portabilityIssueRoutineManifestEntrySchema, portabilityIssueManifestEntrySchema, portabilityManifestSchema, portabilitySourceSchema, portabilityTargetSchema, portabilityAgentSelectionSchema, portabilityCollisionStrategySchema, companyPortabilityExportSchema, companyPortabilityPreviewSchema, portabilityAdapterOverrideSchema, companyPortabilityImportSchema;
 var init_company_portability = __esm({
   "../packages/shared/src/validators/company-portability.ts"() {
     "use strict";
     init_routine();
-    portabilityIncludeSchema = z10.object({
-      company: z10.boolean().optional(),
-      agents: z10.boolean().optional(),
-      projects: z10.boolean().optional(),
-      issues: z10.boolean().optional(),
-      skills: z10.boolean().optional()
+    portabilityIncludeSchema = z12.object({
+      company: z12.boolean().optional(),
+      agents: z12.boolean().optional(),
+      projects: z12.boolean().optional(),
+      issues: z12.boolean().optional(),
+      skills: z12.boolean().optional()
     }).partial();
-    portabilityEnvInputSchema = z10.object({
-      key: z10.string().min(1),
-      description: z10.string().nullable(),
-      agentSlug: z10.string().min(1).nullable(),
-      projectSlug: z10.string().min(1).nullable(),
-      kind: z10.enum(["secret", "plain"]),
-      requirement: z10.enum(["required", "optional"]),
-      defaultValue: z10.string().nullable(),
-      portability: z10.enum(["portable", "system_dependent"])
+    portabilityEnvInputSchema = z12.object({
+      key: z12.string().min(1),
+      description: z12.string().nullable(),
+      agentSlug: z12.string().min(1).nullable(),
+      projectSlug: z12.string().min(1).nullable(),
+      kind: z12.enum(["secret", "plain"]),
+      requirement: z12.enum(["required", "optional"]),
+      defaultValue: z12.string().nullable(),
+      portability: z12.enum(["portable", "system_dependent"])
     });
-    portabilityFileEntrySchema = z10.union([
-      z10.string(),
-      z10.object({
-        encoding: z10.literal("base64"),
-        data: z10.string(),
-        contentType: z10.string().min(1).optional().nullable()
+    portabilityFileEntrySchema = z12.union([
+      z12.string(),
+      z12.object({
+        encoding: z12.literal("base64"),
+        data: z12.string(),
+        contentType: z12.string().min(1).optional().nullable()
       })
     ]);
-    portabilityCompanyManifestEntrySchema = z10.object({
-      path: z10.string().min(1),
-      name: z10.string().min(1),
-      description: z10.string().nullable(),
-      brandColor: z10.string().nullable(),
-      logoPath: z10.string().nullable(),
-      requireBoardApprovalForNewAgents: z10.boolean(),
-      feedbackDataSharingEnabled: z10.boolean().default(false),
-      feedbackDataSharingConsentAt: z10.string().datetime().nullable().default(null),
-      feedbackDataSharingConsentByUserId: z10.string().nullable().default(null),
-      feedbackDataSharingTermsVersion: z10.string().nullable().default(null)
+    portabilityCompanyManifestEntrySchema = z12.object({
+      path: z12.string().min(1),
+      name: z12.string().min(1),
+      description: z12.string().nullable(),
+      brandColor: z12.string().nullable(),
+      logoPath: z12.string().nullable(),
+      requireBoardApprovalForNewAgents: z12.boolean(),
+      feedbackDataSharingEnabled: z12.boolean().default(false),
+      feedbackDataSharingConsentAt: z12.string().datetime().nullable().default(null),
+      feedbackDataSharingConsentByUserId: z12.string().nullable().default(null),
+      feedbackDataSharingTermsVersion: z12.string().nullable().default(null)
     });
-    portabilitySidebarOrderSchema = z10.object({
-      agents: z10.array(z10.string().min(1)).default([]),
-      projects: z10.array(z10.string().min(1)).default([])
+    portabilitySidebarOrderSchema = z12.object({
+      agents: z12.array(z12.string().min(1)).default([]),
+      projects: z12.array(z12.string().min(1)).default([])
     });
-    portabilityAgentManifestEntrySchema = z10.object({
-      slug: z10.string().min(1),
-      name: z10.string().min(1),
-      path: z10.string().min(1),
-      skills: z10.array(z10.string().min(1)).default([]),
-      role: z10.string().min(1),
-      title: z10.string().nullable(),
-      icon: z10.string().nullable(),
-      capabilities: z10.string().nullable(),
-      reportsToSlug: z10.string().min(1).nullable(),
-      adapterType: z10.string().min(1),
-      adapterConfig: z10.record(z10.unknown()),
-      runtimeConfig: z10.record(z10.unknown()),
-      permissions: z10.record(z10.unknown()),
-      budgetMonthlyCents: z10.number().int().nonnegative(),
-      metadata: z10.record(z10.unknown()).nullable()
+    portabilityAgentManifestEntrySchema = z12.object({
+      slug: z12.string().min(1),
+      name: z12.string().min(1),
+      path: z12.string().min(1),
+      skills: z12.array(z12.string().min(1)).default([]),
+      role: z12.string().min(1),
+      title: z12.string().nullable(),
+      icon: z12.string().nullable(),
+      capabilities: z12.string().nullable(),
+      reportsToSlug: z12.string().min(1).nullable(),
+      adapterType: z12.string().min(1),
+      adapterConfig: z12.record(z12.unknown()),
+      runtimeConfig: z12.record(z12.unknown()),
+      permissions: z12.record(z12.unknown()),
+      budgetMonthlyCents: z12.number().int().nonnegative(),
+      metadata: z12.record(z12.unknown()).nullable()
     });
-    portabilitySkillManifestEntrySchema = z10.object({
-      key: z10.string().min(1),
-      slug: z10.string().min(1),
-      name: z10.string().min(1),
-      path: z10.string().min(1),
-      description: z10.string().nullable(),
-      sourceType: z10.string().min(1),
-      sourceLocator: z10.string().nullable(),
-      sourceRef: z10.string().nullable(),
-      trustLevel: z10.string().nullable(),
-      compatibility: z10.string().nullable(),
-      metadata: z10.record(z10.unknown()).nullable(),
-      fileInventory: z10.array(z10.object({
-        path: z10.string().min(1),
-        kind: z10.string().min(1)
+    portabilitySkillManifestEntrySchema = z12.object({
+      key: z12.string().min(1),
+      slug: z12.string().min(1),
+      name: z12.string().min(1),
+      path: z12.string().min(1),
+      description: z12.string().nullable(),
+      sourceType: z12.string().min(1),
+      sourceLocator: z12.string().nullable(),
+      sourceRef: z12.string().nullable(),
+      trustLevel: z12.string().nullable(),
+      compatibility: z12.string().nullable(),
+      metadata: z12.record(z12.unknown()).nullable(),
+      fileInventory: z12.array(z12.object({
+        path: z12.string().min(1),
+        kind: z12.string().min(1)
       })).default([])
     });
-    portabilityProjectManifestEntrySchema = z10.object({
-      slug: z10.string().min(1),
-      name: z10.string().min(1),
-      path: z10.string().min(1),
-      description: z10.string().nullable(),
-      ownerAgentSlug: z10.string().min(1).nullable(),
-      leadAgentSlug: z10.string().min(1).nullable(),
-      targetDate: z10.string().nullable(),
-      color: z10.string().nullable(),
-      status: z10.string().nullable(),
-      executionWorkspacePolicy: z10.record(z10.unknown()).nullable(),
-      workspaces: z10.array(z10.object({
-        key: z10.string().min(1),
-        name: z10.string().min(1),
-        sourceType: z10.string().nullable(),
-        repoUrl: z10.string().nullable(),
-        repoRef: z10.string().nullable(),
-        defaultRef: z10.string().nullable(),
-        visibility: z10.string().nullable(),
-        setupCommand: z10.string().nullable(),
-        cleanupCommand: z10.string().nullable(),
-        metadata: z10.record(z10.unknown()).nullable(),
-        isPrimary: z10.boolean()
+    portabilityProjectManifestEntrySchema = z12.object({
+      slug: z12.string().min(1),
+      name: z12.string().min(1),
+      path: z12.string().min(1),
+      description: z12.string().nullable(),
+      ownerAgentSlug: z12.string().min(1).nullable(),
+      leadAgentSlug: z12.string().min(1).nullable(),
+      targetDate: z12.string().nullable(),
+      color: z12.string().nullable(),
+      status: z12.string().nullable(),
+      executionWorkspacePolicy: z12.record(z12.unknown()).nullable(),
+      workspaces: z12.array(z12.object({
+        key: z12.string().min(1),
+        name: z12.string().min(1),
+        sourceType: z12.string().nullable(),
+        repoUrl: z12.string().nullable(),
+        repoRef: z12.string().nullable(),
+        defaultRef: z12.string().nullable(),
+        visibility: z12.string().nullable(),
+        setupCommand: z12.string().nullable(),
+        cleanupCommand: z12.string().nullable(),
+        metadata: z12.record(z12.unknown()).nullable(),
+        isPrimary: z12.boolean()
       })).default([]),
-      metadata: z10.record(z10.unknown()).nullable()
+      metadata: z12.record(z12.unknown()).nullable()
     });
-    portabilityIssueRoutineTriggerManifestEntrySchema = z10.object({
-      kind: z10.string().min(1),
-      label: z10.string().nullable(),
-      enabled: z10.boolean(),
-      cronExpression: z10.string().nullable(),
-      timezone: z10.string().nullable(),
-      signingMode: z10.string().nullable(),
-      replayWindowSec: z10.number().int().nullable()
+    portabilityIssueRoutineTriggerManifestEntrySchema = z12.object({
+      kind: z12.string().min(1),
+      label: z12.string().nullable(),
+      enabled: z12.boolean(),
+      cronExpression: z12.string().nullable(),
+      timezone: z12.string().nullable(),
+      signingMode: z12.string().nullable(),
+      replayWindowSec: z12.number().int().nullable()
     });
-    portabilityIssueRoutineManifestEntrySchema = z10.object({
-      concurrencyPolicy: z10.string().nullable(),
-      catchUpPolicy: z10.string().nullable(),
-      variables: z10.array(routineVariableSchema).nullable().optional(),
-      triggers: z10.array(portabilityIssueRoutineTriggerManifestEntrySchema).default([])
+    portabilityIssueRoutineManifestEntrySchema = z12.object({
+      concurrencyPolicy: z12.string().nullable(),
+      catchUpPolicy: z12.string().nullable(),
+      variables: z12.array(routineVariableSchema).nullable().optional(),
+      triggers: z12.array(portabilityIssueRoutineTriggerManifestEntrySchema).default([])
     });
-    portabilityIssueManifestEntrySchema = z10.object({
-      slug: z10.string().min(1),
-      identifier: z10.string().min(1).nullable(),
-      title: z10.string().min(1),
-      path: z10.string().min(1),
-      projectSlug: z10.string().min(1).nullable(),
-      projectWorkspaceKey: z10.string().min(1).nullable(),
-      assigneeAgentSlug: z10.string().min(1).nullable(),
-      description: z10.string().nullable(),
-      recurring: z10.boolean().default(false),
+    portabilityIssueManifestEntrySchema = z12.object({
+      slug: z12.string().min(1),
+      identifier: z12.string().min(1).nullable(),
+      title: z12.string().min(1),
+      path: z12.string().min(1),
+      projectSlug: z12.string().min(1).nullable(),
+      projectWorkspaceKey: z12.string().min(1).nullable(),
+      assigneeAgentSlug: z12.string().min(1).nullable(),
+      description: z12.string().nullable(),
+      recurring: z12.boolean().default(false),
       routine: portabilityIssueRoutineManifestEntrySchema.nullable(),
-      legacyRecurrence: z10.record(z10.unknown()).nullable(),
-      status: z10.string().nullable(),
-      priority: z10.string().nullable(),
-      labelIds: z10.array(z10.string().min(1)).default([]),
-      billingCode: z10.string().nullable(),
-      executionWorkspaceSettings: z10.record(z10.unknown()).nullable(),
-      assigneeAdapterOverrides: z10.record(z10.unknown()).nullable(),
-      metadata: z10.record(z10.unknown()).nullable()
+      legacyRecurrence: z12.record(z12.unknown()).nullable(),
+      status: z12.string().nullable(),
+      priority: z12.string().nullable(),
+      labelIds: z12.array(z12.string().min(1)).default([]),
+      billingCode: z12.string().nullable(),
+      executionWorkspaceSettings: z12.record(z12.unknown()).nullable(),
+      assigneeAdapterOverrides: z12.record(z12.unknown()).nullable(),
+      metadata: z12.record(z12.unknown()).nullable()
     });
-    portabilityManifestSchema = z10.object({
-      schemaVersion: z10.number().int().positive(),
-      generatedAt: z10.string().datetime(),
-      source: z10.object({
-        companyId: z10.string().uuid(),
-        companyName: z10.string().min(1)
+    portabilityManifestSchema = z12.object({
+      schemaVersion: z12.number().int().positive(),
+      generatedAt: z12.string().datetime(),
+      source: z12.object({
+        companyId: z12.string().uuid(),
+        companyName: z12.string().min(1)
       }).nullable(),
-      includes: z10.object({
-        company: z10.boolean(),
-        agents: z10.boolean(),
-        projects: z10.boolean(),
-        issues: z10.boolean(),
-        skills: z10.boolean()
+      includes: z12.object({
+        company: z12.boolean(),
+        agents: z12.boolean(),
+        projects: z12.boolean(),
+        issues: z12.boolean(),
+        skills: z12.boolean()
       }),
       company: portabilityCompanyManifestEntrySchema.nullable(),
       sidebar: portabilitySidebarOrderSchema.nullable(),
-      agents: z10.array(portabilityAgentManifestEntrySchema),
-      skills: z10.array(portabilitySkillManifestEntrySchema).default([]),
-      projects: z10.array(portabilityProjectManifestEntrySchema).default([]),
-      issues: z10.array(portabilityIssueManifestEntrySchema).default([]),
-      envInputs: z10.array(portabilityEnvInputSchema).default([])
+      agents: z12.array(portabilityAgentManifestEntrySchema),
+      skills: z12.array(portabilitySkillManifestEntrySchema).default([]),
+      projects: z12.array(portabilityProjectManifestEntrySchema).default([]),
+      issues: z12.array(portabilityIssueManifestEntrySchema).default([]),
+      envInputs: z12.array(portabilityEnvInputSchema).default([])
     });
-    portabilitySourceSchema = z10.discriminatedUnion("type", [
-      z10.object({
-        type: z10.literal("inline"),
-        rootPath: z10.string().min(1).optional().nullable(),
-        files: z10.record(portabilityFileEntrySchema)
+    portabilitySourceSchema = z12.discriminatedUnion("type", [
+      z12.object({
+        type: z12.literal("inline"),
+        rootPath: z12.string().min(1).optional().nullable(),
+        files: z12.record(portabilityFileEntrySchema)
       }),
-      z10.object({
-        type: z10.literal("github"),
-        url: z10.string().url()
+      z12.object({
+        type: z12.literal("github"),
+        url: z12.string().url()
       })
     ]);
-    portabilityTargetSchema = z10.discriminatedUnion("mode", [
-      z10.object({
-        mode: z10.literal("new_company"),
-        newCompanyName: z10.string().min(1).optional().nullable()
+    portabilityTargetSchema = z12.discriminatedUnion("mode", [
+      z12.object({
+        mode: z12.literal("new_company"),
+        newCompanyName: z12.string().min(1).optional().nullable()
       }),
-      z10.object({
-        mode: z10.literal("existing_company"),
-        companyId: z10.string().uuid()
+      z12.object({
+        mode: z12.literal("existing_company"),
+        companyId: z12.string().uuid()
       })
     ]);
-    portabilityAgentSelectionSchema = z10.union([
-      z10.literal("all"),
-      z10.array(z10.string().min(1))
+    portabilityAgentSelectionSchema = z12.union([
+      z12.literal("all"),
+      z12.array(z12.string().min(1))
     ]);
-    portabilityCollisionStrategySchema = z10.enum(["rename", "skip", "replace"]);
-    companyPortabilityExportSchema = z10.object({
+    portabilityCollisionStrategySchema = z12.enum(["rename", "skip", "replace"]);
+    companyPortabilityExportSchema = z12.object({
       include: portabilityIncludeSchema.optional(),
-      agents: z10.array(z10.string().min(1)).optional(),
-      skills: z10.array(z10.string().min(1)).optional(),
-      projects: z10.array(z10.string().min(1)).optional(),
-      issues: z10.array(z10.string().min(1)).optional(),
-      projectIssues: z10.array(z10.string().min(1)).optional(),
-      selectedFiles: z10.array(z10.string().min(1)).optional(),
-      expandReferencedSkills: z10.boolean().optional(),
+      agents: z12.array(z12.string().min(1)).optional(),
+      skills: z12.array(z12.string().min(1)).optional(),
+      projects: z12.array(z12.string().min(1)).optional(),
+      issues: z12.array(z12.string().min(1)).optional(),
+      projectIssues: z12.array(z12.string().min(1)).optional(),
+      selectedFiles: z12.array(z12.string().min(1)).optional(),
+      expandReferencedSkills: z12.boolean().optional(),
       sidebarOrder: portabilitySidebarOrderSchema.partial().optional()
     });
-    companyPortabilityPreviewSchema = z10.object({
+    companyPortabilityPreviewSchema = z12.object({
       source: portabilitySourceSchema,
       include: portabilityIncludeSchema.optional(),
       target: portabilityTargetSchema,
       agents: portabilityAgentSelectionSchema.optional(),
       collisionStrategy: portabilityCollisionStrategySchema.optional(),
-      nameOverrides: z10.record(z10.string().min(1), z10.string().min(1)).optional(),
-      selectedFiles: z10.array(z10.string().min(1)).optional()
+      nameOverrides: z12.record(z12.string().min(1), z12.string().min(1)).optional(),
+      selectedFiles: z12.array(z12.string().min(1)).optional()
     });
-    portabilityAdapterOverrideSchema = z10.object({
-      adapterType: z10.string().min(1),
-      adapterConfig: z10.record(z10.unknown()).optional()
+    portabilityAdapterOverrideSchema = z12.object({
+      adapterType: z12.string().min(1),
+      adapterConfig: z12.record(z12.unknown()).optional()
     });
     companyPortabilityImportSchema = companyPortabilityPreviewSchema.extend({
-      adapterOverrides: z10.record(z10.string().min(1), portabilityAdapterOverrideSchema).optional()
+      adapterOverrides: z12.record(z12.string().min(1), portabilityAdapterOverrideSchema).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/secret.ts
-import { z as z11 } from "zod";
+import { z as z13 } from "zod";
 var envBindingPlainSchema, envBindingSecretRefSchema, envBindingSchema, envConfigSchema, createSecretSchema, rotateSecretSchema, updateSecretSchema;
 var init_secret = __esm({
   "../packages/shared/src/validators/secret.ts"() {
     "use strict";
     init_constants();
-    envBindingPlainSchema = z11.object({
-      type: z11.literal("plain"),
-      value: z11.string()
+    envBindingPlainSchema = z13.object({
+      type: z13.literal("plain"),
+      value: z13.string()
     });
-    envBindingSecretRefSchema = z11.object({
-      type: z11.literal("secret_ref"),
-      secretId: z11.string().uuid(),
-      version: z11.union([z11.literal("latest"), z11.number().int().positive()]).optional()
+    envBindingSecretRefSchema = z13.object({
+      type: z13.literal("secret_ref"),
+      secretId: z13.string().uuid(),
+      version: z13.union([z13.literal("latest"), z13.number().int().positive()]).optional()
     });
-    envBindingSchema = z11.union([
-      z11.string(),
+    envBindingSchema = z13.union([
+      z13.string(),
       envBindingPlainSchema,
       envBindingSecretRefSchema
     ]);
-    envConfigSchema = z11.record(envBindingSchema);
-    createSecretSchema = z11.object({
-      name: z11.string().min(1),
-      provider: z11.enum(SECRET_PROVIDERS).optional(),
-      value: z11.string().min(1),
-      description: z11.string().optional().nullable(),
-      externalRef: z11.string().optional().nullable()
+    envConfigSchema = z13.record(envBindingSchema);
+    createSecretSchema = z13.object({
+      name: z13.string().min(1),
+      provider: z13.enum(SECRET_PROVIDERS).optional(),
+      value: z13.string().min(1),
+      description: z13.string().optional().nullable(),
+      externalRef: z13.string().optional().nullable()
     });
-    rotateSecretSchema = z11.object({
-      value: z11.string().min(1),
-      externalRef: z11.string().optional().nullable()
+    rotateSecretSchema = z13.object({
+      value: z13.string().min(1),
+      externalRef: z13.string().optional().nullable()
     });
-    updateSecretSchema = z11.object({
-      name: z11.string().min(1).optional(),
-      description: z11.string().optional().nullable(),
-      externalRef: z11.string().optional().nullable()
+    updateSecretSchema = z13.object({
+      name: z13.string().min(1).optional(),
+      description: z13.string().optional().nullable(),
+      externalRef: z13.string().optional().nullable()
     });
   }
 });
 
 // ../packages/shared/src/validators/agent.ts
-import { z as z12 } from "zod";
+import { z as z14 } from "zod";
 var agentPermissionsSchema, agentInstructionsBundleModeSchema, updateAgentInstructionsBundleSchema, upsertAgentInstructionsFileSchema, adapterConfigSchema, createAgentSchema, createAgentHireSchema, updateAgentSchema, updateAgentInstructionsPathSchema, createAgentKeySchema, agentMineInboxQuerySchema, wakeAgentSchema, resetAgentSessionSchema, testAdapterEnvironmentSchema, updateAgentPermissionsSchema;
 var init_agent = __esm({
   "../packages/shared/src/validators/agent.ts"() {
@@ -1209,95 +1751,95 @@ var init_agent = __esm({
     init_constants();
     init_adapter_type();
     init_secret();
-    agentPermissionsSchema = z12.object({
-      canCreateAgents: z12.boolean().optional().default(false)
+    agentPermissionsSchema = z14.object({
+      canCreateAgents: z14.boolean().optional().default(false)
     });
-    agentInstructionsBundleModeSchema = z12.enum(["managed", "external"]);
-    updateAgentInstructionsBundleSchema = z12.object({
+    agentInstructionsBundleModeSchema = z14.enum(["managed", "external"]);
+    updateAgentInstructionsBundleSchema = z14.object({
       mode: agentInstructionsBundleModeSchema.optional(),
-      rootPath: z12.string().trim().min(1).nullable().optional(),
-      entryFile: z12.string().trim().min(1).optional(),
-      clearLegacyPromptTemplate: z12.boolean().optional().default(false)
+      rootPath: z14.string().trim().min(1).nullable().optional(),
+      entryFile: z14.string().trim().min(1).optional(),
+      clearLegacyPromptTemplate: z14.boolean().optional().default(false)
     });
-    upsertAgentInstructionsFileSchema = z12.object({
-      path: z12.string().trim().min(1),
-      content: z12.string(),
-      clearLegacyPromptTemplate: z12.boolean().optional().default(false)
+    upsertAgentInstructionsFileSchema = z14.object({
+      path: z14.string().trim().min(1),
+      content: z14.string(),
+      clearLegacyPromptTemplate: z14.boolean().optional().default(false)
     });
-    adapterConfigSchema = z12.record(z12.unknown()).superRefine((value, ctx) => {
+    adapterConfigSchema = z14.record(z14.unknown()).superRefine((value, ctx) => {
       const envValue = value.env;
       if (envValue === void 0) return;
       const parsed = envConfigSchema.safeParse(envValue);
       if (!parsed.success) {
         ctx.addIssue({
-          code: z12.ZodIssueCode.custom,
+          code: z14.ZodIssueCode.custom,
           message: "adapterConfig.env must be a map of valid env bindings",
           path: ["env"]
         });
       }
     });
-    createAgentSchema = z12.object({
-      name: z12.string().min(1),
-      role: z12.enum(AGENT_ROLES).optional().default("general"),
-      title: z12.string().optional().nullable(),
-      icon: z12.enum(AGENT_ICON_NAMES).optional().nullable(),
-      reportsTo: z12.string().uuid().optional().nullable(),
-      capabilities: z12.string().optional().nullable(),
-      desiredSkills: z12.array(z12.string().min(1)).optional(),
+    createAgentSchema = z14.object({
+      name: z14.string().min(1),
+      role: z14.enum(AGENT_ROLES).optional().default("general"),
+      title: z14.string().optional().nullable(),
+      icon: z14.enum(AGENT_ICON_NAMES).optional().nullable(),
+      reportsTo: z14.string().uuid().optional().nullable(),
+      capabilities: z14.string().optional().nullable(),
+      desiredSkills: z14.array(z14.string().min(1)).optional(),
       adapterType: agentAdapterTypeSchema,
       adapterConfig: adapterConfigSchema.optional().default({}),
-      runtimeConfig: z12.record(z12.unknown()).optional().default({}),
-      budgetMonthlyCents: z12.number().int().nonnegative().optional().default(0),
+      runtimeConfig: z14.record(z14.unknown()).optional().default({}),
+      budgetMonthlyCents: z14.number().int().nonnegative().optional().default(0),
       permissions: agentPermissionsSchema.optional(),
-      metadata: z12.record(z12.unknown()).optional().nullable()
+      metadata: z14.record(z14.unknown()).optional().nullable()
     });
     createAgentHireSchema = createAgentSchema.extend({
-      sourceIssueId: z12.string().uuid().optional().nullable(),
-      sourceIssueIds: z12.array(z12.string().uuid()).optional()
+      sourceIssueId: z14.string().uuid().optional().nullable(),
+      sourceIssueIds: z14.array(z14.string().uuid()).optional()
     });
     updateAgentSchema = createAgentSchema.omit({ permissions: true }).partial().extend({
-      permissions: z12.never().optional(),
-      replaceAdapterConfig: z12.boolean().optional(),
-      status: z12.enum(AGENT_STATUSES).optional(),
-      spentMonthlyCents: z12.number().int().nonnegative().optional()
+      permissions: z14.never().optional(),
+      replaceAdapterConfig: z14.boolean().optional(),
+      status: z14.enum(AGENT_STATUSES).optional(),
+      spentMonthlyCents: z14.number().int().nonnegative().optional()
     });
-    updateAgentInstructionsPathSchema = z12.object({
-      path: z12.string().trim().min(1).nullable(),
-      adapterConfigKey: z12.string().trim().min(1).optional()
+    updateAgentInstructionsPathSchema = z14.object({
+      path: z14.string().trim().min(1).nullable(),
+      adapterConfigKey: z14.string().trim().min(1).optional()
     });
-    createAgentKeySchema = z12.object({
-      name: z12.string().min(1).default("default")
+    createAgentKeySchema = z14.object({
+      name: z14.string().min(1).default("default")
     });
-    agentMineInboxQuerySchema = z12.object({
-      userId: z12.string().trim().min(1),
-      status: z12.string().trim().min(1).optional().default(INBOX_MINE_ISSUE_STATUS_FILTER)
+    agentMineInboxQuerySchema = z14.object({
+      userId: z14.string().trim().min(1),
+      status: z14.string().trim().min(1).optional().default(INBOX_MINE_ISSUE_STATUS_FILTER)
     });
-    wakeAgentSchema = z12.object({
-      source: z12.enum(["timer", "assignment", "on_demand", "automation"]).optional().default("on_demand"),
-      triggerDetail: z12.enum(["manual", "ping", "callback", "system"]).optional(),
-      reason: z12.string().optional().nullable(),
-      payload: z12.record(z12.unknown()).optional().nullable(),
-      idempotencyKey: z12.string().optional().nullable(),
-      forceFreshSession: z12.preprocess(
+    wakeAgentSchema = z14.object({
+      source: z14.enum(["timer", "assignment", "on_demand", "automation"]).optional().default("on_demand"),
+      triggerDetail: z14.enum(["manual", "ping", "callback", "system"]).optional(),
+      reason: z14.string().optional().nullable(),
+      payload: z14.record(z14.unknown()).optional().nullable(),
+      idempotencyKey: z14.string().optional().nullable(),
+      forceFreshSession: z14.preprocess(
         (value) => value === null ? void 0 : value,
-        z12.boolean().optional().default(false)
+        z14.boolean().optional().default(false)
       )
     });
-    resetAgentSessionSchema = z12.object({
-      taskKey: z12.string().min(1).optional().nullable()
+    resetAgentSessionSchema = z14.object({
+      taskKey: z14.string().min(1).optional().nullable()
     });
-    testAdapterEnvironmentSchema = z12.object({
+    testAdapterEnvironmentSchema = z14.object({
       adapterConfig: adapterConfigSchema.optional().default({})
     });
-    updateAgentPermissionsSchema = z12.object({
-      canCreateAgents: z12.boolean(),
-      canAssignTasks: z12.boolean()
+    updateAgentPermissionsSchema = z14.object({
+      canCreateAgents: z14.boolean(),
+      canAssignTasks: z14.boolean()
     });
   }
 });
 
 // ../packages/shared/src/validators/project.ts
-import { z as z13 } from "zod";
+import { z as z15 } from "zod";
 function validateProjectWorkspace(value, ctx) {
   const sourceType = value.sourceType ?? "local_path";
   const hasCwd = typeof value.cwd === "string" && value.cwd.trim().length > 0;
@@ -1306,7 +1848,7 @@ function validateProjectWorkspace(value, ctx) {
   if (sourceType === "remote_managed") {
     if (!hasRemoteRef && !hasRepo) {
       ctx.addIssue({
-        code: z13.ZodIssueCode.custom,
+        code: z15.ZodIssueCode.custom,
         message: "Remote-managed workspace requires remoteWorkspaceRef or repoUrl.",
         path: ["remoteWorkspaceRef"]
       });
@@ -1315,7 +1857,7 @@ function validateProjectWorkspace(value, ctx) {
   }
   if (!hasCwd && !hasRepo) {
     ctx.addIssue({
-      code: z13.ZodIssueCode.custom,
+      code: z15.ZodIssueCode.custom,
       message: "Workspace requires at least one of cwd or repoUrl.",
       path: ["cwd"]
     });
@@ -1327,85 +1869,86 @@ var init_project = __esm({
     "use strict";
     init_constants();
     init_secret();
-    executionWorkspaceStrategySchema2 = z13.object({
-      type: z13.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
-      baseRef: z13.string().optional().nullable(),
-      branchTemplate: z13.string().optional().nullable(),
-      worktreeParentDir: z13.string().optional().nullable(),
-      provisionCommand: z13.string().optional().nullable(),
-      teardownCommand: z13.string().optional().nullable()
+    executionWorkspaceStrategySchema2 = z15.object({
+      type: z15.enum(["project_primary", "git_worktree", "adapter_managed", "cloud_sandbox"]).optional(),
+      baseRef: z15.string().optional().nullable(),
+      branchTemplate: z15.string().optional().nullable(),
+      worktreeParentDir: z15.string().optional().nullable(),
+      provisionCommand: z15.string().optional().nullable(),
+      teardownCommand: z15.string().optional().nullable()
     }).strict();
-    projectExecutionWorkspacePolicySchema = z13.object({
-      enabled: z13.boolean(),
-      defaultMode: z13.enum(["shared_workspace", "isolated_workspace", "operator_branch", "adapter_default"]).optional(),
-      allowIssueOverride: z13.boolean().optional(),
-      defaultProjectWorkspaceId: z13.string().uuid().optional().nullable(),
+    projectExecutionWorkspacePolicySchema = z15.object({
+      enabled: z15.boolean(),
+      defaultMode: z15.enum(["shared_workspace", "isolated_workspace", "operator_branch", "adapter_default"]).optional(),
+      allowIssueOverride: z15.boolean().optional(),
+      defaultProjectWorkspaceId: z15.string().uuid().optional().nullable(),
       workspaceStrategy: executionWorkspaceStrategySchema2.optional().nullable(),
-      workspaceRuntime: z13.record(z13.unknown()).optional().nullable(),
-      branchPolicy: z13.record(z13.unknown()).optional().nullable(),
-      pullRequestPolicy: z13.record(z13.unknown()).optional().nullable(),
-      runtimePolicy: z13.record(z13.unknown()).optional().nullable(),
-      cleanupPolicy: z13.record(z13.unknown()).optional().nullable()
+      workspaceRuntime: z15.record(z15.unknown()).optional().nullable(),
+      branchPolicy: z15.record(z15.unknown()).optional().nullable(),
+      pullRequestPolicy: z15.record(z15.unknown()).optional().nullable(),
+      runtimePolicy: z15.record(z15.unknown()).optional().nullable(),
+      cleanupPolicy: z15.record(z15.unknown()).optional().nullable()
     }).strict();
-    projectWorkspaceRuntimeConfigSchema = z13.object({
-      workspaceRuntime: z13.record(z13.unknown()).optional().nullable(),
-      desiredState: z13.enum(["running", "stopped"]).optional().nullable()
+    projectWorkspaceRuntimeConfigSchema = z15.object({
+      workspaceRuntime: z15.record(z15.unknown()).optional().nullable(),
+      desiredState: z15.enum(["running", "stopped", "manual"]).optional().nullable(),
+      serviceStates: z15.record(z15.enum(["running", "stopped", "manual"])).optional().nullable()
     }).strict();
-    projectWorkspaceSourceTypeSchema = z13.enum(["local_path", "git_repo", "remote_managed", "non_git_path"]);
-    projectWorkspaceVisibilitySchema = z13.enum(["default", "advanced"]);
+    projectWorkspaceSourceTypeSchema = z15.enum(["local_path", "git_repo", "remote_managed", "non_git_path"]);
+    projectWorkspaceVisibilitySchema = z15.enum(["default", "advanced"]);
     projectWorkspaceFields = {
-      name: z13.string().min(1).optional(),
+      name: z15.string().min(1).optional(),
       sourceType: projectWorkspaceSourceTypeSchema.optional(),
-      cwd: z13.string().min(1).optional().nullable(),
-      repoUrl: z13.string().url().optional().nullable(),
-      repoRef: z13.string().optional().nullable(),
-      defaultRef: z13.string().optional().nullable(),
+      cwd: z15.string().min(1).optional().nullable(),
+      repoUrl: z15.string().url().optional().nullable(),
+      repoRef: z15.string().optional().nullable(),
+      defaultRef: z15.string().optional().nullable(),
       visibility: projectWorkspaceVisibilitySchema.optional(),
-      setupCommand: z13.string().optional().nullable(),
-      cleanupCommand: z13.string().optional().nullable(),
-      remoteProvider: z13.string().optional().nullable(),
-      remoteWorkspaceRef: z13.string().optional().nullable(),
-      sharedWorkspaceKey: z13.string().optional().nullable(),
-      metadata: z13.record(z13.unknown()).optional().nullable(),
+      setupCommand: z15.string().optional().nullable(),
+      cleanupCommand: z15.string().optional().nullable(),
+      remoteProvider: z15.string().optional().nullable(),
+      remoteWorkspaceRef: z15.string().optional().nullable(),
+      sharedWorkspaceKey: z15.string().optional().nullable(),
+      metadata: z15.record(z15.unknown()).optional().nullable(),
       runtimeConfig: projectWorkspaceRuntimeConfigSchema.optional().nullable()
     };
-    createProjectWorkspaceSchema = z13.object({
+    createProjectWorkspaceSchema = z15.object({
       ...projectWorkspaceFields,
-      isPrimary: z13.boolean().optional().default(false)
+      isPrimary: z15.boolean().optional().default(false)
     }).superRefine(validateProjectWorkspace);
-    updateProjectWorkspaceSchema = z13.object({
+    updateProjectWorkspaceSchema = z15.object({
       ...projectWorkspaceFields,
-      isPrimary: z13.boolean().optional()
+      isPrimary: z15.boolean().optional()
     }).partial();
     projectFields = {
       /** @deprecated Use goalIds instead */
-      goalId: z13.string().uuid().optional().nullable(),
-      goalIds: z13.array(z13.string().uuid()).optional(),
-      name: z13.string().min(1),
-      description: z13.string().optional().nullable(),
-      status: z13.enum(PROJECT_STATUSES).optional().default("backlog"),
-      leadAgentId: z13.string().uuid().optional().nullable(),
-      targetDate: z13.string().optional().nullable(),
-      color: z13.string().optional().nullable(),
+      goalId: z15.string().uuid().optional().nullable(),
+      goalIds: z15.array(z15.string().uuid()).optional(),
+      name: z15.string().min(1),
+      description: z15.string().optional().nullable(),
+      status: z15.enum(PROJECT_STATUSES).optional().default("backlog"),
+      leadAgentId: z15.string().uuid().optional().nullable(),
+      targetDate: z15.string().optional().nullable(),
+      color: z15.string().optional().nullable(),
       env: envConfigSchema.optional().nullable(),
       executionWorkspacePolicy: projectExecutionWorkspacePolicySchema.optional().nullable(),
-      archivedAt: z13.string().datetime().optional().nullable()
+      archivedAt: z15.string().datetime().optional().nullable()
     };
-    createProjectSchema = z13.object({
+    createProjectSchema = z15.object({
       ...projectFields,
       workspace: createProjectWorkspaceSchema.optional()
     });
-    updateProjectSchema = z13.object(projectFields).partial();
+    updateProjectSchema = z15.object(projectFields).partial();
   }
 });
 
 // ../packages/shared/src/validators/work-product.ts
-import { z as z14 } from "zod";
+import { z as z16 } from "zod";
 var issueWorkProductTypeSchema, issueWorkProductStatusSchema, issueWorkProductReviewStateSchema, createIssueWorkProductSchema, updateIssueWorkProductSchema;
 var init_work_product = __esm({
   "../packages/shared/src/validators/work-product.ts"() {
     "use strict";
-    issueWorkProductTypeSchema = z14.enum([
+    issueWorkProductTypeSchema = z16.enum([
       "preview_url",
       "runtime_service",
       "pull_request",
@@ -1414,7 +1957,7 @@ var init_work_product = __esm({
       "artifact",
       "document"
     ]);
-    issueWorkProductStatusSchema = z14.enum([
+    issueWorkProductStatusSchema = z16.enum([
       "active",
       "ready_for_review",
       "approved",
@@ -1425,266 +1968,145 @@ var init_work_product = __esm({
       "archived",
       "draft"
     ]);
-    issueWorkProductReviewStateSchema = z14.enum([
+    issueWorkProductReviewStateSchema = z16.enum([
       "none",
       "needs_board_review",
       "approved",
       "changes_requested"
     ]);
-    createIssueWorkProductSchema = z14.object({
-      projectId: z14.string().uuid().optional().nullable(),
-      executionWorkspaceId: z14.string().uuid().optional().nullable(),
-      runtimeServiceId: z14.string().uuid().optional().nullable(),
+    createIssueWorkProductSchema = z16.object({
+      projectId: z16.string().uuid().optional().nullable(),
+      executionWorkspaceId: z16.string().uuid().optional().nullable(),
+      runtimeServiceId: z16.string().uuid().optional().nullable(),
       type: issueWorkProductTypeSchema,
-      provider: z14.string().min(1),
-      externalId: z14.string().optional().nullable(),
-      title: z14.string().min(1),
-      url: z14.string().url().optional().nullable(),
+      provider: z16.string().min(1),
+      externalId: z16.string().optional().nullable(),
+      title: z16.string().min(1),
+      url: z16.string().url().optional().nullable(),
       status: issueWorkProductStatusSchema.default("active"),
       reviewState: issueWorkProductReviewStateSchema.optional().default("none"),
-      isPrimary: z14.boolean().optional().default(false),
-      healthStatus: z14.enum(["unknown", "healthy", "unhealthy"]).optional().default("unknown"),
-      summary: z14.string().optional().nullable(),
-      metadata: z14.record(z14.unknown()).optional().nullable(),
-      createdByRunId: z14.string().uuid().optional().nullable()
+      isPrimary: z16.boolean().optional().default(false),
+      healthStatus: z16.enum(["unknown", "healthy", "unhealthy"]).optional().default("unknown"),
+      summary: z16.string().optional().nullable(),
+      metadata: z16.record(z16.unknown()).optional().nullable(),
+      createdByRunId: z16.string().uuid().optional().nullable()
     });
     updateIssueWorkProductSchema = createIssueWorkProductSchema.partial();
   }
 });
 
-// ../packages/shared/src/validators/execution-workspace.ts
-import { z as z15 } from "zod";
-var executionWorkspaceStatusSchema, executionWorkspaceConfigSchema, executionWorkspaceCloseReadinessStateSchema, executionWorkspaceCloseActionKindSchema, executionWorkspaceCloseActionSchema, executionWorkspaceCloseLinkedIssueSchema, executionWorkspaceCloseGitReadinessSchema, workspaceRuntimeServiceSchema, executionWorkspaceCloseReadinessSchema, updateExecutionWorkspaceSchema;
-var init_execution_workspace = __esm({
-  "../packages/shared/src/validators/execution-workspace.ts"() {
-    "use strict";
-    executionWorkspaceStatusSchema = z15.enum([
-      "active",
-      "idle",
-      "in_review",
-      "archived",
-      "cleanup_failed"
-    ]);
-    executionWorkspaceConfigSchema = z15.object({
-      provisionCommand: z15.string().optional().nullable(),
-      teardownCommand: z15.string().optional().nullable(),
-      cleanupCommand: z15.string().optional().nullable(),
-      workspaceRuntime: z15.record(z15.unknown()).optional().nullable(),
-      desiredState: z15.enum(["running", "stopped"]).optional().nullable()
-    }).strict();
-    executionWorkspaceCloseReadinessStateSchema = z15.enum([
-      "ready",
-      "ready_with_warnings",
-      "blocked"
-    ]);
-    executionWorkspaceCloseActionKindSchema = z15.enum([
-      "archive_record",
-      "stop_runtime_services",
-      "cleanup_command",
-      "teardown_command",
-      "git_worktree_remove",
-      "git_branch_delete",
-      "remove_local_directory"
-    ]);
-    executionWorkspaceCloseActionSchema = z15.object({
-      kind: executionWorkspaceCloseActionKindSchema,
-      label: z15.string(),
-      description: z15.string(),
-      command: z15.string().nullable()
-    }).strict();
-    executionWorkspaceCloseLinkedIssueSchema = z15.object({
-      id: z15.string().uuid(),
-      identifier: z15.string().nullable(),
-      title: z15.string(),
-      status: z15.string(),
-      isTerminal: z15.boolean()
-    }).strict();
-    executionWorkspaceCloseGitReadinessSchema = z15.object({
-      repoRoot: z15.string().nullable(),
-      workspacePath: z15.string().nullable(),
-      branchName: z15.string().nullable(),
-      baseRef: z15.string().nullable(),
-      hasDirtyTrackedFiles: z15.boolean(),
-      hasUntrackedFiles: z15.boolean(),
-      dirtyEntryCount: z15.number().int().nonnegative(),
-      untrackedEntryCount: z15.number().int().nonnegative(),
-      aheadCount: z15.number().int().nonnegative().nullable(),
-      behindCount: z15.number().int().nonnegative().nullable(),
-      isMergedIntoBase: z15.boolean().nullable(),
-      createdByRuntime: z15.boolean()
-    }).strict();
-    workspaceRuntimeServiceSchema = z15.object({
-      id: z15.string(),
-      companyId: z15.string().uuid(),
-      projectId: z15.string().uuid().nullable(),
-      projectWorkspaceId: z15.string().uuid().nullable(),
-      executionWorkspaceId: z15.string().uuid().nullable(),
-      issueId: z15.string().uuid().nullable(),
-      scopeType: z15.enum(["project_workspace", "execution_workspace", "run", "agent"]),
-      scopeId: z15.string().nullable(),
-      serviceName: z15.string(),
-      status: z15.enum(["starting", "running", "stopped", "failed"]),
-      lifecycle: z15.enum(["shared", "ephemeral"]),
-      reuseKey: z15.string().nullable(),
-      command: z15.string().nullable(),
-      cwd: z15.string().nullable(),
-      port: z15.number().int().nullable(),
-      url: z15.string().nullable(),
-      provider: z15.enum(["local_process", "adapter_managed"]),
-      providerRef: z15.string().nullable(),
-      ownerAgentId: z15.string().uuid().nullable(),
-      startedByRunId: z15.string().uuid().nullable(),
-      lastUsedAt: z15.coerce.date(),
-      startedAt: z15.coerce.date(),
-      stoppedAt: z15.coerce.date().nullable(),
-      stopPolicy: z15.record(z15.unknown()).nullable(),
-      healthStatus: z15.enum(["unknown", "healthy", "unhealthy"]),
-      createdAt: z15.coerce.date(),
-      updatedAt: z15.coerce.date()
-    }).strict();
-    executionWorkspaceCloseReadinessSchema = z15.object({
-      workspaceId: z15.string().uuid(),
-      state: executionWorkspaceCloseReadinessStateSchema,
-      blockingReasons: z15.array(z15.string()),
-      warnings: z15.array(z15.string()),
-      linkedIssues: z15.array(executionWorkspaceCloseLinkedIssueSchema),
-      plannedActions: z15.array(executionWorkspaceCloseActionSchema),
-      isDestructiveCloseAllowed: z15.boolean(),
-      isSharedWorkspace: z15.boolean(),
-      isProjectPrimaryWorkspace: z15.boolean(),
-      git: executionWorkspaceCloseGitReadinessSchema.nullable(),
-      runtimeServices: z15.array(workspaceRuntimeServiceSchema)
-    }).strict();
-    updateExecutionWorkspaceSchema = z15.object({
-      name: z15.string().min(1).optional(),
-      cwd: z15.string().optional().nullable(),
-      repoUrl: z15.string().optional().nullable(),
-      baseRef: z15.string().optional().nullable(),
-      branchName: z15.string().optional().nullable(),
-      providerRef: z15.string().optional().nullable(),
-      status: executionWorkspaceStatusSchema.optional(),
-      cleanupEligibleAt: z15.string().datetime().optional().nullable(),
-      cleanupReason: z15.string().optional().nullable(),
-      config: executionWorkspaceConfigSchema.optional().nullable(),
-      metadata: z15.record(z15.unknown()).optional().nullable()
-    }).strict();
-  }
-});
-
 // ../packages/shared/src/validators/goal.ts
-import { z as z16 } from "zod";
+import { z as z17 } from "zod";
 var createGoalSchema, updateGoalSchema;
 var init_goal = __esm({
   "../packages/shared/src/validators/goal.ts"() {
     "use strict";
     init_constants();
-    createGoalSchema = z16.object({
-      title: z16.string().min(1),
-      description: z16.string().optional().nullable(),
-      level: z16.enum(GOAL_LEVELS).optional().default("task"),
-      status: z16.enum(GOAL_STATUSES).optional().default("planned"),
-      parentId: z16.string().uuid().optional().nullable(),
-      ownerAgentId: z16.string().uuid().optional().nullable()
+    createGoalSchema = z17.object({
+      title: z17.string().min(1),
+      description: z17.string().optional().nullable(),
+      level: z17.enum(GOAL_LEVELS).optional().default("task"),
+      status: z17.enum(GOAL_STATUSES).optional().default("planned"),
+      parentId: z17.string().uuid().optional().nullable(),
+      ownerAgentId: z17.string().uuid().optional().nullable()
     });
     updateGoalSchema = createGoalSchema.partial();
   }
 });
 
 // ../packages/shared/src/validators/approval.ts
-import { z as z17 } from "zod";
+import { z as z18 } from "zod";
 var createApprovalSchema, resolveApprovalSchema, requestApprovalRevisionSchema, resubmitApprovalSchema, addApprovalCommentSchema;
 var init_approval = __esm({
   "../packages/shared/src/validators/approval.ts"() {
     "use strict";
     init_constants();
-    createApprovalSchema = z17.object({
-      type: z17.enum(APPROVAL_TYPES),
-      requestedByAgentId: z17.string().uuid().optional().nullable(),
-      payload: z17.record(z17.unknown()),
-      issueIds: z17.array(z17.string().uuid()).optional()
+    createApprovalSchema = z18.object({
+      type: z18.enum(APPROVAL_TYPES),
+      requestedByAgentId: z18.string().uuid().optional().nullable(),
+      payload: z18.record(z18.unknown()),
+      issueIds: z18.array(z18.string().uuid()).optional()
     });
-    resolveApprovalSchema = z17.object({
-      decisionNote: z17.string().optional().nullable(),
-      decidedByUserId: z17.string().optional().default("board")
+    resolveApprovalSchema = z18.object({
+      decisionNote: z18.string().optional().nullable()
     });
-    requestApprovalRevisionSchema = z17.object({
-      decisionNote: z17.string().optional().nullable(),
-      decidedByUserId: z17.string().optional().default("board")
+    requestApprovalRevisionSchema = z18.object({
+      decisionNote: z18.string().optional().nullable()
     });
-    resubmitApprovalSchema = z17.object({
-      payload: z17.record(z17.unknown()).optional()
+    resubmitApprovalSchema = z18.object({
+      payload: z18.record(z18.unknown()).optional()
     });
-    addApprovalCommentSchema = z17.object({
-      body: z17.string().min(1)
+    addApprovalCommentSchema = z18.object({
+      body: z18.string().min(1)
     });
   }
 });
 
 // ../packages/shared/src/validators/cost.ts
-import { z as z18 } from "zod";
+import { z as z19 } from "zod";
 var createCostEventSchema, updateBudgetSchema;
 var init_cost = __esm({
   "../packages/shared/src/validators/cost.ts"() {
     "use strict";
     init_constants();
-    createCostEventSchema = z18.object({
-      agentId: z18.string().uuid(),
-      issueId: z18.string().uuid().optional().nullable(),
-      projectId: z18.string().uuid().optional().nullable(),
-      goalId: z18.string().uuid().optional().nullable(),
-      heartbeatRunId: z18.string().uuid().optional().nullable(),
-      billingCode: z18.string().optional().nullable(),
-      provider: z18.string().min(1),
-      biller: z18.string().min(1).optional(),
-      billingType: z18.enum(BILLING_TYPES).optional().default("unknown"),
-      model: z18.string().min(1),
-      inputTokens: z18.number().int().nonnegative().optional().default(0),
-      cachedInputTokens: z18.number().int().nonnegative().optional().default(0),
-      outputTokens: z18.number().int().nonnegative().optional().default(0),
-      costCents: z18.number().int().nonnegative(),
-      occurredAt: z18.string().datetime()
+    createCostEventSchema = z19.object({
+      agentId: z19.string().uuid(),
+      issueId: z19.string().uuid().optional().nullable(),
+      projectId: z19.string().uuid().optional().nullable(),
+      goalId: z19.string().uuid().optional().nullable(),
+      heartbeatRunId: z19.string().uuid().optional().nullable(),
+      billingCode: z19.string().optional().nullable(),
+      provider: z19.string().min(1),
+      biller: z19.string().min(1).optional(),
+      billingType: z19.enum(BILLING_TYPES).optional().default("unknown"),
+      model: z19.string().min(1),
+      inputTokens: z19.number().int().nonnegative().optional().default(0),
+      cachedInputTokens: z19.number().int().nonnegative().optional().default(0),
+      outputTokens: z19.number().int().nonnegative().optional().default(0),
+      costCents: z19.number().int().nonnegative(),
+      occurredAt: z19.string().datetime()
     }).transform((value) => ({
       ...value,
       biller: value.biller ?? value.provider
     }));
-    updateBudgetSchema = z18.object({
-      budgetMonthlyCents: z18.number().int().nonnegative()
+    updateBudgetSchema = z19.object({
+      budgetMonthlyCents: z19.number().int().nonnegative()
     });
   }
 });
 
 // ../packages/shared/src/validators/finance.ts
-import { z as z19 } from "zod";
+import { z as z20 } from "zod";
 var createFinanceEventSchema;
 var init_finance = __esm({
   "../packages/shared/src/validators/finance.ts"() {
     "use strict";
     init_constants();
-    createFinanceEventSchema = z19.object({
-      agentId: z19.string().uuid().optional().nullable(),
-      issueId: z19.string().uuid().optional().nullable(),
-      projectId: z19.string().uuid().optional().nullable(),
-      goalId: z19.string().uuid().optional().nullable(),
-      heartbeatRunId: z19.string().uuid().optional().nullable(),
-      costEventId: z19.string().uuid().optional().nullable(),
-      billingCode: z19.string().optional().nullable(),
-      description: z19.string().max(500).optional().nullable(),
-      eventKind: z19.enum(FINANCE_EVENT_KINDS),
-      direction: z19.enum(FINANCE_DIRECTIONS).optional().default("debit"),
-      biller: z19.string().min(1),
-      provider: z19.string().min(1).optional().nullable(),
-      executionAdapterType: z19.enum(AGENT_ADAPTER_TYPES).optional().nullable(),
-      pricingTier: z19.string().min(1).optional().nullable(),
-      region: z19.string().min(1).optional().nullable(),
-      model: z19.string().min(1).optional().nullable(),
-      quantity: z19.number().int().nonnegative().optional().nullable(),
-      unit: z19.enum(FINANCE_UNITS).optional().nullable(),
-      amountCents: z19.number().int().nonnegative(),
-      currency: z19.string().length(3).optional().default("USD"),
-      estimated: z19.boolean().optional().default(false),
-      externalInvoiceId: z19.string().optional().nullable(),
-      metadataJson: z19.record(z19.string(), z19.unknown()).optional().nullable(),
-      occurredAt: z19.string().datetime()
+    createFinanceEventSchema = z20.object({
+      agentId: z20.string().uuid().optional().nullable(),
+      issueId: z20.string().uuid().optional().nullable(),
+      projectId: z20.string().uuid().optional().nullable(),
+      goalId: z20.string().uuid().optional().nullable(),
+      heartbeatRunId: z20.string().uuid().optional().nullable(),
+      costEventId: z20.string().uuid().optional().nullable(),
+      billingCode: z20.string().optional().nullable(),
+      description: z20.string().max(500).optional().nullable(),
+      eventKind: z20.enum(FINANCE_EVENT_KINDS),
+      direction: z20.enum(FINANCE_DIRECTIONS).optional().default("debit"),
+      biller: z20.string().min(1),
+      provider: z20.string().min(1).optional().nullable(),
+      executionAdapterType: z20.enum(AGENT_ADAPTER_TYPES).optional().nullable(),
+      pricingTier: z20.string().min(1).optional().nullable(),
+      region: z20.string().min(1).optional().nullable(),
+      model: z20.string().min(1).optional().nullable(),
+      quantity: z20.number().int().nonnegative().optional().nullable(),
+      unit: z20.enum(FINANCE_UNITS).optional().nullable(),
+      amountCents: z20.number().int().nonnegative(),
+      currency: z20.string().length(3).optional().default("USD"),
+      estimated: z20.boolean().optional().default(false),
+      externalInvoiceId: z20.string().optional().nullable(),
+      metadataJson: z20.record(z20.string(), z20.unknown()).optional().nullable(),
+      occurredAt: z20.string().datetime()
     }).transform((value) => ({
       ...value,
       currency: value.currency.toUpperCase()
@@ -1693,82 +2115,147 @@ var init_finance = __esm({
 });
 
 // ../packages/shared/src/validators/asset.ts
-import { z as z20 } from "zod";
+import { z as z21 } from "zod";
 var createAssetImageMetadataSchema;
 var init_asset = __esm({
   "../packages/shared/src/validators/asset.ts"() {
     "use strict";
-    createAssetImageMetadataSchema = z20.object({
-      namespace: z20.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9/_-]+$/).optional()
+    createAssetImageMetadataSchema = z21.object({
+      namespace: z21.string().trim().min(1).max(120).regex(/^[a-zA-Z0-9/_-]+$/).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/access.ts
-import { z as z21 } from "zod";
-var createCompanyInviteSchema, createOpenClawInvitePromptSchema, acceptInviteSchema, listJoinRequestsQuerySchema, claimJoinRequestApiKeySchema, boardCliAuthAccessLevelSchema, createCliAuthChallengeSchema, resolveCliAuthChallengeSchema, updateMemberPermissionsSchema, updateUserCompanyAccessSchema;
+import { z as z22 } from "zod";
+function isValidProfileImage(value) {
+  if (profileImageAssetPathPattern.test(value)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" || url.protocol === "http:";
+  } catch {
+    return false;
+  }
+}
+var createCompanyInviteSchema, createOpenClawInvitePromptSchema, acceptInviteSchema, listJoinRequestsQuerySchema, listCompanyInvitesQuerySchema, claimJoinRequestApiKeySchema, boardCliAuthAccessLevelSchema, createCliAuthChallengeSchema, resolveCliAuthChallengeSchema, updateMemberPermissionsSchema, editableMembershipStatuses, updateCompanyMemberSchema, updateCompanyMemberWithPermissionsSchema, archiveCompanyMemberSchema, updateUserCompanyAccessSchema, searchAdminUsersQuerySchema, profileImageAssetPathPattern, profileImageSchema, currentUserProfileSchema, authSessionSchema, updateCurrentUserProfileSchema;
 var init_access = __esm({
   "../packages/shared/src/validators/access.ts"() {
     "use strict";
     init_constants();
     init_adapter_type();
-    createCompanyInviteSchema = z21.object({
-      allowedJoinTypes: z21.enum(INVITE_JOIN_TYPES).default("both"),
-      defaultsPayload: z21.record(z21.string(), z21.unknown()).optional().nullable(),
-      agentMessage: z21.string().max(4e3).optional().nullable()
+    createCompanyInviteSchema = z22.object({
+      allowedJoinTypes: z22.enum(INVITE_JOIN_TYPES).default("both"),
+      humanRole: z22.enum(HUMAN_COMPANY_MEMBERSHIP_ROLES).optional().nullable(),
+      defaultsPayload: z22.record(z22.string(), z22.unknown()).optional().nullable(),
+      agentMessage: z22.string().max(4e3).optional().nullable()
     });
-    createOpenClawInvitePromptSchema = z21.object({
-      agentMessage: z21.string().max(4e3).optional().nullable()
+    createOpenClawInvitePromptSchema = z22.object({
+      agentMessage: z22.string().max(4e3).optional().nullable()
     });
-    acceptInviteSchema = z21.object({
-      requestType: z21.enum(JOIN_REQUEST_TYPES),
-      agentName: z21.string().min(1).max(120).optional(),
+    acceptInviteSchema = z22.object({
+      requestType: z22.enum(JOIN_REQUEST_TYPES),
+      agentName: z22.string().min(1).max(120).optional(),
       adapterType: optionalAgentAdapterTypeSchema,
-      capabilities: z21.string().max(4e3).optional().nullable(),
-      agentDefaultsPayload: z21.record(z21.string(), z21.unknown()).optional().nullable(),
+      capabilities: z22.string().max(4e3).optional().nullable(),
+      agentDefaultsPayload: z22.record(z22.string(), z22.unknown()).optional().nullable(),
       // OpenClaw join compatibility fields accepted at top level.
-      responsesWebhookUrl: z21.string().max(4e3).optional().nullable(),
-      responsesWebhookMethod: z21.string().max(32).optional().nullable(),
-      responsesWebhookHeaders: z21.record(z21.string(), z21.unknown()).optional().nullable(),
-      paperclipApiUrl: z21.string().max(4e3).optional().nullable(),
-      webhookAuthHeader: z21.string().max(4e3).optional().nullable()
+      responsesWebhookUrl: z22.string().max(4e3).optional().nullable(),
+      responsesWebhookMethod: z22.string().max(32).optional().nullable(),
+      responsesWebhookHeaders: z22.record(z22.string(), z22.unknown()).optional().nullable(),
+      paperclipApiUrl: z22.string().max(4e3).optional().nullable(),
+      webhookAuthHeader: z22.string().max(4e3).optional().nullable()
     });
-    listJoinRequestsQuerySchema = z21.object({
-      status: z21.enum(JOIN_REQUEST_STATUSES).optional(),
-      requestType: z21.enum(JOIN_REQUEST_TYPES).optional()
+    listJoinRequestsQuerySchema = z22.object({
+      status: z22.enum(JOIN_REQUEST_STATUSES).optional(),
+      requestType: z22.enum(JOIN_REQUEST_TYPES).optional()
     });
-    claimJoinRequestApiKeySchema = z21.object({
-      claimSecret: z21.string().min(16).max(256)
+    listCompanyInvitesQuerySchema = z22.object({
+      state: z22.enum(["active", "revoked", "accepted", "expired"]).optional(),
+      limit: z22.coerce.number().int().min(1).max(100).optional().default(20),
+      offset: z22.coerce.number().int().min(0).optional().default(0)
     });
-    boardCliAuthAccessLevelSchema = z21.enum([
+    claimJoinRequestApiKeySchema = z22.object({
+      claimSecret: z22.string().min(16).max(256)
+    });
+    boardCliAuthAccessLevelSchema = z22.enum([
       "board",
       "instance_admin_required"
     ]);
-    createCliAuthChallengeSchema = z21.object({
-      command: z21.string().min(1).max(240),
-      clientName: z21.string().max(120).optional().nullable(),
+    createCliAuthChallengeSchema = z22.object({
+      command: z22.string().min(1).max(240),
+      clientName: z22.string().max(120).optional().nullable(),
       requestedAccess: boardCliAuthAccessLevelSchema.default("board"),
-      requestedCompanyId: z21.string().uuid().optional().nullable()
+      requestedCompanyId: z22.string().uuid().optional().nullable()
     });
-    resolveCliAuthChallengeSchema = z21.object({
-      token: z21.string().min(16).max(256)
+    resolveCliAuthChallengeSchema = z22.object({
+      token: z22.string().min(16).max(256)
     });
-    updateMemberPermissionsSchema = z21.object({
-      grants: z21.array(
-        z21.object({
-          permissionKey: z21.enum(PERMISSION_KEYS),
-          scope: z21.record(z21.string(), z21.unknown()).optional().nullable()
+    updateMemberPermissionsSchema = z22.object({
+      grants: z22.array(
+        z22.object({
+          permissionKey: z22.enum(PERMISSION_KEYS),
+          scope: z22.record(z22.string(), z22.unknown()).optional().nullable()
         })
       )
     });
-    updateUserCompanyAccessSchema = z21.object({
-      companyIds: z21.array(z21.string().uuid()).default([])
+    editableMembershipStatuses = ["pending", "active", "suspended"];
+    updateCompanyMemberSchema = z22.object({
+      membershipRole: z22.enum(HUMAN_COMPANY_MEMBERSHIP_ROLES).optional().nullable(),
+      status: z22.enum(editableMembershipStatuses).optional()
+    }).refine((value) => value.membershipRole !== void 0 || value.status !== void 0, {
+      message: "membershipRole or status is required"
+    });
+    updateCompanyMemberWithPermissionsSchema = z22.object({
+      membershipRole: z22.enum(HUMAN_COMPANY_MEMBERSHIP_ROLES).optional().nullable(),
+      status: z22.enum(editableMembershipStatuses).optional(),
+      grants: updateMemberPermissionsSchema.shape.grants.default([])
+    }).refine((value) => value.membershipRole !== void 0 || value.status !== void 0, {
+      message: "membershipRole or status is required"
+    });
+    archiveCompanyMemberSchema = z22.object({
+      reassignment: z22.object({
+        assigneeAgentId: z22.string().uuid().optional().nullable(),
+        assigneeUserId: z22.string().uuid().optional().nullable()
+      }).optional().nullable()
+    }).superRefine((value, ctx) => {
+      if (value.reassignment?.assigneeAgentId && value.reassignment.assigneeUserId) {
+        ctx.addIssue({
+          code: z22.ZodIssueCode.custom,
+          message: "Choose either an agent or user reassignment target",
+          path: ["reassignment"]
+        });
+      }
+    });
+    updateUserCompanyAccessSchema = z22.object({
+      companyIds: z22.array(z22.string().uuid()).default([])
+    });
+    searchAdminUsersQuerySchema = z22.object({
+      query: z22.string().trim().max(120).optional().default("")
+    });
+    profileImageAssetPathPattern = /^\/api\/assets\/[^/?#]+\/content(?:\?[^#]*)?(?:#.*)?$/;
+    profileImageSchema = z22.string().trim().min(1).max(4e3).refine(isValidProfileImage, { message: "Invalid profile image URL" });
+    currentUserProfileSchema = z22.object({
+      id: z22.string().min(1),
+      email: z22.string().email().nullable(),
+      name: z22.string().min(1).max(120).nullable(),
+      image: profileImageSchema.nullable()
+    });
+    authSessionSchema = z22.object({
+      session: z22.object({
+        id: z22.string().min(1),
+        userId: z22.string().min(1)
+      }),
+      user: currentUserProfileSchema
+    });
+    updateCurrentUserProfileSchema = z22.object({
+      name: z22.string().trim().min(1).max(120),
+      image: z22.union([profileImageSchema, z22.literal(""), z22.null()]).optional().transform((value) => value === "" ? null : value)
     });
   }
 });
 
 // ../packages/shared/src/validators/plugin.ts
-import { z as z22 } from "zod";
+import { z as z23 } from "zod";
 function isValidCronExpression(expression) {
   const trimmed = expression.trim();
   if (!trimmed) return false;
@@ -1776,12 +2263,12 @@ function isValidCronExpression(expression) {
   if (fields.length !== 5) return false;
   return fields.every((f) => CRON_FIELD_PATTERN.test(f));
 }
-var jsonSchemaSchema, CRON_FIELD_PATTERN, pluginJobDeclarationSchema, pluginWebhookDeclarationSchema, pluginToolDeclarationSchema, pluginUiSlotDeclarationSchema, entityScopedLauncherPlacementZones, launcherBoundsByEnvironment, pluginLauncherActionDeclarationSchema, pluginLauncherRenderDeclarationSchema, pluginLauncherDeclarationSchema, pluginManifestV1Schema, installPluginSchema, upsertPluginConfigSchema, patchPluginConfigSchema, updatePluginStatusSchema, uninstallPluginSchema, pluginStateScopeKeySchema, setPluginStateSchema, listPluginStateSchema;
+var jsonSchemaSchema, CRON_FIELD_PATTERN, pluginJobDeclarationSchema, pluginWebhookDeclarationSchema, pluginToolDeclarationSchema, pluginUiSlotDeclarationSchema, entityScopedLauncherPlacementZones, launcherBoundsByEnvironment, pluginLauncherActionDeclarationSchema, pluginLauncherRenderDeclarationSchema, pluginLauncherDeclarationSchema, pluginDatabaseDeclarationSchema, pluginApiRouteDeclarationSchema, pluginManifestV1Schema, installPluginSchema, upsertPluginConfigSchema, patchPluginConfigSchema, updatePluginStatusSchema, uninstallPluginSchema, pluginStateScopeKeySchema, setPluginStateSchema, listPluginStateSchema;
 var init_plugin = __esm({
   "../packages/shared/src/validators/plugin.ts"() {
     "use strict";
     init_constants();
-    jsonSchemaSchema = z22.record(z22.unknown()).refine(
+    jsonSchemaSchema = z23.record(z23.unknown()).refine(
       (val) => {
         if (Object.keys(val).length === 0) return true;
         return typeof val.type === "string" || val.$ref !== void 0 || val.oneOf !== void 0 || val.anyOf !== void 0 || val.allOf !== void 0;
@@ -1789,76 +2276,76 @@ var init_plugin = __esm({
       { message: "Must be a valid JSON Schema object (requires at least a 'type', '$ref', or composition keyword)" }
     );
     CRON_FIELD_PATTERN = /^(\*(?:\/[0-9]+)?|[0-9]+(?:-[0-9]+)?(?:\/[0-9]+)?)(?:,(\*(?:\/[0-9]+)?|[0-9]+(?:-[0-9]+)?(?:\/[0-9]+)?))*$/;
-    pluginJobDeclarationSchema = z22.object({
-      jobKey: z22.string().min(1),
-      displayName: z22.string().min(1),
-      description: z22.string().optional(),
-      schedule: z22.string().refine(
+    pluginJobDeclarationSchema = z23.object({
+      jobKey: z23.string().min(1),
+      displayName: z23.string().min(1),
+      description: z23.string().optional(),
+      schedule: z23.string().refine(
         (val) => isValidCronExpression(val),
         { message: "schedule must be a valid 5-field cron expression (e.g. '*/15 * * * *')" }
       ).optional()
     });
-    pluginWebhookDeclarationSchema = z22.object({
-      endpointKey: z22.string().min(1),
-      displayName: z22.string().min(1),
-      description: z22.string().optional()
+    pluginWebhookDeclarationSchema = z23.object({
+      endpointKey: z23.string().min(1),
+      displayName: z23.string().min(1),
+      description: z23.string().optional()
     });
-    pluginToolDeclarationSchema = z22.object({
-      name: z22.string().min(1),
-      displayName: z22.string().min(1),
-      description: z22.string().min(1),
+    pluginToolDeclarationSchema = z23.object({
+      name: z23.string().min(1),
+      displayName: z23.string().min(1),
+      description: z23.string().min(1),
       parametersSchema: jsonSchemaSchema
     });
-    pluginUiSlotDeclarationSchema = z22.object({
-      type: z22.enum(PLUGIN_UI_SLOT_TYPES),
-      id: z22.string().min(1),
-      displayName: z22.string().min(1),
-      exportName: z22.string().min(1),
-      entityTypes: z22.array(z22.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
-      routePath: z22.string().regex(/^[a-z0-9][a-z0-9-]*$/, {
+    pluginUiSlotDeclarationSchema = z23.object({
+      type: z23.enum(PLUGIN_UI_SLOT_TYPES),
+      id: z23.string().min(1),
+      displayName: z23.string().min(1),
+      exportName: z23.string().min(1),
+      entityTypes: z23.array(z23.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
+      routePath: z23.string().regex(/^[a-z0-9][a-z0-9-]*$/, {
         message: "routePath must be a lowercase single-segment slug (letters, numbers, hyphens)"
       }).optional(),
-      order: z22.number().int().optional()
+      order: z23.number().int().optional()
     }).superRefine((value, ctx) => {
       const entityScopedTypes = ["detailTab", "taskDetailView", "contextMenuItem", "commentAnnotation", "commentContextMenuItem", "projectSidebarItem"];
       if (entityScopedTypes.includes(value.type) && (!value.entityTypes || value.entityTypes.length === 0)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: `${value.type} slots require at least one entityType`,
           path: ["entityTypes"]
         });
       }
       if (value.type === "projectSidebarItem" && value.entityTypes && !value.entityTypes.includes("project")) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: 'projectSidebarItem slots require entityTypes to include "project"',
           path: ["entityTypes"]
         });
       }
       if (value.type === "commentAnnotation" && value.entityTypes && !value.entityTypes.includes("comment")) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: 'commentAnnotation slots require entityTypes to include "comment"',
           path: ["entityTypes"]
         });
       }
       if (value.type === "commentContextMenuItem" && value.entityTypes && !value.entityTypes.includes("comment")) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: 'commentContextMenuItem slots require entityTypes to include "comment"',
           path: ["entityTypes"]
         });
       }
       if (value.routePath && value.type !== "page") {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "routePath is only supported for page slots",
           path: ["routePath"]
         });
       }
       if (value.routePath && PLUGIN_RESERVED_COMPANY_ROUTE_SEGMENTS.includes(value.routePath)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: `routePath "${value.routePath}" is reserved by the host`,
           path: ["routePath"]
         });
@@ -1879,29 +2366,29 @@ var init_plugin = __esm({
       external: [],
       iframe: ["compact", "default", "wide", "full"]
     };
-    pluginLauncherActionDeclarationSchema = z22.object({
-      type: z22.enum(PLUGIN_LAUNCHER_ACTIONS),
-      target: z22.string().min(1),
-      params: z22.record(z22.unknown()).optional()
+    pluginLauncherActionDeclarationSchema = z23.object({
+      type: z23.enum(PLUGIN_LAUNCHER_ACTIONS),
+      target: z23.string().min(1),
+      params: z23.record(z23.unknown()).optional()
     }).superRefine((value, ctx) => {
       if (value.type === "performAction" && value.target.includes("/")) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "performAction launchers must target an action key, not a route or URL",
           path: ["target"]
         });
       }
       if (value.type === "navigate" && /^https?:\/\//.test(value.target)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "navigate launchers must target a host route, not an absolute URL",
           path: ["target"]
         });
       }
     });
-    pluginLauncherRenderDeclarationSchema = z22.object({
-      environment: z22.enum(PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS),
-      bounds: z22.enum(PLUGIN_LAUNCHER_BOUNDS).optional()
+    pluginLauncherRenderDeclarationSchema = z23.object({
+      environment: z23.enum(PLUGIN_LAUNCHER_RENDER_ENVIRONMENTS),
+      bounds: z23.enum(PLUGIN_LAUNCHER_BOUNDS).optional()
     }).superRefine((value, ctx) => {
       if (!value.bounds) {
         return;
@@ -1909,122 +2396,154 @@ var init_plugin = __esm({
       const supportedBounds = launcherBoundsByEnvironment[value.environment];
       if (!supportedBounds.includes(value.bounds)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: `bounds "${value.bounds}" is not supported for render environment "${value.environment}"`,
           path: ["bounds"]
         });
       }
     });
-    pluginLauncherDeclarationSchema = z22.object({
-      id: z22.string().min(1),
-      displayName: z22.string().min(1),
-      description: z22.string().optional(),
-      placementZone: z22.enum(PLUGIN_LAUNCHER_PLACEMENT_ZONES),
-      exportName: z22.string().min(1).optional(),
-      entityTypes: z22.array(z22.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
-      order: z22.number().int().optional(),
+    pluginLauncherDeclarationSchema = z23.object({
+      id: z23.string().min(1),
+      displayName: z23.string().min(1),
+      description: z23.string().optional(),
+      placementZone: z23.enum(PLUGIN_LAUNCHER_PLACEMENT_ZONES),
+      exportName: z23.string().min(1).optional(),
+      entityTypes: z23.array(z23.enum(PLUGIN_UI_SLOT_ENTITY_TYPES)).optional(),
+      order: z23.number().int().optional(),
       action: pluginLauncherActionDeclarationSchema,
       render: pluginLauncherRenderDeclarationSchema.optional()
     }).superRefine((value, ctx) => {
       if (entityScopedLauncherPlacementZones.some((zone) => zone === value.placementZone) && (!value.entityTypes || value.entityTypes.length === 0)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: `${value.placementZone} launchers require at least one entityType`,
           path: ["entityTypes"]
         });
       }
       if (value.placementZone === "projectSidebarItem" && value.entityTypes && !value.entityTypes.includes("project")) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: 'projectSidebarItem launchers require entityTypes to include "project"',
           path: ["entityTypes"]
         });
       }
       if (value.action.type === "performAction" && value.render) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "performAction launchers cannot declare render hints",
           path: ["render"]
         });
       }
       if (["openModal", "openDrawer", "openPopover"].includes(value.action.type) && !value.render) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: `${value.action.type} launchers require render metadata`,
           path: ["render"]
         });
       }
       if (value.action.type === "openModal" && value.render?.environment === "hostInline") {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "openModal launchers cannot use the hostInline render environment",
           path: ["render", "environment"]
         });
       }
       if (value.action.type === "openDrawer" && value.render && !["hostOverlay", "iframe"].includes(value.render.environment)) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "openDrawer launchers must use hostOverlay or iframe render environments",
           path: ["render", "environment"]
         });
       }
       if (value.action.type === "openPopover" && value.render?.environment === "hostRoute") {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "openPopover launchers cannot use the hostRoute render environment",
           path: ["render", "environment"]
         });
       }
     });
-    pluginManifestV1Schema = z22.object({
-      id: z22.string().min(1).regex(
+    pluginDatabaseDeclarationSchema = z23.object({
+      namespaceSlug: z23.string().regex(/^[a-z0-9][a-z0-9_]*$/, {
+        message: "namespaceSlug must be lowercase letters, digits, or underscores and start with a letter or digit"
+      }).max(40).optional(),
+      migrationsDir: z23.string().min(1).refine(
+        (value) => !value.startsWith("/") && !value.includes("..") && !/[\\]/.test(value),
+        { message: "migrationsDir must be a relative package path without '..' or backslashes" }
+      ),
+      coreReadTables: z23.array(z23.enum(PLUGIN_DATABASE_CORE_READ_TABLES)).optional()
+    });
+    pluginApiRouteDeclarationSchema = z23.object({
+      routeKey: z23.string().min(1).max(100).regex(/^[a-z0-9][a-z0-9._:-]*$/, {
+        message: "routeKey must be lowercase letters, digits, dots, colons, underscores, or hyphens"
+      }),
+      method: z23.enum(PLUGIN_API_ROUTE_METHODS),
+      path: z23.string().min(1).regex(/^\/[a-zA-Z0-9:_./-]*$/, {
+        message: "path must start with / and contain only path-safe literal or :param segments"
+      }).refine(
+        (value) => !value.includes("..") && !value.includes("//") && value !== "/api" && !value.startsWith("/api/") && value !== "/plugins" && !value.startsWith("/plugins/"),
+        { message: "path must stay inside the plugin api namespace" }
+      ),
+      auth: z23.enum(PLUGIN_API_ROUTE_AUTH_MODES),
+      capability: z23.literal("api.routes.register"),
+      checkoutPolicy: z23.enum(PLUGIN_API_ROUTE_CHECKOUT_POLICIES).optional(),
+      companyResolution: z23.discriminatedUnion("from", [
+        z23.object({ from: z23.literal("body"), key: z23.string().min(1) }),
+        z23.object({ from: z23.literal("query"), key: z23.string().min(1) }),
+        z23.object({ from: z23.literal("issue"), param: z23.string().min(1) })
+      ]).optional()
+    });
+    pluginManifestV1Schema = z23.object({
+      id: z23.string().min(1).regex(
         /^[a-z0-9][a-z0-9._-]*$/,
         "Plugin id must start with a lowercase alphanumeric and contain only lowercase letters, digits, dots, hyphens, or underscores"
       ),
-      apiVersion: z22.literal(1),
-      version: z22.string().min(1).regex(
+      apiVersion: z23.literal(1),
+      version: z23.string().min(1).regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "Version must follow semver (e.g. 1.0.0 or 1.0.0-beta.1)"
       ),
-      displayName: z22.string().min(1).max(100),
-      description: z22.string().min(1).max(500),
-      author: z22.string().min(1).max(200),
-      categories: z22.array(z22.enum(PLUGIN_CATEGORIES)).min(1),
-      minimumHostVersion: z22.string().regex(
+      displayName: z23.string().min(1).max(100),
+      description: z23.string().min(1).max(500),
+      author: z23.string().min(1).max(200),
+      categories: z23.array(z23.enum(PLUGIN_CATEGORIES)).min(1),
+      minimumHostVersion: z23.string().regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "minimumHostVersion must follow semver (e.g. 1.0.0)"
       ).optional(),
-      minimumPaperclipVersion: z22.string().regex(
+      minimumPaperclipVersion: z23.string().regex(
         /^\d+\.\d+\.\d+(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$/,
         "minimumPaperclipVersion must follow semver (e.g. 1.0.0)"
       ).optional(),
-      capabilities: z22.array(z22.enum(PLUGIN_CAPABILITIES)).min(1),
-      entrypoints: z22.object({
-        worker: z22.string().min(1),
-        ui: z22.string().min(1).optional()
+      capabilities: z23.array(z23.enum(PLUGIN_CAPABILITIES)).min(1),
+      entrypoints: z23.object({
+        worker: z23.string().min(1),
+        ui: z23.string().min(1).optional()
       }),
       instanceConfigSchema: jsonSchemaSchema.optional(),
-      jobs: z22.array(pluginJobDeclarationSchema).optional(),
-      webhooks: z22.array(pluginWebhookDeclarationSchema).optional(),
-      tools: z22.array(pluginToolDeclarationSchema).optional(),
-      launchers: z22.array(pluginLauncherDeclarationSchema).optional(),
-      ui: z22.object({
-        slots: z22.array(pluginUiSlotDeclarationSchema).min(1).optional(),
-        launchers: z22.array(pluginLauncherDeclarationSchema).optional()
+      jobs: z23.array(pluginJobDeclarationSchema).optional(),
+      webhooks: z23.array(pluginWebhookDeclarationSchema).optional(),
+      tools: z23.array(pluginToolDeclarationSchema).optional(),
+      database: pluginDatabaseDeclarationSchema.optional(),
+      apiRoutes: z23.array(pluginApiRouteDeclarationSchema).optional(),
+      launchers: z23.array(pluginLauncherDeclarationSchema).optional(),
+      ui: z23.object({
+        slots: z23.array(pluginUiSlotDeclarationSchema).min(1).optional(),
+        launchers: z23.array(pluginLauncherDeclarationSchema).optional()
       }).optional()
     }).superRefine((manifest, ctx) => {
       const hasUiSlots = (manifest.ui?.slots?.length ?? 0) > 0;
       const hasUiLaunchers = (manifest.ui?.launchers?.length ?? 0) > 0;
       if ((hasUiSlots || hasUiLaunchers) && !manifest.entrypoints.ui) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "entrypoints.ui is required when ui.slots or ui.launchers are declared",
           path: ["entrypoints", "ui"]
         });
       }
       if (manifest.minimumHostVersion && manifest.minimumPaperclipVersion && manifest.minimumHostVersion !== manifest.minimumPaperclipVersion) {
         ctx.addIssue({
-          code: z22.ZodIssueCode.custom,
+          code: z23.ZodIssueCode.custom,
           message: "minimumHostVersion and minimumPaperclipVersion must match when both are declared",
           path: ["minimumHostVersion"]
         });
@@ -2032,7 +2551,7 @@ var init_plugin = __esm({
       if (manifest.tools && manifest.tools.length > 0) {
         if (!manifest.capabilities.includes("agent.tools.register")) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: "Capability 'agent.tools.register' is required when tools are declared",
             path: ["capabilities"]
           });
@@ -2041,7 +2560,7 @@ var init_plugin = __esm({
       if (manifest.jobs && manifest.jobs.length > 0) {
         if (!manifest.capabilities.includes("jobs.schedule")) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: "Capability 'jobs.schedule' is required when jobs are declared",
             path: ["capabilities"]
           });
@@ -2050,9 +2569,42 @@ var init_plugin = __esm({
       if (manifest.webhooks && manifest.webhooks.length > 0) {
         if (!manifest.capabilities.includes("webhooks.receive")) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: "Capability 'webhooks.receive' is required when webhooks are declared",
             path: ["capabilities"]
+          });
+        }
+      }
+      if (manifest.apiRoutes && manifest.apiRoutes.length > 0) {
+        if (!manifest.capabilities.includes("api.routes.register")) {
+          ctx.addIssue({
+            code: z23.ZodIssueCode.custom,
+            message: "Capability 'api.routes.register' is required when apiRoutes are declared",
+            path: ["capabilities"]
+          });
+        }
+      }
+      if (manifest.database) {
+        const requiredCapabilities = [
+          "database.namespace.migrate",
+          "database.namespace.read"
+        ];
+        for (const capability of requiredCapabilities) {
+          if (!manifest.capabilities.includes(capability)) {
+            ctx.addIssue({
+              code: z23.ZodIssueCode.custom,
+              message: `Capability '${capability}' is required when database migrations are declared`,
+              path: ["capabilities"]
+            });
+          }
+        }
+        const coreReadTables = manifest.database.coreReadTables ?? [];
+        const duplicates = coreReadTables.filter((table, i) => coreReadTables.indexOf(table) !== i);
+        if (duplicates.length > 0) {
+          ctx.addIssue({
+            code: z23.ZodIssueCode.custom,
+            message: `Duplicate database coreReadTables: ${[...new Set(duplicates)].join(", ")}`,
+            path: ["database", "coreReadTables"]
           });
         }
       }
@@ -2061,7 +2613,7 @@ var init_plugin = __esm({
         const duplicates = jobKeys.filter((key, i) => jobKeys.indexOf(key) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: `Duplicate job keys: ${[...new Set(duplicates)].join(", ")}`,
             path: ["jobs"]
           });
@@ -2072,9 +2624,29 @@ var init_plugin = __esm({
         const duplicates = endpointKeys.filter((key, i) => endpointKeys.indexOf(key) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: `Duplicate webhook endpoint keys: ${[...new Set(duplicates)].join(", ")}`,
             path: ["webhooks"]
+          });
+        }
+      }
+      if (manifest.apiRoutes) {
+        const routeKeys = manifest.apiRoutes.map((route) => route.routeKey);
+        const duplicateKeys = routeKeys.filter((key, i) => routeKeys.indexOf(key) !== i);
+        if (duplicateKeys.length > 0) {
+          ctx.addIssue({
+            code: z23.ZodIssueCode.custom,
+            message: `Duplicate api route keys: ${[...new Set(duplicateKeys)].join(", ")}`,
+            path: ["apiRoutes"]
+          });
+        }
+        const routeSignatures = manifest.apiRoutes.map((route) => `${route.method} ${route.path}`);
+        const duplicateRoutes = routeSignatures.filter((sig, i) => routeSignatures.indexOf(sig) !== i);
+        if (duplicateRoutes.length > 0) {
+          ctx.addIssue({
+            code: z23.ZodIssueCode.custom,
+            message: `Duplicate api routes: ${[...new Set(duplicateRoutes)].join(", ")}`,
+            path: ["apiRoutes"]
           });
         }
       }
@@ -2083,7 +2655,7 @@ var init_plugin = __esm({
         const duplicates = toolNames.filter((name, i) => toolNames.indexOf(name) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: `Duplicate tool names: ${[...new Set(duplicates)].join(", ")}`,
             path: ["tools"]
           });
@@ -2095,7 +2667,7 @@ var init_plugin = __esm({
           const duplicates = slotIds.filter((id, i) => slotIds.indexOf(id) !== i);
           if (duplicates.length > 0) {
             ctx.addIssue({
-              code: z22.ZodIssueCode.custom,
+              code: z23.ZodIssueCode.custom,
               message: `Duplicate UI slot ids: ${[...new Set(duplicates)].join(", ")}`,
               path: ["ui", "slots"]
             });
@@ -2111,86 +2683,86 @@ var init_plugin = __esm({
         const duplicates = launcherIds.filter((id, i) => launcherIds.indexOf(id) !== i);
         if (duplicates.length > 0) {
           ctx.addIssue({
-            code: z22.ZodIssueCode.custom,
+            code: z23.ZodIssueCode.custom,
             message: `Duplicate launcher ids: ${[...new Set(duplicates)].join(", ")}`,
             path: manifest.ui?.launchers ? ["ui", "launchers"] : ["launchers"]
           });
         }
       }
     });
-    installPluginSchema = z22.object({
-      packageName: z22.string().min(1),
-      version: z22.string().min(1).optional(),
+    installPluginSchema = z23.object({
+      packageName: z23.string().min(1),
+      version: z23.string().min(1).optional(),
       /** Set by loader for local-path installs so the worker can be resolved. */
-      packagePath: z22.string().min(1).optional()
+      packagePath: z23.string().min(1).optional()
     });
-    upsertPluginConfigSchema = z22.object({
-      configJson: z22.record(z22.unknown())
+    upsertPluginConfigSchema = z23.object({
+      configJson: z23.record(z23.unknown())
     });
-    patchPluginConfigSchema = z22.object({
-      configJson: z22.record(z22.unknown())
+    patchPluginConfigSchema = z23.object({
+      configJson: z23.record(z23.unknown())
     });
-    updatePluginStatusSchema = z22.object({
-      status: z22.enum(PLUGIN_STATUSES),
-      lastError: z22.string().nullable().optional()
+    updatePluginStatusSchema = z23.object({
+      status: z23.enum(PLUGIN_STATUSES),
+      lastError: z23.string().nullable().optional()
     });
-    uninstallPluginSchema = z22.object({
-      removeData: z22.boolean().optional().default(false)
+    uninstallPluginSchema = z23.object({
+      removeData: z23.boolean().optional().default(false)
     });
-    pluginStateScopeKeySchema = z22.object({
-      scopeKind: z22.enum(PLUGIN_STATE_SCOPE_KINDS),
-      scopeId: z22.string().min(1).optional(),
-      namespace: z22.string().min(1).optional(),
-      stateKey: z22.string().min(1)
+    pluginStateScopeKeySchema = z23.object({
+      scopeKind: z23.enum(PLUGIN_STATE_SCOPE_KINDS),
+      scopeId: z23.string().min(1).optional(),
+      namespace: z23.string().min(1).optional(),
+      stateKey: z23.string().min(1)
     });
-    setPluginStateSchema = z22.object({
-      scopeKind: z22.enum(PLUGIN_STATE_SCOPE_KINDS),
-      scopeId: z22.string().min(1).optional(),
-      namespace: z22.string().min(1).optional(),
-      stateKey: z22.string().min(1),
+    setPluginStateSchema = z23.object({
+      scopeKind: z23.enum(PLUGIN_STATE_SCOPE_KINDS),
+      scopeId: z23.string().min(1).optional(),
+      namespace: z23.string().min(1).optional(),
+      stateKey: z23.string().min(1),
       /** JSON-serializable value to store. */
-      value: z22.unknown()
+      value: z23.unknown()
     });
-    listPluginStateSchema = z22.object({
-      scopeKind: z22.enum(PLUGIN_STATE_SCOPE_KINDS).optional(),
-      scopeId: z22.string().min(1).optional(),
-      namespace: z22.string().min(1).optional()
+    listPluginStateSchema = z23.object({
+      scopeKind: z23.enum(PLUGIN_STATE_SCOPE_KINDS).optional(),
+      scopeId: z23.string().min(1).optional(),
+      namespace: z23.string().min(1).optional()
     });
   }
 });
 
 // ../packages/shared/src/validators/vibedash.ts
-import { z as z23 } from "zod";
+import { z as z24 } from "zod";
 var nonEmptyTrimmedString, pmAgentTemplateSchema, createVibedashProjectBootstrapSchema;
 var init_vibedash = __esm({
   "../packages/shared/src/validators/vibedash.ts"() {
     "use strict";
     init_constants();
-    nonEmptyTrimmedString = z23.string().trim().min(1);
-    pmAgentTemplateSchema = z23.object({
+    nonEmptyTrimmedString = z24.string().trim().min(1);
+    pmAgentTemplateSchema = z24.object({
       name: nonEmptyTrimmedString.max(120).optional(),
-      capabilities: z23.string().trim().max(4e3).optional().nullable(),
-      adapterType: z23.enum(AGENT_ADAPTER_TYPES).optional().default("opencode_local"),
-      adapterConfig: z23.record(z23.unknown()).optional().default({}),
-      runtimeConfig: z23.record(z23.unknown()).optional().default({}),
+      capabilities: z24.string().trim().max(4e3).optional().nullable(),
+      adapterType: z24.enum(AGENT_ADAPTER_TYPES).optional().default("opencode_local"),
+      adapterConfig: z24.record(z24.unknown()).optional().default({}),
+      runtimeConfig: z24.record(z24.unknown()).optional().default({}),
       model: nonEmptyTrimmedString.max(200).optional().nullable()
     }).default({});
-    createVibedashProjectBootstrapSchema = z23.object({
+    createVibedashProjectBootstrapSchema = z24.object({
       vibedashProjectId: nonEmptyTrimmedString.max(128),
       vibedashProjectName: nonEmptyTrimmedString.max(200),
-      vibedashProjectDescription: z23.string().trim().max(8e3).optional().nullable(),
+      vibedashProjectDescription: z24.string().trim().max(8e3).optional().nullable(),
       vibedashOwnerUserId: nonEmptyTrimmedString.max(256),
-      vibedashOwnerEmail: z23.string().email().optional().nullable(),
+      vibedashOwnerEmail: z24.string().email().optional().nullable(),
       customerBoardUserId: nonEmptyTrimmedString.max(256).optional().nullable(),
-      customerBoardGrants: z23.array(z23.enum(PERMISSION_KEYS)).optional(),
-      githubRepoUrl: z23.string().url(),
-      githubRepoRef: z23.string().trim().max(512).optional().nullable(),
+      customerBoardGrants: z24.array(z24.enum(PERMISSION_KEYS)).optional(),
+      githubRepoUrl: z24.string().url(),
+      githubRepoRef: z24.string().trim().max(512).optional().nullable(),
       githubToken: nonEmptyTrimmedString.max(8192).optional().nullable(),
       vibedashApiKey: nonEmptyTrimmedString.max(8192),
-      vibedashApiUrl: z23.string().url().optional().nullable(),
-      workspaceRootHint: z23.string().trim().min(1).max(1024).optional().nullable(),
-      triggerInitialWakeup: z23.boolean().optional().default(true),
-      requireBoardApprovalForNewAgents: z23.boolean().optional().default(false),
+      vibedashApiUrl: z24.string().url().optional().nullable(),
+      workspaceRootHint: z24.string().trim().min(1).max(1024).optional().nullable(),
+      triggerInitialWakeup: z24.boolean().optional().default(true),
+      requireBoardApprovalForNewAgents: z24.boolean().optional().default(false),
       pmAgent: pmAgentTemplateSchema
     });
   }
@@ -2200,10 +2772,11 @@ var init_vibedash = __esm({
 var init_validators = __esm({
   "../packages/shared/src/validators/index.ts"() {
     "use strict";
-    init_instance();
+    init_instance2();
     init_budget();
     init_company();
     init_feedback2();
+    init_sidebar_preferences();
     init_company_skill();
     init_adapter_skills();
     init_company_portability();
@@ -2244,6 +2817,7 @@ var init_api = __esm({
       activity: `${API_PREFIX}/activity`,
       dashboard: `${API_PREFIX}/dashboard`,
       sidebarBadges: `${API_PREFIX}/sidebar-badges`,
+      sidebarPreferences: `${API_PREFIX}/sidebar-preferences`,
       invites: `${API_PREFIX}/invites`,
       joinRequests: `${API_PREFIX}/join-requests`,
       members: `${API_PREFIX}/members`,
@@ -2281,68 +2855,71 @@ var init_routine_variables = __esm({
 });
 
 // ../packages/shared/src/config-schema.ts
-import { z as z24 } from "zod";
+import { z as z25 } from "zod";
 var configMetaSchema, llmConfigSchema, databaseBackupConfigSchema, databaseConfigSchema, loggingConfigSchema, serverConfigSchema, authConfigSchema, storageLocalDiskConfigSchema, storageS3ConfigSchema, storageConfigSchema, secretsLocalEncryptedConfigSchema, secretsConfigSchema, telemetryConfigSchema, paperclipConfigSchema;
 var init_config_schema = __esm({
   "../packages/shared/src/config-schema.ts"() {
     "use strict";
     init_constants();
-    configMetaSchema = z24.object({
-      version: z24.literal(1),
-      updatedAt: z24.string(),
-      source: z24.enum(["onboard", "configure", "doctor"])
+    init_network_bind();
+    configMetaSchema = z25.object({
+      version: z25.literal(1),
+      updatedAt: z25.string(),
+      source: z25.enum(["onboard", "configure", "doctor"])
     });
-    llmConfigSchema = z24.object({
-      provider: z24.enum(["claude", "openai"]),
-      apiKey: z24.string().optional()
+    llmConfigSchema = z25.object({
+      provider: z25.enum(["claude", "openai"]),
+      apiKey: z25.string().optional()
     });
-    databaseBackupConfigSchema = z24.object({
-      enabled: z24.boolean().default(true),
-      intervalMinutes: z24.number().int().min(1).max(7 * 24 * 60).default(60),
-      retentionDays: z24.number().int().min(1).max(3650).default(30),
-      dir: z24.string().default("~/.paperclip/instances/default/data/backups")
+    databaseBackupConfigSchema = z25.object({
+      enabled: z25.boolean().default(true),
+      intervalMinutes: z25.number().int().min(1).max(7 * 24 * 60).default(60),
+      retentionDays: z25.number().int().min(1).max(3650).default(7),
+      dir: z25.string().default("~/.paperclip/instances/default/data/backups")
     });
-    databaseConfigSchema = z24.object({
-      mode: z24.enum(["embedded-postgres", "postgres"]).default("embedded-postgres"),
-      connectionString: z24.string().optional(),
-      embeddedPostgresDataDir: z24.string().default("~/.paperclip/instances/default/db"),
-      embeddedPostgresPort: z24.number().int().min(1).max(65535).default(54329),
+    databaseConfigSchema = z25.object({
+      mode: z25.enum(["embedded-postgres", "postgres"]).default("embedded-postgres"),
+      connectionString: z25.string().optional(),
+      embeddedPostgresDataDir: z25.string().default("~/.paperclip/instances/default/db"),
+      embeddedPostgresPort: z25.number().int().min(1).max(65535).default(54329),
       backup: databaseBackupConfigSchema.default({
         enabled: true,
         intervalMinutes: 60,
-        retentionDays: 30,
+        retentionDays: 7,
         dir: "~/.paperclip/instances/default/data/backups"
       })
     });
-    loggingConfigSchema = z24.object({
-      mode: z24.enum(["file", "cloud"]),
-      logDir: z24.string().default("~/.paperclip/instances/default/logs")
+    loggingConfigSchema = z25.object({
+      mode: z25.enum(["file", "cloud"]),
+      logDir: z25.string().default("~/.paperclip/instances/default/logs")
     });
-    serverConfigSchema = z24.object({
-      deploymentMode: z24.enum(DEPLOYMENT_MODES).default("local_trusted"),
-      exposure: z24.enum(DEPLOYMENT_EXPOSURES).default("private"),
-      host: z24.string().default("127.0.0.1"),
-      port: z24.number().int().min(1).max(65535).default(3100),
-      allowedHostnames: z24.array(z24.string().min(1)).default([]),
-      serveUi: z24.boolean().default(true)
+    serverConfigSchema = z25.object({
+      deploymentMode: z25.enum(DEPLOYMENT_MODES).default("local_trusted"),
+      exposure: z25.enum(DEPLOYMENT_EXPOSURES).default("private"),
+      bind: z25.enum(BIND_MODES).optional(),
+      customBindHost: z25.string().optional(),
+      host: z25.string().default("127.0.0.1"),
+      port: z25.number().int().min(1).max(65535).default(3100),
+      allowedHostnames: z25.array(z25.string().min(1)).default([]),
+      serveUi: z25.boolean().default(true)
     });
-    authConfigSchema = z24.object({
-      baseUrlMode: z24.enum(AUTH_BASE_URL_MODES).default("auto"),
-      publicBaseUrl: z24.string().url().optional(),
-      disableSignUp: z24.boolean().default(false)
+    authConfigSchema = z25.object({
+      baseUrlMode: z25.enum(AUTH_BASE_URL_MODES).default("auto"),
+      publicBaseUrl: z25.string().url().optional(),
+      disableSignUp: z25.boolean().default(false)
     });
-    storageLocalDiskConfigSchema = z24.object({
-      baseDir: z24.string().default("~/.paperclip/instances/default/data/storage")
+    storageLocalDiskConfigSchema = z25.object({
+      baseDir: z25.string().default("~/.paperclip/instances/default/data/storage")
     });
-    storageS3ConfigSchema = z24.object({
-      bucket: z24.string().min(1).default("paperclip"),
-      region: z24.string().min(1).default("us-east-1"),
-      endpoint: z24.string().optional(),
-      prefix: z24.string().default(""),
-      forcePathStyle: z24.boolean().default(false)
+    storageS3ConfigSchema = z25.object({
+      bucket: z25.string().min(1).default("paperclip"),
+      region: z25.string().min(1).default("us-east-1"),
+      endpoint: z25.string().optional(),
+      prefix: z25.string().default(""),
+      forcePathStyle: z25.boolean().default(false)
     });
-    storageConfigSchema = z24.object({
-      provider: z24.enum(STORAGE_PROVIDERS).default("local_disk"),
+    storageConfigSchema = z25.object({
+      provider: z25.enum(STORAGE_PROVIDERS).default("local_disk"),
       localDisk: storageLocalDiskConfigSchema.default({
         baseDir: "~/.paperclip/instances/default/data/storage"
       }),
@@ -2353,20 +2930,20 @@ var init_config_schema = __esm({
         forcePathStyle: false
       })
     });
-    secretsLocalEncryptedConfigSchema = z24.object({
-      keyFilePath: z24.string().default("~/.paperclip/instances/default/secrets/master.key")
+    secretsLocalEncryptedConfigSchema = z25.object({
+      keyFilePath: z25.string().default("~/.paperclip/instances/default/secrets/master.key")
     });
-    secretsConfigSchema = z24.object({
-      provider: z24.enum(SECRET_PROVIDERS).default("local_encrypted"),
-      strictMode: z24.boolean().default(false),
+    secretsConfigSchema = z25.object({
+      provider: z25.enum(SECRET_PROVIDERS).default("local_encrypted"),
+      strictMode: z25.boolean().default(false),
       localEncrypted: secretsLocalEncryptedConfigSchema.default({
         keyFilePath: "~/.paperclip/instances/default/secrets/master.key"
       })
     });
-    telemetryConfigSchema = z24.object({
-      enabled: z24.boolean().default(true)
+    telemetryConfigSchema = z25.object({
+      enabled: z25.boolean().default(true)
     }).default({});
-    paperclipConfigSchema = z24.object({
+    paperclipConfigSchema = z25.object({
       $meta: configMetaSchema,
       llm: llmConfigSchema.optional(),
       database: databaseConfigSchema,
@@ -2397,33 +2974,43 @@ var init_config_schema = __esm({
         }
       })
     }).superRefine((value, ctx) => {
-      if (value.server.deploymentMode === "local_trusted") {
-        if (value.server.exposure !== "private") {
-          ctx.addIssue({
-            code: z24.ZodIssueCode.custom,
-            message: "server.exposure must be private when deploymentMode is local_trusted",
-            path: ["server", "exposure"]
-          });
-        }
-        return;
+      if (value.server.deploymentMode === "local_trusted" && value.server.exposure !== "private") {
+        ctx.addIssue({
+          code: z25.ZodIssueCode.custom,
+          message: "server.exposure must be private when deploymentMode is local_trusted",
+          path: ["server", "exposure"]
+        });
+      }
+      for (const message of validateConfiguredBindMode({
+        deploymentMode: value.server.deploymentMode,
+        deploymentExposure: value.server.exposure,
+        bind: value.server.bind,
+        host: value.server.host,
+        customBindHost: value.server.customBindHost
+      })) {
+        ctx.addIssue({
+          code: z25.ZodIssueCode.custom,
+          message,
+          path: message.includes("customBindHost") ? ["server", "customBindHost"] : ["server", "bind"]
+        });
       }
       if (value.auth.baseUrlMode === "explicit" && !value.auth.publicBaseUrl) {
         ctx.addIssue({
-          code: z24.ZodIssueCode.custom,
+          code: z25.ZodIssueCode.custom,
           message: "auth.publicBaseUrl is required when auth.baseUrlMode is explicit",
           path: ["auth", "publicBaseUrl"]
         });
       }
       if (value.server.exposure === "public" && value.auth.baseUrlMode !== "explicit") {
         ctx.addIssue({
-          code: z24.ZodIssueCode.custom,
+          code: z25.ZodIssueCode.custom,
           message: "auth.baseUrlMode must be explicit when deploymentMode=authenticated and exposure=public",
           path: ["auth", "baseUrlMode"]
         });
       }
       if (value.server.exposure === "public" && !value.auth.publicBaseUrl) {
         ctx.addIssue({
-          code: z24.ZodIssueCode.custom,
+          code: z25.ZodIssueCode.custom,
           message: "auth.publicBaseUrl is required when deploymentMode=authenticated and exposure=public",
           path: ["auth", "publicBaseUrl"]
         });
@@ -2438,7 +3025,13 @@ var init_src = __esm({
     "use strict";
     init_adapter_type();
     init_constants();
+    init_network_bind();
+    init_issue_references();
+    init_sidebar_preferences();
+    init_execution_workspace();
+    init_workspace_commands();
     init_feedback();
+    init_instance();
     init_execution_workspace_guards();
     init_validators();
     init_validators();
@@ -3278,69 +3871,116 @@ var init_hostnames = __esm({
   }
 });
 
+// src/config/server-bind.ts
+import { execFileSync } from "node:child_process";
+function inferConfiguredBind(server) {
+  if (server?.bind) return server.bind;
+  return inferBindModeFromHost(server?.customBindHost ?? server?.host);
+}
+function detectTailnetBindHost() {
+  const explicit = process.env.PAPERCLIP_TAILNET_BIND_HOST?.trim();
+  if (explicit) return explicit;
+  try {
+    const stdout = execFileSync("tailscale", ["ip", "-4"], {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+      timeout: TAILSCALE_DETECT_TIMEOUT_MS
+    });
+    return stdout.split(/\r?\n/).map((line) => line.trim()).find(Boolean);
+  } catch {
+    return void 0;
+  }
+}
+function buildPresetServerConfig(bind, input) {
+  const host = bind === "loopback" ? LOOPBACK_BIND_HOST : bind === "tailnet" ? detectTailnetBindHost() ?? LOOPBACK_BIND_HOST : ALL_INTERFACES_BIND_HOST;
+  return {
+    server: {
+      deploymentMode: bind === "loopback" ? "local_trusted" : "authenticated",
+      exposure: "private",
+      bind,
+      customBindHost: void 0,
+      host,
+      port: input.port,
+      allowedHostnames: input.allowedHostnames,
+      serveUi: input.serveUi
+    },
+    auth: {
+      baseUrlMode: "auto",
+      disableSignUp: false
+    }
+  };
+}
+function buildCustomServerConfig(input) {
+  const normalizedHost = input.host.trim();
+  const bind = isLoopbackHost(normalizedHost) ? "loopback" : isAllInterfacesHost(normalizedHost) ? "lan" : "custom";
+  return {
+    server: {
+      deploymentMode: input.deploymentMode,
+      exposure: input.deploymentMode === "local_trusted" ? "private" : input.exposure,
+      bind,
+      customBindHost: bind === "custom" ? normalizedHost : void 0,
+      host: normalizedHost,
+      port: input.port,
+      allowedHostnames: input.allowedHostnames,
+      serveUi: input.serveUi
+    },
+    auth: input.deploymentMode === "authenticated" && input.exposure === "public" ? {
+      baseUrlMode: "explicit",
+      disableSignUp: false,
+      publicBaseUrl: input.publicBaseUrl
+    } : {
+      baseUrlMode: "auto",
+      disableSignUp: false
+    }
+  };
+}
+var TAILSCALE_DETECT_TIMEOUT_MS;
+var init_server_bind = __esm({
+  "src/config/server-bind.ts"() {
+    "use strict";
+    init_src();
+    TAILSCALE_DETECT_TIMEOUT_MS = 3e3;
+  }
+});
+
 // src/prompts/server.ts
 import * as p6 from "@clack/prompts";
+function cancelled() {
+  p6.cancel("Setup cancelled.");
+  process.exit(0);
+}
 async function promptServer(opts) {
   const currentServer = opts?.currentServer;
   const currentAuth = opts?.currentAuth;
-  const deploymentModeSelection = await p6.select({
-    message: "Deployment mode",
+  const currentBind = inferConfiguredBind(currentServer);
+  const bindSelection = await p6.select({
+    message: "Reachability",
     options: [
       {
-        value: "local_trusted",
-        label: "Local trusted",
-        hint: "Easiest for local setup (no login, localhost-only)"
+        value: "loopback",
+        label: "Trusted local",
+        hint: "Recommended for first run: localhost only, no login friction"
       },
       {
-        value: "authenticated",
-        label: "Authenticated",
-        hint: "Login required; use for private network or public hosting"
+        value: "lan",
+        label: "Private network",
+        hint: "Broad private bind for LAN, VPN, or legacy --tailscale-auth style access"
+      },
+      {
+        value: "tailnet",
+        label: "Tailnet",
+        hint: "Private authenticated access using the machine's detected Tailscale address"
+      },
+      {
+        value: "custom",
+        label: "Custom",
+        hint: "Choose exact auth mode, exposure, and host manually"
       }
     ],
-    initialValue: currentServer?.deploymentMode ?? "local_trusted"
+    initialValue: currentBind
   });
-  if (p6.isCancel(deploymentModeSelection)) {
-    p6.cancel("Setup cancelled.");
-    process.exit(0);
-  }
-  const deploymentMode = deploymentModeSelection;
-  let exposure = "private";
-  if (deploymentMode === "authenticated") {
-    const exposureSelection = await p6.select({
-      message: "Exposure profile",
-      options: [
-        {
-          value: "private",
-          label: "Private network",
-          hint: "Private access (for example Tailscale), lower setup friction"
-        },
-        {
-          value: "public",
-          label: "Public internet",
-          hint: "Internet-facing deployment with stricter requirements"
-        }
-      ],
-      initialValue: currentServer?.exposure ?? "private"
-    });
-    if (p6.isCancel(exposureSelection)) {
-      p6.cancel("Setup cancelled.");
-      process.exit(0);
-    }
-    exposure = exposureSelection;
-  }
-  const hostDefault = deploymentMode === "local_trusted" ? "127.0.0.1" : "0.0.0.0";
-  const hostStr = await p6.text({
-    message: "Bind host",
-    defaultValue: currentServer?.host ?? hostDefault,
-    placeholder: hostDefault,
-    validate: (val) => {
-      if (!val.trim()) return "Host is required";
-    }
-  });
-  if (p6.isCancel(hostStr)) {
-    p6.cancel("Setup cancelled.");
-    process.exit(0);
-  }
+  if (p6.isCancel(bindSelection)) cancelled();
+  const bind = bindSelection;
   const portStr = await p6.text({
     message: "Server port",
     defaultValue: String(currentServer?.port ?? 3100),
@@ -3352,14 +3992,97 @@ async function promptServer(opts) {
       }
     }
   });
-  if (p6.isCancel(portStr)) {
-    p6.cancel("Setup cancelled.");
-    process.exit(0);
+  if (p6.isCancel(portStr)) cancelled();
+  const port = Number(portStr) || 3100;
+  const serveUi = currentServer?.serveUi ?? true;
+  if (bind === "loopback") {
+    return buildPresetServerConfig("loopback", {
+      port,
+      allowedHostnames: [],
+      serveUi
+    });
   }
+  if (bind === "lan" || bind === "tailnet") {
+    const allowedHostnamesInput = await p6.text({
+      message: "Allowed private hostnames (comma-separated, optional)",
+      defaultValue: (currentServer?.allowedHostnames ?? []).join(", "),
+      placeholder: bind === "tailnet" ? "your-machine.tailnet.ts.net" : "dotta-macbook-pro, host.docker.internal",
+      validate: (val) => {
+        try {
+          parseHostnameCsv(val);
+          return;
+        } catch (err) {
+          return err instanceof Error ? err.message : "Invalid hostname list";
+        }
+      }
+    });
+    if (p6.isCancel(allowedHostnamesInput)) cancelled();
+    const preset = buildPresetServerConfig(bind, {
+      port,
+      allowedHostnames: parseHostnameCsv(allowedHostnamesInput),
+      serveUi
+    });
+    if (bind === "tailnet" && isLoopbackHost(preset.server.host)) {
+      p6.log.warn(TAILNET_BIND_WARNING);
+    }
+    return preset;
+  }
+  const deploymentModeSelection = await p6.select({
+    message: "Auth mode",
+    options: [
+      {
+        value: "local_trusted",
+        label: "Local trusted",
+        hint: "No login required; only safe with loopback-only or similarly trusted access"
+      },
+      {
+        value: "authenticated",
+        label: "Authenticated",
+        hint: "Login required; supports both private-network and public deployments"
+      }
+    ],
+    initialValue: currentServer?.deploymentMode ?? "authenticated"
+  });
+  if (p6.isCancel(deploymentModeSelection)) cancelled();
+  const deploymentMode = deploymentModeSelection;
+  let exposure = "private";
+  if (deploymentMode === "authenticated") {
+    const exposureSelection = await p6.select({
+      message: "Exposure profile",
+      options: [
+        {
+          value: "private",
+          label: "Private network",
+          hint: "Private access only, with automatic URL handling"
+        },
+        {
+          value: "public",
+          label: "Public internet",
+          hint: "Internet-facing deployment with explicit public URL requirements"
+        }
+      ],
+      initialValue: currentServer?.exposure ?? "private"
+    });
+    if (p6.isCancel(exposureSelection)) cancelled();
+    exposure = exposureSelection;
+  }
+  const defaultHost = currentServer?.customBindHost ?? currentServer?.host ?? (deploymentMode === "local_trusted" ? "127.0.0.1" : "0.0.0.0");
+  const host = await p6.text({
+    message: "Bind host",
+    defaultValue: defaultHost,
+    placeholder: defaultHost,
+    validate: (val) => {
+      if (!val.trim()) return "Host is required";
+      if (deploymentMode === "local_trusted" && !isLoopbackHost(val.trim())) {
+        return "Local trusted mode requires a loopback host such as 127.0.0.1";
+      }
+    }
+  });
+  if (p6.isCancel(host)) cancelled();
   let allowedHostnames = [];
   if (deploymentMode === "authenticated" && exposure === "private") {
     const allowedHostnamesInput = await p6.text({
-      message: "Allowed hostnames (comma-separated, optional)",
+      message: "Allowed private hostnames (comma-separated, optional)",
       defaultValue: (currentServer?.allowedHostnames ?? []).join(", "),
       placeholder: "dotta-macbook-pro, your-host.tailnet.ts.net",
       validate: (val) => {
@@ -3371,14 +4094,10 @@ async function promptServer(opts) {
         }
       }
     });
-    if (p6.isCancel(allowedHostnamesInput)) {
-      p6.cancel("Setup cancelled.");
-      process.exit(0);
-    }
+    if (p6.isCancel(allowedHostnamesInput)) cancelled();
     allowedHostnames = parseHostnameCsv(allowedHostnamesInput);
   }
-  const port = Number(portStr) || 3100;
-  let auth2 = { baseUrlMode: "auto", disableSignUp: false };
+  let publicBaseUrl;
   if (deploymentMode === "authenticated" && exposure === "public") {
     const urlInput = await p6.text({
       message: "Public base URL",
@@ -3398,38 +4117,27 @@ async function promptServer(opts) {
         }
       }
     });
-    if (p6.isCancel(urlInput)) {
-      p6.cancel("Setup cancelled.");
-      process.exit(0);
-    }
-    auth2 = {
-      baseUrlMode: "explicit",
-      disableSignUp: false,
-      publicBaseUrl: urlInput.trim().replace(/\/+$/, "")
-    };
-  } else if (currentAuth?.baseUrlMode === "explicit" && currentAuth.publicBaseUrl) {
-    auth2 = {
-      baseUrlMode: "explicit",
-      disableSignUp: false,
-      publicBaseUrl: currentAuth.publicBaseUrl
-    };
+    if (p6.isCancel(urlInput)) cancelled();
+    publicBaseUrl = urlInput.trim().replace(/\/+$/, "");
   }
-  return {
-    server: {
-      deploymentMode,
-      exposure,
-      host: hostStr.trim(),
-      port,
-      allowedHostnames,
-      serveUi: currentServer?.serveUi ?? true
-    },
-    auth: auth2
-  };
+  return buildCustomServerConfig({
+    deploymentMode,
+    exposure,
+    host: host.trim(),
+    port,
+    allowedHostnames,
+    serveUi,
+    publicBaseUrl
+  });
 }
+var TAILNET_BIND_WARNING;
 var init_server = __esm({
   "src/prompts/server.ts"() {
     "use strict";
+    init_src();
     init_hostnames();
+    init_server_bind();
+    TAILNET_BIND_WARNING = "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or PAPERCLIP_TAILNET_BIND_HOST is set.";
   }
 });
 
@@ -3672,27 +4380,49 @@ var init_instance_user_roles = __esm({
   }
 });
 
+// ../packages/db/src/schema/user_sidebar_preferences.ts
+import { pgTable as pgTable8, uuid as uuid7, text as text12, timestamp as timestamp8, jsonb as jsonb3, uniqueIndex as uniqueIndex6 } from "drizzle-orm/pg-core";
+var userSidebarPreferences;
+var init_user_sidebar_preferences = __esm({
+  "../packages/db/src/schema/user_sidebar_preferences.ts"() {
+    "use strict";
+    userSidebarPreferences = pgTable8(
+      "user_sidebar_preferences",
+      {
+        id: uuid7("id").primaryKey().defaultRandom(),
+        userId: text12("user_id").notNull(),
+        companyOrder: jsonb3("company_order").$type().notNull().default([]),
+        createdAt: timestamp8("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp8("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        userUq: uniqueIndex6("user_sidebar_preferences_user_uq").on(table.userId)
+      })
+    );
+  }
+});
+
 // ../packages/db/src/schema/board_api_keys.ts
-import { pgTable as pgTable8, uuid as uuid7, text as text12, timestamp as timestamp8, index as index4, uniqueIndex as uniqueIndex6 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable9, uuid as uuid8, text as text13, timestamp as timestamp9, index as index4, uniqueIndex as uniqueIndex7 } from "drizzle-orm/pg-core";
 var boardApiKeys;
 var init_board_api_keys = __esm({
   "../packages/db/src/schema/board_api_keys.ts"() {
     "use strict";
     init_auth();
-    boardApiKeys = pgTable8(
+    boardApiKeys = pgTable9(
       "board_api_keys",
       {
-        id: uuid7("id").primaryKey().defaultRandom(),
-        userId: text12("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
-        name: text12("name").notNull(),
-        keyHash: text12("key_hash").notNull(),
-        lastUsedAt: timestamp8("last_used_at", { withTimezone: true }),
-        revokedAt: timestamp8("revoked_at", { withTimezone: true }),
-        expiresAt: timestamp8("expires_at", { withTimezone: true }),
-        createdAt: timestamp8("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid8("id").primaryKey().defaultRandom(),
+        userId: text13("user_id").notNull().references(() => authUsers.id, { onDelete: "cascade" }),
+        name: text13("name").notNull(),
+        keyHash: text13("key_hash").notNull(),
+        lastUsedAt: timestamp9("last_used_at", { withTimezone: true }),
+        revokedAt: timestamp9("revoked_at", { withTimezone: true }),
+        expiresAt: timestamp9("expires_at", { withTimezone: true }),
+        createdAt: timestamp9("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        keyHashIdx: uniqueIndex6("board_api_keys_key_hash_idx").on(table.keyHash),
+        keyHashIdx: uniqueIndex7("board_api_keys_key_hash_idx").on(table.keyHash),
         userIdx: index4("board_api_keys_user_idx").on(table.userId)
       })
     );
@@ -3700,7 +4430,7 @@ var init_board_api_keys = __esm({
 });
 
 // ../packages/db/src/schema/cli_auth_challenges.ts
-import { pgTable as pgTable9, uuid as uuid8, text as text13, timestamp as timestamp9, index as index5 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable10, uuid as uuid9, text as text14, timestamp as timestamp10, index as index5 } from "drizzle-orm/pg-core";
 var cliAuthChallenges;
 var init_cli_auth_challenges = __esm({
   "../packages/db/src/schema/cli_auth_challenges.ts"() {
@@ -3708,24 +4438,24 @@ var init_cli_auth_challenges = __esm({
     init_auth();
     init_companies();
     init_board_api_keys();
-    cliAuthChallenges = pgTable9(
+    cliAuthChallenges = pgTable10(
       "cli_auth_challenges",
       {
-        id: uuid8("id").primaryKey().defaultRandom(),
-        secretHash: text13("secret_hash").notNull(),
-        command: text13("command").notNull(),
-        clientName: text13("client_name"),
-        requestedAccess: text13("requested_access").notNull().default("board"),
-        requestedCompanyId: uuid8("requested_company_id").references(() => companies.id, { onDelete: "set null" }),
-        pendingKeyHash: text13("pending_key_hash").notNull(),
-        pendingKeyName: text13("pending_key_name").notNull(),
-        approvedByUserId: text13("approved_by_user_id").references(() => authUsers.id, { onDelete: "set null" }),
-        boardApiKeyId: uuid8("board_api_key_id").references(() => boardApiKeys.id, { onDelete: "set null" }),
-        approvedAt: timestamp9("approved_at", { withTimezone: true }),
-        cancelledAt: timestamp9("cancelled_at", { withTimezone: true }),
-        expiresAt: timestamp9("expires_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp9("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp9("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid9("id").primaryKey().defaultRandom(),
+        secretHash: text14("secret_hash").notNull(),
+        command: text14("command").notNull(),
+        clientName: text14("client_name"),
+        requestedAccess: text14("requested_access").notNull().default("board"),
+        requestedCompanyId: uuid9("requested_company_id").references(() => companies.id, { onDelete: "set null" }),
+        pendingKeyHash: text14("pending_key_hash").notNull(),
+        pendingKeyName: text14("pending_key_name").notNull(),
+        approvedByUserId: text14("approved_by_user_id").references(() => authUsers.id, { onDelete: "set null" }),
+        boardApiKeyId: uuid9("board_api_key_id").references(() => boardApiKeys.id, { onDelete: "set null" }),
+        approvedAt: timestamp10("approved_at", { withTimezone: true }),
+        cancelledAt: timestamp10("cancelled_at", { withTimezone: true }),
+        expiresAt: timestamp10("expires_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp10("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp10("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         secretHashIdx: index5("cli_auth_challenges_secret_hash_idx").on(table.secretHash),
@@ -3737,26 +4467,26 @@ var init_cli_auth_challenges = __esm({
 });
 
 // ../packages/db/src/schema/company_memberships.ts
-import { pgTable as pgTable10, uuid as uuid9, text as text14, timestamp as timestamp10, uniqueIndex as uniqueIndex7, index as index6 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable11, uuid as uuid10, text as text15, timestamp as timestamp11, uniqueIndex as uniqueIndex8, index as index6 } from "drizzle-orm/pg-core";
 var companyMemberships;
 var init_company_memberships = __esm({
   "../packages/db/src/schema/company_memberships.ts"() {
     "use strict";
     init_companies();
-    companyMemberships = pgTable10(
+    companyMemberships = pgTable11(
       "company_memberships",
       {
-        id: uuid9("id").primaryKey().defaultRandom(),
-        companyId: uuid9("company_id").notNull().references(() => companies.id),
-        principalType: text14("principal_type").notNull(),
-        principalId: text14("principal_id").notNull(),
-        status: text14("status").notNull().default("active"),
-        membershipRole: text14("membership_role"),
-        createdAt: timestamp10("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp10("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid10("id").primaryKey().defaultRandom(),
+        companyId: uuid10("company_id").notNull().references(() => companies.id),
+        principalType: text15("principal_type").notNull(),
+        principalId: text15("principal_id").notNull(),
+        status: text15("status").notNull().default("active"),
+        membershipRole: text15("membership_role"),
+        createdAt: timestamp11("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp11("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyPrincipalUniqueIdx: uniqueIndex7("company_memberships_company_principal_unique_idx").on(
+        companyPrincipalUniqueIdx: uniqueIndex8("company_memberships_company_principal_unique_idx").on(
           table.companyId,
           table.principalType,
           table.principalId
@@ -3772,34 +4502,63 @@ var init_company_memberships = __esm({
   }
 });
 
+// ../packages/db/src/schema/company_user_sidebar_preferences.ts
+import { pgTable as pgTable12, uuid as uuid11, text as text16, timestamp as timestamp12, jsonb as jsonb4, uniqueIndex as uniqueIndex9, index as index7 } from "drizzle-orm/pg-core";
+var companyUserSidebarPreferences;
+var init_company_user_sidebar_preferences = __esm({
+  "../packages/db/src/schema/company_user_sidebar_preferences.ts"() {
+    "use strict";
+    init_companies();
+    companyUserSidebarPreferences = pgTable12(
+      "company_user_sidebar_preferences",
+      {
+        id: uuid11("id").primaryKey().defaultRandom(),
+        companyId: uuid11("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        userId: text16("user_id").notNull(),
+        projectOrder: jsonb4("project_order").$type().notNull().default([]),
+        createdAt: timestamp12("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp12("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        companyIdx: index7("company_user_sidebar_preferences_company_idx").on(table.companyId),
+        userIdx: index7("company_user_sidebar_preferences_user_idx").on(table.userId),
+        companyUserUq: uniqueIndex9("company_user_sidebar_preferences_company_user_uq").on(
+          table.companyId,
+          table.userId
+        )
+      })
+    );
+  }
+});
+
 // ../packages/db/src/schema/principal_permission_grants.ts
-import { pgTable as pgTable11, uuid as uuid10, text as text15, timestamp as timestamp11, jsonb as jsonb3, uniqueIndex as uniqueIndex8, index as index7 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable13, uuid as uuid12, text as text17, timestamp as timestamp13, jsonb as jsonb5, uniqueIndex as uniqueIndex10, index as index8 } from "drizzle-orm/pg-core";
 var principalPermissionGrants;
 var init_principal_permission_grants = __esm({
   "../packages/db/src/schema/principal_permission_grants.ts"() {
     "use strict";
     init_companies();
-    principalPermissionGrants = pgTable11(
+    principalPermissionGrants = pgTable13(
       "principal_permission_grants",
       {
-        id: uuid10("id").primaryKey().defaultRandom(),
-        companyId: uuid10("company_id").notNull().references(() => companies.id),
-        principalType: text15("principal_type").notNull(),
-        principalId: text15("principal_id").notNull(),
-        permissionKey: text15("permission_key").notNull(),
-        scope: jsonb3("scope").$type(),
-        grantedByUserId: text15("granted_by_user_id"),
-        createdAt: timestamp11("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp11("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid12("id").primaryKey().defaultRandom(),
+        companyId: uuid12("company_id").notNull().references(() => companies.id),
+        principalType: text17("principal_type").notNull(),
+        principalId: text17("principal_id").notNull(),
+        permissionKey: text17("permission_key").notNull(),
+        scope: jsonb5("scope").$type(),
+        grantedByUserId: text17("granted_by_user_id"),
+        createdAt: timestamp13("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp13("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        uniqueGrantIdx: uniqueIndex8("principal_permission_grants_unique_idx").on(
+        uniqueGrantIdx: uniqueIndex10("principal_permission_grants_unique_idx").on(
           table.companyId,
           table.principalType,
           table.principalId,
           table.permissionKey
         ),
-        companyPermissionIdx: index7("principal_permission_grants_company_permission_idx").on(
+        companyPermissionIdx: index8("principal_permission_grants_company_permission_idx").on(
           table.companyId,
           table.permissionKey
         )
@@ -3809,31 +4568,31 @@ var init_principal_permission_grants = __esm({
 });
 
 // ../packages/db/src/schema/invites.ts
-import { pgTable as pgTable12, uuid as uuid11, text as text16, timestamp as timestamp12, jsonb as jsonb4, index as index8, uniqueIndex as uniqueIndex9 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable14, uuid as uuid13, text as text18, timestamp as timestamp14, jsonb as jsonb6, index as index9, uniqueIndex as uniqueIndex11 } from "drizzle-orm/pg-core";
 var invites;
 var init_invites = __esm({
   "../packages/db/src/schema/invites.ts"() {
     "use strict";
     init_companies();
-    invites = pgTable12(
+    invites = pgTable14(
       "invites",
       {
-        id: uuid11("id").primaryKey().defaultRandom(),
-        companyId: uuid11("company_id").references(() => companies.id),
-        inviteType: text16("invite_type").notNull().default("company_join"),
-        tokenHash: text16("token_hash").notNull(),
-        allowedJoinTypes: text16("allowed_join_types").notNull().default("both"),
-        defaultsPayload: jsonb4("defaults_payload").$type(),
-        expiresAt: timestamp12("expires_at", { withTimezone: true }).notNull(),
-        invitedByUserId: text16("invited_by_user_id"),
-        revokedAt: timestamp12("revoked_at", { withTimezone: true }),
-        acceptedAt: timestamp12("accepted_at", { withTimezone: true }),
-        createdAt: timestamp12("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp12("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid13("id").primaryKey().defaultRandom(),
+        companyId: uuid13("company_id").references(() => companies.id),
+        inviteType: text18("invite_type").notNull().default("company_join"),
+        tokenHash: text18("token_hash").notNull(),
+        allowedJoinTypes: text18("allowed_join_types").notNull().default("both"),
+        defaultsPayload: jsonb6("defaults_payload").$type(),
+        expiresAt: timestamp14("expires_at", { withTimezone: true }).notNull(),
+        invitedByUserId: text18("invited_by_user_id"),
+        revokedAt: timestamp14("revoked_at", { withTimezone: true }),
+        acceptedAt: timestamp14("accepted_at", { withTimezone: true }),
+        createdAt: timestamp14("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp14("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        tokenHashUniqueIdx: uniqueIndex9("invites_token_hash_unique_idx").on(table.tokenHash),
-        companyInviteStateIdx: index8("invites_company_invite_state_idx").on(
+        tokenHashUniqueIdx: uniqueIndex11("invites_token_hash_unique_idx").on(table.tokenHash),
+        companyInviteStateIdx: index9("invites_company_invite_state_idx").on(
           table.companyId,
           table.inviteType,
           table.revokedAt,
@@ -3845,7 +4604,8 @@ var init_invites = __esm({
 });
 
 // ../packages/db/src/schema/join_requests.ts
-import { pgTable as pgTable13, uuid as uuid12, text as text17, timestamp as timestamp13, jsonb as jsonb5, index as index9, uniqueIndex as uniqueIndex10 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import { pgTable as pgTable15, uuid as uuid14, text as text19, timestamp as timestamp15, jsonb as jsonb7, index as index10, uniqueIndex as uniqueIndex12 } from "drizzle-orm/pg-core";
 var joinRequests;
 var init_join_requests = __esm({
   "../packages/db/src/schema/join_requests.ts"() {
@@ -3853,84 +4613,86 @@ var init_join_requests = __esm({
     init_companies();
     init_invites();
     init_agents();
-    joinRequests = pgTable13(
+    joinRequests = pgTable15(
       "join_requests",
       {
-        id: uuid12("id").primaryKey().defaultRandom(),
-        inviteId: uuid12("invite_id").notNull().references(() => invites.id),
-        companyId: uuid12("company_id").notNull().references(() => companies.id),
-        requestType: text17("request_type").notNull(),
-        status: text17("status").notNull().default("pending_approval"),
-        requestIp: text17("request_ip").notNull(),
-        requestingUserId: text17("requesting_user_id"),
-        requestEmailSnapshot: text17("request_email_snapshot"),
-        agentName: text17("agent_name"),
-        adapterType: text17("adapter_type"),
-        capabilities: text17("capabilities"),
-        agentDefaultsPayload: jsonb5("agent_defaults_payload").$type(),
-        claimSecretHash: text17("claim_secret_hash"),
-        claimSecretExpiresAt: timestamp13("claim_secret_expires_at", { withTimezone: true }),
-        claimSecretConsumedAt: timestamp13("claim_secret_consumed_at", { withTimezone: true }),
-        createdAgentId: uuid12("created_agent_id").references(() => agents.id),
-        approvedByUserId: text17("approved_by_user_id"),
-        approvedAt: timestamp13("approved_at", { withTimezone: true }),
-        rejectedByUserId: text17("rejected_by_user_id"),
-        rejectedAt: timestamp13("rejected_at", { withTimezone: true }),
-        createdAt: timestamp13("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp13("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid14("id").primaryKey().defaultRandom(),
+        inviteId: uuid14("invite_id").notNull().references(() => invites.id),
+        companyId: uuid14("company_id").notNull().references(() => companies.id),
+        requestType: text19("request_type").notNull(),
+        status: text19("status").notNull().default("pending_approval"),
+        requestIp: text19("request_ip").notNull(),
+        requestingUserId: text19("requesting_user_id"),
+        requestEmailSnapshot: text19("request_email_snapshot"),
+        agentName: text19("agent_name"),
+        adapterType: text19("adapter_type"),
+        capabilities: text19("capabilities"),
+        agentDefaultsPayload: jsonb7("agent_defaults_payload").$type(),
+        claimSecretHash: text19("claim_secret_hash"),
+        claimSecretExpiresAt: timestamp15("claim_secret_expires_at", { withTimezone: true }),
+        claimSecretConsumedAt: timestamp15("claim_secret_consumed_at", { withTimezone: true }),
+        createdAgentId: uuid14("created_agent_id").references(() => agents.id),
+        approvedByUserId: text19("approved_by_user_id"),
+        approvedAt: timestamp15("approved_at", { withTimezone: true }),
+        rejectedByUserId: text19("rejected_by_user_id"),
+        rejectedAt: timestamp15("rejected_at", { withTimezone: true }),
+        createdAt: timestamp15("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp15("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        inviteUniqueIdx: uniqueIndex10("join_requests_invite_unique_idx").on(table.inviteId),
-        companyStatusTypeCreatedIdx: index9("join_requests_company_status_type_created_idx").on(
+        inviteUniqueIdx: uniqueIndex12("join_requests_invite_unique_idx").on(table.inviteId),
+        companyStatusTypeCreatedIdx: index10("join_requests_company_status_type_created_idx").on(
           table.companyId,
           table.status,
           table.requestType,
           table.createdAt
-        )
+        ),
+        pendingHumanUserUniqueIdx: uniqueIndex12("join_requests_pending_human_user_uq").on(table.companyId, table.requestingUserId).where(sql`${table.requestType} = 'human' AND ${table.status} = 'pending_approval' AND ${table.requestingUserId} IS NOT NULL`),
+        pendingHumanEmailUniqueIdx: uniqueIndex12("join_requests_pending_human_email_uq").on(table.companyId, sql`lower(${table.requestEmailSnapshot})`).where(sql`${table.requestType} = 'human' AND ${table.status} = 'pending_approval' AND ${table.requestEmailSnapshot} IS NOT NULL`)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/budget_policies.ts
-import { boolean as boolean3, index as index10, integer as integer4, pgTable as pgTable14, text as text18, timestamp as timestamp14, uuid as uuid13, uniqueIndex as uniqueIndex11 } from "drizzle-orm/pg-core";
+import { boolean as boolean3, index as index11, integer as integer4, pgTable as pgTable16, text as text20, timestamp as timestamp16, uuid as uuid15, uniqueIndex as uniqueIndex13 } from "drizzle-orm/pg-core";
 var budgetPolicies;
 var init_budget_policies = __esm({
   "../packages/db/src/schema/budget_policies.ts"() {
     "use strict";
     init_companies();
-    budgetPolicies = pgTable14(
+    budgetPolicies = pgTable16(
       "budget_policies",
       {
-        id: uuid13("id").primaryKey().defaultRandom(),
-        companyId: uuid13("company_id").notNull().references(() => companies.id),
-        scopeType: text18("scope_type").notNull(),
-        scopeId: uuid13("scope_id").notNull(),
-        metric: text18("metric").notNull().default("billed_cents"),
-        windowKind: text18("window_kind").notNull(),
+        id: uuid15("id").primaryKey().defaultRandom(),
+        companyId: uuid15("company_id").notNull().references(() => companies.id),
+        scopeType: text20("scope_type").notNull(),
+        scopeId: uuid15("scope_id").notNull(),
+        metric: text20("metric").notNull().default("billed_cents"),
+        windowKind: text20("window_kind").notNull(),
         amount: integer4("amount").notNull().default(0),
         warnPercent: integer4("warn_percent").notNull().default(80),
         hardStopEnabled: boolean3("hard_stop_enabled").notNull().default(true),
         notifyEnabled: boolean3("notify_enabled").notNull().default(true),
         isActive: boolean3("is_active").notNull().default(true),
-        createdByUserId: text18("created_by_user_id"),
-        updatedByUserId: text18("updated_by_user_id"),
-        createdAt: timestamp14("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp14("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdByUserId: text20("created_by_user_id"),
+        updatedByUserId: text20("updated_by_user_id"),
+        createdAt: timestamp16("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp16("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyScopeActiveIdx: index10("budget_policies_company_scope_active_idx").on(
+        companyScopeActiveIdx: index11("budget_policies_company_scope_active_idx").on(
           table.companyId,
           table.scopeType,
           table.scopeId,
           table.isActive
         ),
-        companyWindowIdx: index10("budget_policies_company_window_idx").on(
+        companyWindowIdx: index11("budget_policies_company_window_idx").on(
           table.companyId,
           table.windowKind,
           table.metric
         ),
-        companyScopeMetricUniqueIdx: uniqueIndex11("budget_policies_company_scope_metric_unique_idx").on(
+        companyScopeMetricUniqueIdx: uniqueIndex13("budget_policies_company_scope_metric_unique_idx").on(
           table.companyId,
           table.scopeType,
           table.scopeId,
@@ -3943,31 +4705,31 @@ var init_budget_policies = __esm({
 });
 
 // ../packages/db/src/schema/approvals.ts
-import { pgTable as pgTable15, uuid as uuid14, text as text19, timestamp as timestamp15, jsonb as jsonb6, index as index11 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable17, uuid as uuid16, text as text21, timestamp as timestamp17, jsonb as jsonb8, index as index12 } from "drizzle-orm/pg-core";
 var approvals;
 var init_approvals = __esm({
   "../packages/db/src/schema/approvals.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    approvals = pgTable15(
+    approvals = pgTable17(
       "approvals",
       {
-        id: uuid14("id").primaryKey().defaultRandom(),
-        companyId: uuid14("company_id").notNull().references(() => companies.id),
-        type: text19("type").notNull(),
-        requestedByAgentId: uuid14("requested_by_agent_id").references(() => agents.id),
-        requestedByUserId: text19("requested_by_user_id"),
-        status: text19("status").notNull().default("pending"),
-        payload: jsonb6("payload").$type().notNull(),
-        decisionNote: text19("decision_note"),
-        decidedByUserId: text19("decided_by_user_id"),
-        decidedAt: timestamp15("decided_at", { withTimezone: true }),
-        createdAt: timestamp15("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp15("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid16("id").primaryKey().defaultRandom(),
+        companyId: uuid16("company_id").notNull().references(() => companies.id),
+        type: text21("type").notNull(),
+        requestedByAgentId: uuid16("requested_by_agent_id").references(() => agents.id),
+        requestedByUserId: text21("requested_by_user_id"),
+        status: text21("status").notNull().default("pending"),
+        payload: jsonb8("payload").$type().notNull(),
+        decisionNote: text21("decision_note"),
+        decidedByUserId: text21("decided_by_user_id"),
+        decidedAt: timestamp17("decided_at", { withTimezone: true }),
+        createdAt: timestamp17("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp17("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyStatusTypeIdx: index11("approvals_company_status_type_idx").on(
+        companyStatusTypeIdx: index12("approvals_company_status_type_idx").on(
           table.companyId,
           table.status,
           table.type
@@ -3978,8 +4740,8 @@ var init_approvals = __esm({
 });
 
 // ../packages/db/src/schema/budget_incidents.ts
-import { sql } from "drizzle-orm";
-import { index as index12, integer as integer5, pgTable as pgTable16, text as text20, timestamp as timestamp16, uuid as uuid15, uniqueIndex as uniqueIndex12 } from "drizzle-orm/pg-core";
+import { sql as sql2 } from "drizzle-orm";
+import { index as index13, integer as integer5, pgTable as pgTable18, text as text22, timestamp as timestamp18, uuid as uuid17, uniqueIndex as uniqueIndex14 } from "drizzle-orm/pg-core";
 var budgetIncidents;
 var init_budget_incidents = __esm({
   "../packages/db/src/schema/budget_incidents.ts"() {
@@ -3987,191 +4749,191 @@ var init_budget_incidents = __esm({
     init_approvals();
     init_budget_policies();
     init_companies();
-    budgetIncidents = pgTable16(
+    budgetIncidents = pgTable18(
       "budget_incidents",
       {
-        id: uuid15("id").primaryKey().defaultRandom(),
-        companyId: uuid15("company_id").notNull().references(() => companies.id),
-        policyId: uuid15("policy_id").notNull().references(() => budgetPolicies.id),
-        scopeType: text20("scope_type").notNull(),
-        scopeId: uuid15("scope_id").notNull(),
-        metric: text20("metric").notNull(),
-        windowKind: text20("window_kind").notNull(),
-        windowStart: timestamp16("window_start", { withTimezone: true }).notNull(),
-        windowEnd: timestamp16("window_end", { withTimezone: true }).notNull(),
-        thresholdType: text20("threshold_type").notNull(),
+        id: uuid17("id").primaryKey().defaultRandom(),
+        companyId: uuid17("company_id").notNull().references(() => companies.id),
+        policyId: uuid17("policy_id").notNull().references(() => budgetPolicies.id),
+        scopeType: text22("scope_type").notNull(),
+        scopeId: uuid17("scope_id").notNull(),
+        metric: text22("metric").notNull(),
+        windowKind: text22("window_kind").notNull(),
+        windowStart: timestamp18("window_start", { withTimezone: true }).notNull(),
+        windowEnd: timestamp18("window_end", { withTimezone: true }).notNull(),
+        thresholdType: text22("threshold_type").notNull(),
         amountLimit: integer5("amount_limit").notNull(),
         amountObserved: integer5("amount_observed").notNull(),
-        status: text20("status").notNull().default("open"),
-        approvalId: uuid15("approval_id").references(() => approvals.id),
-        resolvedAt: timestamp16("resolved_at", { withTimezone: true }),
-        createdAt: timestamp16("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp16("updated_at", { withTimezone: true }).notNull().defaultNow()
+        status: text22("status").notNull().default("open"),
+        approvalId: uuid17("approval_id").references(() => approvals.id),
+        resolvedAt: timestamp18("resolved_at", { withTimezone: true }),
+        createdAt: timestamp18("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp18("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyStatusIdx: index12("budget_incidents_company_status_idx").on(table.companyId, table.status),
-        companyScopeIdx: index12("budget_incidents_company_scope_idx").on(
+        companyStatusIdx: index13("budget_incidents_company_status_idx").on(table.companyId, table.status),
+        companyScopeIdx: index13("budget_incidents_company_scope_idx").on(
           table.companyId,
           table.scopeType,
           table.scopeId,
           table.status
         ),
-        policyWindowIdx: uniqueIndex12("budget_incidents_policy_window_threshold_idx").on(
+        policyWindowIdx: uniqueIndex14("budget_incidents_policy_window_threshold_idx").on(
           table.policyId,
           table.windowStart,
           table.thresholdType
-        ).where(sql`${table.status} <> 'dismissed'`)
+        ).where(sql2`${table.status} <> 'dismissed'`)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/agent_config_revisions.ts
-import { pgTable as pgTable17, uuid as uuid16, text as text21, timestamp as timestamp17, jsonb as jsonb7, index as index13 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable19, uuid as uuid18, text as text23, timestamp as timestamp19, jsonb as jsonb9, index as index14 } from "drizzle-orm/pg-core";
 var agentConfigRevisions;
 var init_agent_config_revisions = __esm({
   "../packages/db/src/schema/agent_config_revisions.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    agentConfigRevisions = pgTable17(
+    agentConfigRevisions = pgTable19(
       "agent_config_revisions",
       {
-        id: uuid16("id").primaryKey().defaultRandom(),
-        companyId: uuid16("company_id").notNull().references(() => companies.id),
-        agentId: uuid16("agent_id").notNull().references(() => agents.id, { onDelete: "cascade" }),
-        createdByAgentId: uuid16("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text21("created_by_user_id"),
-        source: text21("source").notNull().default("patch"),
-        rolledBackFromRevisionId: uuid16("rolled_back_from_revision_id"),
-        changedKeys: jsonb7("changed_keys").$type().notNull().default([]),
-        beforeConfig: jsonb7("before_config").$type().notNull(),
-        afterConfig: jsonb7("after_config").$type().notNull(),
-        createdAt: timestamp17("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid18("id").primaryKey().defaultRandom(),
+        companyId: uuid18("company_id").notNull().references(() => companies.id),
+        agentId: uuid18("agent_id").notNull().references(() => agents.id, { onDelete: "cascade" }),
+        createdByAgentId: uuid18("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text23("created_by_user_id"),
+        source: text23("source").notNull().default("patch"),
+        rolledBackFromRevisionId: uuid18("rolled_back_from_revision_id"),
+        changedKeys: jsonb9("changed_keys").$type().notNull().default([]),
+        beforeConfig: jsonb9("before_config").$type().notNull(),
+        afterConfig: jsonb9("after_config").$type().notNull(),
+        createdAt: timestamp19("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyAgentCreatedIdx: index13("agent_config_revisions_company_agent_created_idx").on(
+        companyAgentCreatedIdx: index14("agent_config_revisions_company_agent_created_idx").on(
           table.companyId,
           table.agentId,
           table.createdAt
         ),
-        agentCreatedIdx: index13("agent_config_revisions_agent_created_idx").on(table.agentId, table.createdAt)
+        agentCreatedIdx: index14("agent_config_revisions_agent_created_idx").on(table.agentId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/agent_api_keys.ts
-import { pgTable as pgTable18, uuid as uuid17, text as text22, timestamp as timestamp18, index as index14 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable20, uuid as uuid19, text as text24, timestamp as timestamp20, index as index15 } from "drizzle-orm/pg-core";
 var agentApiKeys;
 var init_agent_api_keys = __esm({
   "../packages/db/src/schema/agent_api_keys.ts"() {
     "use strict";
     init_agents();
     init_companies();
-    agentApiKeys = pgTable18(
+    agentApiKeys = pgTable20(
       "agent_api_keys",
       {
-        id: uuid17("id").primaryKey().defaultRandom(),
-        agentId: uuid17("agent_id").notNull().references(() => agents.id),
-        companyId: uuid17("company_id").notNull().references(() => companies.id),
-        name: text22("name").notNull(),
-        keyHash: text22("key_hash").notNull(),
-        lastUsedAt: timestamp18("last_used_at", { withTimezone: true }),
-        revokedAt: timestamp18("revoked_at", { withTimezone: true }),
-        createdAt: timestamp18("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid19("id").primaryKey().defaultRandom(),
+        agentId: uuid19("agent_id").notNull().references(() => agents.id),
+        companyId: uuid19("company_id").notNull().references(() => companies.id),
+        name: text24("name").notNull(),
+        keyHash: text24("key_hash").notNull(),
+        lastUsedAt: timestamp20("last_used_at", { withTimezone: true }),
+        revokedAt: timestamp20("revoked_at", { withTimezone: true }),
+        createdAt: timestamp20("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        keyHashIdx: index14("agent_api_keys_key_hash_idx").on(table.keyHash),
-        companyAgentIdx: index14("agent_api_keys_company_agent_idx").on(table.companyId, table.agentId)
+        keyHashIdx: index15("agent_api_keys_key_hash_idx").on(table.keyHash),
+        companyAgentIdx: index15("agent_api_keys_company_agent_idx").on(table.companyId, table.agentId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/agent_runtime_state.ts
-import { pgTable as pgTable19, uuid as uuid18, text as text23, timestamp as timestamp19, jsonb as jsonb8, bigint, index as index15 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable21, uuid as uuid20, text as text25, timestamp as timestamp21, jsonb as jsonb10, bigint, index as index16 } from "drizzle-orm/pg-core";
 var agentRuntimeState;
 var init_agent_runtime_state = __esm({
   "../packages/db/src/schema/agent_runtime_state.ts"() {
     "use strict";
     init_agents();
     init_companies();
-    agentRuntimeState = pgTable19(
+    agentRuntimeState = pgTable21(
       "agent_runtime_state",
       {
-        agentId: uuid18("agent_id").primaryKey().references(() => agents.id),
-        companyId: uuid18("company_id").notNull().references(() => companies.id),
-        adapterType: text23("adapter_type").notNull(),
-        sessionId: text23("session_id"),
-        stateJson: jsonb8("state_json").$type().notNull().default({}),
-        lastRunId: uuid18("last_run_id"),
-        lastRunStatus: text23("last_run_status"),
+        agentId: uuid20("agent_id").primaryKey().references(() => agents.id),
+        companyId: uuid20("company_id").notNull().references(() => companies.id),
+        adapterType: text25("adapter_type").notNull(),
+        sessionId: text25("session_id"),
+        stateJson: jsonb10("state_json").$type().notNull().default({}),
+        lastRunId: uuid20("last_run_id"),
+        lastRunStatus: text25("last_run_status"),
         totalInputTokens: bigint("total_input_tokens", { mode: "number" }).notNull().default(0),
         totalOutputTokens: bigint("total_output_tokens", { mode: "number" }).notNull().default(0),
         totalCachedInputTokens: bigint("total_cached_input_tokens", { mode: "number" }).notNull().default(0),
         totalCostCents: bigint("total_cost_cents", { mode: "number" }).notNull().default(0),
-        lastError: text23("last_error"),
-        createdAt: timestamp19("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp19("updated_at", { withTimezone: true }).notNull().defaultNow()
+        lastError: text25("last_error"),
+        createdAt: timestamp21("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp21("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyAgentIdx: index15("agent_runtime_state_company_agent_idx").on(table.companyId, table.agentId),
-        companyUpdatedIdx: index15("agent_runtime_state_company_updated_idx").on(table.companyId, table.updatedAt)
+        companyAgentIdx: index16("agent_runtime_state_company_agent_idx").on(table.companyId, table.agentId),
+        companyUpdatedIdx: index16("agent_runtime_state_company_updated_idx").on(table.companyId, table.updatedAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/agent_wakeup_requests.ts
-import { pgTable as pgTable20, uuid as uuid19, text as text24, timestamp as timestamp20, jsonb as jsonb9, integer as integer6, index as index16 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable22, uuid as uuid21, text as text26, timestamp as timestamp22, jsonb as jsonb11, integer as integer6, index as index17 } from "drizzle-orm/pg-core";
 var agentWakeupRequests;
 var init_agent_wakeup_requests = __esm({
   "../packages/db/src/schema/agent_wakeup_requests.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    agentWakeupRequests = pgTable20(
+    agentWakeupRequests = pgTable22(
       "agent_wakeup_requests",
       {
-        id: uuid19("id").primaryKey().defaultRandom(),
-        companyId: uuid19("company_id").notNull().references(() => companies.id),
-        agentId: uuid19("agent_id").notNull().references(() => agents.id),
-        source: text24("source").notNull(),
-        triggerDetail: text24("trigger_detail"),
-        reason: text24("reason"),
-        payload: jsonb9("payload").$type(),
-        status: text24("status").notNull().default("queued"),
+        id: uuid21("id").primaryKey().defaultRandom(),
+        companyId: uuid21("company_id").notNull().references(() => companies.id),
+        agentId: uuid21("agent_id").notNull().references(() => agents.id),
+        source: text26("source").notNull(),
+        triggerDetail: text26("trigger_detail"),
+        reason: text26("reason"),
+        payload: jsonb11("payload").$type(),
+        status: text26("status").notNull().default("queued"),
         coalescedCount: integer6("coalesced_count").notNull().default(0),
-        requestedByActorType: text24("requested_by_actor_type"),
-        requestedByActorId: text24("requested_by_actor_id"),
-        idempotencyKey: text24("idempotency_key"),
-        runId: uuid19("run_id"),
-        requestedAt: timestamp20("requested_at", { withTimezone: true }).notNull().defaultNow(),
-        claimedAt: timestamp20("claimed_at", { withTimezone: true }),
-        finishedAt: timestamp20("finished_at", { withTimezone: true }),
-        error: text24("error"),
-        createdAt: timestamp20("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp20("updated_at", { withTimezone: true }).notNull().defaultNow()
+        requestedByActorType: text26("requested_by_actor_type"),
+        requestedByActorId: text26("requested_by_actor_id"),
+        idempotencyKey: text26("idempotency_key"),
+        runId: uuid21("run_id"),
+        requestedAt: timestamp22("requested_at", { withTimezone: true }).notNull().defaultNow(),
+        claimedAt: timestamp22("claimed_at", { withTimezone: true }),
+        finishedAt: timestamp22("finished_at", { withTimezone: true }),
+        error: text26("error"),
+        createdAt: timestamp22("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp22("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyAgentStatusIdx: index16("agent_wakeup_requests_company_agent_status_idx").on(
+        companyAgentStatusIdx: index17("agent_wakeup_requests_company_agent_status_idx").on(
           table.companyId,
           table.agentId,
           table.status
         ),
-        companyRequestedIdx: index16("agent_wakeup_requests_company_requested_idx").on(
+        companyRequestedIdx: index17("agent_wakeup_requests_company_requested_idx").on(
           table.companyId,
           table.requestedAt
         ),
-        agentRequestedIdx: index16("agent_wakeup_requests_agent_requested_idx").on(table.agentId, table.requestedAt)
+        agentRequestedIdx: index17("agent_wakeup_requests_agent_requested_idx").on(table.agentId, table.requestedAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/heartbeat_runs.ts
-import { pgTable as pgTable21, uuid as uuid20, text as text25, timestamp as timestamp21, jsonb as jsonb10, index as index17, integer as integer7, bigint as bigint2, boolean as boolean4 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable23, uuid as uuid22, text as text27, timestamp as timestamp23, jsonb as jsonb12, index as index18, integer as integer7, bigint as bigint2, boolean as boolean4 } from "drizzle-orm/pg-core";
 var heartbeatRuns;
 var init_heartbeat_runs = __esm({
   "../packages/db/src/schema/heartbeat_runs.ts"() {
@@ -4179,53 +4941,67 @@ var init_heartbeat_runs = __esm({
     init_companies();
     init_agents();
     init_agent_wakeup_requests();
-    heartbeatRuns = pgTable21(
+    heartbeatRuns = pgTable23(
       "heartbeat_runs",
       {
-        id: uuid20("id").primaryKey().defaultRandom(),
-        companyId: uuid20("company_id").notNull().references(() => companies.id),
-        agentId: uuid20("agent_id").notNull().references(() => agents.id),
-        invocationSource: text25("invocation_source").notNull().default("on_demand"),
-        triggerDetail: text25("trigger_detail"),
-        status: text25("status").notNull().default("queued"),
-        startedAt: timestamp21("started_at", { withTimezone: true }),
-        finishedAt: timestamp21("finished_at", { withTimezone: true }),
-        error: text25("error"),
-        wakeupRequestId: uuid20("wakeup_request_id").references(() => agentWakeupRequests.id),
+        id: uuid22("id").primaryKey().defaultRandom(),
+        companyId: uuid22("company_id").notNull().references(() => companies.id),
+        agentId: uuid22("agent_id").notNull().references(() => agents.id),
+        invocationSource: text27("invocation_source").notNull().default("on_demand"),
+        triggerDetail: text27("trigger_detail"),
+        status: text27("status").notNull().default("queued"),
+        startedAt: timestamp23("started_at", { withTimezone: true }),
+        finishedAt: timestamp23("finished_at", { withTimezone: true }),
+        error: text27("error"),
+        wakeupRequestId: uuid22("wakeup_request_id").references(() => agentWakeupRequests.id),
         exitCode: integer7("exit_code"),
-        signal: text25("signal"),
-        usageJson: jsonb10("usage_json").$type(),
-        resultJson: jsonb10("result_json").$type(),
-        sessionIdBefore: text25("session_id_before"),
-        sessionIdAfter: text25("session_id_after"),
-        logStore: text25("log_store"),
-        logRef: text25("log_ref"),
+        signal: text27("signal"),
+        usageJson: jsonb12("usage_json").$type(),
+        resultJson: jsonb12("result_json").$type(),
+        sessionIdBefore: text27("session_id_before"),
+        sessionIdAfter: text27("session_id_after"),
+        logStore: text27("log_store"),
+        logRef: text27("log_ref"),
         logBytes: bigint2("log_bytes", { mode: "number" }),
-        logSha256: text25("log_sha256"),
+        logSha256: text27("log_sha256"),
         logCompressed: boolean4("log_compressed").notNull().default(false),
-        stdoutExcerpt: text25("stdout_excerpt"),
-        stderrExcerpt: text25("stderr_excerpt"),
-        errorCode: text25("error_code"),
-        externalRunId: text25("external_run_id"),
+        stdoutExcerpt: text27("stdout_excerpt"),
+        stderrExcerpt: text27("stderr_excerpt"),
+        errorCode: text27("error_code"),
+        externalRunId: text27("external_run_id"),
         processPid: integer7("process_pid"),
-        processStartedAt: timestamp21("process_started_at", { withTimezone: true }),
-        timeoutAt: timestamp21("timeout_at", { withTimezone: true }),
-        retryOfRunId: uuid20("retry_of_run_id").references(() => heartbeatRuns.id, {
+        processGroupId: integer7("process_group_id"),
+        processStartedAt: timestamp23("process_started_at", { withTimezone: true }),
+        timeoutAt: timestamp23("timeout_at", { withTimezone: true }),
+        retryOfRunId: uuid22("retry_of_run_id").references(() => heartbeatRuns.id, {
           onDelete: "set null"
         }),
         processLossRetryCount: integer7("process_loss_retry_count").notNull().default(0),
-        issueCommentStatus: text25("issue_comment_status").notNull().default("not_applicable"),
-        issueCommentSatisfiedByCommentId: uuid20("issue_comment_satisfied_by_comment_id"),
-        issueCommentRetryQueuedAt: timestamp21("issue_comment_retry_queued_at", { withTimezone: true }),
-        contextSnapshot: jsonb10("context_snapshot").$type(),
-        createdAt: timestamp21("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp21("updated_at", { withTimezone: true }).notNull().defaultNow()
+        scheduledRetryAt: timestamp23("scheduled_retry_at", { withTimezone: true }),
+        scheduledRetryAttempt: integer7("scheduled_retry_attempt").notNull().default(0),
+        scheduledRetryReason: text27("scheduled_retry_reason"),
+        issueCommentStatus: text27("issue_comment_status").notNull().default("not_applicable"),
+        issueCommentSatisfiedByCommentId: uuid22("issue_comment_satisfied_by_comment_id"),
+        issueCommentRetryQueuedAt: timestamp23("issue_comment_retry_queued_at", { withTimezone: true }),
+        livenessState: text27("liveness_state"),
+        livenessReason: text27("liveness_reason"),
+        continuationAttempt: integer7("continuation_attempt").notNull().default(0),
+        lastUsefulActionAt: timestamp23("last_useful_action_at", { withTimezone: true }),
+        nextAction: text27("next_action"),
+        contextSnapshot: jsonb12("context_snapshot").$type(),
+        createdAt: timestamp23("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp23("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyAgentStartedIdx: index17("heartbeat_runs_company_agent_started_idx").on(
+        companyAgentStartedIdx: index18("heartbeat_runs_company_agent_started_idx").on(
           table.companyId,
           table.agentId,
           table.startedAt
+        ),
+        companyLivenessIdx: index18("heartbeat_runs_company_liveness_idx").on(
+          table.companyId,
+          table.livenessState,
+          table.createdAt
         )
       })
     );
@@ -4233,7 +5009,7 @@ var init_heartbeat_runs = __esm({
 });
 
 // ../packages/db/src/schema/agent_task_sessions.ts
-import { pgTable as pgTable22, uuid as uuid21, text as text26, timestamp as timestamp22, jsonb as jsonb11, index as index18, uniqueIndex as uniqueIndex13 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable24, uuid as uuid23, text as text28, timestamp as timestamp24, jsonb as jsonb13, index as index19, uniqueIndex as uniqueIndex15 } from "drizzle-orm/pg-core";
 var agentTaskSessions;
 var init_agent_task_sessions = __esm({
   "../packages/db/src/schema/agent_task_sessions.ts"() {
@@ -4241,34 +5017,34 @@ var init_agent_task_sessions = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    agentTaskSessions = pgTable22(
+    agentTaskSessions = pgTable24(
       "agent_task_sessions",
       {
-        id: uuid21("id").primaryKey().defaultRandom(),
-        companyId: uuid21("company_id").notNull().references(() => companies.id),
-        agentId: uuid21("agent_id").notNull().references(() => agents.id),
-        adapterType: text26("adapter_type").notNull(),
-        taskKey: text26("task_key").notNull(),
-        sessionParamsJson: jsonb11("session_params_json").$type(),
-        sessionDisplayId: text26("session_display_id"),
-        lastRunId: uuid21("last_run_id").references(() => heartbeatRuns.id),
-        lastError: text26("last_error"),
-        createdAt: timestamp22("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp22("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid23("id").primaryKey().defaultRandom(),
+        companyId: uuid23("company_id").notNull().references(() => companies.id),
+        agentId: uuid23("agent_id").notNull().references(() => agents.id),
+        adapterType: text28("adapter_type").notNull(),
+        taskKey: text28("task_key").notNull(),
+        sessionParamsJson: jsonb13("session_params_json").$type(),
+        sessionDisplayId: text28("session_display_id"),
+        lastRunId: uuid23("last_run_id").references(() => heartbeatRuns.id),
+        lastError: text28("last_error"),
+        createdAt: timestamp24("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp24("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyAgentTaskUniqueIdx: uniqueIndex13("agent_task_sessions_company_agent_adapter_task_uniq").on(
+        companyAgentTaskUniqueIdx: uniqueIndex15("agent_task_sessions_company_agent_adapter_task_uniq").on(
           table.companyId,
           table.agentId,
           table.adapterType,
           table.taskKey
         ),
-        companyAgentUpdatedIdx: index18("agent_task_sessions_company_agent_updated_idx").on(
+        companyAgentUpdatedIdx: index19("agent_task_sessions_company_agent_updated_idx").on(
           table.companyId,
           table.agentId,
           table.updatedAt
         ),
-        companyTaskUpdatedIdx: index18("agent_task_sessions_company_task_updated_idx").on(
+        companyTaskUpdatedIdx: index19("agent_task_sessions_company_task_updated_idx").on(
           table.companyId,
           table.taskKey,
           table.updatedAt
@@ -4280,11 +5056,11 @@ var init_agent_task_sessions = __esm({
 
 // ../packages/db/src/schema/goals.ts
 import {
-  pgTable as pgTable23,
-  uuid as uuid22,
-  text as text27,
-  timestamp as timestamp23,
-  index as index19
+  pgTable as pgTable25,
+  uuid as uuid24,
+  text as text29,
+  timestamp as timestamp25,
+  index as index20
 } from "drizzle-orm/pg-core";
 var goals;
 var init_goals = __esm({
@@ -4292,29 +5068,29 @@ var init_goals = __esm({
     "use strict";
     init_agents();
     init_companies();
-    goals = pgTable23(
+    goals = pgTable25(
       "goals",
       {
-        id: uuid22("id").primaryKey().defaultRandom(),
-        companyId: uuid22("company_id").notNull().references(() => companies.id),
-        title: text27("title").notNull(),
-        description: text27("description"),
-        level: text27("level").notNull().default("task"),
-        status: text27("status").notNull().default("planned"),
-        parentId: uuid22("parent_id").references(() => goals.id),
-        ownerAgentId: uuid22("owner_agent_id").references(() => agents.id),
-        createdAt: timestamp23("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp23("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid24("id").primaryKey().defaultRandom(),
+        companyId: uuid24("company_id").notNull().references(() => companies.id),
+        title: text29("title").notNull(),
+        description: text29("description"),
+        level: text29("level").notNull().default("task"),
+        status: text29("status").notNull().default("planned"),
+        parentId: uuid24("parent_id").references(() => goals.id),
+        ownerAgentId: uuid24("owner_agent_id").references(() => agents.id),
+        createdAt: timestamp25("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp25("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index19("goals_company_idx").on(table.companyId)
+        companyIdx: index20("goals_company_idx").on(table.companyId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/projects.ts
-import { pgTable as pgTable24, uuid as uuid23, text as text28, timestamp as timestamp24, date, index as index20, jsonb as jsonb12 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable26, uuid as uuid25, text as text30, timestamp as timestamp26, date, index as index21, jsonb as jsonb14 } from "drizzle-orm/pg-core";
 var projects;
 var init_projects = __esm({
   "../packages/db/src/schema/projects.ts"() {
@@ -4322,28 +5098,28 @@ var init_projects = __esm({
     init_companies();
     init_goals();
     init_agents();
-    projects = pgTable24(
+    projects = pgTable26(
       "projects",
       {
-        id: uuid23("id").primaryKey().defaultRandom(),
-        companyId: uuid23("company_id").notNull().references(() => companies.id),
-        goalId: uuid23("goal_id").references(() => goals.id),
-        name: text28("name").notNull(),
-        description: text28("description"),
-        status: text28("status").notNull().default("backlog"),
-        leadAgentId: uuid23("lead_agent_id").references(() => agents.id),
+        id: uuid25("id").primaryKey().defaultRandom(),
+        companyId: uuid25("company_id").notNull().references(() => companies.id),
+        goalId: uuid25("goal_id").references(() => goals.id),
+        name: text30("name").notNull(),
+        description: text30("description"),
+        status: text30("status").notNull().default("backlog"),
+        leadAgentId: uuid25("lead_agent_id").references(() => agents.id),
         targetDate: date("target_date"),
-        color: text28("color"),
-        env: jsonb12("env").$type(),
-        pauseReason: text28("pause_reason"),
-        pausedAt: timestamp24("paused_at", { withTimezone: true }),
-        executionWorkspacePolicy: jsonb12("execution_workspace_policy").$type(),
-        archivedAt: timestamp24("archived_at", { withTimezone: true }),
-        createdAt: timestamp24("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp24("updated_at", { withTimezone: true }).notNull().defaultNow()
+        color: text30("color"),
+        env: jsonb14("env").$type(),
+        pauseReason: text30("pause_reason"),
+        pausedAt: timestamp26("paused_at", { withTimezone: true }),
+        executionWorkspacePolicy: jsonb14("execution_workspace_policy").$type(),
+        archivedAt: timestamp26("archived_at", { withTimezone: true }),
+        createdAt: timestamp26("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp26("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index20("projects_company_idx").on(table.companyId)
+        companyIdx: index21("projects_company_idx").on(table.companyId)
       })
     );
   }
@@ -4352,13 +5128,13 @@ var init_projects = __esm({
 // ../packages/db/src/schema/project_workspaces.ts
 import {
   boolean as boolean5,
-  index as index21,
-  jsonb as jsonb13,
-  pgTable as pgTable25,
-  text as text29,
-  timestamp as timestamp25,
-  uniqueIndex as uniqueIndex14,
-  uuid as uuid24
+  index as index22,
+  jsonb as jsonb15,
+  pgTable as pgTable27,
+  text as text31,
+  timestamp as timestamp27,
+  uniqueIndex as uniqueIndex16,
+  uuid as uuid26
 } from "drizzle-orm/pg-core";
 var projectWorkspaces;
 var init_project_workspaces = __esm({
@@ -4366,51 +5142,51 @@ var init_project_workspaces = __esm({
     "use strict";
     init_companies();
     init_projects();
-    projectWorkspaces = pgTable25(
+    projectWorkspaces = pgTable27(
       "project_workspaces",
       {
-        id: uuid24("id").primaryKey().defaultRandom(),
-        companyId: uuid24("company_id").notNull().references(() => companies.id),
-        projectId: uuid24("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-        name: text29("name").notNull(),
-        sourceType: text29("source_type").notNull().default("local_path"),
-        cwd: text29("cwd"),
-        repoUrl: text29("repo_url"),
-        repoRef: text29("repo_ref"),
-        defaultRef: text29("default_ref"),
-        visibility: text29("visibility").notNull().default("default"),
-        setupCommand: text29("setup_command"),
-        cleanupCommand: text29("cleanup_command"),
-        remoteProvider: text29("remote_provider"),
-        remoteWorkspaceRef: text29("remote_workspace_ref"),
-        sharedWorkspaceKey: text29("shared_workspace_key"),
-        metadata: jsonb13("metadata").$type(),
+        id: uuid26("id").primaryKey().defaultRandom(),
+        companyId: uuid26("company_id").notNull().references(() => companies.id),
+        projectId: uuid26("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+        name: text31("name").notNull(),
+        sourceType: text31("source_type").notNull().default("local_path"),
+        cwd: text31("cwd"),
+        repoUrl: text31("repo_url"),
+        repoRef: text31("repo_ref"),
+        defaultRef: text31("default_ref"),
+        visibility: text31("visibility").notNull().default("default"),
+        setupCommand: text31("setup_command"),
+        cleanupCommand: text31("cleanup_command"),
+        remoteProvider: text31("remote_provider"),
+        remoteWorkspaceRef: text31("remote_workspace_ref"),
+        sharedWorkspaceKey: text31("shared_workspace_key"),
+        metadata: jsonb15("metadata").$type(),
         isPrimary: boolean5("is_primary").notNull().default(false),
-        createdAt: timestamp25("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp25("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdAt: timestamp27("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp27("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyProjectIdx: index21("project_workspaces_company_project_idx").on(table.companyId, table.projectId),
-        projectPrimaryIdx: index21("project_workspaces_project_primary_idx").on(table.projectId, table.isPrimary),
-        projectSourceTypeIdx: index21("project_workspaces_project_source_type_idx").on(table.projectId, table.sourceType),
-        companySharedKeyIdx: index21("project_workspaces_company_shared_key_idx").on(table.companyId, table.sharedWorkspaceKey),
-        projectRemoteRefIdx: uniqueIndex14("project_workspaces_project_remote_ref_idx").on(table.projectId, table.remoteProvider, table.remoteWorkspaceRef)
+        companyProjectIdx: index22("project_workspaces_company_project_idx").on(table.companyId, table.projectId),
+        projectPrimaryIdx: index22("project_workspaces_project_primary_idx").on(table.projectId, table.isPrimary),
+        projectSourceTypeIdx: index22("project_workspaces_project_source_type_idx").on(table.projectId, table.sourceType),
+        companySharedKeyIdx: index22("project_workspaces_company_shared_key_idx").on(table.companyId, table.sharedWorkspaceKey),
+        projectRemoteRefIdx: uniqueIndex16("project_workspaces_project_remote_ref_idx").on(table.projectId, table.remoteProvider, table.remoteWorkspaceRef)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issues.ts
-import { sql as sql2 } from "drizzle-orm";
+import { sql as sql3 } from "drizzle-orm";
 import {
-  pgTable as pgTable26,
-  uuid as uuid25,
-  text as text30,
-  timestamp as timestamp26,
+  pgTable as pgTable28,
+  uuid as uuid27,
+  text as text32,
+  timestamp as timestamp28,
   integer as integer8,
-  jsonb as jsonb14,
-  index as index22,
-  uniqueIndex as uniqueIndex15
+  jsonb as jsonb16,
+  index as index23,
+  uniqueIndex as uniqueIndex17
 } from "drizzle-orm/pg-core";
 var issues;
 var init_issues = __esm({
@@ -4423,70 +5199,71 @@ var init_issues = __esm({
     init_heartbeat_runs();
     init_project_workspaces();
     init_execution_workspaces();
-    issues = pgTable26(
+    issues = pgTable28(
       "issues",
       {
-        id: uuid25("id").primaryKey().defaultRandom(),
-        companyId: uuid25("company_id").notNull().references(() => companies.id),
-        projectId: uuid25("project_id").references(() => projects.id),
-        projectWorkspaceId: uuid25("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
-        goalId: uuid25("goal_id").references(() => goals.id),
-        parentId: uuid25("parent_id").references(() => issues.id),
-        title: text30("title").notNull(),
-        description: text30("description"),
-        status: text30("status").notNull().default("backlog"),
-        priority: text30("priority").notNull().default("medium"),
-        assigneeAgentId: uuid25("assignee_agent_id").references(() => agents.id),
-        assigneeUserId: text30("assignee_user_id"),
-        checkoutRunId: uuid25("checkout_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        executionRunId: uuid25("execution_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        executionAgentNameKey: text30("execution_agent_name_key"),
-        executionLockedAt: timestamp26("execution_locked_at", { withTimezone: true }),
-        createdByAgentId: uuid25("created_by_agent_id").references(() => agents.id),
-        createdByUserId: text30("created_by_user_id"),
+        id: uuid27("id").primaryKey().defaultRandom(),
+        companyId: uuid27("company_id").notNull().references(() => companies.id),
+        projectId: uuid27("project_id").references(() => projects.id),
+        projectWorkspaceId: uuid27("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
+        goalId: uuid27("goal_id").references(() => goals.id),
+        parentId: uuid27("parent_id").references(() => issues.id),
+        title: text32("title").notNull(),
+        description: text32("description"),
+        status: text32("status").notNull().default("backlog"),
+        priority: text32("priority").notNull().default("medium"),
+        assigneeAgentId: uuid27("assignee_agent_id").references(() => agents.id),
+        assigneeUserId: text32("assignee_user_id"),
+        checkoutRunId: uuid27("checkout_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        executionRunId: uuid27("execution_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        executionAgentNameKey: text32("execution_agent_name_key"),
+        executionLockedAt: timestamp28("execution_locked_at", { withTimezone: true }),
+        createdByAgentId: uuid27("created_by_agent_id").references(() => agents.id),
+        createdByUserId: text32("created_by_user_id"),
         issueNumber: integer8("issue_number"),
-        identifier: text30("identifier"),
-        originKind: text30("origin_kind").notNull().default("manual"),
-        originId: text30("origin_id"),
-        originRunId: text30("origin_run_id"),
+        identifier: text32("identifier"),
+        originKind: text32("origin_kind").notNull().default("manual"),
+        originId: text32("origin_id"),
+        originRunId: text32("origin_run_id"),
+        originFingerprint: text32("origin_fingerprint").notNull().default("default"),
         requestDepth: integer8("request_depth").notNull().default(0),
-        billingCode: text30("billing_code"),
-        assigneeAdapterOverrides: jsonb14("assignee_adapter_overrides").$type(),
-        executionPolicy: jsonb14("execution_policy").$type(),
-        executionState: jsonb14("execution_state").$type(),
-        executionWorkspaceId: uuid25("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
-        executionWorkspacePreference: text30("execution_workspace_preference"),
-        executionWorkspaceSettings: jsonb14("execution_workspace_settings").$type(),
-        startedAt: timestamp26("started_at", { withTimezone: true }),
-        completedAt: timestamp26("completed_at", { withTimezone: true }),
-        cancelledAt: timestamp26("cancelled_at", { withTimezone: true }),
-        hiddenAt: timestamp26("hidden_at", { withTimezone: true }),
-        createdAt: timestamp26("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp26("updated_at", { withTimezone: true }).notNull().defaultNow()
+        billingCode: text32("billing_code"),
+        assigneeAdapterOverrides: jsonb16("assignee_adapter_overrides").$type(),
+        executionPolicy: jsonb16("execution_policy").$type(),
+        executionState: jsonb16("execution_state").$type(),
+        executionWorkspaceId: uuid27("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
+        executionWorkspacePreference: text32("execution_workspace_preference"),
+        executionWorkspaceSettings: jsonb16("execution_workspace_settings").$type(),
+        startedAt: timestamp28("started_at", { withTimezone: true }),
+        completedAt: timestamp28("completed_at", { withTimezone: true }),
+        cancelledAt: timestamp28("cancelled_at", { withTimezone: true }),
+        hiddenAt: timestamp28("hidden_at", { withTimezone: true }),
+        createdAt: timestamp28("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp28("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyStatusIdx: index22("issues_company_status_idx").on(table.companyId, table.status),
-        assigneeStatusIdx: index22("issues_company_assignee_status_idx").on(
+        companyStatusIdx: index23("issues_company_status_idx").on(table.companyId, table.status),
+        assigneeStatusIdx: index23("issues_company_assignee_status_idx").on(
           table.companyId,
           table.assigneeAgentId,
           table.status
         ),
-        assigneeUserStatusIdx: index22("issues_company_assignee_user_status_idx").on(
+        assigneeUserStatusIdx: index23("issues_company_assignee_user_status_idx").on(
           table.companyId,
           table.assigneeUserId,
           table.status
         ),
-        parentIdx: index22("issues_company_parent_idx").on(table.companyId, table.parentId),
-        projectIdx: index22("issues_company_project_idx").on(table.companyId, table.projectId),
-        originIdx: index22("issues_company_origin_idx").on(table.companyId, table.originKind, table.originId),
-        projectWorkspaceIdx: index22("issues_company_project_workspace_idx").on(table.companyId, table.projectWorkspaceId),
-        executionWorkspaceIdx: index22("issues_company_execution_workspace_idx").on(table.companyId, table.executionWorkspaceId),
-        identifierIdx: uniqueIndex15("issues_identifier_idx").on(table.identifier),
-        titleSearchIdx: index22("issues_title_search_idx").using("gin", table.title.op("gin_trgm_ops")),
-        identifierSearchIdx: index22("issues_identifier_search_idx").using("gin", table.identifier.op("gin_trgm_ops")),
-        descriptionSearchIdx: index22("issues_description_search_idx").using("gin", table.description.op("gin_trgm_ops")),
-        openRoutineExecutionIdx: uniqueIndex15("issues_open_routine_execution_uq").on(table.companyId, table.originKind, table.originId).where(
-          sql2`${table.originKind} = 'routine_execution'
+        parentIdx: index23("issues_company_parent_idx").on(table.companyId, table.parentId),
+        projectIdx: index23("issues_company_project_idx").on(table.companyId, table.projectId),
+        originIdx: index23("issues_company_origin_idx").on(table.companyId, table.originKind, table.originId),
+        projectWorkspaceIdx: index23("issues_company_project_workspace_idx").on(table.companyId, table.projectWorkspaceId),
+        executionWorkspaceIdx: index23("issues_company_execution_workspace_idx").on(table.companyId, table.executionWorkspaceId),
+        identifierIdx: uniqueIndex17("issues_identifier_idx").on(table.identifier),
+        titleSearchIdx: index23("issues_title_search_idx").using("gin", table.title.op("gin_trgm_ops")),
+        identifierSearchIdx: index23("issues_identifier_search_idx").using("gin", table.identifier.op("gin_trgm_ops")),
+        descriptionSearchIdx: index23("issues_description_search_idx").using("gin", table.description.op("gin_trgm_ops")),
+        openRoutineExecutionIdx: uniqueIndex17("issues_open_routine_execution_uq").on(table.companyId, table.originKind, table.originId, table.originFingerprint).where(
+          sql3`${table.originKind} = 'routine_execution'
           and ${table.originId} is not null
           and ${table.hiddenAt} is null
           and ${table.executionRunId} is not null
@@ -4499,12 +5276,12 @@ var init_issues = __esm({
 
 // ../packages/db/src/schema/execution_workspaces.ts
 import {
-  index as index23,
-  jsonb as jsonb15,
-  pgTable as pgTable27,
-  text as text31,
-  timestamp as timestamp27,
-  uuid as uuid26
+  index as index24,
+  jsonb as jsonb17,
+  pgTable as pgTable29,
+  text as text33,
+  timestamp as timestamp29,
+  uuid as uuid28
 } from "drizzle-orm/pg-core";
 var executionWorkspaces;
 var init_execution_workspaces = __esm({
@@ -4514,54 +5291,54 @@ var init_execution_workspaces = __esm({
     init_issues();
     init_project_workspaces();
     init_projects();
-    executionWorkspaces = pgTable27(
+    executionWorkspaces = pgTable29(
       "execution_workspaces",
       {
-        id: uuid26("id").primaryKey().defaultRandom(),
-        companyId: uuid26("company_id").notNull().references(() => companies.id),
-        projectId: uuid26("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-        projectWorkspaceId: uuid26("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
-        sourceIssueId: uuid26("source_issue_id").references(() => issues.id, { onDelete: "set null" }),
-        mode: text31("mode").notNull(),
-        strategyType: text31("strategy_type").notNull(),
-        name: text31("name").notNull(),
-        status: text31("status").notNull().default("active"),
-        cwd: text31("cwd"),
-        repoUrl: text31("repo_url"),
-        baseRef: text31("base_ref"),
-        branchName: text31("branch_name"),
-        providerType: text31("provider_type").notNull().default("local_fs"),
-        providerRef: text31("provider_ref"),
-        derivedFromExecutionWorkspaceId: uuid26("derived_from_execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
-        lastUsedAt: timestamp27("last_used_at", { withTimezone: true }).notNull().defaultNow(),
-        openedAt: timestamp27("opened_at", { withTimezone: true }).notNull().defaultNow(),
-        closedAt: timestamp27("closed_at", { withTimezone: true }),
-        cleanupEligibleAt: timestamp27("cleanup_eligible_at", { withTimezone: true }),
-        cleanupReason: text31("cleanup_reason"),
-        metadata: jsonb15("metadata").$type(),
-        createdAt: timestamp27("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp27("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid28("id").primaryKey().defaultRandom(),
+        companyId: uuid28("company_id").notNull().references(() => companies.id),
+        projectId: uuid28("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+        projectWorkspaceId: uuid28("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
+        sourceIssueId: uuid28("source_issue_id").references(() => issues.id, { onDelete: "set null" }),
+        mode: text33("mode").notNull(),
+        strategyType: text33("strategy_type").notNull(),
+        name: text33("name").notNull(),
+        status: text33("status").notNull().default("active"),
+        cwd: text33("cwd"),
+        repoUrl: text33("repo_url"),
+        baseRef: text33("base_ref"),
+        branchName: text33("branch_name"),
+        providerType: text33("provider_type").notNull().default("local_fs"),
+        providerRef: text33("provider_ref"),
+        derivedFromExecutionWorkspaceId: uuid28("derived_from_execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
+        lastUsedAt: timestamp29("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+        openedAt: timestamp29("opened_at", { withTimezone: true }).notNull().defaultNow(),
+        closedAt: timestamp29("closed_at", { withTimezone: true }),
+        cleanupEligibleAt: timestamp29("cleanup_eligible_at", { withTimezone: true }),
+        cleanupReason: text33("cleanup_reason"),
+        metadata: jsonb17("metadata").$type(),
+        createdAt: timestamp29("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp29("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyProjectStatusIdx: index23("execution_workspaces_company_project_status_idx").on(
+        companyProjectStatusIdx: index24("execution_workspaces_company_project_status_idx").on(
           table.companyId,
           table.projectId,
           table.status
         ),
-        companyProjectWorkspaceStatusIdx: index23("execution_workspaces_company_project_workspace_status_idx").on(
+        companyProjectWorkspaceStatusIdx: index24("execution_workspaces_company_project_workspace_status_idx").on(
           table.companyId,
           table.projectWorkspaceId,
           table.status
         ),
-        companySourceIssueIdx: index23("execution_workspaces_company_source_issue_idx").on(
+        companySourceIssueIdx: index24("execution_workspaces_company_source_issue_idx").on(
           table.companyId,
           table.sourceIssueId
         ),
-        companyLastUsedIdx: index23("execution_workspaces_company_last_used_idx").on(
+        companyLastUsedIdx: index24("execution_workspaces_company_last_used_idx").on(
           table.companyId,
           table.lastUsedAt
         ),
-        companyBranchIdx: index23("execution_workspaces_company_branch_idx").on(
+        companyBranchIdx: index24("execution_workspaces_company_branch_idx").on(
           table.companyId,
           table.branchName
         )
@@ -4574,13 +5351,13 @@ var init_execution_workspaces = __esm({
 import {
   bigint as bigint3,
   boolean as boolean6,
-  index as index24,
+  index as index25,
   integer as integer9,
-  jsonb as jsonb16,
-  pgTable as pgTable28,
-  text as text32,
-  timestamp as timestamp28,
-  uuid as uuid27
+  jsonb as jsonb18,
+  pgTable as pgTable30,
+  text as text34,
+  timestamp as timestamp30,
+  uuid as uuid29
 } from "drizzle-orm/pg-core";
 var workspaceOperations;
 var init_workspace_operations = __esm({
@@ -4589,42 +5366,42 @@ var init_workspace_operations = __esm({
     init_companies();
     init_execution_workspaces();
     init_heartbeat_runs();
-    workspaceOperations = pgTable28(
+    workspaceOperations = pgTable30(
       "workspace_operations",
       {
-        id: uuid27("id").primaryKey().defaultRandom(),
-        companyId: uuid27("company_id").notNull().references(() => companies.id),
-        executionWorkspaceId: uuid27("execution_workspace_id").references(() => executionWorkspaces.id, {
+        id: uuid29("id").primaryKey().defaultRandom(),
+        companyId: uuid29("company_id").notNull().references(() => companies.id),
+        executionWorkspaceId: uuid29("execution_workspace_id").references(() => executionWorkspaces.id, {
           onDelete: "set null"
         }),
-        heartbeatRunId: uuid27("heartbeat_run_id").references(() => heartbeatRuns.id, {
+        heartbeatRunId: uuid29("heartbeat_run_id").references(() => heartbeatRuns.id, {
           onDelete: "set null"
         }),
-        phase: text32("phase").notNull(),
-        command: text32("command"),
-        cwd: text32("cwd"),
-        status: text32("status").notNull().default("running"),
+        phase: text34("phase").notNull(),
+        command: text34("command"),
+        cwd: text34("cwd"),
+        status: text34("status").notNull().default("running"),
         exitCode: integer9("exit_code"),
-        logStore: text32("log_store"),
-        logRef: text32("log_ref"),
+        logStore: text34("log_store"),
+        logRef: text34("log_ref"),
         logBytes: bigint3("log_bytes", { mode: "number" }),
-        logSha256: text32("log_sha256"),
+        logSha256: text34("log_sha256"),
         logCompressed: boolean6("log_compressed").notNull().default(false),
-        stdoutExcerpt: text32("stdout_excerpt"),
-        stderrExcerpt: text32("stderr_excerpt"),
-        metadata: jsonb16("metadata").$type(),
-        startedAt: timestamp28("started_at", { withTimezone: true }).notNull().defaultNow(),
-        finishedAt: timestamp28("finished_at", { withTimezone: true }),
-        createdAt: timestamp28("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp28("updated_at", { withTimezone: true }).notNull().defaultNow()
+        stdoutExcerpt: text34("stdout_excerpt"),
+        stderrExcerpt: text34("stderr_excerpt"),
+        metadata: jsonb18("metadata").$type(),
+        startedAt: timestamp30("started_at", { withTimezone: true }).notNull().defaultNow(),
+        finishedAt: timestamp30("finished_at", { withTimezone: true }),
+        createdAt: timestamp30("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp30("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyRunStartedIdx: index24("workspace_operations_company_run_started_idx").on(
+        companyRunStartedIdx: index25("workspace_operations_company_run_started_idx").on(
           table.companyId,
           table.heartbeatRunId,
           table.startedAt
         ),
-        companyWorkspaceStartedIdx: index24("workspace_operations_company_workspace_started_idx").on(
+        companyWorkspaceStartedIdx: index25("workspace_operations_company_workspace_started_idx").on(
           table.companyId,
           table.executionWorkspaceId,
           table.startedAt
@@ -4636,13 +5413,13 @@ var init_workspace_operations = __esm({
 
 // ../packages/db/src/schema/workspace_runtime_services.ts
 import {
-  index as index25,
+  index as index26,
   integer as integer10,
-  jsonb as jsonb17,
-  pgTable as pgTable29,
-  text as text33,
-  timestamp as timestamp29,
-  uuid as uuid28
+  jsonb as jsonb19,
+  pgTable as pgTable31,
+  text as text35,
+  timestamp as timestamp31,
+  uuid as uuid30
 } from "drizzle-orm/pg-core";
 var workspaceRuntimeServices;
 var init_workspace_runtime_services = __esm({
@@ -4655,55 +5432,55 @@ var init_workspace_runtime_services = __esm({
     init_issues();
     init_agents();
     init_heartbeat_runs();
-    workspaceRuntimeServices = pgTable29(
+    workspaceRuntimeServices = pgTable31(
       "workspace_runtime_services",
       {
-        id: uuid28("id").primaryKey(),
-        companyId: uuid28("company_id").notNull().references(() => companies.id),
-        projectId: uuid28("project_id").references(() => projects.id, { onDelete: "set null" }),
-        projectWorkspaceId: uuid28("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
-        executionWorkspaceId: uuid28("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
-        issueId: uuid28("issue_id").references(() => issues.id, { onDelete: "set null" }),
-        scopeType: text33("scope_type").notNull(),
-        scopeId: text33("scope_id"),
-        serviceName: text33("service_name").notNull(),
-        status: text33("status").notNull(),
-        lifecycle: text33("lifecycle").notNull(),
-        reuseKey: text33("reuse_key"),
-        command: text33("command"),
-        cwd: text33("cwd"),
+        id: uuid30("id").primaryKey(),
+        companyId: uuid30("company_id").notNull().references(() => companies.id),
+        projectId: uuid30("project_id").references(() => projects.id, { onDelete: "set null" }),
+        projectWorkspaceId: uuid30("project_workspace_id").references(() => projectWorkspaces.id, { onDelete: "set null" }),
+        executionWorkspaceId: uuid30("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
+        issueId: uuid30("issue_id").references(() => issues.id, { onDelete: "set null" }),
+        scopeType: text35("scope_type").notNull(),
+        scopeId: text35("scope_id"),
+        serviceName: text35("service_name").notNull(),
+        status: text35("status").notNull(),
+        lifecycle: text35("lifecycle").notNull(),
+        reuseKey: text35("reuse_key"),
+        command: text35("command"),
+        cwd: text35("cwd"),
         port: integer10("port"),
-        url: text33("url"),
-        provider: text33("provider").notNull(),
-        providerRef: text33("provider_ref"),
-        ownerAgentId: uuid28("owner_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        startedByRunId: uuid28("started_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        lastUsedAt: timestamp29("last_used_at", { withTimezone: true }).notNull().defaultNow(),
-        startedAt: timestamp29("started_at", { withTimezone: true }).notNull().defaultNow(),
-        stoppedAt: timestamp29("stopped_at", { withTimezone: true }),
-        stopPolicy: jsonb17("stop_policy").$type(),
-        healthStatus: text33("health_status").notNull().default("unknown"),
-        createdAt: timestamp29("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp29("updated_at", { withTimezone: true }).notNull().defaultNow()
+        url: text35("url"),
+        provider: text35("provider").notNull(),
+        providerRef: text35("provider_ref"),
+        ownerAgentId: uuid30("owner_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        startedByRunId: uuid30("started_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        lastUsedAt: timestamp31("last_used_at", { withTimezone: true }).notNull().defaultNow(),
+        startedAt: timestamp31("started_at", { withTimezone: true }).notNull().defaultNow(),
+        stoppedAt: timestamp31("stopped_at", { withTimezone: true }),
+        stopPolicy: jsonb19("stop_policy").$type(),
+        healthStatus: text35("health_status").notNull().default("unknown"),
+        createdAt: timestamp31("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp31("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyWorkspaceStatusIdx: index25("workspace_runtime_services_company_workspace_status_idx").on(
+        companyWorkspaceStatusIdx: index26("workspace_runtime_services_company_workspace_status_idx").on(
           table.companyId,
           table.projectWorkspaceId,
           table.status
         ),
-        companyExecutionWorkspaceStatusIdx: index25("workspace_runtime_services_company_execution_workspace_status_idx").on(
+        companyExecutionWorkspaceStatusIdx: index26("workspace_runtime_services_company_execution_workspace_status_idx").on(
           table.companyId,
           table.executionWorkspaceId,
           table.status
         ),
-        companyProjectStatusIdx: index25("workspace_runtime_services_company_project_status_idx").on(
+        companyProjectStatusIdx: index26("workspace_runtime_services_company_project_status_idx").on(
           table.companyId,
           table.projectId,
           table.status
         ),
-        runIdx: index25("workspace_runtime_services_run_idx").on(table.startedByRunId),
-        companyUpdatedIdx: index25("workspace_runtime_services_company_updated_idx").on(
+        runIdx: index26("workspace_runtime_services_run_idx").on(table.startedByRunId),
+        companyUpdatedIdx: index26("workspace_runtime_services_company_updated_idx").on(
           table.companyId,
           table.updatedAt
         )
@@ -4713,7 +5490,7 @@ var init_workspace_runtime_services = __esm({
 });
 
 // ../packages/db/src/schema/project_goals.ts
-import { pgTable as pgTable30, uuid as uuid29, timestamp as timestamp30, index as index26, primaryKey } from "drizzle-orm/pg-core";
+import { pgTable as pgTable32, uuid as uuid31, timestamp as timestamp32, index as index27, primaryKey } from "drizzle-orm/pg-core";
 var projectGoals;
 var init_project_goals = __esm({
   "../packages/db/src/schema/project_goals.ts"() {
@@ -4721,27 +5498,82 @@ var init_project_goals = __esm({
     init_companies();
     init_projects();
     init_goals();
-    projectGoals = pgTable30(
+    projectGoals = pgTable32(
       "project_goals",
       {
-        projectId: uuid29("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-        goalId: uuid29("goal_id").notNull().references(() => goals.id, { onDelete: "cascade" }),
-        companyId: uuid29("company_id").notNull().references(() => companies.id),
-        createdAt: timestamp30("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp30("updated_at", { withTimezone: true }).notNull().defaultNow()
+        projectId: uuid31("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
+        goalId: uuid31("goal_id").notNull().references(() => goals.id, { onDelete: "cascade" }),
+        companyId: uuid31("company_id").notNull().references(() => companies.id),
+        createdAt: timestamp32("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp32("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         pk: primaryKey({ columns: [table.projectId, table.goalId] }),
-        projectIdx: index26("project_goals_project_idx").on(table.projectId),
-        goalIdx: index26("project_goals_goal_idx").on(table.goalId),
-        companyIdx: index26("project_goals_company_idx").on(table.companyId)
+        projectIdx: index27("project_goals_project_idx").on(table.projectId),
+        goalIdx: index27("project_goals_goal_idx").on(table.goalId),
+        companyIdx: index27("project_goals_company_idx").on(table.companyId)
+      })
+    );
+  }
+});
+
+// ../packages/db/src/schema/issue_reference_mentions.ts
+import { sql as sql4 } from "drizzle-orm";
+import { index as index28, pgTable as pgTable33, text as text36, timestamp as timestamp33, uniqueIndex as uniqueIndex18, uuid as uuid32 } from "drizzle-orm/pg-core";
+var issueReferenceMentions;
+var init_issue_reference_mentions = __esm({
+  "../packages/db/src/schema/issue_reference_mentions.ts"() {
+    "use strict";
+    init_companies();
+    init_issues();
+    issueReferenceMentions = pgTable33(
+      "issue_reference_mentions",
+      {
+        id: uuid32("id").primaryKey().defaultRandom(),
+        companyId: uuid32("company_id").notNull().references(() => companies.id),
+        sourceIssueId: uuid32("source_issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        targetIssueId: uuid32("target_issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        sourceKind: text36("source_kind").$type().notNull(),
+        sourceRecordId: uuid32("source_record_id"),
+        documentKey: text36("document_key"),
+        matchedText: text36("matched_text"),
+        createdAt: timestamp33("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp33("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        companySourceIssueIdx: index28("issue_reference_mentions_company_source_issue_idx").on(
+          table.companyId,
+          table.sourceIssueId
+        ),
+        companyTargetIssueIdx: index28("issue_reference_mentions_company_target_issue_idx").on(
+          table.companyId,
+          table.targetIssueId
+        ),
+        companyIssuePairIdx: index28("issue_reference_mentions_company_issue_pair_idx").on(
+          table.companyId,
+          table.sourceIssueId,
+          table.targetIssueId
+        ),
+        companySourceMentionWithRecordUq: uniqueIndex18("issue_reference_mentions_company_source_mention_record_uq").on(
+          table.companyId,
+          table.sourceIssueId,
+          table.targetIssueId,
+          table.sourceKind,
+          table.sourceRecordId
+        ).where(sql4`${table.sourceRecordId} is not null`),
+        companySourceMentionWithoutRecordUq: uniqueIndex18("issue_reference_mentions_company_source_mention_null_record_uq").on(
+          table.companyId,
+          table.sourceIssueId,
+          table.targetIssueId,
+          table.sourceKind
+        ).where(sql4`${table.sourceRecordId} is null`)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_relations.ts
-import { index as index27, pgTable as pgTable31, text as text34, timestamp as timestamp31, uniqueIndex as uniqueIndex16, uuid as uuid30 } from "drizzle-orm/pg-core";
+import { index as index29, pgTable as pgTable34, text as text37, timestamp as timestamp34, uniqueIndex as uniqueIndex19, uuid as uuid33 } from "drizzle-orm/pg-core";
 var issueRelations;
 var init_issue_relations = __esm({
   "../packages/db/src/schema/issue_relations.ts"() {
@@ -4749,24 +5581,24 @@ var init_issue_relations = __esm({
     init_agents();
     init_companies();
     init_issues();
-    issueRelations = pgTable31(
+    issueRelations = pgTable34(
       "issue_relations",
       {
-        id: uuid30("id").primaryKey().defaultRandom(),
-        companyId: uuid30("company_id").notNull().references(() => companies.id),
-        issueId: uuid30("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        relatedIssueId: uuid30("related_issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        type: text34("type").$type().notNull(),
-        createdByAgentId: uuid30("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text34("created_by_user_id"),
-        createdAt: timestamp31("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp31("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid33("id").primaryKey().defaultRandom(),
+        companyId: uuid33("company_id").notNull().references(() => companies.id),
+        issueId: uuid33("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        relatedIssueId: uuid33("related_issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        type: text37("type").$type().notNull(),
+        createdByAgentId: uuid33("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text37("created_by_user_id"),
+        createdAt: timestamp34("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp34("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index27("issue_relations_company_issue_idx").on(table.companyId, table.issueId),
-        companyRelatedIssueIdx: index27("issue_relations_company_related_issue_idx").on(table.companyId, table.relatedIssueId),
-        companyTypeIdx: index27("issue_relations_company_type_idx").on(table.companyId, table.type),
-        companyEdgeUq: uniqueIndex16("issue_relations_company_edge_uq").on(
+        companyIssueIdx: index29("issue_relations_company_issue_idx").on(table.companyId, table.issueId),
+        companyRelatedIssueIdx: index29("issue_relations_company_related_issue_idx").on(table.companyId, table.relatedIssueId),
+        companyTypeIdx: index29("issue_relations_company_type_idx").on(table.companyId, table.type),
+        companyEdgeUq: uniqueIndex19("issue_relations_company_edge_uq").on(
           table.companyId,
           table.issueId,
           table.relatedIssueId,
@@ -4778,32 +5610,32 @@ var init_issue_relations = __esm({
 });
 
 // ../packages/db/src/schema/company_secrets.ts
-import { pgTable as pgTable32, uuid as uuid31, text as text35, timestamp as timestamp32, integer as integer11, index as index28, uniqueIndex as uniqueIndex17 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable35, uuid as uuid34, text as text38, timestamp as timestamp35, integer as integer11, index as index30, uniqueIndex as uniqueIndex20 } from "drizzle-orm/pg-core";
 var companySecrets;
 var init_company_secrets = __esm({
   "../packages/db/src/schema/company_secrets.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    companySecrets = pgTable32(
+    companySecrets = pgTable35(
       "company_secrets",
       {
-        id: uuid31("id").primaryKey().defaultRandom(),
-        companyId: uuid31("company_id").notNull().references(() => companies.id),
-        name: text35("name").notNull(),
-        provider: text35("provider").notNull().default("local_encrypted"),
-        externalRef: text35("external_ref"),
+        id: uuid34("id").primaryKey().defaultRandom(),
+        companyId: uuid34("company_id").notNull().references(() => companies.id),
+        name: text38("name").notNull(),
+        provider: text38("provider").notNull().default("local_encrypted"),
+        externalRef: text38("external_ref"),
         latestVersion: integer11("latest_version").notNull().default(1),
-        description: text35("description"),
-        createdByAgentId: uuid31("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text35("created_by_user_id"),
-        createdAt: timestamp32("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp32("updated_at", { withTimezone: true }).notNull().defaultNow()
+        description: text38("description"),
+        createdByAgentId: uuid34("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text38("created_by_user_id"),
+        createdAt: timestamp35("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp35("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index28("company_secrets_company_idx").on(table.companyId),
-        companyProviderIdx: index28("company_secrets_company_provider_idx").on(table.companyId, table.provider),
-        companyNameUq: uniqueIndex17("company_secrets_company_name_uq").on(table.companyId, table.name)
+        companyIdx: index30("company_secrets_company_idx").on(table.companyId),
+        companyProviderIdx: index30("company_secrets_company_provider_idx").on(table.companyId, table.provider),
+        companyNameUq: uniqueIndex20("company_secrets_company_name_uq").on(table.companyId, table.name)
       })
     );
   }
@@ -4812,14 +5644,14 @@ var init_company_secrets = __esm({
 // ../packages/db/src/schema/routines.ts
 import {
   boolean as boolean7,
-  index as index29,
+  index as index31,
   integer as integer12,
-  jsonb as jsonb18,
-  pgTable as pgTable33,
-  text as text36,
-  timestamp as timestamp33,
-  uniqueIndex as uniqueIndex18,
-  uuid as uuid32
+  jsonb as jsonb20,
+  pgTable as pgTable36,
+  text as text39,
+  timestamp as timestamp36,
+  uniqueIndex as uniqueIndex21,
+  uuid as uuid35
 } from "drizzle-orm/pg-core";
 var routines, routineTriggers, routineRuns;
 var init_routines = __esm({
@@ -4831,95 +5663,97 @@ var init_routines = __esm({
     init_issues();
     init_projects();
     init_goals();
-    routines = pgTable33(
+    routines = pgTable36(
       "routines",
       {
-        id: uuid32("id").primaryKey().defaultRandom(),
-        companyId: uuid32("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        projectId: uuid32("project_id").notNull().references(() => projects.id, { onDelete: "cascade" }),
-        goalId: uuid32("goal_id").references(() => goals.id, { onDelete: "set null" }),
-        parentIssueId: uuid32("parent_issue_id").references(() => issues.id, { onDelete: "set null" }),
-        title: text36("title").notNull(),
-        description: text36("description"),
-        assigneeAgentId: uuid32("assignee_agent_id").notNull().references(() => agents.id),
-        priority: text36("priority").notNull().default("medium"),
-        status: text36("status").notNull().default("active"),
-        concurrencyPolicy: text36("concurrency_policy").notNull().default("coalesce_if_active"),
-        catchUpPolicy: text36("catch_up_policy").notNull().default("skip_missed"),
-        variables: jsonb18("variables").$type().notNull().default([]),
-        createdByAgentId: uuid32("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text36("created_by_user_id"),
-        updatedByAgentId: uuid32("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        updatedByUserId: text36("updated_by_user_id"),
-        lastTriggeredAt: timestamp33("last_triggered_at", { withTimezone: true }),
-        lastEnqueuedAt: timestamp33("last_enqueued_at", { withTimezone: true }),
-        createdAt: timestamp33("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp33("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid35("id").primaryKey().defaultRandom(),
+        companyId: uuid35("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        projectId: uuid35("project_id").references(() => projects.id, { onDelete: "cascade" }),
+        goalId: uuid35("goal_id").references(() => goals.id, { onDelete: "set null" }),
+        parentIssueId: uuid35("parent_issue_id").references(() => issues.id, { onDelete: "set null" }),
+        title: text39("title").notNull(),
+        description: text39("description"),
+        assigneeAgentId: uuid35("assignee_agent_id").references(() => agents.id),
+        priority: text39("priority").notNull().default("medium"),
+        status: text39("status").notNull().default("active"),
+        concurrencyPolicy: text39("concurrency_policy").notNull().default("coalesce_if_active"),
+        catchUpPolicy: text39("catch_up_policy").notNull().default("skip_missed"),
+        variables: jsonb20("variables").$type().notNull().default([]),
+        createdByAgentId: uuid35("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text39("created_by_user_id"),
+        updatedByAgentId: uuid35("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        updatedByUserId: text39("updated_by_user_id"),
+        lastTriggeredAt: timestamp36("last_triggered_at", { withTimezone: true }),
+        lastEnqueuedAt: timestamp36("last_enqueued_at", { withTimezone: true }),
+        createdAt: timestamp36("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp36("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyStatusIdx: index29("routines_company_status_idx").on(table.companyId, table.status),
-        companyAssigneeIdx: index29("routines_company_assignee_idx").on(table.companyId, table.assigneeAgentId),
-        companyProjectIdx: index29("routines_company_project_idx").on(table.companyId, table.projectId)
+        companyStatusIdx: index31("routines_company_status_idx").on(table.companyId, table.status),
+        companyAssigneeIdx: index31("routines_company_assignee_idx").on(table.companyId, table.assigneeAgentId),
+        companyProjectIdx: index31("routines_company_project_idx").on(table.companyId, table.projectId)
       })
     );
-    routineTriggers = pgTable33(
+    routineTriggers = pgTable36(
       "routine_triggers",
       {
-        id: uuid32("id").primaryKey().defaultRandom(),
-        companyId: uuid32("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        routineId: uuid32("routine_id").notNull().references(() => routines.id, { onDelete: "cascade" }),
-        kind: text36("kind").notNull(),
-        label: text36("label"),
+        id: uuid35("id").primaryKey().defaultRandom(),
+        companyId: uuid35("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        routineId: uuid35("routine_id").notNull().references(() => routines.id, { onDelete: "cascade" }),
+        kind: text39("kind").notNull(),
+        label: text39("label"),
         enabled: boolean7("enabled").notNull().default(true),
-        cronExpression: text36("cron_expression"),
-        timezone: text36("timezone"),
-        nextRunAt: timestamp33("next_run_at", { withTimezone: true }),
-        lastFiredAt: timestamp33("last_fired_at", { withTimezone: true }),
-        publicId: text36("public_id"),
-        secretId: uuid32("secret_id").references(() => companySecrets.id, { onDelete: "set null" }),
-        signingMode: text36("signing_mode"),
+        cronExpression: text39("cron_expression"),
+        timezone: text39("timezone"),
+        nextRunAt: timestamp36("next_run_at", { withTimezone: true }),
+        lastFiredAt: timestamp36("last_fired_at", { withTimezone: true }),
+        publicId: text39("public_id"),
+        secretId: uuid35("secret_id").references(() => companySecrets.id, { onDelete: "set null" }),
+        signingMode: text39("signing_mode"),
         replayWindowSec: integer12("replay_window_sec"),
-        lastRotatedAt: timestamp33("last_rotated_at", { withTimezone: true }),
-        lastResult: text36("last_result"),
-        createdByAgentId: uuid32("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text36("created_by_user_id"),
-        updatedByAgentId: uuid32("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        updatedByUserId: text36("updated_by_user_id"),
-        createdAt: timestamp33("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp33("updated_at", { withTimezone: true }).notNull().defaultNow()
+        lastRotatedAt: timestamp36("last_rotated_at", { withTimezone: true }),
+        lastResult: text39("last_result"),
+        createdByAgentId: uuid35("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text39("created_by_user_id"),
+        updatedByAgentId: uuid35("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        updatedByUserId: text39("updated_by_user_id"),
+        createdAt: timestamp36("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp36("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyRoutineIdx: index29("routine_triggers_company_routine_idx").on(table.companyId, table.routineId),
-        companyKindIdx: index29("routine_triggers_company_kind_idx").on(table.companyId, table.kind),
-        nextRunIdx: index29("routine_triggers_next_run_idx").on(table.nextRunAt),
-        publicIdIdx: index29("routine_triggers_public_id_idx").on(table.publicId),
-        publicIdUq: uniqueIndex18("routine_triggers_public_id_uq").on(table.publicId)
+        companyRoutineIdx: index31("routine_triggers_company_routine_idx").on(table.companyId, table.routineId),
+        companyKindIdx: index31("routine_triggers_company_kind_idx").on(table.companyId, table.kind),
+        nextRunIdx: index31("routine_triggers_next_run_idx").on(table.nextRunAt),
+        publicIdIdx: index31("routine_triggers_public_id_idx").on(table.publicId),
+        publicIdUq: uniqueIndex21("routine_triggers_public_id_uq").on(table.publicId)
       })
     );
-    routineRuns = pgTable33(
+    routineRuns = pgTable36(
       "routine_runs",
       {
-        id: uuid32("id").primaryKey().defaultRandom(),
-        companyId: uuid32("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        routineId: uuid32("routine_id").notNull().references(() => routines.id, { onDelete: "cascade" }),
-        triggerId: uuid32("trigger_id").references(() => routineTriggers.id, { onDelete: "set null" }),
-        source: text36("source").notNull(),
-        status: text36("status").notNull().default("received"),
-        triggeredAt: timestamp33("triggered_at", { withTimezone: true }).notNull().defaultNow(),
-        idempotencyKey: text36("idempotency_key"),
-        triggerPayload: jsonb18("trigger_payload").$type(),
-        linkedIssueId: uuid32("linked_issue_id").references(() => issues.id, { onDelete: "set null" }),
-        coalescedIntoRunId: uuid32("coalesced_into_run_id"),
-        failureReason: text36("failure_reason"),
-        completedAt: timestamp33("completed_at", { withTimezone: true }),
-        createdAt: timestamp33("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp33("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid35("id").primaryKey().defaultRandom(),
+        companyId: uuid35("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        routineId: uuid35("routine_id").notNull().references(() => routines.id, { onDelete: "cascade" }),
+        triggerId: uuid35("trigger_id").references(() => routineTriggers.id, { onDelete: "set null" }),
+        source: text39("source").notNull(),
+        status: text39("status").notNull().default("received"),
+        triggeredAt: timestamp36("triggered_at", { withTimezone: true }).notNull().defaultNow(),
+        idempotencyKey: text39("idempotency_key"),
+        triggerPayload: jsonb20("trigger_payload").$type(),
+        dispatchFingerprint: text39("dispatch_fingerprint"),
+        linkedIssueId: uuid35("linked_issue_id").references(() => issues.id, { onDelete: "set null" }),
+        coalescedIntoRunId: uuid35("coalesced_into_run_id"),
+        failureReason: text39("failure_reason"),
+        completedAt: timestamp36("completed_at", { withTimezone: true }),
+        createdAt: timestamp36("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp36("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyRoutineIdx: index29("routine_runs_company_routine_idx").on(table.companyId, table.routineId, table.createdAt),
-        triggerIdx: index29("routine_runs_trigger_idx").on(table.triggerId, table.createdAt),
-        linkedIssueIdx: index29("routine_runs_linked_issue_idx").on(table.linkedIssueId),
-        idempotencyIdx: index29("routine_runs_trigger_idempotency_idx").on(table.triggerId, table.idempotencyKey)
+        companyRoutineIdx: index31("routine_runs_company_routine_idx").on(table.companyId, table.routineId, table.createdAt),
+        triggerIdx: index31("routine_runs_trigger_idx").on(table.triggerId, table.createdAt),
+        dispatchFingerprintIdx: index31("routine_runs_dispatch_fingerprint_idx").on(table.routineId, table.dispatchFingerprint),
+        linkedIssueIdx: index31("routine_runs_linked_issue_idx").on(table.linkedIssueId),
+        idempotencyIdx: index31("routine_runs_trigger_idempotency_idx").on(table.triggerId, table.idempotencyKey)
       })
     );
   }
@@ -4928,12 +5762,12 @@ var init_routines = __esm({
 // ../packages/db/src/schema/issue_work_products.ts
 import {
   boolean as boolean8,
-  index as index30,
-  jsonb as jsonb19,
-  pgTable as pgTable34,
-  text as text37,
-  timestamp as timestamp34,
-  uuid as uuid33
+  index as index32,
+  jsonb as jsonb21,
+  pgTable as pgTable37,
+  text as text40,
+  timestamp as timestamp37,
+  uuid as uuid36
 } from "drizzle-orm/pg-core";
 var issueWorkProducts;
 var init_issue_work_products = __esm({
@@ -4945,47 +5779,47 @@ var init_issue_work_products = __esm({
     init_issues();
     init_projects();
     init_workspace_runtime_services();
-    issueWorkProducts = pgTable34(
+    issueWorkProducts = pgTable37(
       "issue_work_products",
       {
-        id: uuid33("id").primaryKey().defaultRandom(),
-        companyId: uuid33("company_id").notNull().references(() => companies.id),
-        projectId: uuid33("project_id").references(() => projects.id, { onDelete: "set null" }),
-        issueId: uuid33("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        executionWorkspaceId: uuid33("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
-        runtimeServiceId: uuid33("runtime_service_id").references(() => workspaceRuntimeServices.id, { onDelete: "set null" }),
-        type: text37("type").notNull(),
-        provider: text37("provider").notNull(),
-        externalId: text37("external_id"),
-        title: text37("title").notNull(),
-        url: text37("url"),
-        status: text37("status").notNull(),
-        reviewState: text37("review_state").notNull().default("none"),
+        id: uuid36("id").primaryKey().defaultRandom(),
+        companyId: uuid36("company_id").notNull().references(() => companies.id),
+        projectId: uuid36("project_id").references(() => projects.id, { onDelete: "set null" }),
+        issueId: uuid36("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        executionWorkspaceId: uuid36("execution_workspace_id").references(() => executionWorkspaces.id, { onDelete: "set null" }),
+        runtimeServiceId: uuid36("runtime_service_id").references(() => workspaceRuntimeServices.id, { onDelete: "set null" }),
+        type: text40("type").notNull(),
+        provider: text40("provider").notNull(),
+        externalId: text40("external_id"),
+        title: text40("title").notNull(),
+        url: text40("url"),
+        status: text40("status").notNull(),
+        reviewState: text40("review_state").notNull().default("none"),
         isPrimary: boolean8("is_primary").notNull().default(false),
-        healthStatus: text37("health_status").notNull().default("unknown"),
-        summary: text37("summary"),
-        metadata: jsonb19("metadata").$type(),
-        createdByRunId: uuid33("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        createdAt: timestamp34("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp34("updated_at", { withTimezone: true }).notNull().defaultNow()
+        healthStatus: text40("health_status").notNull().default("unknown"),
+        summary: text40("summary"),
+        metadata: jsonb21("metadata").$type(),
+        createdByRunId: uuid36("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        createdAt: timestamp37("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp37("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueTypeIdx: index30("issue_work_products_company_issue_type_idx").on(
+        companyIssueTypeIdx: index32("issue_work_products_company_issue_type_idx").on(
           table.companyId,
           table.issueId,
           table.type
         ),
-        companyExecutionWorkspaceTypeIdx: index30("issue_work_products_company_execution_workspace_type_idx").on(
+        companyExecutionWorkspaceTypeIdx: index32("issue_work_products_company_execution_workspace_type_idx").on(
           table.companyId,
           table.executionWorkspaceId,
           table.type
         ),
-        companyProviderExternalIdIdx: index30("issue_work_products_company_provider_external_id_idx").on(
+        companyProviderExternalIdIdx: index32("issue_work_products_company_provider_external_id_idx").on(
           table.companyId,
           table.provider,
           table.externalId
         ),
-        companyUpdatedIdx: index30("issue_work_products_company_updated_idx").on(
+        companyUpdatedIdx: index32("issue_work_products_company_updated_idx").on(
           table.companyId,
           table.updatedAt
         )
@@ -4995,32 +5829,32 @@ var init_issue_work_products = __esm({
 });
 
 // ../packages/db/src/schema/labels.ts
-import { pgTable as pgTable35, uuid as uuid34, text as text38, timestamp as timestamp35, index as index31, uniqueIndex as uniqueIndex19 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable38, uuid as uuid37, text as text41, timestamp as timestamp38, index as index33, uniqueIndex as uniqueIndex22 } from "drizzle-orm/pg-core";
 var labels;
 var init_labels = __esm({
   "../packages/db/src/schema/labels.ts"() {
     "use strict";
     init_companies();
-    labels = pgTable35(
+    labels = pgTable38(
       "labels",
       {
-        id: uuid34("id").primaryKey().defaultRandom(),
-        companyId: uuid34("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        name: text38("name").notNull(),
-        color: text38("color").notNull(),
-        createdAt: timestamp35("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp35("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid37("id").primaryKey().defaultRandom(),
+        companyId: uuid37("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        name: text41("name").notNull(),
+        color: text41("color").notNull(),
+        createdAt: timestamp38("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp38("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index31("labels_company_idx").on(table.companyId),
-        companyNameIdx: uniqueIndex19("labels_company_name_idx").on(table.companyId, table.name)
+        companyIdx: index33("labels_company_idx").on(table.companyId),
+        companyNameIdx: uniqueIndex22("labels_company_name_idx").on(table.companyId, table.name)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_labels.ts
-import { pgTable as pgTable36, uuid as uuid35, timestamp as timestamp36, index as index32, primaryKey as primaryKey2 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable39, uuid as uuid38, timestamp as timestamp39, index as index34, primaryKey as primaryKey2 } from "drizzle-orm/pg-core";
 var issueLabels;
 var init_issue_labels = __esm({
   "../packages/db/src/schema/issue_labels.ts"() {
@@ -5028,26 +5862,26 @@ var init_issue_labels = __esm({
     init_companies();
     init_issues();
     init_labels();
-    issueLabels = pgTable36(
+    issueLabels = pgTable39(
       "issue_labels",
       {
-        issueId: uuid35("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        labelId: uuid35("label_id").notNull().references(() => labels.id, { onDelete: "cascade" }),
-        companyId: uuid35("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        createdAt: timestamp36("created_at", { withTimezone: true }).notNull().defaultNow()
+        issueId: uuid38("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        labelId: uuid38("label_id").notNull().references(() => labels.id, { onDelete: "cascade" }),
+        companyId: uuid38("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         pk: primaryKey2({ columns: [table.issueId, table.labelId], name: "issue_labels_pk" }),
-        issueIdx: index32("issue_labels_issue_idx").on(table.issueId),
-        labelIdx: index32("issue_labels_label_idx").on(table.labelId),
-        companyIdx: index32("issue_labels_company_idx").on(table.companyId)
+        issueIdx: index34("issue_labels_issue_idx").on(table.issueId),
+        labelIdx: index34("issue_labels_label_idx").on(table.labelId),
+        companyIdx: index34("issue_labels_company_idx").on(table.companyId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_approvals.ts
-import { pgTable as pgTable37, uuid as uuid36, text as text39, timestamp as timestamp37, index as index33, primaryKey as primaryKey3 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable40, uuid as uuid39, text as text42, timestamp as timestamp40, index as index35, primaryKey as primaryKey3 } from "drizzle-orm/pg-core";
 var issueApprovals;
 var init_issue_approvals = __esm({
   "../packages/db/src/schema/issue_approvals.ts"() {
@@ -5056,28 +5890,28 @@ var init_issue_approvals = __esm({
     init_issues();
     init_approvals();
     init_agents();
-    issueApprovals = pgTable37(
+    issueApprovals = pgTable40(
       "issue_approvals",
       {
-        companyId: uuid36("company_id").notNull().references(() => companies.id),
-        issueId: uuid36("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        approvalId: uuid36("approval_id").notNull().references(() => approvals.id, { onDelete: "cascade" }),
-        linkedByAgentId: uuid36("linked_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        linkedByUserId: text39("linked_by_user_id"),
-        createdAt: timestamp37("created_at", { withTimezone: true }).notNull().defaultNow()
+        companyId: uuid39("company_id").notNull().references(() => companies.id),
+        issueId: uuid39("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        approvalId: uuid39("approval_id").notNull().references(() => approvals.id, { onDelete: "cascade" }),
+        linkedByAgentId: uuid39("linked_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        linkedByUserId: text42("linked_by_user_id"),
+        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         pk: primaryKey3({ columns: [table.issueId, table.approvalId], name: "issue_approvals_pk" }),
-        issueIdx: index33("issue_approvals_issue_idx").on(table.issueId),
-        approvalIdx: index33("issue_approvals_approval_idx").on(table.approvalId),
-        companyIdx: index33("issue_approvals_company_idx").on(table.companyId)
+        issueIdx: index35("issue_approvals_issue_idx").on(table.issueId),
+        approvalIdx: index35("issue_approvals_approval_idx").on(table.approvalId),
+        companyIdx: index35("issue_approvals_company_idx").on(table.companyId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_comments.ts
-import { pgTable as pgTable38, uuid as uuid37, text as text40, timestamp as timestamp38, index as index34 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable41, uuid as uuid40, text as text43, timestamp as timestamp41, index as index36 } from "drizzle-orm/pg-core";
 var issueComments;
 var init_issue_comments = __esm({
   "../packages/db/src/schema/issue_comments.ts"() {
@@ -5086,41 +5920,96 @@ var init_issue_comments = __esm({
     init_issues();
     init_agents();
     init_heartbeat_runs();
-    issueComments = pgTable38(
+    issueComments = pgTable41(
       "issue_comments",
       {
-        id: uuid37("id").primaryKey().defaultRandom(),
-        companyId: uuid37("company_id").notNull().references(() => companies.id),
-        issueId: uuid37("issue_id").notNull().references(() => issues.id),
-        authorAgentId: uuid37("author_agent_id").references(() => agents.id),
-        authorUserId: text40("author_user_id"),
-        createdByRunId: uuid37("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        body: text40("body").notNull(),
-        createdAt: timestamp38("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp38("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid40("id").primaryKey().defaultRandom(),
+        companyId: uuid40("company_id").notNull().references(() => companies.id),
+        issueId: uuid40("issue_id").notNull().references(() => issues.id),
+        authorAgentId: uuid40("author_agent_id").references(() => agents.id),
+        authorUserId: text43("author_user_id"),
+        createdByRunId: uuid40("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        body: text43("body").notNull(),
+        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp41("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        issueIdx: index34("issue_comments_issue_idx").on(table.issueId),
-        companyIdx: index34("issue_comments_company_idx").on(table.companyId),
-        companyIssueCreatedAtIdx: index34("issue_comments_company_issue_created_at_idx").on(
+        issueIdx: index36("issue_comments_issue_idx").on(table.issueId),
+        companyIdx: index36("issue_comments_company_idx").on(table.companyId),
+        companyIssueCreatedAtIdx: index36("issue_comments_company_issue_created_at_idx").on(
           table.companyId,
           table.issueId,
           table.createdAt
         ),
-        companyAuthorIssueCreatedAtIdx: index34("issue_comments_company_author_issue_created_at_idx").on(
+        companyAuthorIssueCreatedAtIdx: index36("issue_comments_company_author_issue_created_at_idx").on(
           table.companyId,
           table.authorUserId,
           table.issueId,
           table.createdAt
         ),
-        bodySearchIdx: index34("issue_comments_body_search_idx").using("gin", table.body.op("gin_trgm_ops"))
+        bodySearchIdx: index36("issue_comments_body_search_idx").using("gin", table.body.op("gin_trgm_ops"))
+      })
+    );
+  }
+});
+
+// ../packages/db/src/schema/issue_thread_interactions.ts
+import { sql as sql5 } from "drizzle-orm";
+import { pgTable as pgTable42, uuid as uuid41, text as text44, timestamp as timestamp42, jsonb as jsonb22, index as index37, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
+var issueThreadInteractions;
+var init_issue_thread_interactions = __esm({
+  "../packages/db/src/schema/issue_thread_interactions.ts"() {
+    "use strict";
+    init_agents();
+    init_companies();
+    init_heartbeat_runs();
+    init_issue_comments();
+    init_issues();
+    issueThreadInteractions = pgTable42(
+      "issue_thread_interactions",
+      {
+        id: uuid41("id").primaryKey().defaultRandom(),
+        companyId: uuid41("company_id").notNull().references(() => companies.id),
+        issueId: uuid41("issue_id").notNull().references(() => issues.id),
+        kind: text44("kind").notNull(),
+        status: text44("status").notNull().default("pending"),
+        continuationPolicy: text44("continuation_policy").notNull().default("wake_assignee"),
+        idempotencyKey: text44("idempotency_key"),
+        sourceCommentId: uuid41("source_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
+        sourceRunId: uuid41("source_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        title: text44("title"),
+        summary: text44("summary"),
+        createdByAgentId: uuid41("created_by_agent_id").references(() => agents.id),
+        createdByUserId: text44("created_by_user_id"),
+        resolvedByAgentId: uuid41("resolved_by_agent_id").references(() => agents.id),
+        resolvedByUserId: text44("resolved_by_user_id"),
+        payload: jsonb22("payload").$type().notNull(),
+        result: jsonb22("result").$type(),
+        resolvedAt: timestamp42("resolved_at", { withTimezone: true }),
+        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp42("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        issueIdx: index37("issue_thread_interactions_issue_idx").on(table.issueId),
+        companyIssueCreatedAtIdx: index37("issue_thread_interactions_company_issue_created_at_idx").on(
+          table.companyId,
+          table.issueId,
+          table.createdAt
+        ),
+        companyIssueStatusIdx: index37("issue_thread_interactions_company_issue_status_idx").on(
+          table.companyId,
+          table.issueId,
+          table.status
+        ),
+        companyIssueIdempotencyUq: uniqueIndex23("issue_thread_interactions_company_issue_idempotency_uq").on(table.companyId, table.issueId, table.idempotencyKey).where(sql5`${table.idempotencyKey} IS NOT NULL`),
+        sourceCommentIdx: index37("issue_thread_interactions_source_comment_idx").on(table.sourceCommentId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_execution_decisions.ts
-import { index as index35, pgTable as pgTable39, text as text41, timestamp as timestamp39, uuid as uuid38 } from "drizzle-orm/pg-core";
+import { index as index38, pgTable as pgTable43, text as text45, timestamp as timestamp43, uuid as uuid42 } from "drizzle-orm/pg-core";
 var issueExecutionDecisions;
 var init_issue_execution_decisions = __esm({
   "../packages/db/src/schema/issue_execution_decisions.ts"() {
@@ -5129,53 +6018,53 @@ var init_issue_execution_decisions = __esm({
     init_issues();
     init_agents();
     init_heartbeat_runs();
-    issueExecutionDecisions = pgTable39(
+    issueExecutionDecisions = pgTable43(
       "issue_execution_decisions",
       {
-        id: uuid38("id").primaryKey().defaultRandom(),
-        companyId: uuid38("company_id").notNull().references(() => companies.id),
-        issueId: uuid38("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        stageId: uuid38("stage_id").notNull(),
-        stageType: text41("stage_type").notNull(),
-        actorAgentId: uuid38("actor_agent_id").references(() => agents.id),
-        actorUserId: text41("actor_user_id"),
-        outcome: text41("outcome").notNull(),
-        body: text41("body").notNull(),
-        createdByRunId: uuid38("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        createdAt: timestamp39("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp39("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid42("id").primaryKey().defaultRandom(),
+        companyId: uuid42("company_id").notNull().references(() => companies.id),
+        issueId: uuid42("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        stageId: uuid42("stage_id").notNull(),
+        stageType: text45("stage_type").notNull(),
+        actorAgentId: uuid42("actor_agent_id").references(() => agents.id),
+        actorUserId: text45("actor_user_id"),
+        outcome: text45("outcome").notNull(),
+        body: text45("body").notNull(),
+        createdByRunId: uuid42("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp43("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index35("issue_execution_decisions_company_issue_idx").on(table.companyId, table.issueId),
-        stageIdx: index35("issue_execution_decisions_stage_idx").on(table.issueId, table.stageId, table.createdAt)
+        companyIssueIdx: index38("issue_execution_decisions_company_issue_idx").on(table.companyId, table.issueId),
+        stageIdx: index38("issue_execution_decisions_stage_idx").on(table.issueId, table.stageId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_inbox_archives.ts
-import { pgTable as pgTable40, uuid as uuid39, text as text42, timestamp as timestamp40, index as index36, uniqueIndex as uniqueIndex20 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable44, uuid as uuid43, text as text46, timestamp as timestamp44, index as index39, uniqueIndex as uniqueIndex24 } from "drizzle-orm/pg-core";
 var issueInboxArchives;
 var init_issue_inbox_archives = __esm({
   "../packages/db/src/schema/issue_inbox_archives.ts"() {
     "use strict";
     init_companies();
     init_issues();
-    issueInboxArchives = pgTable40(
+    issueInboxArchives = pgTable44(
       "issue_inbox_archives",
       {
-        id: uuid39("id").primaryKey().defaultRandom(),
-        companyId: uuid39("company_id").notNull().references(() => companies.id),
-        issueId: uuid39("issue_id").notNull().references(() => issues.id),
-        userId: text42("user_id").notNull(),
-        archivedAt: timestamp40("archived_at", { withTimezone: true }).notNull().defaultNow(),
-        createdAt: timestamp40("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp40("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid43("id").primaryKey().defaultRandom(),
+        companyId: uuid43("company_id").notNull().references(() => companies.id),
+        issueId: uuid43("issue_id").notNull().references(() => issues.id),
+        userId: text46("user_id").notNull(),
+        archivedAt: timestamp44("archived_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp44("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index36("issue_inbox_archives_company_issue_idx").on(table.companyId, table.issueId),
-        companyUserIdx: index36("issue_inbox_archives_company_user_idx").on(table.companyId, table.userId),
-        companyIssueUserUnique: uniqueIndex20("issue_inbox_archives_company_issue_user_idx").on(
+        companyIssueIdx: index39("issue_inbox_archives_company_issue_idx").on(table.companyId, table.issueId),
+        companyUserIdx: index39("issue_inbox_archives_company_user_idx").on(table.companyId, table.userId),
+        companyIssueUserUnique: uniqueIndex24("issue_inbox_archives_company_issue_user_idx").on(
           table.companyId,
           table.issueId,
           table.userId
@@ -5185,37 +6074,68 @@ var init_issue_inbox_archives = __esm({
   }
 });
 
+// ../packages/db/src/schema/inbox_dismissals.ts
+import { pgTable as pgTable45, uuid as uuid44, text as text47, timestamp as timestamp45, index as index40, uniqueIndex as uniqueIndex25 } from "drizzle-orm/pg-core";
+var inboxDismissals;
+var init_inbox_dismissals = __esm({
+  "../packages/db/src/schema/inbox_dismissals.ts"() {
+    "use strict";
+    init_companies();
+    inboxDismissals = pgTable45(
+      "inbox_dismissals",
+      {
+        id: uuid44("id").primaryKey().defaultRandom(),
+        companyId: uuid44("company_id").notNull().references(() => companies.id),
+        userId: text47("user_id").notNull(),
+        itemKey: text47("item_key").notNull(),
+        dismissedAt: timestamp45("dismissed_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp45("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        companyUserIdx: index40("inbox_dismissals_company_user_idx").on(table.companyId, table.userId),
+        companyItemIdx: index40("inbox_dismissals_company_item_idx").on(table.companyId, table.itemKey),
+        companyUserItemUnique: uniqueIndex25("inbox_dismissals_company_user_item_idx").on(
+          table.companyId,
+          table.userId,
+          table.itemKey
+        )
+      })
+    );
+  }
+});
+
 // ../packages/db/src/schema/feedback_votes.ts
-import { boolean as boolean9, index as index37, jsonb as jsonb20, pgTable as pgTable41, text as text43, timestamp as timestamp41, uniqueIndex as uniqueIndex21, uuid as uuid40 } from "drizzle-orm/pg-core";
+import { boolean as boolean9, index as index41, jsonb as jsonb23, pgTable as pgTable46, text as text48, timestamp as timestamp46, uniqueIndex as uniqueIndex26, uuid as uuid45 } from "drizzle-orm/pg-core";
 var feedbackVotes;
 var init_feedback_votes = __esm({
   "../packages/db/src/schema/feedback_votes.ts"() {
     "use strict";
     init_companies();
     init_issues();
-    feedbackVotes = pgTable41(
+    feedbackVotes = pgTable46(
       "feedback_votes",
       {
-        id: uuid40("id").primaryKey().defaultRandom(),
-        companyId: uuid40("company_id").notNull().references(() => companies.id),
-        issueId: uuid40("issue_id").notNull().references(() => issues.id),
-        targetType: text43("target_type").notNull(),
-        targetId: text43("target_id").notNull(),
-        authorUserId: text43("author_user_id").notNull(),
-        vote: text43("vote").notNull(),
-        reason: text43("reason"),
+        id: uuid45("id").primaryKey().defaultRandom(),
+        companyId: uuid45("company_id").notNull().references(() => companies.id),
+        issueId: uuid45("issue_id").notNull().references(() => issues.id),
+        targetType: text48("target_type").notNull(),
+        targetId: text48("target_id").notNull(),
+        authorUserId: text48("author_user_id").notNull(),
+        vote: text48("vote").notNull(),
+        reason: text48("reason"),
         sharedWithLabs: boolean9("shared_with_labs").notNull().default(false),
-        sharedAt: timestamp41("shared_at", { withTimezone: true }),
-        consentVersion: text43("consent_version"),
-        redactionSummary: jsonb20("redaction_summary"),
-        createdAt: timestamp41("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp41("updated_at", { withTimezone: true }).notNull().defaultNow()
+        sharedAt: timestamp46("shared_at", { withTimezone: true }),
+        consentVersion: text48("consent_version"),
+        redactionSummary: jsonb23("redaction_summary"),
+        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp46("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index37("feedback_votes_company_issue_idx").on(table.companyId, table.issueId),
-        issueTargetIdx: index37("feedback_votes_issue_target_idx").on(table.issueId, table.targetType, table.targetId),
-        authorIdx: index37("feedback_votes_author_idx").on(table.authorUserId, table.createdAt),
-        companyTargetAuthorUniqueIdx: uniqueIndex21("feedback_votes_company_target_author_idx").on(
+        companyIssueIdx: index41("feedback_votes_company_issue_idx").on(table.companyId, table.issueId),
+        issueTargetIdx: index41("feedback_votes_issue_target_idx").on(table.issueId, table.targetType, table.targetId),
+        authorIdx: index41("feedback_votes_author_idx").on(table.authorUserId, table.createdAt),
+        companyTargetAuthorUniqueIdx: uniqueIndex26("feedback_votes_company_target_author_idx").on(
           table.companyId,
           table.targetType,
           table.targetId,
@@ -5227,7 +6147,7 @@ var init_feedback_votes = __esm({
 });
 
 // ../packages/db/src/schema/feedback_exports.ts
-import { index as index38, integer as integer13, jsonb as jsonb21, pgTable as pgTable42, text as text44, timestamp as timestamp42, uniqueIndex as uniqueIndex22, uuid as uuid41 } from "drizzle-orm/pg-core";
+import { index as index42, integer as integer13, jsonb as jsonb24, pgTable as pgTable47, text as text49, timestamp as timestamp47, uniqueIndex as uniqueIndex27, uuid as uuid46 } from "drizzle-orm/pg-core";
 var feedbackExports;
 var init_feedback_exports = __esm({
   "../packages/db/src/schema/feedback_exports.ts"() {
@@ -5236,71 +6156,71 @@ var init_feedback_exports = __esm({
     init_feedback_votes();
     init_issues();
     init_projects();
-    feedbackExports = pgTable42(
+    feedbackExports = pgTable47(
       "feedback_exports",
       {
-        id: uuid41("id").primaryKey().defaultRandom(),
-        companyId: uuid41("company_id").notNull().references(() => companies.id),
-        feedbackVoteId: uuid41("feedback_vote_id").notNull().references(() => feedbackVotes.id, { onDelete: "cascade" }),
-        issueId: uuid41("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        projectId: uuid41("project_id").references(() => projects.id, { onDelete: "set null" }),
-        authorUserId: text44("author_user_id").notNull(),
-        targetType: text44("target_type").notNull(),
-        targetId: text44("target_id").notNull(),
-        vote: text44("vote").notNull(),
-        status: text44("status").notNull().default("local_only"),
-        destination: text44("destination"),
-        exportId: text44("export_id"),
-        consentVersion: text44("consent_version"),
-        schemaVersion: text44("schema_version").notNull().default("paperclip-feedback-envelope-v2"),
-        bundleVersion: text44("bundle_version").notNull().default("paperclip-feedback-bundle-v2"),
-        payloadVersion: text44("payload_version").notNull().default("paperclip-feedback-v1"),
-        payloadDigest: text44("payload_digest"),
-        payloadSnapshot: jsonb21("payload_snapshot"),
-        targetSummary: jsonb21("target_summary").notNull(),
-        redactionSummary: jsonb21("redaction_summary"),
+        id: uuid46("id").primaryKey().defaultRandom(),
+        companyId: uuid46("company_id").notNull().references(() => companies.id),
+        feedbackVoteId: uuid46("feedback_vote_id").notNull().references(() => feedbackVotes.id, { onDelete: "cascade" }),
+        issueId: uuid46("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        projectId: uuid46("project_id").references(() => projects.id, { onDelete: "set null" }),
+        authorUserId: text49("author_user_id").notNull(),
+        targetType: text49("target_type").notNull(),
+        targetId: text49("target_id").notNull(),
+        vote: text49("vote").notNull(),
+        status: text49("status").notNull().default("local_only"),
+        destination: text49("destination"),
+        exportId: text49("export_id"),
+        consentVersion: text49("consent_version"),
+        schemaVersion: text49("schema_version").notNull().default("paperclip-feedback-envelope-v2"),
+        bundleVersion: text49("bundle_version").notNull().default("paperclip-feedback-bundle-v2"),
+        payloadVersion: text49("payload_version").notNull().default("paperclip-feedback-v1"),
+        payloadDigest: text49("payload_digest"),
+        payloadSnapshot: jsonb24("payload_snapshot"),
+        targetSummary: jsonb24("target_summary").notNull(),
+        redactionSummary: jsonb24("redaction_summary"),
         attemptCount: integer13("attempt_count").notNull().default(0),
-        lastAttemptedAt: timestamp42("last_attempted_at", { withTimezone: true }),
-        exportedAt: timestamp42("exported_at", { withTimezone: true }),
-        failureReason: text44("failure_reason"),
-        createdAt: timestamp42("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp42("updated_at", { withTimezone: true }).notNull().defaultNow()
+        lastAttemptedAt: timestamp47("last_attempted_at", { withTimezone: true }),
+        exportedAt: timestamp47("exported_at", { withTimezone: true }),
+        failureReason: text49("failure_reason"),
+        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp47("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        voteUniqueIdx: uniqueIndex22("feedback_exports_feedback_vote_idx").on(table.feedbackVoteId),
-        companyCreatedIdx: index38("feedback_exports_company_created_idx").on(table.companyId, table.createdAt),
-        companyStatusIdx: index38("feedback_exports_company_status_idx").on(table.companyId, table.status, table.createdAt),
-        companyIssueIdx: index38("feedback_exports_company_issue_idx").on(table.companyId, table.issueId, table.createdAt),
-        companyProjectIdx: index38("feedback_exports_company_project_idx").on(table.companyId, table.projectId, table.createdAt),
-        companyAuthorIdx: index38("feedback_exports_company_author_idx").on(table.companyId, table.authorUserId, table.createdAt)
+        voteUniqueIdx: uniqueIndex27("feedback_exports_feedback_vote_idx").on(table.feedbackVoteId),
+        companyCreatedIdx: index42("feedback_exports_company_created_idx").on(table.companyId, table.createdAt),
+        companyStatusIdx: index42("feedback_exports_company_status_idx").on(table.companyId, table.status, table.createdAt),
+        companyIssueIdx: index42("feedback_exports_company_issue_idx").on(table.companyId, table.issueId, table.createdAt),
+        companyProjectIdx: index42("feedback_exports_company_project_idx").on(table.companyId, table.projectId, table.createdAt),
+        companyAuthorIdx: index42("feedback_exports_company_author_idx").on(table.companyId, table.authorUserId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/issue_read_states.ts
-import { pgTable as pgTable43, uuid as uuid42, text as text45, timestamp as timestamp43, index as index39, uniqueIndex as uniqueIndex23 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable48, uuid as uuid47, text as text50, timestamp as timestamp48, index as index43, uniqueIndex as uniqueIndex28 } from "drizzle-orm/pg-core";
 var issueReadStates;
 var init_issue_read_states = __esm({
   "../packages/db/src/schema/issue_read_states.ts"() {
     "use strict";
     init_companies();
     init_issues();
-    issueReadStates = pgTable43(
+    issueReadStates = pgTable48(
       "issue_read_states",
       {
-        id: uuid42("id").primaryKey().defaultRandom(),
-        companyId: uuid42("company_id").notNull().references(() => companies.id),
-        issueId: uuid42("issue_id").notNull().references(() => issues.id),
-        userId: text45("user_id").notNull(),
-        lastReadAt: timestamp43("last_read_at", { withTimezone: true }).notNull().defaultNow(),
-        createdAt: timestamp43("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp43("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid47("id").primaryKey().defaultRandom(),
+        companyId: uuid47("company_id").notNull().references(() => companies.id),
+        issueId: uuid47("issue_id").notNull().references(() => issues.id),
+        userId: text50("user_id").notNull(),
+        lastReadAt: timestamp48("last_read_at", { withTimezone: true }).notNull().defaultNow(),
+        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp48("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index39("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
-        companyUserIdx: index39("issue_read_states_company_user_idx").on(table.companyId, table.userId),
-        companyIssueUserUnique: uniqueIndex23("issue_read_states_company_issue_user_idx").on(
+        companyIssueIdx: index43("issue_read_states_company_issue_idx").on(table.companyId, table.issueId),
+        companyUserIdx: index43("issue_read_states_company_user_idx").on(table.companyId, table.userId),
+        companyIssueUserUnique: uniqueIndex28("issue_read_states_company_issue_user_idx").on(
           table.companyId,
           table.issueId,
           table.userId
@@ -5311,7 +6231,7 @@ var init_issue_read_states = __esm({
 });
 
 // ../packages/db/src/schema/issue_attachments.ts
-import { pgTable as pgTable44, uuid as uuid43, timestamp as timestamp44, index as index40, uniqueIndex as uniqueIndex24 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable49, uuid as uuid48, timestamp as timestamp49, index as index44, uniqueIndex as uniqueIndex29 } from "drizzle-orm/pg-core";
 var issueAttachments;
 var init_issue_attachments = __esm({
   "../packages/db/src/schema/issue_attachments.ts"() {
@@ -5320,61 +6240,61 @@ var init_issue_attachments = __esm({
     init_issues();
     init_assets();
     init_issue_comments();
-    issueAttachments = pgTable44(
+    issueAttachments = pgTable49(
       "issue_attachments",
       {
-        id: uuid43("id").primaryKey().defaultRandom(),
-        companyId: uuid43("company_id").notNull().references(() => companies.id),
-        issueId: uuid43("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        assetId: uuid43("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
-        issueCommentId: uuid43("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
-        createdAt: timestamp44("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp44("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid48("id").primaryKey().defaultRandom(),
+        companyId: uuid48("company_id").notNull().references(() => companies.id),
+        issueId: uuid48("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        assetId: uuid48("asset_id").notNull().references(() => assets.id, { onDelete: "cascade" }),
+        issueCommentId: uuid48("issue_comment_id").references(() => issueComments.id, { onDelete: "set null" }),
+        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp49("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueIdx: index40("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
-        issueCommentIdx: index40("issue_attachments_issue_comment_idx").on(table.issueCommentId),
-        assetUq: uniqueIndex24("issue_attachments_asset_uq").on(table.assetId)
+        companyIssueIdx: index44("issue_attachments_company_issue_idx").on(table.companyId, table.issueId),
+        issueCommentIdx: index44("issue_attachments_issue_comment_idx").on(table.issueCommentId),
+        assetUq: uniqueIndex29("issue_attachments_asset_uq").on(table.assetId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/documents.ts
-import { pgTable as pgTable45, uuid as uuid44, text as text46, integer as integer14, timestamp as timestamp45, index as index41 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable50, uuid as uuid49, text as text51, integer as integer14, timestamp as timestamp50, index as index45 } from "drizzle-orm/pg-core";
 var documents;
 var init_documents = __esm({
   "../packages/db/src/schema/documents.ts"() {
     "use strict";
     init_companies();
     init_agents();
-    documents = pgTable45(
+    documents = pgTable50(
       "documents",
       {
-        id: uuid44("id").primaryKey().defaultRandom(),
-        companyId: uuid44("company_id").notNull().references(() => companies.id),
-        title: text46("title"),
-        format: text46("format").notNull().default("markdown"),
-        latestBody: text46("latest_body").notNull(),
-        latestRevisionId: uuid44("latest_revision_id"),
+        id: uuid49("id").primaryKey().defaultRandom(),
+        companyId: uuid49("company_id").notNull().references(() => companies.id),
+        title: text51("title"),
+        format: text51("format").notNull().default("markdown"),
+        latestBody: text51("latest_body").notNull(),
+        latestRevisionId: uuid49("latest_revision_id"),
         latestRevisionNumber: integer14("latest_revision_number").notNull().default(1),
-        createdByAgentId: uuid44("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text46("created_by_user_id"),
-        updatedByAgentId: uuid44("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        updatedByUserId: text46("updated_by_user_id"),
-        createdAt: timestamp45("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp45("updated_at", { withTimezone: true }).notNull().defaultNow()
+        createdByAgentId: uuid49("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text51("created_by_user_id"),
+        updatedByAgentId: uuid49("updated_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        updatedByUserId: text51("updated_by_user_id"),
+        createdAt: timestamp50("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp50("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyUpdatedIdx: index41("documents_company_updated_idx").on(table.companyId, table.updatedAt),
-        companyCreatedIdx: index41("documents_company_created_idx").on(table.companyId, table.createdAt)
+        companyUpdatedIdx: index45("documents_company_updated_idx").on(table.companyId, table.updatedAt),
+        companyCreatedIdx: index45("documents_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/document_revisions.ts
-import { pgTable as pgTable46, uuid as uuid45, text as text47, integer as integer15, timestamp as timestamp46, index as index42, uniqueIndex as uniqueIndex25 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable51, uuid as uuid50, text as text52, integer as integer15, timestamp as timestamp51, index as index46, uniqueIndex as uniqueIndex30 } from "drizzle-orm/pg-core";
 var documentRevisions;
 var init_document_revisions = __esm({
   "../packages/db/src/schema/document_revisions.ts"() {
@@ -5383,28 +6303,28 @@ var init_document_revisions = __esm({
     init_agents();
     init_documents();
     init_heartbeat_runs();
-    documentRevisions = pgTable46(
+    documentRevisions = pgTable51(
       "document_revisions",
       {
-        id: uuid45("id").primaryKey().defaultRandom(),
-        companyId: uuid45("company_id").notNull().references(() => companies.id),
-        documentId: uuid45("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        id: uuid50("id").primaryKey().defaultRandom(),
+        companyId: uuid50("company_id").notNull().references(() => companies.id),
+        documentId: uuid50("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
         revisionNumber: integer15("revision_number").notNull(),
-        title: text47("title"),
-        format: text47("format").notNull().default("markdown"),
-        body: text47("body").notNull(),
-        changeSummary: text47("change_summary"),
-        createdByAgentId: uuid45("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text47("created_by_user_id"),
-        createdByRunId: uuid45("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
-        createdAt: timestamp46("created_at", { withTimezone: true }).notNull().defaultNow()
+        title: text52("title"),
+        format: text52("format").notNull().default("markdown"),
+        body: text52("body").notNull(),
+        changeSummary: text52("change_summary"),
+        createdByAgentId: uuid50("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text52("created_by_user_id"),
+        createdByRunId: uuid50("created_by_run_id").references(() => heartbeatRuns.id, { onDelete: "set null" }),
+        createdAt: timestamp51("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        documentRevisionUq: uniqueIndex25("document_revisions_document_revision_uq").on(
+        documentRevisionUq: uniqueIndex30("document_revisions_document_revision_uq").on(
           table.documentId,
           table.revisionNumber
         ),
-        companyDocumentCreatedIdx: index42("document_revisions_company_document_created_idx").on(
+        companyDocumentCreatedIdx: index46("document_revisions_company_document_created_idx").on(
           table.companyId,
           table.documentId,
           table.createdAt
@@ -5415,7 +6335,7 @@ var init_document_revisions = __esm({
 });
 
 // ../packages/db/src/schema/issue_documents.ts
-import { pgTable as pgTable47, uuid as uuid46, text as text48, timestamp as timestamp47, index as index43, uniqueIndex as uniqueIndex26 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable52, uuid as uuid51, text as text53, timestamp as timestamp52, index as index47, uniqueIndex as uniqueIndex31 } from "drizzle-orm/pg-core";
 var issueDocuments;
 var init_issue_documents = __esm({
   "../packages/db/src/schema/issue_documents.ts"() {
@@ -5423,25 +6343,25 @@ var init_issue_documents = __esm({
     init_companies();
     init_issues();
     init_documents();
-    issueDocuments = pgTable47(
+    issueDocuments = pgTable52(
       "issue_documents",
       {
-        id: uuid46("id").primaryKey().defaultRandom(),
-        companyId: uuid46("company_id").notNull().references(() => companies.id),
-        issueId: uuid46("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
-        documentId: uuid46("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
-        key: text48("key").notNull(),
-        createdAt: timestamp47("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp47("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid51("id").primaryKey().defaultRandom(),
+        companyId: uuid51("company_id").notNull().references(() => companies.id),
+        issueId: uuid51("issue_id").notNull().references(() => issues.id, { onDelete: "cascade" }),
+        documentId: uuid51("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+        key: text53("key").notNull(),
+        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp52("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIssueKeyUq: uniqueIndex26("issue_documents_company_issue_key_uq").on(
+        companyIssueKeyUq: uniqueIndex31("issue_documents_company_issue_key_uq").on(
           table.companyId,
           table.issueId,
           table.key
         ),
-        documentUq: uniqueIndex26("issue_documents_document_uq").on(table.documentId),
-        companyIssueUpdatedIdx: index43("issue_documents_company_issue_updated_idx").on(
+        documentUq: uniqueIndex31("issue_documents_document_uq").on(table.documentId),
+        companyIssueUpdatedIdx: index47("issue_documents_company_issue_updated_idx").on(
           table.companyId,
           table.issueId,
           table.updatedAt
@@ -5452,7 +6372,7 @@ var init_issue_documents = __esm({
 });
 
 // ../packages/db/src/schema/heartbeat_run_events.ts
-import { pgTable as pgTable48, uuid as uuid47, text as text49, timestamp as timestamp48, integer as integer16, jsonb as jsonb22, index as index44, bigserial } from "drizzle-orm/pg-core";
+import { pgTable as pgTable53, uuid as uuid52, text as text54, timestamp as timestamp53, integer as integer16, jsonb as jsonb25, index as index48, bigserial } from "drizzle-orm/pg-core";
 var heartbeatRunEvents;
 var init_heartbeat_run_events = __esm({
   "../packages/db/src/schema/heartbeat_run_events.ts"() {
@@ -5460,33 +6380,33 @@ var init_heartbeat_run_events = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    heartbeatRunEvents = pgTable48(
+    heartbeatRunEvents = pgTable53(
       "heartbeat_run_events",
       {
         id: bigserial("id", { mode: "number" }).primaryKey(),
-        companyId: uuid47("company_id").notNull().references(() => companies.id),
-        runId: uuid47("run_id").notNull().references(() => heartbeatRuns.id),
-        agentId: uuid47("agent_id").notNull().references(() => agents.id),
+        companyId: uuid52("company_id").notNull().references(() => companies.id),
+        runId: uuid52("run_id").notNull().references(() => heartbeatRuns.id),
+        agentId: uuid52("agent_id").notNull().references(() => agents.id),
         seq: integer16("seq").notNull(),
-        eventType: text49("event_type").notNull(),
-        stream: text49("stream"),
-        level: text49("level"),
-        color: text49("color"),
-        message: text49("message"),
-        payload: jsonb22("payload").$type(),
-        createdAt: timestamp48("created_at", { withTimezone: true }).notNull().defaultNow()
+        eventType: text54("event_type").notNull(),
+        stream: text54("stream"),
+        level: text54("level"),
+        color: text54("color"),
+        message: text54("message"),
+        payload: jsonb25("payload").$type(),
+        createdAt: timestamp53("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        runSeqIdx: index44("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
-        companyRunIdx: index44("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
-        companyCreatedIdx: index44("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
+        runSeqIdx: index48("heartbeat_run_events_run_seq_idx").on(table.runId, table.seq),
+        companyRunIdx: index48("heartbeat_run_events_company_run_idx").on(table.companyId, table.runId),
+        companyCreatedIdx: index48("heartbeat_run_events_company_created_idx").on(table.companyId, table.createdAt)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/cost_events.ts
-import { pgTable as pgTable49, uuid as uuid48, text as text50, timestamp as timestamp49, integer as integer17, index as index45 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable54, uuid as uuid53, text as text55, timestamp as timestamp54, integer as integer17, index as index49 } from "drizzle-orm/pg-core";
 var costEvents;
 var init_cost_events = __esm({
   "../packages/db/src/schema/cost_events.ts"() {
@@ -5497,46 +6417,46 @@ var init_cost_events = __esm({
     init_projects();
     init_goals();
     init_heartbeat_runs();
-    costEvents = pgTable49(
+    costEvents = pgTable54(
       "cost_events",
       {
-        id: uuid48("id").primaryKey().defaultRandom(),
-        companyId: uuid48("company_id").notNull().references(() => companies.id),
-        agentId: uuid48("agent_id").notNull().references(() => agents.id),
-        issueId: uuid48("issue_id").references(() => issues.id),
-        projectId: uuid48("project_id").references(() => projects.id),
-        goalId: uuid48("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid48("heartbeat_run_id").references(() => heartbeatRuns.id),
-        billingCode: text50("billing_code"),
-        provider: text50("provider").notNull(),
-        biller: text50("biller").notNull().default("unknown"),
-        billingType: text50("billing_type").notNull().default("unknown"),
-        model: text50("model").notNull(),
+        id: uuid53("id").primaryKey().defaultRandom(),
+        companyId: uuid53("company_id").notNull().references(() => companies.id),
+        agentId: uuid53("agent_id").notNull().references(() => agents.id),
+        issueId: uuid53("issue_id").references(() => issues.id),
+        projectId: uuid53("project_id").references(() => projects.id),
+        goalId: uuid53("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid53("heartbeat_run_id").references(() => heartbeatRuns.id),
+        billingCode: text55("billing_code"),
+        provider: text55("provider").notNull(),
+        biller: text55("biller").notNull().default("unknown"),
+        billingType: text55("billing_type").notNull().default("unknown"),
+        model: text55("model").notNull(),
         inputTokens: integer17("input_tokens").notNull().default(0),
         cachedInputTokens: integer17("cached_input_tokens").notNull().default(0),
         outputTokens: integer17("output_tokens").notNull().default(0),
         costCents: integer17("cost_cents").notNull(),
-        occurredAt: timestamp49("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp49("created_at", { withTimezone: true }).notNull().defaultNow()
+        occurredAt: timestamp54("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp54("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index45("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyAgentOccurredIdx: index45("cost_events_company_agent_occurred_idx").on(
+        companyOccurredIdx: index49("cost_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyAgentOccurredIdx: index49("cost_events_company_agent_occurred_idx").on(
           table.companyId,
           table.agentId,
           table.occurredAt
         ),
-        companyProviderOccurredIdx: index45("cost_events_company_provider_occurred_idx").on(
+        companyProviderOccurredIdx: index49("cost_events_company_provider_occurred_idx").on(
           table.companyId,
           table.provider,
           table.occurredAt
         ),
-        companyBillerOccurredIdx: index45("cost_events_company_biller_occurred_idx").on(
+        companyBillerOccurredIdx: index49("cost_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index45("cost_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index49("cost_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         )
@@ -5546,7 +6466,7 @@ var init_cost_events = __esm({
 });
 
 // ../packages/db/src/schema/finance_events.ts
-import { pgTable as pgTable50, uuid as uuid49, text as text51, timestamp as timestamp50, integer as integer18, index as index46, boolean as boolean10, jsonb as jsonb23 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable55, uuid as uuid54, text as text56, timestamp as timestamp55, integer as integer18, index as index50, boolean as boolean10, jsonb as jsonb26 } from "drizzle-orm/pg-core";
 var financeEvents;
 var init_finance_events = __esm({
   "../packages/db/src/schema/finance_events.ts"() {
@@ -5558,59 +6478,59 @@ var init_finance_events = __esm({
     init_goals();
     init_heartbeat_runs();
     init_cost_events();
-    financeEvents = pgTable50(
+    financeEvents = pgTable55(
       "finance_events",
       {
-        id: uuid49("id").primaryKey().defaultRandom(),
-        companyId: uuid49("company_id").notNull().references(() => companies.id),
-        agentId: uuid49("agent_id").references(() => agents.id),
-        issueId: uuid49("issue_id").references(() => issues.id),
-        projectId: uuid49("project_id").references(() => projects.id),
-        goalId: uuid49("goal_id").references(() => goals.id),
-        heartbeatRunId: uuid49("heartbeat_run_id").references(() => heartbeatRuns.id),
-        costEventId: uuid49("cost_event_id").references(() => costEvents.id),
-        billingCode: text51("billing_code"),
-        description: text51("description"),
-        eventKind: text51("event_kind").notNull(),
-        direction: text51("direction").notNull().default("debit"),
-        biller: text51("biller").notNull(),
-        provider: text51("provider"),
-        executionAdapterType: text51("execution_adapter_type"),
-        pricingTier: text51("pricing_tier"),
-        region: text51("region"),
-        model: text51("model"),
+        id: uuid54("id").primaryKey().defaultRandom(),
+        companyId: uuid54("company_id").notNull().references(() => companies.id),
+        agentId: uuid54("agent_id").references(() => agents.id),
+        issueId: uuid54("issue_id").references(() => issues.id),
+        projectId: uuid54("project_id").references(() => projects.id),
+        goalId: uuid54("goal_id").references(() => goals.id),
+        heartbeatRunId: uuid54("heartbeat_run_id").references(() => heartbeatRuns.id),
+        costEventId: uuid54("cost_event_id").references(() => costEvents.id),
+        billingCode: text56("billing_code"),
+        description: text56("description"),
+        eventKind: text56("event_kind").notNull(),
+        direction: text56("direction").notNull().default("debit"),
+        biller: text56("biller").notNull(),
+        provider: text56("provider"),
+        executionAdapterType: text56("execution_adapter_type"),
+        pricingTier: text56("pricing_tier"),
+        region: text56("region"),
+        model: text56("model"),
         quantity: integer18("quantity"),
-        unit: text51("unit"),
+        unit: text56("unit"),
         amountCents: integer18("amount_cents").notNull(),
-        currency: text51("currency").notNull().default("USD"),
+        currency: text56("currency").notNull().default("USD"),
         estimated: boolean10("estimated").notNull().default(false),
-        externalInvoiceId: text51("external_invoice_id"),
-        metadataJson: jsonb23("metadata_json").$type(),
-        occurredAt: timestamp50("occurred_at", { withTimezone: true }).notNull(),
-        createdAt: timestamp50("created_at", { withTimezone: true }).notNull().defaultNow()
+        externalInvoiceId: text56("external_invoice_id"),
+        metadataJson: jsonb26("metadata_json").$type(),
+        occurredAt: timestamp55("occurred_at", { withTimezone: true }).notNull(),
+        createdAt: timestamp55("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyOccurredIdx: index46("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
-        companyBillerOccurredIdx: index46("finance_events_company_biller_occurred_idx").on(
+        companyOccurredIdx: index50("finance_events_company_occurred_idx").on(table.companyId, table.occurredAt),
+        companyBillerOccurredIdx: index50("finance_events_company_biller_occurred_idx").on(
           table.companyId,
           table.biller,
           table.occurredAt
         ),
-        companyKindOccurredIdx: index46("finance_events_company_kind_occurred_idx").on(
+        companyKindOccurredIdx: index50("finance_events_company_kind_occurred_idx").on(
           table.companyId,
           table.eventKind,
           table.occurredAt
         ),
-        companyDirectionOccurredIdx: index46("finance_events_company_direction_occurred_idx").on(
+        companyDirectionOccurredIdx: index50("finance_events_company_direction_occurred_idx").on(
           table.companyId,
           table.direction,
           table.occurredAt
         ),
-        companyHeartbeatRunIdx: index46("finance_events_company_heartbeat_run_idx").on(
+        companyHeartbeatRunIdx: index50("finance_events_company_heartbeat_run_idx").on(
           table.companyId,
           table.heartbeatRunId
         ),
-        companyCostEventIdx: index46("finance_events_company_cost_event_idx").on(
+        companyCostEventIdx: index50("finance_events_company_cost_event_idx").on(
           table.companyId,
           table.costEventId
         )
@@ -5620,7 +6540,7 @@ var init_finance_events = __esm({
 });
 
 // ../packages/db/src/schema/approval_comments.ts
-import { pgTable as pgTable51, uuid as uuid50, text as text52, timestamp as timestamp51, index as index47 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable56, uuid as uuid55, text as text57, timestamp as timestamp56, index as index51 } from "drizzle-orm/pg-core";
 var approvalComments;
 var init_approval_comments = __esm({
   "../packages/db/src/schema/approval_comments.ts"() {
@@ -5628,22 +6548,22 @@ var init_approval_comments = __esm({
     init_companies();
     init_approvals();
     init_agents();
-    approvalComments = pgTable51(
+    approvalComments = pgTable56(
       "approval_comments",
       {
-        id: uuid50("id").primaryKey().defaultRandom(),
-        companyId: uuid50("company_id").notNull().references(() => companies.id),
-        approvalId: uuid50("approval_id").notNull().references(() => approvals.id),
-        authorAgentId: uuid50("author_agent_id").references(() => agents.id),
-        authorUserId: text52("author_user_id"),
-        body: text52("body").notNull(),
-        createdAt: timestamp51("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp51("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid55("id").primaryKey().defaultRandom(),
+        companyId: uuid55("company_id").notNull().references(() => companies.id),
+        approvalId: uuid55("approval_id").notNull().references(() => approvals.id),
+        authorAgentId: uuid55("author_agent_id").references(() => agents.id),
+        authorUserId: text57("author_user_id"),
+        body: text57("body").notNull(),
+        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp56("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index47("approval_comments_company_idx").on(table.companyId),
-        approvalIdx: index47("approval_comments_approval_idx").on(table.approvalId),
-        approvalCreatedIdx: index47("approval_comments_approval_created_idx").on(
+        companyIdx: index51("approval_comments_company_idx").on(table.companyId),
+        approvalIdx: index51("approval_comments_approval_idx").on(table.approvalId),
+        approvalCreatedIdx: index51("approval_comments_approval_created_idx").on(
           table.approvalId,
           table.createdAt
         )
@@ -5653,7 +6573,7 @@ var init_approval_comments = __esm({
 });
 
 // ../packages/db/src/schema/activity_log.ts
-import { pgTable as pgTable52, uuid as uuid51, text as text53, timestamp as timestamp52, jsonb as jsonb24, index as index48 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable57, uuid as uuid56, text as text58, timestamp as timestamp57, jsonb as jsonb27, index as index52 } from "drizzle-orm/pg-core";
 var activityLog;
 var init_activity_log = __esm({
   "../packages/db/src/schema/activity_log.ts"() {
@@ -5661,55 +6581,55 @@ var init_activity_log = __esm({
     init_companies();
     init_agents();
     init_heartbeat_runs();
-    activityLog = pgTable52(
+    activityLog = pgTable57(
       "activity_log",
       {
-        id: uuid51("id").primaryKey().defaultRandom(),
-        companyId: uuid51("company_id").notNull().references(() => companies.id),
-        actorType: text53("actor_type").notNull().default("system"),
-        actorId: text53("actor_id").notNull(),
-        action: text53("action").notNull(),
-        entityType: text53("entity_type").notNull(),
-        entityId: text53("entity_id").notNull(),
-        agentId: uuid51("agent_id").references(() => agents.id),
-        runId: uuid51("run_id").references(() => heartbeatRuns.id),
-        details: jsonb24("details").$type(),
-        createdAt: timestamp52("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid56("id").primaryKey().defaultRandom(),
+        companyId: uuid56("company_id").notNull().references(() => companies.id),
+        actorType: text58("actor_type").notNull().default("system"),
+        actorId: text58("actor_id").notNull(),
+        action: text58("action").notNull(),
+        entityType: text58("entity_type").notNull(),
+        entityId: text58("entity_id").notNull(),
+        agentId: uuid56("agent_id").references(() => agents.id),
+        runId: uuid56("run_id").references(() => heartbeatRuns.id),
+        details: jsonb27("details").$type(),
+        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyCreatedIdx: index48("activity_log_company_created_idx").on(table.companyId, table.createdAt),
-        runIdIdx: index48("activity_log_run_id_idx").on(table.runId),
-        entityIdx: index48("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
+        companyCreatedIdx: index52("activity_log_company_created_idx").on(table.companyId, table.createdAt),
+        runIdIdx: index52("activity_log_run_id_idx").on(table.runId),
+        entityIdx: index52("activity_log_entity_type_id_idx").on(table.entityType, table.entityId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/company_secret_versions.ts
-import { pgTable as pgTable53, uuid as uuid52, text as text54, timestamp as timestamp53, integer as integer19, jsonb as jsonb25, index as index49, uniqueIndex as uniqueIndex27 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable58, uuid as uuid57, text as text59, timestamp as timestamp58, integer as integer19, jsonb as jsonb28, index as index53, uniqueIndex as uniqueIndex32 } from "drizzle-orm/pg-core";
 var companySecretVersions;
 var init_company_secret_versions = __esm({
   "../packages/db/src/schema/company_secret_versions.ts"() {
     "use strict";
     init_agents();
     init_company_secrets();
-    companySecretVersions = pgTable53(
+    companySecretVersions = pgTable58(
       "company_secret_versions",
       {
-        id: uuid52("id").primaryKey().defaultRandom(),
-        secretId: uuid52("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
+        id: uuid57("id").primaryKey().defaultRandom(),
+        secretId: uuid57("secret_id").notNull().references(() => companySecrets.id, { onDelete: "cascade" }),
         version: integer19("version").notNull(),
-        material: jsonb25("material").$type().notNull(),
-        valueSha256: text54("value_sha256").notNull(),
-        createdByAgentId: uuid52("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        createdByUserId: text54("created_by_user_id"),
-        createdAt: timestamp53("created_at", { withTimezone: true }).notNull().defaultNow(),
-        revokedAt: timestamp53("revoked_at", { withTimezone: true })
+        material: jsonb28("material").$type().notNull(),
+        valueSha256: text59("value_sha256").notNull(),
+        createdByAgentId: uuid57("created_by_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        createdByUserId: text59("created_by_user_id"),
+        createdAt: timestamp58("created_at", { withTimezone: true }).notNull().defaultNow(),
+        revokedAt: timestamp58("revoked_at", { withTimezone: true })
       },
       (table) => ({
-        secretIdx: index49("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
-        valueHashIdx: index49("company_secret_versions_value_sha256_idx").on(table.valueSha256),
-        secretVersionUq: uniqueIndex27("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
+        secretIdx: index53("company_secret_versions_secret_idx").on(table.secretId, table.createdAt),
+        valueHashIdx: index53("company_secret_versions_value_sha256_idx").on(table.valueSha256),
+        secretVersionUq: uniqueIndex32("company_secret_versions_secret_version_uq").on(table.secretId, table.version)
       })
     );
   }
@@ -5717,42 +6637,42 @@ var init_company_secret_versions = __esm({
 
 // ../packages/db/src/schema/company_skills.ts
 import {
-  pgTable as pgTable54,
-  uuid as uuid53,
-  text as text55,
-  timestamp as timestamp54,
-  jsonb as jsonb26,
-  index as index50,
-  uniqueIndex as uniqueIndex28
+  pgTable as pgTable59,
+  uuid as uuid58,
+  text as text60,
+  timestamp as timestamp59,
+  jsonb as jsonb29,
+  index as index54,
+  uniqueIndex as uniqueIndex33
 } from "drizzle-orm/pg-core";
 var companySkills;
 var init_company_skills = __esm({
   "../packages/db/src/schema/company_skills.ts"() {
     "use strict";
     init_companies();
-    companySkills = pgTable54(
+    companySkills = pgTable59(
       "company_skills",
       {
-        id: uuid53("id").primaryKey().defaultRandom(),
-        companyId: uuid53("company_id").notNull().references(() => companies.id),
-        key: text55("key").notNull(),
-        slug: text55("slug").notNull(),
-        name: text55("name").notNull(),
-        description: text55("description"),
-        markdown: text55("markdown").notNull(),
-        sourceType: text55("source_type").notNull().default("local_path"),
-        sourceLocator: text55("source_locator"),
-        sourceRef: text55("source_ref"),
-        trustLevel: text55("trust_level").notNull().default("markdown_only"),
-        compatibility: text55("compatibility").notNull().default("compatible"),
-        fileInventory: jsonb26("file_inventory").$type().notNull().default([]),
-        metadata: jsonb26("metadata").$type(),
-        createdAt: timestamp54("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp54("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid58("id").primaryKey().defaultRandom(),
+        companyId: uuid58("company_id").notNull().references(() => companies.id),
+        key: text60("key").notNull(),
+        slug: text60("slug").notNull(),
+        name: text60("name").notNull(),
+        description: text60("description"),
+        markdown: text60("markdown").notNull(),
+        sourceType: text60("source_type").notNull().default("local_path"),
+        sourceLocator: text60("source_locator"),
+        sourceRef: text60("source_ref"),
+        trustLevel: text60("trust_level").notNull().default("markdown_only"),
+        compatibility: text60("compatibility").notNull().default("compatible"),
+        fileInventory: jsonb29("file_inventory").$type().notNull().default([]),
+        metadata: jsonb29("metadata").$type(),
+        createdAt: timestamp59("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp59("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyKeyUniqueIdx: uniqueIndex28("company_skills_company_key_idx").on(table.companyId, table.key),
-        companyNameIdx: index50("company_skills_company_name_idx").on(table.companyId, table.name)
+        companyKeyUniqueIdx: uniqueIndex33("company_skills_company_key_idx").on(table.companyId, table.key),
+        companyNameIdx: index54("company_skills_company_name_idx").on(table.companyId, table.name)
       })
     );
   }
@@ -5760,93 +6680,93 @@ var init_company_skills = __esm({
 
 // ../packages/db/src/schema/plugins.ts
 import {
-  pgTable as pgTable55,
-  uuid as uuid54,
-  text as text56,
+  pgTable as pgTable60,
+  uuid as uuid59,
+  text as text61,
   integer as integer20,
-  timestamp as timestamp55,
-  jsonb as jsonb27,
-  index as index51,
-  uniqueIndex as uniqueIndex29
+  timestamp as timestamp60,
+  jsonb as jsonb30,
+  index as index55,
+  uniqueIndex as uniqueIndex34
 } from "drizzle-orm/pg-core";
 var plugins;
 var init_plugins = __esm({
   "../packages/db/src/schema/plugins.ts"() {
     "use strict";
-    plugins = pgTable55(
+    plugins = pgTable60(
       "plugins",
       {
-        id: uuid54("id").primaryKey().defaultRandom(),
-        pluginKey: text56("plugin_key").notNull(),
-        packageName: text56("package_name").notNull(),
-        version: text56("version").notNull(),
+        id: uuid59("id").primaryKey().defaultRandom(),
+        pluginKey: text61("plugin_key").notNull(),
+        packageName: text61("package_name").notNull(),
+        version: text61("version").notNull(),
         apiVersion: integer20("api_version").notNull().default(1),
-        categories: jsonb27("categories").$type().notNull().default([]),
-        manifestJson: jsonb27("manifest_json").$type().notNull(),
-        status: text56("status").$type().notNull().default("installed"),
+        categories: jsonb30("categories").$type().notNull().default([]),
+        manifestJson: jsonb30("manifest_json").$type().notNull(),
+        status: text61("status").$type().notNull().default("installed"),
         installOrder: integer20("install_order"),
         /** Resolved package path for local-path installs; used to find worker entrypoint. */
-        packagePath: text56("package_path"),
-        lastError: text56("last_error"),
-        installedAt: timestamp55("installed_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp55("updated_at", { withTimezone: true }).notNull().defaultNow()
+        packagePath: text61("package_path"),
+        lastError: text61("last_error"),
+        installedAt: timestamp60("installed_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp60("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginKeyIdx: uniqueIndex29("plugins_plugin_key_idx").on(table.pluginKey),
-        statusIdx: index51("plugins_status_idx").on(table.status)
+        pluginKeyIdx: uniqueIndex34("plugins_plugin_key_idx").on(table.pluginKey),
+        statusIdx: index55("plugins_status_idx").on(table.status)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_config.ts
-import { pgTable as pgTable56, uuid as uuid55, text as text57, timestamp as timestamp56, jsonb as jsonb28, uniqueIndex as uniqueIndex30 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable61, uuid as uuid60, text as text62, timestamp as timestamp61, jsonb as jsonb31, uniqueIndex as uniqueIndex35 } from "drizzle-orm/pg-core";
 var pluginConfig;
 var init_plugin_config = __esm({
   "../packages/db/src/schema/plugin_config.ts"() {
     "use strict";
     init_plugins();
-    pluginConfig = pgTable56(
+    pluginConfig = pgTable61(
       "plugin_config",
       {
-        id: uuid55("id").primaryKey().defaultRandom(),
-        pluginId: uuid55("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        configJson: jsonb28("config_json").$type().notNull().default({}),
-        lastError: text57("last_error"),
-        createdAt: timestamp56("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp56("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid60("id").primaryKey().defaultRandom(),
+        pluginId: uuid60("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        configJson: jsonb31("config_json").$type().notNull().default({}),
+        lastError: text62("last_error"),
+        createdAt: timestamp61("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp61("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdIdx: uniqueIndex30("plugin_config_plugin_id_idx").on(table.pluginId)
+        pluginIdIdx: uniqueIndex35("plugin_config_plugin_id_idx").on(table.pluginId)
       })
     );
   }
 });
 
 // ../packages/db/src/schema/plugin_company_settings.ts
-import { pgTable as pgTable57, uuid as uuid56, text as text58, timestamp as timestamp57, jsonb as jsonb29, index as index52, uniqueIndex as uniqueIndex31, boolean as boolean11 } from "drizzle-orm/pg-core";
+import { pgTable as pgTable62, uuid as uuid61, text as text63, timestamp as timestamp62, jsonb as jsonb32, index as index56, uniqueIndex as uniqueIndex36, boolean as boolean11 } from "drizzle-orm/pg-core";
 var pluginCompanySettings;
 var init_plugin_company_settings = __esm({
   "../packages/db/src/schema/plugin_company_settings.ts"() {
     "use strict";
     init_companies();
     init_plugins();
-    pluginCompanySettings = pgTable57(
+    pluginCompanySettings = pgTable62(
       "plugin_company_settings",
       {
-        id: uuid56("id").primaryKey().defaultRandom(),
-        companyId: uuid56("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        pluginId: uuid56("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        id: uuid61("id").primaryKey().defaultRandom(),
+        companyId: uuid61("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        pluginId: uuid61("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         enabled: boolean11("enabled").notNull().default(true),
-        settingsJson: jsonb29("settings_json").$type().notNull().default({}),
-        lastError: text58("last_error"),
-        createdAt: timestamp57("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp57("updated_at", { withTimezone: true }).notNull().defaultNow()
+        settingsJson: jsonb32("settings_json").$type().notNull().default({}),
+        lastError: text63("last_error"),
+        createdAt: timestamp62("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp62("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        companyIdx: index52("plugin_company_settings_company_idx").on(table.companyId),
-        pluginIdx: index52("plugin_company_settings_plugin_idx").on(table.pluginId),
-        companyPluginUq: uniqueIndex31("plugin_company_settings_company_plugin_uq").on(
+        companyIdx: index56("plugin_company_settings_company_idx").on(table.companyId),
+        pluginIdx: index56("plugin_company_settings_plugin_idx").on(table.pluginId),
+        companyPluginUq: uniqueIndex36("plugin_company_settings_company_plugin_uq").on(
           table.companyId,
           table.pluginId
         )
@@ -5857,12 +6777,12 @@ var init_plugin_company_settings = __esm({
 
 // ../packages/db/src/schema/plugin_state.ts
 import {
-  pgTable as pgTable58,
-  uuid as uuid57,
-  text as text59,
-  timestamp as timestamp58,
-  jsonb as jsonb30,
-  index as index53,
+  pgTable as pgTable63,
+  uuid as uuid62,
+  text as text64,
+  timestamp as timestamp63,
+  jsonb as jsonb33,
+  index as index57,
   unique as unique2
 } from "drizzle-orm/pg-core";
 var pluginState;
@@ -5870,30 +6790,30 @@ var init_plugin_state = __esm({
   "../packages/db/src/schema/plugin_state.ts"() {
     "use strict";
     init_plugins();
-    pluginState = pgTable58(
+    pluginState = pgTable63(
       "plugin_state",
       {
-        id: uuid57("id").primaryKey().defaultRandom(),
+        id: uuid62("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid57("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid62("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Granularity of the scope (e.g. `"instance"`, `"project"`, `"issue"`). */
-        scopeKind: text59("scope_kind").$type().notNull(),
+        scopeKind: text64("scope_kind").$type().notNull(),
         /**
          * UUID or text identifier for the scoped object.
          * Null for `instance` scope (which has no associated entity).
          */
-        scopeId: text59("scope_id"),
+        scopeId: text64("scope_id"),
         /**
          * Sub-namespace to avoid key collisions within a scope.
          * Defaults to `"default"` if the plugin does not specify one.
          */
-        namespace: text59("namespace").notNull().default("default"),
+        namespace: text64("namespace").notNull().default("default"),
         /** The key identifying this state entry within the namespace. */
-        stateKey: text59("state_key").notNull(),
+        stateKey: text64("state_key").notNull(),
         /** JSON-serializable value stored by the plugin. */
-        valueJson: jsonb30("value_json").notNull(),
+        valueJson: jsonb33("value_json").notNull(),
         /** Timestamp of the most recent write. */
-        updatedAt: timestamp58("updated_at", { withTimezone: true }).notNull().defaultNow()
+        updatedAt: timestamp63("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
         /**
@@ -5915,7 +6835,7 @@ var init_plugin_state = __esm({
           table.stateKey
         ).nullsNotDistinct(),
         /** Speed up lookups by plugin + scope kind (most common access pattern). */
-        pluginScopeIdx: index53("plugin_state_plugin_scope_idx").on(
+        pluginScopeIdx: index57("plugin_state_plugin_scope_idx").on(
           table.pluginId,
           table.scopeKind
         )
@@ -5926,41 +6846,41 @@ var init_plugin_state = __esm({
 
 // ../packages/db/src/schema/plugin_entities.ts
 import {
-  pgTable as pgTable59,
-  uuid as uuid58,
-  text as text60,
-  timestamp as timestamp59,
-  jsonb as jsonb31,
-  index as index54,
-  uniqueIndex as uniqueIndex32
+  pgTable as pgTable64,
+  uuid as uuid63,
+  text as text65,
+  timestamp as timestamp64,
+  jsonb as jsonb34,
+  index as index58,
+  uniqueIndex as uniqueIndex37
 } from "drizzle-orm/pg-core";
 var pluginEntities;
 var init_plugin_entities = __esm({
   "../packages/db/src/schema/plugin_entities.ts"() {
     "use strict";
     init_plugins();
-    pluginEntities = pgTable59(
+    pluginEntities = pgTable64(
       "plugin_entities",
       {
-        id: uuid58("id").primaryKey().defaultRandom(),
-        pluginId: uuid58("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        entityType: text60("entity_type").notNull(),
-        scopeKind: text60("scope_kind").$type().notNull(),
-        scopeId: text60("scope_id"),
+        id: uuid63("id").primaryKey().defaultRandom(),
+        pluginId: uuid63("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        entityType: text65("entity_type").notNull(),
+        scopeKind: text65("scope_kind").$type().notNull(),
+        scopeId: text65("scope_id"),
         // NULL for global scope (text to match plugin_state.scope_id)
-        externalId: text60("external_id"),
+        externalId: text65("external_id"),
         // ID in the external system
-        title: text60("title"),
-        status: text60("status"),
-        data: jsonb31("data").$type().notNull().default({}),
-        createdAt: timestamp59("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp59("updated_at", { withTimezone: true }).notNull().defaultNow()
+        title: text65("title"),
+        status: text65("status"),
+        data: jsonb34("data").$type().notNull().default({}),
+        createdAt: timestamp64("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp64("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index54("plugin_entities_plugin_idx").on(table.pluginId),
-        typeIdx: index54("plugin_entities_type_idx").on(table.entityType),
-        scopeIdx: index54("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
-        externalIdx: uniqueIndex32("plugin_entities_external_idx").on(
+        pluginIdx: index58("plugin_entities_plugin_idx").on(table.pluginId),
+        typeIdx: index58("plugin_entities_type_idx").on(table.entityType),
+        scopeIdx: index58("plugin_entities_scope_idx").on(table.scopeKind, table.scopeId),
+        externalIdx: uniqueIndex37("plugin_entities_external_idx").on(
           table.pluginId,
           table.entityType,
           table.externalId
@@ -5970,73 +6890,132 @@ var init_plugin_entities = __esm({
   }
 });
 
+// ../packages/db/src/schema/plugin_database.ts
+import {
+  pgTable as pgTable65,
+  uuid as uuid64,
+  text as text66,
+  timestamp as timestamp65,
+  index as index59,
+  uniqueIndex as uniqueIndex38
+} from "drizzle-orm/pg-core";
+var pluginDatabaseNamespaces, pluginMigrations;
+var init_plugin_database = __esm({
+  "../packages/db/src/schema/plugin_database.ts"() {
+    "use strict";
+    init_plugins();
+    pluginDatabaseNamespaces = pgTable65(
+      "plugin_database_namespaces",
+      {
+        id: uuid64("id").primaryKey().defaultRandom(),
+        pluginId: uuid64("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginKey: text66("plugin_key").notNull(),
+        namespaceName: text66("namespace_name").notNull(),
+        namespaceMode: text66("namespace_mode").$type().notNull().default("schema"),
+        status: text66("status").$type().notNull().default("active"),
+        createdAt: timestamp65("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp65("updated_at", { withTimezone: true }).notNull().defaultNow()
+      },
+      (table) => ({
+        pluginIdx: uniqueIndex38("plugin_database_namespaces_plugin_idx").on(table.pluginId),
+        namespaceIdx: uniqueIndex38("plugin_database_namespaces_namespace_idx").on(table.namespaceName),
+        statusIdx: index59("plugin_database_namespaces_status_idx").on(table.status)
+      })
+    );
+    pluginMigrations = pgTable65(
+      "plugin_migrations",
+      {
+        id: uuid64("id").primaryKey().defaultRandom(),
+        pluginId: uuid64("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginKey: text66("plugin_key").notNull(),
+        namespaceName: text66("namespace_name").notNull(),
+        migrationKey: text66("migration_key").notNull(),
+        checksum: text66("checksum").notNull(),
+        pluginVersion: text66("plugin_version").notNull(),
+        status: text66("status").$type().notNull(),
+        startedAt: timestamp65("started_at", { withTimezone: true }).notNull().defaultNow(),
+        appliedAt: timestamp65("applied_at", { withTimezone: true }),
+        errorMessage: text66("error_message")
+      },
+      (table) => ({
+        pluginMigrationIdx: uniqueIndex38("plugin_migrations_plugin_key_idx").on(
+          table.pluginId,
+          table.migrationKey
+        ),
+        pluginIdx: index59("plugin_migrations_plugin_idx").on(table.pluginId),
+        statusIdx: index59("plugin_migrations_status_idx").on(table.status)
+      })
+    );
+  }
+});
+
 // ../packages/db/src/schema/plugin_jobs.ts
 import {
-  pgTable as pgTable60,
-  uuid as uuid59,
-  text as text61,
+  pgTable as pgTable66,
+  uuid as uuid65,
+  text as text67,
   integer as integer21,
-  timestamp as timestamp60,
-  jsonb as jsonb32,
-  index as index55,
-  uniqueIndex as uniqueIndex33
+  timestamp as timestamp66,
+  jsonb as jsonb35,
+  index as index60,
+  uniqueIndex as uniqueIndex39
 } from "drizzle-orm/pg-core";
 var pluginJobs, pluginJobRuns;
 var init_plugin_jobs = __esm({
   "../packages/db/src/schema/plugin_jobs.ts"() {
     "use strict";
     init_plugins();
-    pluginJobs = pgTable60(
+    pluginJobs = pgTable66(
       "plugin_jobs",
       {
-        id: uuid59("id").primaryKey().defaultRandom(),
+        id: uuid65("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid59("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid65("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `jobs` array. */
-        jobKey: text61("job_key").notNull(),
+        jobKey: text67("job_key").notNull(),
         /** Cron expression (e.g. `"0 * * * *"`) or interval string. */
-        schedule: text61("schedule").notNull(),
+        schedule: text67("schedule").notNull(),
         /** Current scheduling state. */
-        status: text61("status").$type().notNull().default("active"),
+        status: text67("status").$type().notNull().default("active"),
         /** Timestamp of the most recent successful execution. */
-        lastRunAt: timestamp60("last_run_at", { withTimezone: true }),
+        lastRunAt: timestamp66("last_run_at", { withTimezone: true }),
         /** Pre-computed timestamp of the next scheduled execution. */
-        nextRunAt: timestamp60("next_run_at", { withTimezone: true }),
-        createdAt: timestamp60("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp60("updated_at", { withTimezone: true }).notNull().defaultNow()
+        nextRunAt: timestamp66("next_run_at", { withTimezone: true }),
+        createdAt: timestamp66("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp66("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index55("plugin_jobs_plugin_idx").on(table.pluginId),
-        nextRunIdx: index55("plugin_jobs_next_run_idx").on(table.nextRunAt),
-        uniqueJobIdx: uniqueIndex33("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
+        pluginIdx: index60("plugin_jobs_plugin_idx").on(table.pluginId),
+        nextRunIdx: index60("plugin_jobs_next_run_idx").on(table.nextRunAt),
+        uniqueJobIdx: uniqueIndex39("plugin_jobs_unique_idx").on(table.pluginId, table.jobKey)
       })
     );
-    pluginJobRuns = pgTable60(
+    pluginJobRuns = pgTable66(
       "plugin_job_runs",
       {
-        id: uuid59("id").primaryKey().defaultRandom(),
+        id: uuid65("id").primaryKey().defaultRandom(),
         /** FK to the parent job definition. Cascades on delete. */
-        jobId: uuid59("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
+        jobId: uuid65("job_id").notNull().references(() => pluginJobs.id, { onDelete: "cascade" }),
         /** Denormalized FK to the owning plugin for efficient querying. Cascades on delete. */
-        pluginId: uuid59("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid65("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** What caused this run to start (`"scheduled"` or `"manual"`). */
-        trigger: text61("trigger").$type().notNull(),
+        trigger: text67("trigger").$type().notNull(),
         /** Current lifecycle state of this run. */
-        status: text61("status").$type().notNull().default("pending"),
+        status: text67("status").$type().notNull().default("pending"),
         /** Wall-clock duration in milliseconds. Null until the run finishes. */
         durationMs: integer21("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text61("error"),
+        error: text67("error"),
         /** Ordered list of log lines emitted during this run. */
-        logs: jsonb32("logs").$type().notNull().default([]),
-        startedAt: timestamp60("started_at", { withTimezone: true }),
-        finishedAt: timestamp60("finished_at", { withTimezone: true }),
-        createdAt: timestamp60("created_at", { withTimezone: true }).notNull().defaultNow()
+        logs: jsonb35("logs").$type().notNull().default([]),
+        startedAt: timestamp66("started_at", { withTimezone: true }),
+        finishedAt: timestamp66("finished_at", { withTimezone: true }),
+        createdAt: timestamp66("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        jobIdx: index55("plugin_job_runs_job_idx").on(table.jobId),
-        pluginIdx: index55("plugin_job_runs_plugin_idx").on(table.pluginId),
-        statusIdx: index55("plugin_job_runs_status_idx").on(table.status)
+        jobIdx: index60("plugin_job_runs_job_idx").on(table.jobId),
+        pluginIdx: index60("plugin_job_runs_plugin_idx").on(table.pluginId),
+        statusIdx: index60("plugin_job_runs_status_idx").on(table.status)
       })
     );
   }
@@ -6044,47 +7023,47 @@ var init_plugin_jobs = __esm({
 
 // ../packages/db/src/schema/plugin_webhooks.ts
 import {
-  pgTable as pgTable61,
-  uuid as uuid60,
-  text as text62,
+  pgTable as pgTable67,
+  uuid as uuid66,
+  text as text68,
   integer as integer22,
-  timestamp as timestamp61,
-  jsonb as jsonb33,
-  index as index56
+  timestamp as timestamp67,
+  jsonb as jsonb36,
+  index as index61
 } from "drizzle-orm/pg-core";
 var pluginWebhookDeliveries;
 var init_plugin_webhooks = __esm({
   "../packages/db/src/schema/plugin_webhooks.ts"() {
     "use strict";
     init_plugins();
-    pluginWebhookDeliveries = pgTable61(
+    pluginWebhookDeliveries = pgTable67(
       "plugin_webhook_deliveries",
       {
-        id: uuid60("id").primaryKey().defaultRandom(),
+        id: uuid66("id").primaryKey().defaultRandom(),
         /** FK to the owning plugin. Cascades on delete. */
-        pluginId: uuid60("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        pluginId: uuid66("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
         /** Identifier matching the key in the plugin manifest's `webhooks` array. */
-        webhookKey: text62("webhook_key").notNull(),
+        webhookKey: text68("webhook_key").notNull(),
         /** Optional de-duplication ID provided by the external system. */
-        externalId: text62("external_id"),
+        externalId: text68("external_id"),
         /** Current delivery state. */
-        status: text62("status").$type().notNull().default("pending"),
+        status: text68("status").$type().notNull().default("pending"),
         /** Wall-clock processing duration in milliseconds. Null until delivery finishes. */
         durationMs: integer22("duration_ms"),
         /** Error message if `status === "failed"`. */
-        error: text62("error"),
+        error: text68("error"),
         /** Raw JSON body of the inbound HTTP request. */
-        payload: jsonb33("payload").$type().notNull(),
+        payload: jsonb36("payload").$type().notNull(),
         /** Relevant HTTP headers from the inbound request (e.g. signature headers). */
-        headers: jsonb33("headers").$type().notNull().default({}),
-        startedAt: timestamp61("started_at", { withTimezone: true }),
-        finishedAt: timestamp61("finished_at", { withTimezone: true }),
-        createdAt: timestamp61("created_at", { withTimezone: true }).notNull().defaultNow()
+        headers: jsonb36("headers").$type().notNull().default({}),
+        startedAt: timestamp67("started_at", { withTimezone: true }),
+        finishedAt: timestamp67("finished_at", { withTimezone: true }),
+        createdAt: timestamp67("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginIdx: index56("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
-        statusIdx: index56("plugin_webhook_deliveries_status_idx").on(table.status),
-        keyIdx: index56("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
+        pluginIdx: index61("plugin_webhook_deliveries_plugin_idx").on(table.pluginId),
+        statusIdx: index61("plugin_webhook_deliveries_status_idx").on(table.status),
+        keyIdx: index61("plugin_webhook_deliveries_key_idx").on(table.webhookKey)
       })
     );
   }
@@ -6092,34 +7071,34 @@ var init_plugin_webhooks = __esm({
 
 // ../packages/db/src/schema/plugin_logs.ts
 import {
-  pgTable as pgTable62,
-  uuid as uuid61,
-  text as text63,
-  timestamp as timestamp62,
-  jsonb as jsonb34,
-  index as index57
+  pgTable as pgTable68,
+  uuid as uuid67,
+  text as text69,
+  timestamp as timestamp68,
+  jsonb as jsonb37,
+  index as index62
 } from "drizzle-orm/pg-core";
 var pluginLogs;
 var init_plugin_logs = __esm({
   "../packages/db/src/schema/plugin_logs.ts"() {
     "use strict";
     init_plugins();
-    pluginLogs = pgTable62(
+    pluginLogs = pgTable68(
       "plugin_logs",
       {
-        id: uuid61("id").primaryKey().defaultRandom(),
-        pluginId: uuid61("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
-        level: text63("level").notNull().default("info"),
-        message: text63("message").notNull(),
-        meta: jsonb34("meta").$type(),
-        createdAt: timestamp62("created_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid67("id").primaryKey().defaultRandom(),
+        pluginId: uuid67("plugin_id").notNull().references(() => plugins.id, { onDelete: "cascade" }),
+        level: text69("level").notNull().default("info"),
+        message: text69("message").notNull(),
+        meta: jsonb37("meta").$type(),
+        createdAt: timestamp68("created_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        pluginTimeIdx: index57("plugin_logs_plugin_time_idx").on(
+        pluginTimeIdx: index62("plugin_logs_plugin_time_idx").on(
           table.pluginId,
           table.createdAt
         ),
-        levelIdx: index57("plugin_logs_level_idx").on(table.level)
+        levelIdx: index62("plugin_logs_level_idx").on(table.level)
       })
     );
   }
@@ -6127,13 +7106,13 @@ var init_plugin_logs = __esm({
 
 // ../packages/db/src/schema/vibedash_project_links.ts
 import {
-  index as index58,
-  jsonb as jsonb35,
-  pgTable as pgTable63,
-  text as text64,
-  timestamp as timestamp63,
-  uniqueIndex as uniqueIndex34,
-  uuid as uuid62
+  index as index63,
+  jsonb as jsonb38,
+  pgTable as pgTable69,
+  text as text70,
+  timestamp as timestamp69,
+  uniqueIndex as uniqueIndex40,
+  uuid as uuid68
 } from "drizzle-orm/pg-core";
 var vibedashProjectLinks;
 var init_vibedash_project_links = __esm({
@@ -6142,36 +7121,36 @@ var init_vibedash_project_links = __esm({
     init_companies();
     init_projects();
     init_agents();
-    vibedashProjectLinks = pgTable63(
+    vibedashProjectLinks = pgTable69(
       "vibedash_project_links",
       {
-        id: uuid62("id").primaryKey().defaultRandom(),
-        companyId: uuid62("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
-        projectId: uuid62("project_id").references(() => projects.id, { onDelete: "set null" }),
-        pmAgentId: uuid62("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
-        vibedashProjectId: text64("vibedash_project_id").notNull(),
-        vibedashOwnerUserId: text64("vibedash_owner_user_id").notNull(),
-        vibedashOwnerEmail: text64("vibedash_owner_email"),
-        githubRepoUrl: text64("github_repo_url"),
-        githubRepoRef: text64("github_repo_ref"),
-        githubProvider: text64("github_provider").notNull().default("github"),
-        bootstrapStatus: text64("bootstrap_status").notNull().default("provisioning"),
-        lastSyncedAt: timestamp63("last_synced_at", { withTimezone: true }),
-        metadata: jsonb35("metadata").$type(),
-        createdAt: timestamp63("created_at", { withTimezone: true }).notNull().defaultNow(),
-        updatedAt: timestamp63("updated_at", { withTimezone: true }).notNull().defaultNow()
+        id: uuid68("id").primaryKey().defaultRandom(),
+        companyId: uuid68("company_id").notNull().references(() => companies.id, { onDelete: "cascade" }),
+        projectId: uuid68("project_id").references(() => projects.id, { onDelete: "set null" }),
+        pmAgentId: uuid68("pm_agent_id").references(() => agents.id, { onDelete: "set null" }),
+        vibedashProjectId: text70("vibedash_project_id").notNull(),
+        vibedashOwnerUserId: text70("vibedash_owner_user_id").notNull(),
+        vibedashOwnerEmail: text70("vibedash_owner_email"),
+        githubRepoUrl: text70("github_repo_url"),
+        githubRepoRef: text70("github_repo_ref"),
+        githubProvider: text70("github_provider").notNull().default("github"),
+        bootstrapStatus: text70("bootstrap_status").notNull().default("provisioning"),
+        lastSyncedAt: timestamp69("last_synced_at", { withTimezone: true }),
+        metadata: jsonb38("metadata").$type(),
+        createdAt: timestamp69("created_at", { withTimezone: true }).notNull().defaultNow(),
+        updatedAt: timestamp69("updated_at", { withTimezone: true }).notNull().defaultNow()
       },
       (table) => ({
-        vibedashProjectIdUniqueIdx: uniqueIndex34(
+        vibedashProjectIdUniqueIdx: uniqueIndex40(
           "vibedash_project_links_vibedash_project_id_idx"
         ).on(table.vibedashProjectId),
-        companyUniqueIdx: uniqueIndex34("vibedash_project_links_company_id_idx").on(table.companyId),
-        companyStatusIdx: index58("vibedash_project_links_company_status_idx").on(
+        companyUniqueIdx: uniqueIndex40("vibedash_project_links_company_id_idx").on(table.companyId),
+        companyStatusIdx: index63("vibedash_project_links_company_status_idx").on(
           table.companyId,
           table.bootstrapStatus
         ),
-        projectIdx: index58("vibedash_project_links_project_idx").on(table.projectId),
-        pmAgentIdx: index58("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
+        projectIdx: index63("vibedash_project_links_project_idx").on(table.projectId),
+        pmAgentIdx: index63("vibedash_project_links_pm_agent_idx").on(table.pmAgentId)
       })
     );
   }
@@ -6204,6 +7183,7 @@ __export(schema_exports, {
   companySecretVersions: () => companySecretVersions,
   companySecrets: () => companySecrets,
   companySkills: () => companySkills,
+  companyUserSidebarPreferences: () => companyUserSidebarPreferences,
   costEvents: () => costEvents,
   documentRevisions: () => documentRevisions,
   documents: () => documents,
@@ -6214,6 +7194,7 @@ __export(schema_exports, {
   goals: () => goals,
   heartbeatRunEvents: () => heartbeatRunEvents,
   heartbeatRuns: () => heartbeatRuns,
+  inboxDismissals: () => inboxDismissals,
   instanceSettings: () => instanceSettings,
   instanceUserRoles: () => instanceUserRoles,
   invites: () => invites,
@@ -6225,17 +7206,21 @@ __export(schema_exports, {
   issueInboxArchives: () => issueInboxArchives,
   issueLabels: () => issueLabels,
   issueReadStates: () => issueReadStates,
+  issueReferenceMentions: () => issueReferenceMentions,
   issueRelations: () => issueRelations,
+  issueThreadInteractions: () => issueThreadInteractions,
   issueWorkProducts: () => issueWorkProducts,
   issues: () => issues,
   joinRequests: () => joinRequests,
   labels: () => labels,
   pluginCompanySettings: () => pluginCompanySettings,
   pluginConfig: () => pluginConfig,
+  pluginDatabaseNamespaces: () => pluginDatabaseNamespaces,
   pluginEntities: () => pluginEntities,
   pluginJobRuns: () => pluginJobRuns,
   pluginJobs: () => pluginJobs,
   pluginLogs: () => pluginLogs,
+  pluginMigrations: () => pluginMigrations,
   pluginState: () => pluginState,
   pluginWebhookDeliveries: () => pluginWebhookDeliveries,
   plugins: () => plugins,
@@ -6246,6 +7231,7 @@ __export(schema_exports, {
   routineRuns: () => routineRuns,
   routineTriggers: () => routineTriggers,
   routines: () => routines,
+  userSidebarPreferences: () => userSidebarPreferences,
   vibedashProjectLinks: () => vibedashProjectLinks,
   workspaceOperations: () => workspaceOperations,
   workspaceRuntimeServices: () => workspaceRuntimeServices
@@ -6258,10 +7244,12 @@ var init_schema2 = __esm({
     init_auth();
     init_instance_settings();
     init_instance_user_roles();
+    init_user_sidebar_preferences();
     init_agents();
     init_board_api_keys();
     init_cli_auth_challenges();
     init_company_memberships();
+    init_company_user_sidebar_preferences();
     init_principal_permission_grants();
     init_invites();
     init_join_requests();
@@ -6280,6 +7268,7 @@ var init_schema2 = __esm({
     init_project_goals();
     init_goals();
     init_issues();
+    init_issue_reference_mentions();
     init_issue_relations();
     init_routines();
     init_issue_work_products();
@@ -6287,8 +7276,10 @@ var init_schema2 = __esm({
     init_issue_labels();
     init_issue_approvals();
     init_issue_comments();
+    init_issue_thread_interactions();
     init_issue_execution_decisions();
     init_issue_inbox_archives();
+    init_inbox_dismissals();
     init_feedback_votes();
     init_feedback_exports();
     init_issue_read_states();
@@ -6312,6 +7303,7 @@ var init_schema2 = __esm({
     init_plugin_company_settings();
     init_plugin_state();
     init_plugin_entities();
+    init_plugin_database();
     init_plugin_jobs();
     init_plugin_webhooks();
     init_plugin_logs();
@@ -6344,13 +7336,13 @@ function splitMigrationStatements(content) {
   return content.split("--> statement-breakpoint").map((statement) => statement.trim()).filter((statement) => statement.length > 0);
 }
 function createDb(url) {
-  const sql4 = postgres(url);
-  return drizzlePg(sql4, { schema: schema_exports });
+  const sql7 = postgres(url);
+  return drizzlePg(sql7, { schema: schema_exports });
 }
 async function getPostgresDataDirectory(url) {
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   try {
-    const rows = await sql4`
+    const rows = await sql7`
       SELECT current_setting('data_directory', true) AS data_directory
     `;
     const actual = rows[0]?.data_directory;
@@ -6358,7 +7350,7 @@ async function getPostgresDataDirectory(url) {
   } catch {
     return null;
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 async function listMigrationFiles() {
@@ -6400,21 +7392,21 @@ async function orderMigrationsByJournal(migrationFiles) {
     return leftOrder - rightOrder;
   });
 }
-async function runInTransaction(sql4, action) {
-  await sql4.unsafe("BEGIN");
+async function runInTransaction(sql7, action) {
+  await sql7.unsafe("BEGIN");
   try {
     await action();
-    await sql4.unsafe("COMMIT");
+    await sql7.unsafe("COMMIT");
   } catch (error) {
     try {
-      await sql4.unsafe("ROLLBACK");
+      await sql7.unsafe("ROLLBACK");
     } catch {
     }
     throw error;
   }
 }
-async function latestMigrationCreatedAt(sql4, qualifiedTable) {
-  const rows = await sql4.unsafe(
+async function latestMigrationCreatedAt(sql7, qualifiedTable) {
+  const rows = await sql7.unsafe(
     `SELECT created_at FROM ${qualifiedTable} ORDER BY created_at DESC NULLS LAST LIMIT 1`
   );
   const value = Number(rows[0]?.created_at ?? Number.NaN);
@@ -6426,31 +7418,31 @@ function normalizeFolderMillis(value) {
   }
   return Date.now();
 }
-async function ensureMigrationJournalTable(sql4) {
-  let migrationTableSchema = await discoverMigrationTableSchema(sql4);
+async function ensureMigrationJournalTable(sql7) {
+  let migrationTableSchema = await discoverMigrationTableSchema(sql7);
   if (!migrationTableSchema) {
     const drizzleSchema = quoteIdentifier("drizzle");
     const migrationTable = quoteIdentifier(DRIZZLE_MIGRATIONS_TABLE);
-    await sql4.unsafe(`CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}`);
-    await sql4.unsafe(
+    await sql7.unsafe(`CREATE SCHEMA IF NOT EXISTS ${drizzleSchema}`);
+    await sql7.unsafe(
       `CREATE TABLE IF NOT EXISTS ${drizzleSchema}.${migrationTable} (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint)`
     );
-    migrationTableSchema = await discoverMigrationTableSchema(sql4) ?? "drizzle";
+    migrationTableSchema = await discoverMigrationTableSchema(sql7) ?? "drizzle";
   }
-  const columnNames = await getMigrationTableColumnNames(sql4, migrationTableSchema);
+  const columnNames = await getMigrationTableColumnNames(sql7, migrationTableSchema);
   return { migrationTableSchema, columnNames };
 }
-async function migrationHistoryEntryExists(sql4, qualifiedTable, columnNames, migrationFile, hash) {
+async function migrationHistoryEntryExists(sql7, qualifiedTable, columnNames, migrationFile, hash) {
   const predicates = [];
   if (columnNames.has("hash")) predicates.push(`hash = ${quoteLiteral(hash)}`);
   if (columnNames.has("name")) predicates.push(`name = ${quoteLiteral(migrationFile)}`);
   if (predicates.length === 0) return false;
-  const rows = await sql4.unsafe(
+  const rows = await sql7.unsafe(
     `SELECT 1 AS one FROM ${qualifiedTable} WHERE ${predicates.join(" OR ")} LIMIT 1`
   );
   return rows.length > 0;
 }
-async function recordMigrationHistoryEntry(sql4, qualifiedTable, columnNames, migrationFile, hash, folderMillis) {
+async function recordMigrationHistoryEntry(sql7, qualifiedTable, columnNames, migrationFile, hash, folderMillis) {
   const insertColumns = [];
   const insertValues = [];
   if (columnNames.has("hash")) {
@@ -6462,13 +7454,13 @@ async function recordMigrationHistoryEntry(sql4, qualifiedTable, columnNames, mi
     insertValues.push(quoteLiteral(migrationFile));
   }
   if (columnNames.has("created_at")) {
-    const latestCreatedAt = await latestMigrationCreatedAt(sql4, qualifiedTable);
+    const latestCreatedAt = await latestMigrationCreatedAt(sql7, qualifiedTable);
     const createdAt = latestCreatedAt === null ? normalizeFolderMillis(folderMillis) : Math.max(latestCreatedAt + 1, normalizeFolderMillis(folderMillis));
     insertColumns.push(quoteIdentifier("created_at"));
     insertValues.push(quoteLiteral(String(createdAt)));
   }
   if (insertColumns.length === 0) return;
-  await sql4.unsafe(
+  await sql7.unsafe(
     `INSERT INTO ${qualifiedTable} (${insertColumns.join(", ")}) VALUES (${insertValues.join(", ")})`
   );
 }
@@ -6479,29 +7471,29 @@ async function applyPendingMigrationsManually(url, pendingMigrations) {
   const folderMillisByFileName = new Map(
     journalEntries.map((entry) => [entry.fileName, normalizeFolderMillis(entry.folderMillis)])
   );
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   try {
-    const { migrationTableSchema, columnNames } = await ensureMigrationJournalTable(sql4);
+    const { migrationTableSchema, columnNames } = await ensureMigrationJournalTable(sql7);
     const qualifiedTable = `${quoteIdentifier(migrationTableSchema)}.${quoteIdentifier(DRIZZLE_MIGRATIONS_TABLE)}`;
     for (const migrationFile of orderedPendingMigrations) {
       const migrationContent = await readMigrationFileContent(migrationFile);
       const hash = createHash("sha256").update(migrationContent).digest("hex");
       const existingEntry = await migrationHistoryEntryExists(
-        sql4,
+        sql7,
         qualifiedTable,
         columnNames,
         migrationFile,
         hash
       );
       if (existingEntry) continue;
-      await runInTransaction(sql4, async () => {
+      await runInTransaction(sql7, async () => {
         for (const statement of splitMigrationStatements(migrationContent)) {
-          const alreadyApplied = await migrationStatementAlreadyApplied(sql4, statement);
+          const alreadyApplied = await migrationStatementAlreadyApplied(sql7, statement);
           if (alreadyApplied) continue;
-          await sql4.unsafe(statement);
+          await sql7.unsafe(statement);
         }
         await recordMigrationHistoryEntry(
-          sql4,
+          sql7,
           qualifiedTable,
           columnNames,
           migrationFile,
@@ -6511,7 +7503,7 @@ async function applyPendingMigrationsManually(url, pendingMigrations) {
       });
     }
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 async function mapHashesToMigrationFiles(migrationFiles) {
@@ -6525,8 +7517,8 @@ async function mapHashesToMigrationFiles(migrationFiles) {
   );
   return mapped;
 }
-async function getMigrationTableColumnNames(sql4, migrationTableSchema) {
-  const columns = await sql4.unsafe(
+async function getMigrationTableColumnNames(sql7, migrationTableSchema) {
+  const columns = await sql7.unsafe(
     `
       SELECT column_name
       FROM information_schema.columns
@@ -6536,8 +7528,8 @@ async function getMigrationTableColumnNames(sql4, migrationTableSchema) {
   );
   return new Set(columns.map((column) => column.column_name));
 }
-async function tableExists(sql4, tableName) {
-  const rows = await sql4`
+async function tableExists(sql7, tableName) {
+  const rows = await sql7`
     SELECT EXISTS (
       SELECT 1
       FROM information_schema.tables
@@ -6547,8 +7539,8 @@ async function tableExists(sql4, tableName) {
   `;
   return rows[0]?.exists ?? false;
 }
-async function columnExists(sql4, tableName, columnName) {
-  const rows = await sql4`
+async function columnExists(sql7, tableName, columnName) {
+  const rows = await sql7`
     SELECT EXISTS (
       SELECT 1
       FROM information_schema.columns
@@ -6559,8 +7551,8 @@ async function columnExists(sql4, tableName, columnName) {
   `;
   return rows[0]?.exists ?? false;
 }
-async function indexExists(sql4, indexName) {
-  const rows = await sql4`
+async function indexExists(sql7, indexName) {
+  const rows = await sql7`
     SELECT EXISTS (
       SELECT 1
       FROM pg_class c
@@ -6572,8 +7564,8 @@ async function indexExists(sql4, indexName) {
   `;
   return rows[0]?.exists ?? false;
 }
-async function constraintExists(sql4, constraintName) {
-  const rows = await sql4`
+async function constraintExists(sql7, constraintName) {
+  const rows = await sql7`
     SELECT EXISTS (
       SELECT 1
       FROM pg_constraint c
@@ -6584,68 +7576,68 @@ async function constraintExists(sql4, constraintName) {
   `;
   return rows[0]?.exists ?? false;
 }
-async function migrationStatementAlreadyApplied(sql4, statement) {
+async function migrationStatementAlreadyApplied(sql7, statement) {
   const stripped = statement.replace(/--[^\n]*/g, "");
   const normalized = stripped.replace(/\s+/g, " ").trim();
   const createTableMatch = normalized.match(/^CREATE TABLE(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createTableMatch) {
-    return tableExists(sql4, createTableMatch[1]);
+    return tableExists(sql7, createTableMatch[1]);
   }
   const addColumnMatch = normalized.match(
     /^ALTER TABLE "([^"]+)" ADD COLUMN(?: IF NOT EXISTS)? "([^"]+)"/i
   );
   if (addColumnMatch) {
-    return columnExists(sql4, addColumnMatch[1], addColumnMatch[2]);
+    return columnExists(sql7, addColumnMatch[1], addColumnMatch[2]);
   }
   const dropColumnMatch = normalized.match(
     /^ALTER TABLE "([^"]+)" DROP COLUMN(?: IF EXISTS)? "([^"]+)"/i
   );
   if (dropColumnMatch) {
-    return !await columnExists(sql4, dropColumnMatch[1], dropColumnMatch[2]);
+    return !await columnExists(sql7, dropColumnMatch[1], dropColumnMatch[2]);
   }
   const createIndexMatch = normalized.match(/^CREATE (?:UNIQUE )?INDEX(?: IF NOT EXISTS)? "([^"]+)"/i);
   if (createIndexMatch) {
-    return indexExists(sql4, createIndexMatch[1]);
+    return indexExists(sql7, createIndexMatch[1]);
   }
   const dropIndexMatch = normalized.match(/^DROP INDEX(?: IF EXISTS)? (?:"[^"]+"\.)??"([^"]+)"/i);
   if (dropIndexMatch) {
-    return !await indexExists(sql4, dropIndexMatch[1]);
+    return !await indexExists(sql7, dropIndexMatch[1]);
   }
   const addConstraintMatch = normalized.match(/^ALTER TABLE "([^"]+)" ADD CONSTRAINT "([^"]+)"/i);
   if (addConstraintMatch) {
-    return constraintExists(sql4, addConstraintMatch[2]);
+    return constraintExists(sql7, addConstraintMatch[2]);
   }
   const dropConstraintMatch = normalized.match(
     /^ALTER TABLE "([^"]+)" DROP CONSTRAINT(?: IF EXISTS)? "([^"]+)"/i
   );
   if (dropConstraintMatch) {
-    return !await constraintExists(sql4, dropConstraintMatch[2]);
+    return !await constraintExists(sql7, dropConstraintMatch[2]);
   }
   const dropTableMatch = normalized.match(/^DROP TABLE(?: IF EXISTS)? "([^"]+)"/i);
   if (dropTableMatch) {
-    return !await tableExists(sql4, dropTableMatch[1]);
+    return !await tableExists(sql7, dropTableMatch[1]);
   }
   return false;
 }
-async function migrationContentAlreadyApplied(sql4, migrationContent) {
+async function migrationContentAlreadyApplied(sql7, migrationContent) {
   const statements = splitMigrationStatements(migrationContent);
   if (statements.length === 0) return false;
   for (const statement of statements) {
-    const applied = await migrationStatementAlreadyApplied(sql4, statement);
+    const applied = await migrationStatementAlreadyApplied(sql7, statement);
     if (!applied) return false;
   }
   return true;
 }
-async function loadAppliedMigrations(sql4, migrationTableSchema, availableMigrations) {
+async function loadAppliedMigrations(sql7, migrationTableSchema, availableMigrations) {
   const quotedSchema = quoteIdentifier(migrationTableSchema);
   const qualifiedTable = `${quotedSchema}.${quoteIdentifier(DRIZZLE_MIGRATIONS_TABLE)}`;
-  const columnNames = await getMigrationTableColumnNames(sql4, migrationTableSchema);
+  const columnNames = await getMigrationTableColumnNames(sql7, migrationTableSchema);
   if (columnNames.has("name")) {
-    const rows2 = await sql4.unsafe(`SELECT name FROM ${qualifiedTable} ORDER BY id`);
+    const rows2 = await sql7.unsafe(`SELECT name FROM ${qualifiedTable} ORDER BY id`);
     return rows2.map((row) => row.name).filter((name) => Boolean(name));
   }
   if (columnNames.has("hash")) {
-    const rows2 = await sql4.unsafe(`SELECT hash FROM ${qualifiedTable} ORDER BY id`);
+    const rows2 = await sql7.unsafe(`SELECT hash FROM ${qualifiedTable} ORDER BY id`);
     const hashesToMigrationFiles = await mapHashesToMigrationFiles(availableMigrations);
     const appliedFromHashes = rows2.map((row) => hashesToMigrationFiles.get(row.hash)).filter((name) => Boolean(name));
     if (appliedFromHashes.length > 0) {
@@ -6655,7 +7647,7 @@ async function loadAppliedMigrations(sql4, migrationTableSchema, availableMigrat
     if (columnNames.has("created_at")) {
       const journalEntries = await listJournalMigrationEntries();
       if (journalEntries.length > 0) {
-        const lastDbRows = await sql4.unsafe(
+        const lastDbRows = await sql7.unsafe(
           `SELECT created_at FROM ${qualifiedTable} ORDER BY created_at DESC LIMIT 1`
         );
         const lastCreatedAt = Number(lastDbRows[0]?.created_at ?? -1);
@@ -6665,7 +7657,7 @@ async function loadAppliedMigrations(sql4, migrationTableSchema, availableMigrat
       }
     }
   }
-  const rows = await sql4.unsafe(`SELECT id FROM ${qualifiedTable} ORDER BY id`);
+  const rows = await sql7.unsafe(`SELECT id FROM ${qualifiedTable} ORDER BY id`);
   const journalMigrationFiles = await listJournalMigrationFiles();
   const appliedFromIds = rows.map((row) => journalMigrationFiles[row.id - 1]).filter((name) => Boolean(name));
   if (appliedFromIds.length > 0) return appliedFromIds;
@@ -6676,40 +7668,40 @@ async function reconcilePendingMigrationHistory(url) {
   if (state.status !== "needsMigrations" || state.reason !== "pending-migrations") {
     return { repairedMigrations: [], remainingMigrations: [] };
   }
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   const repairedMigrations = [];
   try {
     const journalEntries = await listJournalMigrationEntries();
     const folderMillisByFile = new Map(journalEntries.map((entry) => [entry.fileName, entry.folderMillis]));
-    const migrationTableSchema = await discoverMigrationTableSchema(sql4);
+    const migrationTableSchema = await discoverMigrationTableSchema(sql7);
     if (!migrationTableSchema) {
       return { repairedMigrations, remainingMigrations: state.pendingMigrations };
     }
-    const columnNames = await getMigrationTableColumnNames(sql4, migrationTableSchema);
+    const columnNames = await getMigrationTableColumnNames(sql7, migrationTableSchema);
     const qualifiedTable = `${quoteIdentifier(migrationTableSchema)}.${quoteIdentifier(DRIZZLE_MIGRATIONS_TABLE)}`;
     for (const migrationFile of state.pendingMigrations) {
       const migrationContent = await readMigrationFileContent(migrationFile);
-      const alreadyApplied = await migrationContentAlreadyApplied(sql4, migrationContent);
+      const alreadyApplied = await migrationContentAlreadyApplied(sql7, migrationContent);
       if (!alreadyApplied) break;
       const hash = createHash("sha256").update(migrationContent).digest("hex");
       const folderMillis = folderMillisByFile.get(migrationFile) ?? Date.now();
-      const existingByHash = columnNames.has("hash") ? await sql4.unsafe(
+      const existingByHash = columnNames.has("hash") ? await sql7.unsafe(
         `SELECT created_at FROM ${qualifiedTable} WHERE hash = ${quoteLiteral(hash)} ORDER BY created_at DESC LIMIT 1`
       ) : [];
-      const existingByName = columnNames.has("name") ? await sql4.unsafe(
+      const existingByName = columnNames.has("name") ? await sql7.unsafe(
         `SELECT created_at FROM ${qualifiedTable} WHERE name = ${quoteLiteral(migrationFile)} ORDER BY created_at DESC LIMIT 1`
       ) : [];
       if (existingByHash.length > 0 || existingByName.length > 0) {
         if (columnNames.has("created_at")) {
           const existingHashCreatedAt = Number(existingByHash[0]?.created_at ?? -1);
           if (existingByHash.length > 0 && Number.isFinite(existingHashCreatedAt) && existingHashCreatedAt < folderMillis) {
-            await sql4.unsafe(
+            await sql7.unsafe(
               `UPDATE ${qualifiedTable} SET created_at = ${quoteLiteral(String(folderMillis))} WHERE hash = ${quoteLiteral(hash)} AND created_at < ${quoteLiteral(String(folderMillis))}`
             );
           }
           const existingNameCreatedAt = Number(existingByName[0]?.created_at ?? -1);
           if (existingByName.length > 0 && Number.isFinite(existingNameCreatedAt) && existingNameCreatedAt < folderMillis) {
-            await sql4.unsafe(
+            await sql7.unsafe(
               `UPDATE ${qualifiedTable} SET created_at = ${quoteLiteral(String(folderMillis))} WHERE name = ${quoteLiteral(migrationFile)} AND created_at < ${quoteLiteral(String(folderMillis))}`
             );
           }
@@ -6732,13 +7724,13 @@ async function reconcilePendingMigrationHistory(url) {
         insertValues.push(quoteLiteral(String(folderMillis)));
       }
       if (insertColumns.length === 0) break;
-      await sql4.unsafe(
+      await sql7.unsafe(
         `INSERT INTO ${qualifiedTable} (${insertColumns.join(", ")}) VALUES (${insertValues.join(", ")})`
       );
       repairedMigrations.push(migrationFile);
     }
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
   const refreshed = await inspectMigrations(url);
   return {
@@ -6746,8 +7738,8 @@ async function reconcilePendingMigrationHistory(url) {
     remainingMigrations: refreshed.status === "needsMigrations" ? refreshed.pendingMigrations : []
   };
 }
-async function discoverMigrationTableSchema(sql4) {
-  const rows = await sql4`
+async function discoverMigrationTableSchema(sql7) {
+  const rows = await sql7`
     SELECT n.nspname AS "schemaName"
     FROM pg_class c
     JOIN pg_namespace n ON n.oid = c.relnamespace
@@ -6761,17 +7753,17 @@ async function discoverMigrationTableSchema(sql4) {
   return rows[0]?.schemaName ?? null;
 }
 async function inspectMigrations(url) {
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   try {
     const availableMigrations = await listMigrationFiles();
-    const tableCountResult = await sql4`
+    const tableCountResult = await sql7`
       select count(*)::int as count
       from information_schema.tables
       where table_schema = 'public'
         and table_type = 'BASE TABLE'
     `;
     const tableCount = tableCountResult[0]?.count ?? 0;
-    const migrationTableSchema = await discoverMigrationTableSchema(sql4);
+    const migrationTableSchema = await discoverMigrationTableSchema(sql7);
     if (!migrationTableSchema) {
       if (tableCount > 0) {
         return {
@@ -6792,7 +7784,7 @@ async function inspectMigrations(url) {
         reason: "no-migration-journal-empty-db"
       };
     }
-    const appliedMigrations = await loadAppliedMigrations(sql4, migrationTableSchema, availableMigrations);
+    const appliedMigrations = await loadAppliedMigrations(sql7, migrationTableSchema, availableMigrations);
     const pendingMigrations = availableMigrations.filter((name) => !appliedMigrations.includes(name));
     if (pendingMigrations.length === 0) {
       return {
@@ -6811,7 +7803,7 @@ async function inspectMigrations(url) {
       reason: "pending-migrations"
     };
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 async function applyPendingMigrations(url) {
@@ -6819,14 +7811,14 @@ async function applyPendingMigrations(url) {
   if (initialState.status === "upToDate") return;
   if (initialState.reason === "no-migration-journal-empty-db") {
     let migrateError = null;
-    const sql4 = createUtilitySql(url);
+    const sql7 = createUtilitySql(url);
     try {
-      const db = drizzlePg(sql4);
+      const db = drizzlePg(sql7);
       await migratePg(db, { migrationsFolder: MIGRATIONS_FOLDER });
     } catch (error) {
       migrateError = error;
     } finally {
-      await sql4.end();
+      await sql7.end();
     }
     if (migrateError) {
       let stateAfterError = await inspectMigrations(url);
@@ -6889,10 +7881,10 @@ async function applyPendingMigrations(url) {
   }
 }
 async function migratePostgresIfEmpty(url) {
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   try {
-    const migrationTableSchema = await discoverMigrationTableSchema(sql4);
-    const tableCountResult = await sql4`
+    const migrationTableSchema = await discoverMigrationTableSchema(sql7);
+    const tableCountResult = await sql7`
       select count(*)::int as count
       from information_schema.tables
       where table_schema = 'public'
@@ -6905,27 +7897,27 @@ async function migratePostgresIfEmpty(url) {
     if (tableCount > 0) {
       return { migrated: false, reason: "not-empty-no-migration-journal", tableCount };
     }
-    const db = drizzlePg(sql4);
+    const db = drizzlePg(sql7);
     await migratePg(db, { migrationsFolder: MIGRATIONS_FOLDER });
     return { migrated: true, reason: "migrated-empty-db", tableCount: 0 };
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 async function ensurePostgresDatabase(url, databaseName) {
   if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(databaseName)) {
     throw new Error(`Unsafe database name: ${databaseName}`);
   }
-  const sql4 = createUtilitySql(url);
+  const sql7 = createUtilitySql(url);
   try {
-    const existing = await sql4`
+    const existing = await sql7`
       select 1 as one from pg_database where datname = ${databaseName} limit 1
     `;
     if (existing.length > 0) return "exists";
-    await sql4.unsafe(`create database "${databaseName}" encoding 'UTF8' lc_collate 'C' lc_ctype 'C' template template0`);
+    await sql7.unsafe(`create database "${databaseName}" encoding 'UTF8' lc_collate 'C' lc_ctype 'C' template template0`);
     return "created";
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 var MIGRATIONS_FOLDER, DRIZZLE_MIGRATIONS_TABLE, MIGRATIONS_JOURNAL_JSON;
@@ -7062,6 +8054,10 @@ var init_test_embedded_postgres = __esm({
 import { createReadStream, createWriteStream, existsSync, mkdirSync, readdirSync, statSync, unlinkSync } from "node:fs";
 import { basename, resolve } from "node:path";
 import { createInterface } from "node:readline";
+import { spawn } from "node:child_process";
+import { open as openFile } from "node:fs/promises";
+import { pipeline } from "node:stream/promises";
+import { createGunzip, createGzip } from "node:zlib";
 import postgres2 from "postgres";
 function sanitizeRestoreErrorMessage(error) {
   if (error && typeof error === "object") {
@@ -7074,25 +8070,65 @@ function sanitizeRestoreErrorMessage(error) {
   }
   return error instanceof Error ? error.message : String(error);
 }
-function timestamp64(date2 = /* @__PURE__ */ new Date()) {
+function timestamp70(date2 = /* @__PURE__ */ new Date()) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${date2.getFullYear()}${pad(date2.getMonth() + 1)}${pad(date2.getDate())}-${pad(date2.getHours())}${pad(date2.getMinutes())}${pad(date2.getSeconds())}`;
 }
-function pruneOldBackups(backupDir, retentionDays, filenamePrefix) {
+function isoWeekKey(date2) {
+  const d = new Date(Date.UTC(date2.getFullYear(), date2.getMonth(), date2.getDate()));
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 864e5 + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+function monthKey(date2) {
+  return `${date2.getFullYear()}-${String(date2.getMonth() + 1).padStart(2, "0")}`;
+}
+function pruneOldBackups(backupDir, retention, filenamePrefix) {
   if (!existsSync(backupDir)) return 0;
-  const safeRetention = Math.max(1, Math.trunc(retentionDays));
-  const cutoff = Date.now() - safeRetention * 24 * 60 * 60 * 1e3;
-  let pruned = 0;
+  const now = Date.now();
+  const dailyCutoff = now - Math.max(1, retention.dailyDays) * 24 * 60 * 60 * 1e3;
+  const weeklyCutoff = now - Math.max(1, retention.weeklyWeeks) * 7 * 24 * 60 * 60 * 1e3;
+  const monthlyCutoff = now - Math.max(1, retention.monthlyMonths) * 30 * 24 * 60 * 60 * 1e3;
+  const entries = [];
   for (const name of readdirSync(backupDir)) {
-    if (!name.startsWith(`${filenamePrefix}-`) || !name.endsWith(".sql")) continue;
+    if (!name.startsWith(`${filenamePrefix}-`)) continue;
+    if (!name.endsWith(".sql") && !name.endsWith(".sql.gz")) continue;
     const fullPath = resolve(backupDir, name);
     const stat3 = statSync(fullPath);
-    if (stat3.mtimeMs < cutoff) {
-      unlinkSync(fullPath);
-      pruned++;
-    }
+    entries.push({ name, fullPath, mtimeMs: stat3.mtimeMs });
   }
-  return pruned;
+  entries.sort((a, b) => b.mtimeMs - a.mtimeMs);
+  const keepWeekBuckets = /* @__PURE__ */ new Set();
+  const keepMonthBuckets = /* @__PURE__ */ new Set();
+  const toDelete = [];
+  for (const entry of entries) {
+    if (entry.mtimeMs >= dailyCutoff) continue;
+    const date2 = new Date(entry.mtimeMs);
+    const week = isoWeekKey(date2);
+    const month = monthKey(date2);
+    if (entry.mtimeMs >= weeklyCutoff) {
+      if (keepWeekBuckets.has(week)) {
+        toDelete.push(entry.fullPath);
+      } else {
+        keepWeekBuckets.add(week);
+      }
+      continue;
+    }
+    if (entry.mtimeMs >= monthlyCutoff) {
+      if (keepMonthBuckets.has(month)) {
+        toDelete.push(entry.fullPath);
+      } else {
+        keepMonthBuckets.add(month);
+      }
+      continue;
+    }
+    toDelete.push(entry.fullPath);
+  }
+  for (const filePath of toDelete) {
+    unlinkSync(filePath);
+  }
+  return toDelete.length;
 }
 function formatBackupSize(sizeBytes) {
   if (sizeBytes < 1024) return `${sizeBytes}B`;
@@ -7136,8 +8172,115 @@ function quoteQualifiedName(schemaName, objectName) {
 function tableKey(schemaName, tableName) {
   return `${schemaName}.${tableName}`;
 }
+function hasBackupTransforms(opts) {
+  return opts.includeMigrationJournal === true || (opts.excludeTables?.length ?? 0) > 0 || Object.keys(opts.nullifyColumns ?? {}).length > 0;
+}
+function formatSqlValue(rawValue, columnName, nullifiedColumns) {
+  const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
+  if (val === null || val === void 0) return "NULL";
+  if (typeof val === "boolean") return val ? "true" : "false";
+  if (typeof val === "number") return String(val);
+  if (val instanceof Date) return formatSqlLiteral(val.toISOString());
+  if (typeof val === "object") return formatSqlLiteral(JSON.stringify(val));
+  return formatSqlLiteral(String(val));
+}
+function appendCapturedStderr(previous, chunk) {
+  const next = previous + (Buffer.isBuffer(chunk) ? chunk.toString("utf8") : chunk);
+  if (Buffer.byteLength(next, "utf8") <= BACKUP_CLI_STDERR_BYTES) return next;
+  return Buffer.from(next, "utf8").subarray(-BACKUP_CLI_STDERR_BYTES).toString("utf8");
+}
+async function waitForChildExit(child, label) {
+  let stderr = "";
+  child.stderr?.on("data", (chunk) => {
+    stderr = appendCapturedStderr(stderr, chunk);
+  });
+  const result = await new Promise((resolve2, reject) => {
+    child.once("error", reject);
+    child.once("exit", (code, signal) => resolve2({ code, signal }));
+  });
+  if (result.signal) {
+    throw new Error(`${label} exited via ${result.signal}${stderr.trim() ? `: ${stderr.trim()}` : ""}`);
+  }
+  if (result.code !== 0) {
+    throw new Error(`${label} failed with exit code ${result.code ?? "unknown"}${stderr.trim() ? `: ${stderr.trim()}` : ""}`);
+  }
+}
+async function runPgDumpBackup(opts) {
+  const pgDumpBin = process.env.PAPERCLIP_PG_DUMP_PATH || "pg_dump";
+  const child = spawn(
+    pgDumpBin,
+    [
+      `--dbname=${opts.connectionString}`,
+      "--format=plain",
+      "--clean",
+      "--if-exists",
+      "--no-owner",
+      "--no-privileges",
+      "--schema=public"
+    ],
+    {
+      stdio: ["ignore", "pipe", "pipe"],
+      env: {
+        ...process.env,
+        PGCONNECT_TIMEOUT: String(opts.connectTimeout)
+      }
+    }
+  );
+  if (!child.stdout) {
+    throw new Error("pg_dump did not expose stdout");
+  }
+  await Promise.all([
+    pipeline(child.stdout, createGzip(), createWriteStream(opts.backupFile)),
+    waitForChildExit(child, pgDumpBin)
+  ]);
+}
+async function restoreWithPsql(opts, connectTimeout) {
+  const psqlBin = process.env.PAPERCLIP_PSQL_PATH || "psql";
+  const child = spawn(
+    psqlBin,
+    [
+      `--dbname=${opts.connectionString}`,
+      "--set=ON_ERROR_STOP=1",
+      "--quiet",
+      "--no-psqlrc"
+    ],
+    {
+      stdio: ["pipe", "ignore", "pipe"],
+      env: {
+        ...process.env,
+        PGCONNECT_TIMEOUT: String(connectTimeout)
+      }
+    }
+  );
+  if (!child.stdin) {
+    throw new Error("psql did not expose stdin");
+  }
+  const input = opts.backupFile.endsWith(".gz") ? createReadStream(opts.backupFile).pipe(createGunzip()) : createReadStream(opts.backupFile);
+  await Promise.all([
+    pipeline(input, child.stdin),
+    waitForChildExit(child, psqlBin)
+  ]);
+}
+async function hasStatementBreakpoints(backupFile) {
+  const raw = createReadStream(backupFile);
+  const stream = backupFile.endsWith(".gz") ? raw.pipe(createGunzip()) : raw;
+  let text71 = "";
+  try {
+    for await (const chunk of stream) {
+      text71 += Buffer.isBuffer(chunk) ? chunk.toString("utf8") : String(chunk);
+      if (text71.includes(STATEMENT_BREAKPOINT)) return true;
+      if (Buffer.byteLength(text71, "utf8") >= BACKUP_BREAKPOINT_DETECT_BYTES) return false;
+    }
+    return text71.includes(STATEMENT_BREAKPOINT);
+  } finally {
+    stream.destroy();
+    raw.destroy();
+  }
+}
 async function* readRestoreStatements(backupFile) {
-  const stream = createReadStream(backupFile, { encoding: "utf8" });
+  const raw = createReadStream(backupFile);
+  const stream = backupFile.endsWith(".gz") ? raw.pipe(createGunzip()) : raw;
+  stream.setEncoding("utf8");
   const reader = createInterface({
     input: stream,
     crlfDelay: Infinity
@@ -7166,42 +8309,24 @@ async function* readRestoreStatements(backupFile) {
   } finally {
     reader.close();
     stream.destroy();
+    raw.destroy();
   }
 }
 function createBufferedTextFileWriter(filePath, maxBufferedBytes = DEFAULT_BACKUP_WRITE_BUFFER_BYTES) {
-  const stream = createWriteStream(filePath, { encoding: "utf8" });
+  const filePromise = openFile(filePath, "w");
   const flushThreshold = Math.max(1, Math.trunc(maxBufferedBytes));
   let bufferedLines = [];
   let bufferedBytes = 0;
   let firstChunk = true;
   let closed = false;
-  let streamError = null;
   let pendingWrite = Promise.resolve();
-  stream.on("error", (error) => {
-    streamError = error;
-  });
   const writeChunk = async (chunk) => {
-    if (streamError) throw streamError;
-    const canContinue = stream.write(chunk);
-    if (!canContinue) {
-      await new Promise((resolve2, reject) => {
-        const handleDrain = () => {
-          cleanup();
-          resolve2();
-        };
-        const handleError = (error) => {
-          cleanup();
-          reject(error);
-        };
-        const cleanup = () => {
-          stream.off("drain", handleDrain);
-          stream.off("error", handleError);
-        };
-        stream.once("drain", handleDrain);
-        stream.once("error", handleError);
-      });
+    const file = await filePromise;
+    if (typeof chunk === "string") {
+      await file.write(chunk, null, "utf8");
+    } else {
+      await file.write(chunk);
     }
-    if (streamError) throw streamError;
   };
   const flushBufferedLines = () => {
     if (bufferedLines.length === 0) return;
@@ -7219,37 +8344,44 @@ ${chunkBody}`;
       if (closed) {
         throw new Error(`Cannot write to closed backup file: ${filePath}`);
       }
-      if (streamError) throw streamError;
       bufferedLines.push(line);
       bufferedBytes += Buffer.byteLength(line, "utf8") + 1;
       if (bufferedBytes >= flushThreshold) {
         flushBufferedLines();
       }
     },
+    async drain() {
+      if (closed) {
+        throw new Error(`Cannot drain closed backup file: ${filePath}`);
+      }
+      flushBufferedLines();
+      await pendingWrite;
+    },
+    async writeRaw(chunk) {
+      if (closed) {
+        throw new Error(`Cannot write to closed backup file: ${filePath}`);
+      }
+      flushBufferedLines();
+      firstChunk = false;
+      pendingWrite = pendingWrite.then(() => writeChunk(chunk));
+      await pendingWrite;
+    },
     async close() {
       if (closed) return;
       closed = true;
       flushBufferedLines();
       await pendingWrite;
-      await new Promise((resolve2, reject) => {
-        if (streamError) {
-          reject(streamError);
-          return;
-        }
-        stream.end((error) => {
-          if (error) reject(error);
-          else resolve2();
-        });
-      });
-      if (streamError) throw streamError;
+      const file = await filePromise;
+      await file.close();
     },
     async abort() {
       if (closed) return;
       closed = true;
       bufferedLines = [];
       bufferedBytes = 0;
-      stream.destroy();
       await pendingWrite.catch(() => {
+      });
+      await filePromise.then((file) => file.close()).catch(() => {
       });
       if (existsSync(filePath)) {
         try {
@@ -7262,17 +8394,57 @@ ${chunkBody}`;
 }
 async function runDatabaseBackup(opts) {
   const filenamePrefix = opts.filenamePrefix ?? "paperclip";
-  const retentionDays = Math.max(1, Math.trunc(opts.retentionDays));
+  const retention = opts.retention;
   const connectTimeout = Math.max(1, Math.trunc(opts.connectTimeoutSeconds ?? 5));
+  const backupEngine = opts.backupEngine ?? "auto";
+  const canUsePgDump = !hasBackupTransforms(opts);
   const includeMigrationJournal = opts.includeMigrationJournal === true;
   const excludedTableNames = normalizeTableNameSet(opts.excludeTables);
   const nullifiedColumnsByTable = normalizeNullifyColumnMap(opts.nullifyColumns);
-  const sql4 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+  let sql7 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+  let sqlClosed = false;
+  const closeSql = async () => {
+    if (sqlClosed) return;
+    sqlClosed = true;
+    await sql7.end();
+  };
   mkdirSync(opts.backupDir, { recursive: true });
-  const backupFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp64()}.sql`);
-  const writer = createBufferedTextFileWriter(backupFile);
+  const sqlFile = resolve(opts.backupDir, `${filenamePrefix}-${timestamp70()}.sql`);
+  const backupFile = `${sqlFile}.gz`;
+  const writer = createBufferedTextFileWriter(sqlFile);
   try {
-    await sql4`SELECT 1`;
+    if (backupEngine === "pg_dump" || backupEngine === "auto" && canUsePgDump) {
+      await sql7`SELECT 1`;
+      try {
+        await closeSql();
+        await runPgDumpBackup({
+          connectionString: opts.connectionString,
+          backupFile,
+          connectTimeout
+        });
+        await writer.abort();
+        const sizeBytes2 = statSync(backupFile).size;
+        const prunedCount2 = pruneOldBackups(opts.backupDir, retention, filenamePrefix);
+        return {
+          backupFile,
+          sizeBytes: sizeBytes2,
+          prunedCount: prunedCount2
+        };
+      } catch (error) {
+        if (existsSync(backupFile)) {
+          try {
+            unlinkSync(backupFile);
+          } catch {
+          }
+        }
+        if (backupEngine === "pg_dump") {
+          throw error;
+        }
+        sql7 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+        sqlClosed = false;
+      }
+    }
+    await sql7`SELECT 1`;
     const emit = (line) => writer.emit(line);
     const emitStatement = (statement) => {
       emit(statement);
@@ -7288,7 +8460,7 @@ async function runDatabaseBackup(opts) {
     emitStatement("SET LOCAL session_replication_role = replica;");
     emitStatement("SET LOCAL client_min_messages = warning;");
     emit("");
-    const allTables = await sql4`
+    const allTables = await sql7`
       SELECT table_schema AS schema_name, table_name AS tablename
       FROM information_schema.tables
       WHERE table_type = 'BASE TABLE'
@@ -7300,7 +8472,7 @@ async function runDatabaseBackup(opts) {
     `;
     const tables = allTables;
     const includedTableNames = new Set(tables.map(({ schema_name, tablename }) => tableKey(schema_name, tablename)));
-    const enums = await sql4`
+    const enums = await sql7`
       SELECT t.typname, array_agg(e.enumlabel ORDER BY e.enumsortorder) AS labels
       FROM pg_type t
       JOIN pg_enum e ON t.oid = e.enumtypid
@@ -7314,7 +8486,7 @@ async function runDatabaseBackup(opts) {
       emitStatement(`CREATE TYPE "public"."${e.typname}" AS ENUM (${labels2});`);
     }
     if (enums.length > 0) emit("");
-    const allSequences = await sql4`
+    const allSequences = await sql7`
       SELECT
         s.sequence_schema,
         s.sequence_name,
@@ -7352,7 +8524,7 @@ async function runDatabaseBackup(opts) {
       }
       emit("");
     }
-    const extensions = await sql4`
+    const extensions = await sql7`
       SELECT
         e.extname AS extension_name,
         n.nspname AS schema_name
@@ -7383,7 +8555,7 @@ async function runDatabaseBackup(opts) {
     }
     for (const { schema_name, tablename } of tables) {
       const qualifiedTableName = quoteQualifiedName(schema_name, tablename);
-      const columns = await sql4`
+      const columns = await sql7`
         SELECT column_name, data_type, udt_name, is_nullable, column_default,
                character_maximum_length, numeric_precision, numeric_scale
         FROM information_schema.columns
@@ -7411,7 +8583,7 @@ async function runDatabaseBackup(opts) {
         if (col.is_nullable === "NO") def += " NOT NULL";
         colDefs.push(def);
       }
-      const pk = await sql4`
+      const pk = await sql7`
         SELECT c.conname AS constraint_name,
                array_agg(a.attname ORDER BY array_position(c.conkey, a.attnum)) AS column_names
         FROM pg_constraint c
@@ -7441,7 +8613,7 @@ async function runDatabaseBackup(opts) {
       }
       emit("");
     }
-    const allForeignKeys = await sql4`
+    const allForeignKeys = await sql7`
       SELECT
         c.conname AS constraint_name,
         srcn.nspname AS source_schema,
@@ -7480,7 +8652,7 @@ async function runDatabaseBackup(opts) {
       }
       emit("");
     }
-    const allUniqueConstraints = await sql4`
+    const allUniqueConstraints = await sql7`
       SELECT c.conname AS constraint_name,
              n.nspname AS schema_name,
              t.relname AS tablename,
@@ -7505,7 +8677,7 @@ async function runDatabaseBackup(opts) {
       }
       emit("");
     }
-    const allIndexes = await sql4`
+    const allIndexes = await sql7`
       SELECT schemaname AS schema_name, tablename, indexdef
       FROM pg_indexes
       WHERE (
@@ -7529,9 +8701,9 @@ async function runDatabaseBackup(opts) {
     }
     for (const { schema_name, tablename } of tables) {
       const qualifiedTableName = quoteQualifiedName(schema_name, tablename);
-      const count = await sql4.unsafe(`SELECT count(*)::int AS n FROM ${qualifiedTableName}`);
+      const count = await sql7.unsafe(`SELECT count(*)::int AS n FROM ${qualifiedTableName}`);
       if (excludedTableNames.has(tablename) || (count[0]?.n ?? 0) === 0) continue;
-      const cols = await sql4`
+      const cols = await sql7`
         SELECT column_name, data_type
         FROM information_schema.columns
         WHERE table_schema = ${schema_name} AND table_name = ${tablename}
@@ -7539,20 +8711,33 @@ async function runDatabaseBackup(opts) {
       `;
       const colNames = cols.map((c) => `"${c.column_name}"`).join(", ");
       emit(`-- Data for: ${schema_name}.${tablename} (${count[0].n} rows)`);
-      const rows = await sql4.unsafe(`SELECT * FROM ${qualifiedTableName}`).values();
       const nullifiedColumns = nullifiedColumnsByTable.get(tablename) ?? /* @__PURE__ */ new Set();
-      for (const row of rows) {
-        const values = row.map((rawValue, index59) => {
-          const columnName = cols[index59]?.column_name;
-          const val = columnName && nullifiedColumns.has(columnName) ? null : rawValue;
-          if (val === null || val === void 0) return "NULL";
-          if (typeof val === "boolean") return val ? "true" : "false";
-          if (typeof val === "number") return String(val);
-          if (val instanceof Date) return formatSqlLiteral(val.toISOString());
-          if (typeof val === "object") return formatSqlLiteral(JSON.stringify(val));
-          return formatSqlLiteral(String(val));
-        });
-        emitStatement(`INSERT INTO ${qualifiedTableName} (${colNames}) VALUES (${values.join(", ")});`);
+      if (backupEngine !== "javascript" && nullifiedColumns.size === 0) {
+        emit(`COPY ${qualifiedTableName} (${colNames}) FROM stdin;`);
+        await writer.writeRaw("\n");
+        const copySql = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+        try {
+          const copyStream = await copySql.unsafe(`COPY ${qualifiedTableName} (${colNames}) TO STDOUT`).readable();
+          for await (const chunk of copyStream) {
+            await writer.writeRaw(Buffer.isBuffer(chunk) ? chunk : Buffer.from(String(chunk)));
+          }
+        } finally {
+          await copySql.end();
+        }
+        await writer.writeRaw("\\.\n");
+        emitStatementBoundary();
+        emit("");
+        continue;
+      }
+      const rowCursor = sql7.unsafe(`SELECT * FROM ${qualifiedTableName}`).values().cursor(BACKUP_DATA_CURSOR_ROWS);
+      for await (const rows of rowCursor) {
+        for (const row of rows) {
+          const values = row.map(
+            (rawValue, index64) => formatSqlValue(rawValue, cols[index64]?.column_name, nullifiedColumns)
+          );
+          emitStatement(`INSERT INTO ${qualifiedTableName} (${colNames}) VALUES (${values.join(", ")});`);
+        }
+        await writer.drain();
       }
       emit("");
     }
@@ -7560,7 +8745,7 @@ async function runDatabaseBackup(opts) {
       emit("-- Sequence values");
       for (const seq of sequences) {
         const qualifiedSequenceName = quoteQualifiedName(seq.sequence_schema, seq.sequence_name);
-        const val = await sql4.unsafe(
+        const val = await sql7.unsafe(
           `SELECT last_value::text, is_called FROM ${qualifiedSequenceName}`
         );
         const skipSequenceValue = seq.owner_table !== null && excludedTableNames.has(seq.owner_table);
@@ -7573,8 +8758,12 @@ async function runDatabaseBackup(opts) {
     emitStatement("COMMIT;");
     emit("");
     await writer.close();
+    const sqlReadStream = createReadStream(sqlFile);
+    const gzWriteStream = createWriteStream(backupFile);
+    await pipeline(sqlReadStream, createGzip(), gzWriteStream);
+    unlinkSync(sqlFile);
     const sizeBytes = statSync(backupFile).size;
-    const prunedCount = pruneOldBackups(opts.backupDir, retentionDays, filenamePrefix);
+    const prunedCount = pruneOldBackups(opts.backupDir, retention, filenamePrefix);
     return {
       backupFile,
       sizeBytes,
@@ -7582,18 +8771,40 @@ async function runDatabaseBackup(opts) {
     };
   } catch (error) {
     await writer.abort();
+    if (existsSync(backupFile)) {
+      try {
+        unlinkSync(backupFile);
+      } catch {
+      }
+    }
+    if (existsSync(sqlFile)) {
+      try {
+        unlinkSync(sqlFile);
+      } catch {
+      }
+    }
     throw error;
   } finally {
-    await sql4.end();
+    await closeSql();
   }
 }
 async function runDatabaseRestore(opts) {
   const connectTimeout = Math.max(1, Math.trunc(opts.connectTimeoutSeconds ?? 5));
-  const sql4 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
   try {
-    await sql4`SELECT 1`;
+    await restoreWithPsql(opts, connectTimeout);
+    return;
+  } catch (error) {
+    if (!await hasStatementBreakpoints(opts.backupFile)) {
+      throw new Error(
+        `Failed to restore ${basename(opts.backupFile)} with psql: ${sanitizeRestoreErrorMessage(error)}`
+      );
+    }
+  }
+  const sql7 = postgres2(opts.connectionString, { max: 1, connect_timeout: connectTimeout });
+  try {
+    await sql7`SELECT 1`;
     for await (const statement of readRestoreStatements(opts.backupFile)) {
-      await sql4.unsafe(statement).execute();
+      await sql7.unsafe(statement).execute();
     }
   } catch (error) {
     const statementPreview = typeof error === "object" && error !== null && typeof error.query === "string" ? String(error.query).split(/\r?\n/).map((line) => line.trim()).find((line) => line.length > 0 && !line.startsWith("--")) : null;
@@ -7601,7 +8812,7 @@ async function runDatabaseRestore(opts) {
       `Failed to restore ${basename(opts.backupFile)}: ${sanitizeRestoreErrorMessage(error)}${statementPreview ? ` [statement: ${statementPreview.slice(0, 120)}]` : ""}`
     );
   } finally {
-    await sql4.end();
+    await sql7.end();
   }
 }
 function formatDatabaseBackupResult(result) {
@@ -7609,13 +8820,16 @@ function formatDatabaseBackupResult(result) {
   const pruned = result.prunedCount > 0 ? `; pruned ${result.prunedCount} old backup(s)` : "";
   return `${result.backupFile} (${size}${pruned})`;
 }
-var DRIZZLE_SCHEMA, DRIZZLE_MIGRATIONS_TABLE2, DEFAULT_BACKUP_WRITE_BUFFER_BYTES, STATEMENT_BREAKPOINT;
+var DRIZZLE_SCHEMA, DRIZZLE_MIGRATIONS_TABLE2, DEFAULT_BACKUP_WRITE_BUFFER_BYTES, BACKUP_DATA_CURSOR_ROWS, BACKUP_CLI_STDERR_BYTES, BACKUP_BREAKPOINT_DETECT_BYTES, STATEMENT_BREAKPOINT;
 var init_backup_lib = __esm({
   "../packages/db/src/backup-lib.ts"() {
     "use strict";
     DRIZZLE_SCHEMA = "drizzle";
     DRIZZLE_MIGRATIONS_TABLE2 = "__drizzle_migrations";
     DEFAULT_BACKUP_WRITE_BUFFER_BYTES = 1024 * 1024;
+    BACKUP_DATA_CURSOR_ROWS = 100;
+    BACKUP_CLI_STDERR_BYTES = 64 * 1024;
+    BACKUP_BREAKPOINT_DETECT_BYTES = 64 * 1024;
     STATEMENT_BREAKPOINT = "-- paperclip statement breakpoint 69f6f3f1-42fd-46a6-bf17-d1d85f8f3900";
   }
 });
@@ -7646,8 +8860,8 @@ function createEmbeddedPostgresLogBuffer(limit = DEFAULT_RECENT_LOG_LIMIT) {
   const recentLogs = [];
   return {
     append(message) {
-      const text65 = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
-      for (const rawLine of text65.split(/\r?\n/)) {
+      const text71 = typeof message === "string" ? message : message instanceof Error ? message.message : String(message ?? "");
+      for (const rawLine of text71.split(/\r?\n/)) {
         const line = rawLine.trim();
         if (!line) continue;
         recentLogs.push(line);
@@ -7712,6 +8926,7 @@ __export(src_exports, {
   companySecretVersions: () => companySecretVersions,
   companySecrets: () => companySecrets,
   companySkills: () => companySkills,
+  companyUserSidebarPreferences: () => companyUserSidebarPreferences,
   costEvents: () => costEvents,
   createDb: () => createDb,
   createEmbeddedPostgresLogBuffer: () => createEmbeddedPostgresLogBuffer,
@@ -7729,6 +8944,7 @@ __export(src_exports, {
   goals: () => goals,
   heartbeatRunEvents: () => heartbeatRunEvents,
   heartbeatRuns: () => heartbeatRuns,
+  inboxDismissals: () => inboxDismissals,
   inspectMigrations: () => inspectMigrations,
   instanceSettings: () => instanceSettings,
   instanceUserRoles: () => instanceUserRoles,
@@ -7741,7 +8957,9 @@ __export(src_exports, {
   issueInboxArchives: () => issueInboxArchives,
   issueLabels: () => issueLabels,
   issueReadStates: () => issueReadStates,
+  issueReferenceMentions: () => issueReferenceMentions,
   issueRelations: () => issueRelations,
+  issueThreadInteractions: () => issueThreadInteractions,
   issueWorkProducts: () => issueWorkProducts,
   issues: () => issues,
   joinRequests: () => joinRequests,
@@ -7749,10 +8967,12 @@ __export(src_exports, {
   migratePostgresIfEmpty: () => migratePostgresIfEmpty,
   pluginCompanySettings: () => pluginCompanySettings,
   pluginConfig: () => pluginConfig,
+  pluginDatabaseNamespaces: () => pluginDatabaseNamespaces,
   pluginEntities: () => pluginEntities,
   pluginJobRuns: () => pluginJobRuns,
   pluginJobs: () => pluginJobs,
   pluginLogs: () => pluginLogs,
+  pluginMigrations: () => pluginMigrations,
   pluginState: () => pluginState,
   pluginWebhookDeliveries: () => pluginWebhookDeliveries,
   plugins: () => plugins,
@@ -7767,6 +8987,7 @@ __export(src_exports, {
   runDatabaseBackup: () => runDatabaseBackup,
   runDatabaseRestore: () => runDatabaseRestore,
   startEmbeddedPostgresTestDatabase: () => startEmbeddedPostgresTestDatabase,
+  userSidebarPreferences: () => userSidebarPreferences,
   vibedashProjectLinks: () => vibedashProjectLinks,
   workspaceOperations: () => workspaceOperations,
   workspaceRuntimeServices: () => workspaceRuntimeServices
@@ -7779,6 +9000,7 @@ var init_src2 = __esm({
     init_backup_lib();
     init_embedded_postgres_error();
     init_issue_relations();
+    init_issue_reference_mentions();
     init_schema2();
   }
 });
@@ -7815,9 +9037,10 @@ function resolveBaseUrl(configPath, explicitBaseUrl) {
   if (config?.auth.baseUrlMode === "explicit" && config.auth.publicBaseUrl) {
     return config.auth.publicBaseUrl.replace(/\/+$/, "");
   }
-  const host = config?.server.host ?? "localhost";
+  const bind = config?.server.bind ?? inferBindModeFromHost(config?.server.host);
+  const host = bind === "custom" ? config?.server.customBindHost ?? config?.server.host ?? "localhost" : config?.server.host ?? "localhost";
   const port = config?.server.port ?? 3100;
-  const publicHost = host === "0.0.0.0" ? "localhost" : host;
+  const publicHost = host === "0.0.0.0" || bind === "lan" ? "localhost" : host;
   return `http://${publicHost}:${port}`;
 }
 async function bootstrapCeoInvite(opts) {
@@ -7881,6 +9104,7 @@ var init_auth_bootstrap_ceo = __esm({
   "src/commands/auth-bootstrap-ceo.ts"() {
     "use strict";
     init_src2();
+    init_src();
     init_env();
     init_store();
   }
@@ -7916,11 +9140,14 @@ var init_banner = __esm({
 
 // ../packages/shared/src/telemetry/client.ts
 import { createHash as createHash3 } from "node:crypto";
-var DEFAULT_ENDPOINT, BATCH_SIZE, SEND_TIMEOUT_MS, TelemetryClient;
+var DEFAULT_ENDPOINTS, BATCH_SIZE, SEND_TIMEOUT_MS, TelemetryClient;
 var init_client2 = __esm({
   "../packages/shared/src/telemetry/client.ts"() {
     "use strict";
-    DEFAULT_ENDPOINT = "https://telemetry.paperclip.ing/ingest";
+    DEFAULT_ENDPOINTS = [
+      "https://telemetry.paperclip.ing/ingest",
+      "https://rusqrrg391.execute-api.us-east-1.amazonaws.com/ingest"
+    ];
     BATCH_SIZE = 50;
     SEND_TIMEOUT_MS = 5e3;
     TelemetryClient = class {
@@ -7951,27 +9178,33 @@ var init_client2 = __esm({
         if (!this.config.enabled || this.queue.length === 0) return;
         const events = this.queue.splice(0);
         const state = this.getState();
-        const endpoint = this.config.endpoint ?? DEFAULT_ENDPOINT;
+        const endpoints = this.resolveEndpoints();
         const app = this.config.app ?? "paperclip";
         const schemaVersion = this.config.schemaVersion ?? "1";
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
-        try {
-          await fetch(endpoint, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              app,
-              schemaVersion,
-              installId: state.installId,
-              version: this.version,
-              events
-            }),
-            signal: controller.signal
-          });
-        } catch {
-        } finally {
-          clearTimeout(timer);
+        const body = JSON.stringify({
+          app,
+          schemaVersion,
+          installId: state.installId,
+          version: this.version,
+          events
+        });
+        for (const endpoint of endpoints) {
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), SEND_TIMEOUT_MS);
+          try {
+            const response = await fetch(endpoint, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body,
+              signal: controller.signal
+            });
+            if (response.ok) {
+              return;
+            }
+          } catch {
+          } finally {
+            clearTimeout(timer);
+          }
         }
       }
       startPeriodicFlush(intervalMs = 6e4) {
@@ -7998,6 +9231,10 @@ var init_client2 = __esm({
           this.state = this.stateFactory();
         }
         return this.state;
+      }
+      resolveEndpoints() {
+        const configured = this.config.endpoint?.trim();
+        return configured ? [configured] : DEFAULT_ENDPOINTS;
       }
     };
   }
@@ -8218,22 +9455,19 @@ var init_config_check = __esm({
 });
 
 // src/checks/deployment-auth-check.ts
-function isLoopbackHost(host) {
-  const normalized = host.trim().toLowerCase();
-  return normalized === "127.0.0.1" || normalized === "localhost" || normalized === "::1";
-}
 function deploymentAuthCheck(config) {
   const mode = config.server.deploymentMode;
   const exposure = config.server.exposure;
   const auth2 = config.auth;
+  const bind = config.server.bind ?? inferBindModeFromHost(config.server.host);
   if (mode === "local_trusted") {
-    if (!isLoopbackHost(config.server.host)) {
+    if (bind !== "loopback") {
       return {
         name: "Deployment/auth mode",
         status: "fail",
-        message: `local_trusted requires loopback host binding (found ${config.server.host})`,
+        message: `local_trusted requires loopback binding (found ${bind})`,
         canRepair: false,
-        repairHint: "Run `paperclipai configure --section server` and set host to 127.0.0.1"
+        repairHint: "Run `paperclipai configure --section server` and choose Local trusted / loopback reachability"
       };
     }
     return {
@@ -8295,12 +9529,13 @@ function deploymentAuthCheck(config) {
   return {
     name: "Deployment/auth mode",
     status: "pass",
-    message: `Mode ${mode}/${exposure} with auth URL mode ${auth2.baseUrlMode}`
+    message: `Mode ${mode}/${exposure} with bind ${bind} and auth URL mode ${auth2.baseUrlMode}`
   };
 }
 var init_deployment_auth_check = __esm({
   "src/checks/deployment-auth-check.ts"() {
     "use strict";
+    init_src();
   }
 });
 
@@ -8886,6 +10121,7 @@ __export(run_exports, {
 });
 import fs10 from "node:fs";
 import path10 from "node:path";
+import { spawnSync } from "node:child_process";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "node:url";
 import * as p9 from "@clack/prompts";
 import pc4 from "picocolors";
@@ -8910,7 +10146,7 @@ async function runCommand(opts) {
       process.exit(1);
     }
     p9.log.step("No config found. Starting onboarding...");
-    await onboard({ config: configPath, invokedByRun: true });
+    await onboard({ config: configPath, invokedByRun: true, bind: opts.bind });
   }
   p9.log.step("Running doctor checks...");
   const summary = await doctor({
@@ -8978,10 +10214,31 @@ function maybeEnableUiDevMiddleware(entrypoint) {
     process.env.PAPERCLIP_UI_DEV_MIDDLEWARE = "true";
   }
 }
+function ensureDevWorkspaceBuildDeps(projectRoot) {
+  const buildScript = path10.resolve(projectRoot, "scripts/ensure-plugin-build-deps.mjs");
+  if (!fs10.existsSync(buildScript)) return;
+  const result = spawnSync(process.execPath, [buildScript], {
+    cwd: projectRoot,
+    stdio: "inherit",
+    timeout: 12e4
+  });
+  if (result.error) {
+    throw new Error(
+      `Failed to prepare workspace build artifacts before starting the Paperclip dev server.
+${formatError(result.error)}`
+    );
+  }
+  if ((result.status ?? 1) !== 0) {
+    throw new Error(
+      "Failed to prepare workspace build artifacts before starting the Paperclip dev server."
+    );
+  }
+}
 async function importServerEntry() {
   const projectRoot = path10.resolve(path10.dirname(fileURLToPath2(import.meta.url)), "../../..");
   const devEntry = path10.resolve(projectRoot, "server/src/index.ts");
   if (fs10.existsSync(devEntry)) {
+    ensureDevWorkspaceBuildDeps(projectRoot);
     maybeEnableUiDevMiddleware(devEntry);
     const mod = await import(pathToFileURL(devEntry).href);
     return await startServerFromModule(mod, devEntry);
@@ -9053,18 +10310,35 @@ function resolvePathFromEnv(rawValue) {
   if (!rawValue || rawValue.trim().length === 0) return null;
   return path11.resolve(expandHomePrefix(rawValue.trim()));
 }
-function quickstartDefaultsFromEnv() {
+function describeServerBinding(server) {
+  const bind = server.bind ?? inferBindModeFromHost(server.host);
+  const detail = bind === "custom" ? server.customBindHost ?? server.host : bind === "tailnet" ? "detected tailscale address" : server.host;
+  return `${bind}${detail ? ` (${detail})` : ""}:${server.port}`;
+}
+function quickstartDefaultsFromEnv(opts) {
+  const preferTrustedLocal = opts?.preferTrustedLocal ?? false;
   const instanceId = resolvePaperclipInstanceId();
   const defaultStorage = defaultStorageConfig();
   const defaultSecrets = defaultSecretsConfig();
   const databaseUrl = process.env.DATABASE_URL?.trim() || void 0;
-  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL?.trim() || process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL?.trim() || process.env.BETTER_AUTH_URL?.trim() || process.env.BETTER_AUTH_BASE_URL?.trim() || void 0;
-  const deploymentMode = parseEnumFromEnv(process.env.PAPERCLIP_DEPLOYMENT_MODE, DEPLOYMENT_MODES) ?? "local_trusted";
+  const publicUrl = preferTrustedLocal ? void 0 : process.env.PAPERCLIP_PUBLIC_URL?.trim() || process.env.PAPERCLIP_AUTH_PUBLIC_BASE_URL?.trim() || process.env.BETTER_AUTH_URL?.trim() || process.env.BETTER_AUTH_BASE_URL?.trim() || void 0;
+  const deploymentMode = preferTrustedLocal ? "local_trusted" : parseEnumFromEnv(process.env.PAPERCLIP_DEPLOYMENT_MODE, DEPLOYMENT_MODES) ?? "local_trusted";
   const deploymentExposureFromEnv = parseEnumFromEnv(
     process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE,
     DEPLOYMENT_EXPOSURES
   );
   const deploymentExposure = deploymentMode === "local_trusted" ? "private" : deploymentExposureFromEnv ?? "private";
+  const bindFromEnv = parseEnumFromEnv(process.env.PAPERCLIP_BIND, BIND_MODES);
+  const customBindHostFromEnv = process.env.PAPERCLIP_BIND_HOST?.trim() || void 0;
+  const hostFromEnv = process.env.HOST?.trim() || void 0;
+  const configuredBindHost = customBindHostFromEnv ?? hostFromEnv;
+  const bind = preferTrustedLocal ? "loopback" : deploymentMode === "local_trusted" ? "loopback" : bindFromEnv ?? (configuredBindHost ? inferBindModeFromHost(configuredBindHost) : "lan");
+  const resolvedBind = resolveRuntimeBind({
+    bind,
+    host: hostFromEnv ?? (bind === "loopback" ? "127.0.0.1" : "0.0.0.0"),
+    customBindHost: customBindHostFromEnv,
+    tailnetBindHost: process.env.PAPERCLIP_TAILNET_BIND_HOST?.trim()
+  });
   const authPublicBaseUrl = publicUrl;
   const authBaseUrlModeFromEnv = parseEnumFromEnv(
     process.env.PAPERCLIP_AUTH_BASE_URL_MODE,
@@ -9110,7 +10384,9 @@ function quickstartDefaultsFromEnv() {
     server: {
       deploymentMode,
       exposure: deploymentExposure,
-      host: process.env.HOST ?? "127.0.0.1",
+      bind: resolvedBind.bind,
+      ...resolvedBind.customBindHost ? { customBindHost: resolvedBind.customBindHost } : {},
+      host: resolvedBind.host,
       port: Number(process.env.PORT) || 3100,
       allowedHostnames: Array.from(/* @__PURE__ */ new Set([...allowedHostnamesFromEnv, ...hostnameFromPublicUrl ? [hostnameFromPublicUrl] : []])),
       serveUi: parseBooleanFromEnv(process.env.SERVE_UI) ?? true
@@ -9142,10 +10418,47 @@ function quickstartDefaultsFromEnv() {
     }
   };
   const ignoredEnvKeys = [];
+  if (preferTrustedLocal) {
+    const forcedLocalReason = "Ignored because --yes quickstart forces trusted local loopback defaults";
+    for (const key of [
+      "PAPERCLIP_DEPLOYMENT_MODE",
+      "PAPERCLIP_DEPLOYMENT_EXPOSURE",
+      "PAPERCLIP_BIND",
+      "PAPERCLIP_BIND_HOST",
+      "HOST",
+      "PAPERCLIP_AUTH_BASE_URL_MODE",
+      "PAPERCLIP_AUTH_PUBLIC_BASE_URL",
+      "PAPERCLIP_PUBLIC_URL",
+      "BETTER_AUTH_URL",
+      "BETTER_AUTH_BASE_URL"
+    ]) {
+      if (process.env[key] !== void 0) {
+        ignoredEnvKeys.push({ key, reason: forcedLocalReason });
+      }
+    }
+  }
   if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_DEPLOYMENT_EXPOSURE !== void 0) {
     ignoredEnvKeys.push({
       key: "PAPERCLIP_DEPLOYMENT_EXPOSURE",
       reason: "Ignored because deployment mode local_trusted always forces private exposure"
+    });
+  }
+  if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_BIND !== void 0) {
+    ignoredEnvKeys.push({
+      key: "PAPERCLIP_BIND",
+      reason: "Ignored because deployment mode local_trusted always uses loopback reachability"
+    });
+  }
+  if (deploymentMode === "local_trusted" && process.env.PAPERCLIP_BIND_HOST !== void 0) {
+    ignoredEnvKeys.push({
+      key: "PAPERCLIP_BIND_HOST",
+      reason: "Ignored because deployment mode local_trusted always uses loopback reachability"
+    });
+  }
+  if (deploymentMode === "local_trusted" && process.env.HOST !== void 0) {
+    ignoredEnvKeys.push({
+      key: "HOST",
+      reason: "Ignored because deployment mode local_trusted always uses loopback reachability"
     });
   }
   const ignoredKeySet = new Set(ignoredEnvKeys.map((entry) => entry.key));
@@ -9158,6 +10471,9 @@ function canCreateBootstrapInviteImmediately(config) {
   return config.server.deploymentMode === "authenticated" && config.database.mode !== "embedded-postgres";
 }
 async function onboard(opts) {
+  if (opts.bind && !["loopback", "lan", "tailnet"].includes(opts.bind)) {
+    throw new Error(`Unsupported bind preset for onboard: ${opts.bind}. Use loopback, lan, or tailnet.`);
+  }
   printPaperclipCliBanner();
   p10.intro(pc5.bgCyan(pc5.black(" paperclipai onboard ")));
   const configPath = resolveConfigPath(opts.config);
@@ -9207,7 +10523,7 @@ ${err instanceof Error ? err.message : String(err)}`
         `Database: ${existingConfig.database.mode}`,
         existingConfig.llm ? `LLM: ${existingConfig.llm.provider}` : "LLM: not configured",
         `Logging: ${existingConfig.logging.mode} -> ${existingConfig.logging.logDir}`,
-        `Server: ${existingConfig.server.deploymentMode}/${existingConfig.server.exposure} @ ${existingConfig.server.host}:${existingConfig.server.port}`,
+        `Server: ${existingConfig.server.deploymentMode}/${existingConfig.server.exposure} @ ${describeServerBinding(existingConfig.server)}`,
         `Allowed hosts: ${existingConfig.server.allowedHostnames.length > 0 ? existingConfig.server.allowedHostnames.join(", ") : "(loopback only)"}`,
         `Auth URL mode: ${existingConfig.auth.baseUrlMode}${existingConfig.auth.publicBaseUrl ? ` (${existingConfig.auth.publicBaseUrl})` : ""}`,
         `Storage: ${existingConfig.storage.provider}`,
@@ -9245,7 +10561,11 @@ ${err instanceof Error ? err.message : String(err)}`
   }
   let setupMode = "quickstart";
   if (opts.yes) {
-    p10.log.message(pc5.dim("`--yes` enabled: using Quickstart defaults."));
+    p10.log.message(
+      pc5.dim(
+        opts.bind ? `\`--yes\` enabled: using Quickstart defaults with bind=${opts.bind}.` : "`--yes` enabled: using Quickstart defaults."
+      )
+    );
   } else {
     const setupModeChoice = await p10.select({
       message: "Choose setup path",
@@ -9272,7 +10592,9 @@ ${err instanceof Error ? err.message : String(err)}`
   const tc = getTelemetryClient();
   if (tc) trackInstallStarted(tc);
   let llm;
-  const { defaults: derivedDefaults, usedEnvKeys, ignoredEnvKeys } = quickstartDefaultsFromEnv();
+  const { defaults: derivedDefaults, usedEnvKeys, ignoredEnvKeys } = quickstartDefaultsFromEnv({
+    preferTrustedLocal: opts.yes === true && !opts.bind
+  });
   let {
     database,
     logging,
@@ -9281,6 +10603,18 @@ ${err instanceof Error ? err.message : String(err)}`
     storage,
     secrets
   } = derivedDefaults;
+  if (opts.bind === "loopback" || opts.bind === "lan" || opts.bind === "tailnet") {
+    const preset = buildPresetServerConfig(opts.bind, {
+      port: server.port,
+      allowedHostnames: server.allowedHostnames,
+      serveUi: server.serveUi
+    });
+    server = preset.server;
+    auth2 = preset.auth;
+    if (opts.bind === "tailnet" && server.host === "127.0.0.1") {
+      p10.log.warn(TAILNET_BIND_WARNING2);
+    }
+  }
   if (setupMode === "advanced") {
     p10.log.step(pc5.bold("Database"));
     database = await promptDatabase(database);
@@ -9361,7 +10695,11 @@ ${err instanceof Error ? err.message : String(err)}`
     );
   } else {
     p10.log.step(pc5.bold("Quickstart"));
-    p10.log.message(pc5.dim("Using quickstart defaults."));
+    p10.log.message(
+      pc5.dim(
+        opts.bind ? `Using quickstart defaults with bind=${opts.bind}.` : `Using quickstart defaults: ${server.deploymentMode}/${server.exposure} @ ${describeServerBinding(server)}.`
+      )
+    );
     if (usedEnvKeys.length > 0) {
       p10.log.message(pc5.dim(`Environment-aware defaults active (${usedEnvKeys.length} env var(s) detected).`));
     } else {
@@ -9414,7 +10752,7 @@ ${err instanceof Error ? err.message : String(err)}`
       `Database: ${database.mode}`,
       llm ? `LLM: ${llm.provider}` : "LLM: not configured",
       `Logging: ${logging.mode} -> ${logging.logDir}`,
-      `Server: ${server.deploymentMode}/${server.exposure} @ ${server.host}:${server.port}`,
+      `Server: ${server.deploymentMode}/${server.exposure} @ ${describeServerBinding(server)}`,
       `Allowed hosts: ${server.allowedHostnames.length > 0 ? server.allowedHostnames.join(", ") : "(loopback only)"}`,
       `Auth URL mode: ${auth2.baseUrlMode}${auth2.publicBaseUrl ? ` (${auth2.publicBaseUrl})` : ""}`,
       `Storage: ${storage.provider}`,
@@ -9462,7 +10800,7 @@ ${err instanceof Error ? err.message : String(err)}`
   }
   p10.outro("You're all set!");
 }
-var ONBOARD_ENV_KEYS;
+var TAILNET_BIND_WARNING2, ONBOARD_ENV_KEYS;
 var init_onboard = __esm({
   "src/commands/onboard.ts"() {
     "use strict";
@@ -9476,10 +10814,12 @@ var init_onboard = __esm({
     init_secrets();
     init_storage();
     init_server();
+    init_server_bind();
     init_home();
     init_auth_bootstrap_ceo();
     init_banner();
     init_telemetry2();
+    TAILNET_BIND_WARNING2 = "No Tailscale address was detected during setup. The saved config will stay on loopback until Tailscale is available or PAPERCLIP_TAILNET_BIND_HOST is set.";
     ONBOARD_ENV_KEYS = [
       "PAPERCLIP_PUBLIC_URL",
       "DATABASE_URL",
@@ -9489,6 +10829,9 @@ var init_onboard = __esm({
       "PAPERCLIP_DB_BACKUP_DIR",
       "PAPERCLIP_DEPLOYMENT_MODE",
       "PAPERCLIP_DEPLOYMENT_EXPOSURE",
+      "PAPERCLIP_BIND",
+      "PAPERCLIP_BIND_HOST",
+      "PAPERCLIP_TAILNET_BIND_HOST",
       "HOST",
       "PORT",
       "SERVE_UI",
@@ -9841,6 +11184,7 @@ function defaultConfig() {
     server: {
       deploymentMode: "local_trusted",
       exposure: "private",
+      bind: "loopback",
       host: "127.0.0.1",
       port: 3100,
       allowedHostnames: [],
@@ -10022,9 +11366,9 @@ function asErrorText(value) {
 }
 function printToolResult(block) {
   const isError = block.is_error === true;
-  let text65 = "";
+  let text71 = "";
   if (typeof block.content === "string") {
-    text65 = block.content;
+    text71 = block.content;
   } else if (Array.isArray(block.content)) {
     const parts = [];
     for (const part of block.content) {
@@ -10032,11 +11376,11 @@ function printToolResult(block) {
       const record = part;
       if (typeof record.text === "string") parts.push(record.text);
     }
-    text65 = parts.join("\n");
+    text71 = parts.join("\n");
   }
   console.log((isError ? pc9.red : pc9.cyan)(`tool_result${isError ? " (error)" : ""}`));
-  if (text65) {
-    console.log((isError ? pc9.red : pc9.gray)(text65));
+  if (text71) {
+    console.log((isError ? pc9.red : pc9.gray)(text71));
   }
 }
 function printClaudeStreamEvent(raw, debug) {
@@ -10064,11 +11408,11 @@ function printClaudeStreamEvent(raw, debug) {
       const block = blockRaw;
       const blockType = typeof block.type === "string" ? block.type : "";
       if (blockType === "text") {
-        const text65 = typeof block.text === "string" ? block.text : "";
-        if (text65) console.log(pc9.green(`assistant: ${text65}`));
+        const text71 = typeof block.text === "string" ? block.text : "";
+        if (text71) console.log(pc9.green(`assistant: ${text71}`));
       } else if (blockType === "thinking") {
-        const text65 = typeof block.thinking === "string" ? block.thinking : "";
-        if (text65) console.log(pc9.gray(`thinking: ${text65}`));
+        const text71 = typeof block.thinking === "string" ? block.thinking : "";
+        if (text71) console.log(pc9.gray(`thinking: ${text71}`));
       } else if (blockType === "tool_use") {
         const name = typeof block.name === "string" ? block.name : "unknown";
         console.log(pc9.yellow(`tool_call: ${name}`));
@@ -10172,13 +11516,13 @@ function printItemStarted(item) {
 function printItemCompleted(item) {
   const itemType = asString(item.type);
   if (itemType === "agent_message") {
-    const text65 = asString(item.text);
-    if (text65) console.log(pc10.green(`assistant: ${text65}`));
+    const text71 = asString(item.text);
+    if (text71) console.log(pc10.green(`assistant: ${text71}`));
     return true;
   }
   if (itemType === "reasoning") {
-    const text65 = asString(item.text);
-    if (text65) console.log(pc10.gray(`thinking: ${text65}`));
+    const text71 = asString(item.text);
+    if (text71) console.log(pc10.gray(`thinking: ${text71}`));
     return true;
   }
   if (itemType === "tool_use") {
@@ -10228,9 +11572,9 @@ function printItemCompleted(item) {
   }
   if (itemType === "tool_result") {
     const isError = item.is_error === true || asString(item.status) === "error";
-    const text65 = asString(item.content) || asString(item.result) || asString(item.output);
+    const text71 = asString(item.content) || asString(item.result) || asString(item.output);
     console.log((isError ? pc10.red : pc10.cyan)(`tool_result${isError ? " (error)" : ""}`));
-    if (text65) console.log((isError ? pc10.red : pc10.gray)(text65));
+    if (text71) console.log((isError ? pc10.red : pc10.gray)(text71));
     return true;
   }
   return false;
@@ -10349,8 +11693,8 @@ function stringifyUnknown(value) {
 }
 function printUserMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text65 = messageRaw.trim();
-    if (text65) console.log(pc11.gray(`user: ${text65}`));
+    const text71 = messageRaw.trim();
+    if (text71) console.log(pc11.gray(`user: ${text71}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -10363,14 +11707,14 @@ function printUserMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type !== "output_text" && type !== "text") continue;
-    const text65 = asString2(part.text).trim();
-    if (text65) console.log(pc11.gray(`user: ${text65}`));
+    const text71 = asString2(part.text).trim();
+    if (text71) console.log(pc11.gray(`user: ${text71}`));
   }
 }
 function printAssistantMessage(messageRaw) {
   if (typeof messageRaw === "string") {
-    const text65 = messageRaw.trim();
-    if (text65) console.log(pc11.green(`assistant: ${text65}`));
+    const text71 = messageRaw.trim();
+    if (text71) console.log(pc11.green(`assistant: ${text71}`));
     return;
   }
   const message = asRecord2(messageRaw);
@@ -10383,13 +11727,13 @@ function printAssistantMessage(messageRaw) {
     if (!part) continue;
     const type = asString2(part.type).trim();
     if (type === "output_text" || type === "text") {
-      const text65 = asString2(part.text).trim();
-      if (text65) console.log(pc11.green(`assistant: ${text65}`));
+      const text71 = asString2(part.text).trim();
+      if (text71) console.log(pc11.green(`assistant: ${text71}`));
       continue;
     }
     if (type === "thinking") {
-      const text65 = asString2(part.text).trim();
-      if (text65) console.log(pc11.gray(`thinking: ${text65}`));
+      const text71 = asString2(part.text).trim();
+      if (text71) console.log(pc11.gray(`thinking: ${text71}`));
       continue;
     }
     if (type === "tool_call") {
@@ -10509,8 +11853,8 @@ function printCursorStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text65 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
-    if (text65) console.log(pc11.gray(`thinking: ${text65}`));
+    const text71 = asString2(parsed.text).trim() || asString2(asRecord2(parsed.delta)?.text).trim();
+    if (text71) console.log(pc11.gray(`thinking: ${text71}`));
     return;
   }
   if (type === "tool_call") {
@@ -10548,8 +11892,8 @@ function printCursorStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord2(parsed.part);
-    const text65 = asString2(part?.text);
-    if (text65) console.log(pc11.green(`assistant: ${text65}`));
+    const text71 = asString2(part?.text);
+    if (text71) console.log(pc11.green(`assistant: ${text71}`));
     return;
   }
   if (type === "tool_use") {
@@ -10612,8 +11956,8 @@ function errorText2(value) {
 }
 function printTextMessage(prefix, colorize, messageRaw) {
   if (typeof messageRaw === "string") {
-    const text65 = messageRaw.trim();
-    if (text65) console.log(colorize(`${prefix}: ${text65}`));
+    const text71 = messageRaw.trim();
+    if (text71) console.log(colorize(`${prefix}: ${text71}`));
     return;
   }
   const message = asRecord3(messageRaw);
@@ -10626,13 +11970,13 @@ function printTextMessage(prefix, colorize, messageRaw) {
     if (!part) continue;
     const type = asString3(part.type).trim();
     if (type === "output_text" || type === "text" || type === "content") {
-      const text65 = asString3(part.text).trim() || asString3(part.content).trim();
-      if (text65) console.log(colorize(`${prefix}: ${text65}`));
+      const text71 = asString3(part.text).trim() || asString3(part.content).trim();
+      if (text71) console.log(colorize(`${prefix}: ${text71}`));
       continue;
     }
     if (type === "thinking") {
-      const text65 = asString3(part.text).trim();
-      if (text65) console.log(pc12.gray(`thinking: ${text65}`));
+      const text71 = asString3(part.text).trim();
+      if (text71) console.log(pc12.gray(`thinking: ${text71}`));
       continue;
     }
     if (type === "tool_call") {
@@ -10684,8 +12028,8 @@ function printGeminiStreamEvent(raw, _debug) {
       return;
     }
     if (subtype === "error") {
-      const text65 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-      if (text65) console.log(pc12.red(`error: ${text65}`));
+      const text71 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+      if (text71) console.log(pc12.red(`error: ${text71}`));
       return;
     }
     console.log(pc12.blue(`system: ${subtype || "event"}`));
@@ -10700,8 +12044,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "thinking") {
-    const text65 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
-    if (text65) console.log(pc12.gray(`thinking: ${text65}`));
+    const text71 = asString3(parsed.text).trim() || asString3(asRecord3(parsed.delta)?.text).trim();
+    if (text71) console.log(pc12.gray(`thinking: ${text71}`));
     return;
   }
   if (type === "tool_call") {
@@ -10737,8 +12081,8 @@ function printGeminiStreamEvent(raw, _debug) {
     return;
   }
   if (type === "error") {
-    const text65 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
-    if (text65) console.log(pc12.red(`error: ${text65}`));
+    const text71 = errorText2(parsed.error ?? parsed.message ?? parsed.detail);
+    if (text71) console.log(pc12.red(`error: ${text71}`));
     return;
   }
   console.log(line);
@@ -10746,9 +12090,9 @@ function printGeminiStreamEvent(raw, _debug) {
 
 // ../packages/adapters/opencode-local/src/cli/format-event.ts
 import pc13 from "picocolors";
-function safeJsonParse(text65) {
+function safeJsonParse(text71) {
   try {
-    return JSON.parse(text65);
+    return JSON.parse(text71);
   } catch {
     return null;
   }
@@ -10792,14 +12136,14 @@ function printOpenCodeStreamEvent(raw, _debug) {
   }
   if (type === "text") {
     const part = asRecord4(parsed.part);
-    const text65 = asString4(part?.text).trim();
-    if (text65) console.log(pc13.green(`assistant: ${text65}`));
+    const text71 = asString4(part?.text).trim();
+    if (text71) console.log(pc13.green(`assistant: ${text71}`));
     return;
   }
   if (type === "reasoning") {
     const part = asRecord4(parsed.part);
-    const text65 = asString4(part?.text).trim();
-    if (text65) console.log(pc13.gray(`thinking: ${text65}`));
+    const text71 = asString4(part?.text).trim();
+    if (text71) console.log(pc13.gray(`thinking: ${text71}`));
     return;
   }
   if (type === "tool_use") {
@@ -10847,9 +12191,9 @@ function printOpenCodeStreamEvent(raw, _debug) {
 
 // ../packages/adapters/pi-local/src/cli/format-event.ts
 import pc14 from "picocolors";
-function safeJsonParse2(text65) {
+function safeJsonParse2(text71) {
   try {
-    return JSON.parse(text65);
+    return JSON.parse(text71);
   } catch {
     return null;
   }
@@ -10891,9 +12235,9 @@ function printPiStreamEvent(raw, _debug) {
     const message = asRecord5(parsed.message);
     if (message) {
       const content = message.content;
-      const text65 = extractTextContent(content);
-      if (text65) {
-        console.log(pc14.green(`assistant: ${text65}`));
+      const text71 = extractTextContent(content);
+      if (text71) {
+        console.log(pc14.green(`assistant: ${text71}`));
       }
     }
     return;
@@ -10958,9 +12302,9 @@ function printOpenClawGatewayStreamEvent(raw, debug) {
 
 // ../packages/adapters/agent-browser/src/cli/format-event.ts
 import pc16 from "picocolors";
-function safeJsonParse3(text65) {
+function safeJsonParse3(text71) {
   try {
-    return JSON.parse(text65);
+    return JSON.parse(text71);
   } catch {
     return null;
   }
@@ -11102,7 +12446,7 @@ function getCLIAdapter(type) {
 import pc18 from "picocolors";
 
 // src/client/board-auth.ts
-import { spawn } from "node:child_process";
+import { spawn as spawn2 } from "node:child_process";
 import fs11 from "node:fs";
 import path12 from "node:path";
 import pc17 from "picocolors";
@@ -11219,16 +12563,16 @@ function openUrl(url) {
   const platform = process.platform;
   try {
     if (platform === "darwin") {
-      const child2 = spawn("open", [url], { detached: true, stdio: "ignore" });
+      const child2 = spawn2("open", [url], { detached: true, stdio: "ignore" });
       child2.unref();
       return true;
     }
     if (platform === "win32") {
-      const child2 = spawn("cmd", ["/c", "start", "", url], { detached: true, stdio: "ignore" });
+      const child2 = spawn2("cmd", ["/c", "start", "", url], { detached: true, stdio: "ignore" });
       child2.unref();
       return true;
     }
-    const child = spawn("xdg-open", [url], { detached: true, stdio: "ignore" });
+    const child = spawn2("xdg-open", [url], { detached: true, stdio: "ignore" });
     child.unref();
     return true;
   } catch {
@@ -11550,11 +12894,11 @@ var PaperclipApiClient = class {
     if (response.status === 204) {
       return null;
     }
-    const text65 = await response.text();
-    if (!text65.trim()) {
+    const text71 = await response.text();
+    if (!text71.trim()) {
       return null;
     }
-    return safeParseJson(text65);
+    return safeParseJson(text71);
   }
 };
 function buildUrl(apiBase, path25) {
@@ -11565,16 +12909,16 @@ function buildUrl(apiBase, path25) {
   if (query) url.search = query;
   return url.toString();
 }
-function safeParseJson(text65) {
+function safeParseJson(text71) {
   try {
-    return JSON.parse(text65);
+    return JSON.parse(text71);
   } catch {
-    return text65;
+    return text71;
   }
 }
 async function toApiError(response) {
-  const text65 = await response.text();
-  const parsed = safeParseJson(text65);
+  const text71 = await response.text();
+  const parsed = safeParseJson(text71);
   if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
     const body = parsed;
     const message = typeof body.error === "string" && body.error.trim() || typeof body.message === "string" && body.message.trim() || `Request failed with status ${response.status}`;
@@ -12090,7 +13434,7 @@ async function dbBackupCommand(opts) {
     const result = await runDatabaseBackup({
       connectionString: connection.value,
       backupDir,
-      retentionDays,
+      retention: { dailyDays: retentionDays, weeklyWeeks: 4, monthlyMonths: 1 },
       filenamePrefix
     });
     spinner4.stop(`Backup saved: ${formatDatabaseBackupResult(result)}`);
@@ -14171,8 +15515,8 @@ function filterIssueRows(rows, match) {
   if (!match?.trim()) return rows;
   const needle = match.trim().toLowerCase();
   return rows.filter((row) => {
-    const text65 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
-    return text65.includes(needle);
+    const text71 = [row.identifier, row.title, row.description].filter((part) => Boolean(part)).join("\n").toLowerCase();
+    return text71.includes(needle);
   });
 }
 
@@ -14181,10 +15525,25 @@ import { constants as fsConstants, promises as fs13 } from "node:fs";
 import path18 from "node:path";
 var MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 var MAX_EXCERPT_BYTES = 32 * 1024;
+var TERMINAL_RESULT_SCAN_OVERLAP_CHARS = 64 * 1024;
 var PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES = [
   "../../skills",
   "../../../../../skills"
 ];
+var DEFAULT_PAPERCLIP_AGENT_PROMPT_TEMPLATE = [
+  "You are agent {{agent.id}} ({{agent.name}}). Continue your Paperclip work.",
+  "",
+  "Execution contract:",
+  "- Start actionable work in this heartbeat; do not stop at a plan unless the issue asks for planning.",
+  "- Leave durable progress in comments, documents, or work products with a clear next action.",
+  "- Use child issues for parallel or long delegated work instead of polling agents, sessions, or processes.",
+  "- If woken by a human comment on a dependency-blocked issue, respond or triage the comment without treating the blocked deliverable work as unblocked.",
+  "- Create child issues directly when you know what needs to be done; use issue-thread interactions when the board/user must choose suggested tasks, answer structured questions, or confirm a proposal.",
+  "- To ask for that input, create an interaction on the current issue with POST /api/issues/{issueId}/interactions using kind suggest_tasks, ask_user_questions, or request_confirmation. Use continuationPolicy wake_assignee when you need to resume after a response; for request_confirmation this resumes only after acceptance.",
+  "- For plan approval, update the plan document first, then create request_confirmation targeting the latest plan revision with idempotencyKey confirmation:{issueId}:plan:{revisionId}. Wait for acceptance before creating implementation subtasks, and create a fresh confirmation after superseding board/user comments if approval is still needed.",
+  "- If blocked, mark the issue blocked and name the unblock owner and action.",
+  "- Respect budget, pause/cancel, approval gates, and company boundaries."
+].join("\n");
 function normalizePathSlashes(value) {
   return value.replaceAll("\\", "/");
 }
@@ -14924,12 +16283,12 @@ import {
 } from "node:fs";
 import os4 from "node:os";
 import path23 from "node:path";
-import { execFileSync } from "node:child_process";
+import { execFileSync as execFileSync2 } from "node:child_process";
 import { createServer } from "node:net";
 import { Readable } from "node:stream";
 import * as p16 from "@clack/prompts";
 import pc25 from "picocolors";
-import { and as and2, eq as eq3, inArray as inArray2, sql as sql3 } from "drizzle-orm";
+import { and as and2, eq as eq3, inArray as inArray2, sql as sql6 } from "drizzle-orm";
 
 // src/commands/worktree-lib.ts
 init_home();
@@ -15083,6 +16442,8 @@ function buildWorktreeConfig(input) {
     server: {
       deploymentMode: source?.server.deploymentMode ?? "local_trusted",
       exposure: source?.server.exposure ?? "private",
+      ...source?.server.bind ? { bind: source.server.bind } : {},
+      ...source?.server.customBindHost ? { customBindHost: source.server.customBindHost } : {},
       host: source?.server.host ?? "127.0.0.1",
       port: serverPort,
       allowedHostnames: source?.server.allowedHostnames ?? [],
@@ -15568,6 +16929,15 @@ function isCurrentSourceConfigPath(sourceConfigPath) {
   }
   return path23.resolve(currentConfigPath) === path23.resolve(sourceConfigPath);
 }
+function formatSeededWorktreeExecutionQuarantineSummary(summary) {
+  return [
+    `disabled timer heartbeats: ${summary.disabledTimerHeartbeats}`,
+    `reset running agents: ${summary.resetRunningAgents}`,
+    `quarantined in-progress issues: ${summary.quarantinedInProgressIssues}`,
+    `unassigned todo issues: ${summary.unassignedTodoIssues}`,
+    `unassigned review issues: ${summary.unassignedReviewIssues}`
+  ].join(", ");
+}
 var WORKTREE_NAME_PREFIX = "paperclip-";
 function resolveWorktreeMakeName(name) {
   const value = nonEmpty3(name);
@@ -15758,7 +17128,7 @@ function extractExecSyncErrorMessage(error) {
 }
 function localBranchExists(cwd, branchName) {
   try {
-    execFileSync("git", ["show-ref", "--verify", "--quiet", `refs/heads/${branchName}`], {
+    execFileSync2("git", ["show-ref", "--verify", "--quiet", `refs/heads/${branchName}`], {
       cwd,
       stdio: "ignore"
     });
@@ -15815,9 +17185,9 @@ async function findAvailablePort2(preferredPort, reserved = /* @__PURE__ */ new 
 function resolveRepoManagedWorktreesRoot(cwd) {
   const normalized = path23.resolve(cwd);
   const marker = `${path23.sep}.paperclip${path23.sep}worktrees${path23.sep}`;
-  const index59 = normalized.indexOf(marker);
-  if (index59 === -1) return null;
-  const repoRoot = normalized.slice(0, index59);
+  const index64 = normalized.indexOf(marker);
+  if (index64 === -1) return null;
+  const repoRoot = normalized.slice(0, index64);
   return path23.resolve(repoRoot, ".paperclip", "worktrees");
 }
 function collectClaimedWorktreePorts(homeDir, currentInstanceId, cwd) {
@@ -15860,7 +17230,7 @@ function collectClaimedWorktreePorts(homeDir, currentInstanceId, cwd) {
 }
 function detectGitBranchName(cwd) {
   try {
-    const value = execFileSync("git", ["branch", "--show-current"], {
+    const value = execFileSync2("git", ["branch", "--show-current"], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
@@ -15870,24 +17240,57 @@ function detectGitBranchName(cwd) {
     return null;
   }
 }
+function validateGitBranchName(cwd, branchName) {
+  const value = nonEmpty3(branchName);
+  if (!value) {
+    throw new Error("Branch name is required.");
+  }
+  try {
+    execFileSync2("git", ["check-ref-format", "--branch", value], {
+      cwd,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  } catch (error) {
+    throw new Error(`Invalid branch name "${branchName}": ${extractExecSyncErrorMessage(error) ?? String(error)}`);
+  }
+  return value;
+}
+function isPrimaryGitWorktree(cwd) {
+  const workspace = detectGitWorkspaceInfo(cwd);
+  return Boolean(workspace && workspace.gitDir === workspace.commonDir);
+}
+function resolvePrimaryGitRepoRoot(cwd) {
+  const workspace = detectGitWorkspaceInfo(cwd);
+  if (!workspace) {
+    throw new Error("Current directory is not inside a git repository.");
+  }
+  if (workspace.gitDir === workspace.commonDir) {
+    return workspace.root;
+  }
+  return path23.resolve(workspace.commonDir, "..");
+}
+function resolveRepairWorktreeDirName(branchName) {
+  const normalized = branchName.trim().replace(/[^A-Za-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^[-._]+|[-._]+$/g, "");
+  return normalized || "worktree";
+}
 function detectGitWorkspaceInfo(cwd) {
   try {
-    const root = execFileSync("git", ["rev-parse", "--show-toplevel"], {
+    const root = execFileSync2("git", ["rev-parse", "--show-toplevel"], {
       cwd,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
-    const commonDirRaw = execFileSync("git", ["rev-parse", "--git-common-dir"], {
+    const commonDirRaw = execFileSync2("git", ["rev-parse", "--git-common-dir"], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
-    const gitDirRaw = execFileSync("git", ["rev-parse", "--git-dir"], {
+    const gitDirRaw = execFileSync2("git", ["rev-parse", "--git-dir"], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
-    const hooksPathRaw = execFileSync("git", ["rev-parse", "--git-path", "hooks"], {
+    const hooksPathRaw = execFileSync2("git", ["rev-parse", "--git-path", "hooks"], {
       cwd: root,
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"]
@@ -16015,6 +17418,148 @@ function resolveSourceConfigPath(opts) {
   const sourceInstanceId = sanitizeWorktreeInstanceId(opts.fromInstance ?? "default");
   return path23.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
 }
+function resolveWorktreeReseedSource(input) {
+  const fromSelector = nonEmpty3(input.from);
+  const fromConfig = nonEmpty3(input.fromConfig);
+  const fromDataDir = nonEmpty3(input.fromDataDir);
+  const fromInstance = nonEmpty3(input.fromInstance);
+  const hasExplicitConfigSource = Boolean(fromConfig || fromDataDir || fromInstance);
+  if (fromSelector && hasExplicitConfigSource) {
+    throw new Error(
+      "Use either --from <worktree> or --from-config/--from-data-dir/--from-instance, not both."
+    );
+  }
+  if (fromSelector) {
+    const endpoint = resolveWorktreeEndpointFromSelector(fromSelector, { allowCurrent: true });
+    return {
+      configPath: endpoint.configPath,
+      label: endpoint.label
+    };
+  }
+  if (hasExplicitConfigSource) {
+    const configPath = resolveSourceConfigPath({
+      fromConfig: fromConfig ?? void 0,
+      fromDataDir: fromDataDir ?? void 0,
+      fromInstance: fromInstance ?? void 0
+    });
+    return {
+      configPath,
+      label: configPath
+    };
+  }
+  throw new Error(
+    "Pass --from <worktree> or --from-config/--from-instance explicitly so the reseed source is unambiguous."
+  );
+}
+function resolveWorktreeRepairSource(input) {
+  const fromConfig = nonEmpty3(input.fromConfig);
+  const fromDataDir = nonEmpty3(input.fromDataDir);
+  const fromInstance = nonEmpty3(input.fromInstance) ?? "default";
+  const configPath = resolveSourceConfigPath({
+    fromConfig: fromConfig ?? void 0,
+    fromDataDir: fromDataDir ?? void 0,
+    fromInstance
+  });
+  return {
+    configPath,
+    label: configPath
+  };
+}
+function resolveWorktreeReseedTargetPaths(input) {
+  const envEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(input.configPath));
+  const homeDir = nonEmpty3(envEntries.PAPERCLIP_HOME);
+  const instanceId = nonEmpty3(envEntries.PAPERCLIP_INSTANCE_ID);
+  if (!homeDir || !instanceId) {
+    throw new Error(
+      `Target config ${input.configPath} does not look like a worktree-local Paperclip instance. Expected PAPERCLIP_HOME and PAPERCLIP_INSTANCE_ID in the adjacent .env.`
+    );
+  }
+  return resolveWorktreeLocalPaths({
+    cwd: input.rootPath,
+    homeDir,
+    instanceId
+  });
+}
+function resolveExistingGitWorktree(selector, cwd) {
+  const trimmed = selector.trim();
+  if (trimmed.length === 0) return null;
+  const directPath = path23.resolve(trimmed);
+  if (existsSync3(directPath)) {
+    return {
+      worktree: directPath,
+      branch: null,
+      branchLabel: path23.basename(directPath),
+      hasPaperclipConfig: existsSync3(path23.resolve(directPath, ".paperclip", "config.json")),
+      isCurrent: directPath === path23.resolve(cwd)
+    };
+  }
+  return toMergeSourceChoices(cwd).find(
+    (choice) => choice.worktree === directPath || path23.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed || choice.branch === trimmed
+  ) ?? null;
+}
+async function ensureRepairTargetWorktree(input) {
+  const cwd = process.cwd();
+  const currentRoot = path23.resolve(cwd);
+  const currentConfigPath = path23.resolve(currentRoot, ".paperclip", "config.json");
+  if (!input.selector) {
+    if (isPrimaryGitWorktree(cwd)) {
+      return null;
+    }
+    return {
+      rootPath: currentRoot,
+      configPath: currentConfigPath,
+      label: path23.basename(currentRoot),
+      branchName: detectGitBranchName(cwd),
+      created: false
+    };
+  }
+  const existing = resolveExistingGitWorktree(input.selector, cwd);
+  if (existing) {
+    return {
+      rootPath: existing.worktree,
+      configPath: path23.resolve(existing.worktree, ".paperclip", "config.json"),
+      label: existing.branchLabel,
+      branchName: existing.branchLabel === "(detached)" ? null : existing.branchLabel,
+      created: false
+    };
+  }
+  const repoRoot = resolvePrimaryGitRepoRoot(cwd);
+  const branchName = validateGitBranchName(repoRoot, input.selector);
+  const targetPath = path23.resolve(
+    repoRoot,
+    ".paperclip",
+    "worktrees",
+    resolveRepairWorktreeDirName(branchName)
+  );
+  if (existsSync3(targetPath)) {
+    throw new Error(`Target path already exists but is not a registered git worktree: ${targetPath}`);
+  }
+  mkdirSync3(path23.dirname(targetPath), { recursive: true });
+  const spinner4 = p16.spinner();
+  spinner4.start(`Creating git worktree for ${branchName}...`);
+  try {
+    execFileSync2("git", resolveGitWorktreeAddArgs({
+      branchName,
+      targetPath,
+      branchExists: localBranchExists(repoRoot, branchName)
+    }), {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    spinner4.stop(`Created git worktree at ${targetPath}.`);
+  } catch (error) {
+    spinner4.stop(pc25.red("Failed to create git worktree."));
+    throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
+  }
+  installDependenciesBestEffort(targetPath);
+  return {
+    rootPath: targetPath,
+    configPath: path23.resolve(targetPath, ".paperclip", "config.json"),
+    label: branchName,
+    branchName,
+    created: true
+  };
+}
 function resolveSourceConnectionString(config, envEntries, portOverride) {
   if (config.database.mode === "postgres") {
     const connectionString = nonEmpty3(envEntries.DATABASE_URL) ?? nonEmpty3(config.database.connectionString);
@@ -16122,6 +17667,119 @@ async function ensureEmbeddedPostgres2(dataDir, preferredPort) {
     }
   };
 }
+async function pauseSeededScheduledRoutines(connectionString) {
+  const db = createDb(connectionString);
+  try {
+    const scheduledRoutineIds = await db.selectDistinct({ routineId: routineTriggers.routineId }).from(routineTriggers).where(and2(eq3(routineTriggers.kind, "schedule"), eq3(routineTriggers.enabled, true)));
+    const idsToPause = scheduledRoutineIds.map((row) => row.routineId).filter((value) => Boolean(value));
+    if (idsToPause.length === 0) {
+      return 0;
+    }
+    const paused = await db.update(routines).set({
+      status: "paused",
+      updatedAt: /* @__PURE__ */ new Date()
+    }).where(and2(inArray2(routines.id, idsToPause), sql6`${routines.status} <> 'paused'`, sql6`${routines.status} <> 'archived'`)).returning({ id: routines.id });
+    return paused.length;
+  } finally {
+    await db.$client?.end?.({ timeout: 5 }).catch(() => void 0);
+  }
+}
+var EMPTY_SEEDED_WORKTREE_EXECUTION_QUARANTINE_SUMMARY = {
+  disabledTimerHeartbeats: 0,
+  resetRunningAgents: 0,
+  quarantinedInProgressIssues: 0,
+  unassignedTodoIssues: 0,
+  unassignedReviewIssues: 0
+};
+function isRecord(value) {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+function isEnabledValue(value) {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+function normalizeWorktreeRuntimeConfig(runtimeConfig) {
+  const nextRuntimeConfig = isRecord(runtimeConfig) ? { ...runtimeConfig } : {};
+  const heartbeat2 = isRecord(nextRuntimeConfig.heartbeat) ? { ...nextRuntimeConfig.heartbeat } : null;
+  if (!heartbeat2) {
+    return { runtimeConfig: nextRuntimeConfig, disabledTimerHeartbeat: false, changed: false };
+  }
+  const disabledTimerHeartbeat = isEnabledValue(heartbeat2.enabled);
+  if (heartbeat2.enabled !== false) {
+    heartbeat2.enabled = false;
+    nextRuntimeConfig.heartbeat = heartbeat2;
+    return { runtimeConfig: nextRuntimeConfig, disabledTimerHeartbeat, changed: true };
+  }
+  return { runtimeConfig: nextRuntimeConfig, disabledTimerHeartbeat: false, changed: false };
+}
+async function quarantineSeededWorktreeExecutionState(connectionString) {
+  const db = createDb(connectionString);
+  const summary = { ...EMPTY_SEEDED_WORKTREE_EXECUTION_QUARANTINE_SUMMARY };
+  try {
+    await db.transaction(async (tx) => {
+      const seededAgents = await tx.select({
+        id: agents.id,
+        status: agents.status,
+        runtimeConfig: agents.runtimeConfig
+      }).from(agents);
+      for (const agent of seededAgents) {
+        const normalized = normalizeWorktreeRuntimeConfig(agent.runtimeConfig);
+        const nextStatus = agent.status === "running" ? "idle" : agent.status;
+        if (normalized.disabledTimerHeartbeat) {
+          summary.disabledTimerHeartbeats += 1;
+        }
+        if (agent.status === "running") {
+          summary.resetRunningAgents += 1;
+        }
+        if (normalized.changed || nextStatus !== agent.status) {
+          await tx.update(agents).set({
+            runtimeConfig: normalized.runtimeConfig,
+            status: nextStatus,
+            updatedAt: /* @__PURE__ */ new Date()
+          }).where(eq3(agents.id, agent.id));
+        }
+      }
+      const affectedIssues = await tx.select({
+        id: issues.id,
+        companyId: issues.companyId,
+        status: issues.status
+      }).from(issues).where(
+        and2(
+          sql6`${issues.assigneeAgentId} is not null`,
+          sql6`${issues.assigneeUserId} is null`,
+          inArray2(issues.status, ["todo", "in_progress", "in_review"])
+        )
+      );
+      for (const issue of affectedIssues) {
+        const nextStatus = issue.status === "in_progress" ? "blocked" : issue.status;
+        await tx.update(issues).set({
+          status: nextStatus,
+          assigneeAgentId: null,
+          checkoutRunId: null,
+          executionRunId: null,
+          executionAgentNameKey: null,
+          executionLockedAt: null,
+          executionWorkspaceId: null,
+          updatedAt: /* @__PURE__ */ new Date()
+        }).where(eq3(issues.id, issue.id));
+        if (issue.status === "in_progress") {
+          summary.quarantinedInProgressIssues += 1;
+          await tx.insert(issueComments).values({
+            companyId: issue.companyId,
+            issueId: issue.id,
+            body: "Quarantined during worktree seed so copied in-flight work does not auto-run in this isolated instance. Reassign or unblock here only if you intentionally want the worktree instance to own this task."
+          });
+        } else if (issue.status === "todo") {
+          summary.unassignedTodoIssues += 1;
+        } else if (issue.status === "in_review") {
+          summary.unassignedReviewIssues += 1;
+        }
+      }
+    });
+    return summary;
+  } finally {
+    await db.$client?.end?.({ timeout: 5 }).catch(() => void 0);
+  }
+}
 async function seedWorktreeDatabase(input) {
   const seedPlan = resolveWorktreeSeedPlan(input.seedMode);
   const sourceEnvFile = resolvePaperclipEnvFile(input.sourceConfigPath);
@@ -16140,6 +17798,8 @@ async function seedWorktreeDatabase(input) {
         input.sourceConfig.database.embeddedPostgresDataDir,
         input.sourceConfig.database.embeddedPostgresPort
       );
+      const sourceAdminConnectionString = `postgres://paperclip:paperclip@127.0.0.1:${sourceHandle.port}/postgres`;
+      await ensurePostgresDatabase(sourceAdminConnectionString, "paperclip");
     }
     const sourceConnectionString = resolveSourceConnectionString(
       input.sourceConfig,
@@ -16149,7 +17809,7 @@ async function seedWorktreeDatabase(input) {
     const backup = await runDatabaseBackup({
       connectionString: sourceConnectionString,
       backupDir: path23.resolve(input.targetPaths.backupDir, "seed"),
-      retentionDays: 7,
+      retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
       filenamePrefix: `${input.instanceId}-seed`,
       includeMigrationJournal: true,
       excludeTables: seedPlan.excludedTables,
@@ -16167,12 +17827,16 @@ async function seedWorktreeDatabase(input) {
       backupFile: backup.backupFile
     });
     await applyPendingMigrations(targetConnectionString);
+    const executionQuarantine = input.preserveLiveWork ? { ...EMPTY_SEEDED_WORKTREE_EXECUTION_QUARANTINE_SUMMARY } : await quarantineSeededWorktreeExecutionState(targetConnectionString);
+    const pausedScheduledRoutines = await pauseSeededScheduledRoutines(targetConnectionString);
     const reboundWorkspaces = await rebindSeededProjectWorkspaces({
       targetConnectionString,
       currentCwd: input.targetPaths.cwd
     });
     return {
       backupSummary: formatDatabaseBackupResult(backup),
+      pausedScheduledRoutines,
+      executionQuarantine,
       reboundWorkspaces
     };
   } finally {
@@ -16243,6 +17907,8 @@ async function runWorktreeInit(opts) {
   loadPaperclipEnvFile(paths.configPath);
   const copiedGitHooks = copyGitHooksToWorktreeGitDir(cwd);
   let seedSummary = null;
+  let seedExecutionQuarantineSummary = null;
+  let pausedScheduledRoutineCount = null;
   let reboundWorkspaceSummary = [];
   if (opts.seed !== false) {
     if (!sourceConfig) {
@@ -16259,9 +17925,12 @@ async function runWorktreeInit(opts) {
         targetConfig,
         targetPaths: paths,
         instanceId,
-        seedMode
+        seedMode,
+        preserveLiveWork: opts.preserveLiveWork
       });
       seedSummary = seeded.backupSummary;
+      seedExecutionQuarantineSummary = seeded.executionQuarantine;
+      pausedScheduledRoutineCount = seeded.pausedScheduledRoutines;
       reboundWorkspaceSummary = seeded.reboundWorkspaces;
       spinner4.stop(`Seeded isolated worktree database (${seedMode}).`);
     } catch (error) {
@@ -16283,6 +17952,16 @@ async function runWorktreeInit(opts) {
   if (seedSummary) {
     p16.log.message(pc25.dim(`Seed mode: ${seedMode}`));
     p16.log.message(pc25.dim(`Seed snapshot: ${seedSummary}`));
+    if (opts.preserveLiveWork) {
+      p16.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+    } else if (seedExecutionQuarantineSummary) {
+      p16.log.message(
+        pc25.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seedExecutionQuarantineSummary)}`)
+      );
+    }
+    if (pausedScheduledRoutineCount != null) {
+      p16.log.message(pc25.dim(`Paused scheduled routines: ${pausedScheduledRoutineCount}`));
+    }
     for (const rebound of reboundWorkspaceSummary) {
       p16.log.message(
         pc25.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`)
@@ -16300,126 +17979,6 @@ async function worktreeInitCommand(opts) {
   p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree init ")));
   await runWorktreeInit(opts);
 }
-function hasExplicitSourceSelection(opts) {
-  return Boolean(
-    nonEmpty3(opts.fromConfig) || nonEmpty3(opts.fromDataDir) || nonEmpty3(opts.fromInstance) || nonEmpty3(opts.sourceConfigPathOverride)
-  );
-}
-function resolveCurrentWorktreeReseedState(opts = {}) {
-  const currentConfigPath = resolveConfigPath();
-  if (!existsSync3(currentConfigPath)) {
-    throw new Error(
-      "Current directory does not have a Paperclip worktree config. Run `paperclipai worktree init` here first."
-    );
-  }
-  const currentConfig = readConfig(currentConfigPath);
-  if (!currentConfig) {
-    throw new Error(`Could not read current worktree config at ${currentConfigPath}.`);
-  }
-  if (currentConfig.database.mode !== "embedded-postgres") {
-    throw new Error("Worktree reseed only supports embedded-postgres worktree instances.");
-  }
-  const currentEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(currentConfigPath));
-  const instanceRoot = path23.dirname(currentConfig.database.embeddedPostgresDataDir);
-  const derivedHomeDir = path23.dirname(path23.dirname(instanceRoot));
-  return {
-    currentConfigPath: path23.resolve(currentConfigPath),
-    instanceId: nonEmpty3(currentEnvEntries.PAPERCLIP_INSTANCE_ID) ?? nonEmpty3(path23.basename(instanceRoot)) ?? sanitizeWorktreeInstanceId(path23.basename(process.cwd())),
-    homeDir: path23.resolve(expandHomePrefix(opts.home ?? currentEnvEntries.PAPERCLIP_HOME ?? derivedHomeDir)),
-    serverPort: currentConfig.server.port,
-    dbPort: currentConfig.database.embeddedPostgresPort,
-    worktreeName: nonEmpty3(currentEnvEntries.PAPERCLIP_WORKTREE_NAME) ?? void 0,
-    worktreeColor: nonEmpty3(currentEnvEntries.PAPERCLIP_WORKTREE_COLOR) ?? void 0
-  };
-}
-async function snapshotDirectory(sourcePath, targetPath) {
-  if (!existsSync3(sourcePath)) {
-    return null;
-  }
-  await fsPromises.cp(sourcePath, targetPath, { recursive: true });
-  return targetPath;
-}
-async function snapshotWorktreeReseedState(target) {
-  const tempRoot = await fsPromises.mkdtemp(path23.join(os4.tmpdir(), "paperclip-worktree-reseed-backup-"));
-  return {
-    tempRoot,
-    repoConfigDirBackup: await snapshotDirectory(
-      target.repoConfigDir,
-      path23.resolve(tempRoot, "repo-config")
-    ),
-    instanceRootBackup: await snapshotDirectory(
-      target.instanceRoot,
-      path23.resolve(tempRoot, "instance-root")
-    )
-  };
-}
-async function restoreDirectoryBackup(backupPath, targetPath) {
-  rmSync(targetPath, { recursive: true, force: true });
-  if (!backupPath) {
-    return;
-  }
-  await fsPromises.cp(backupPath, targetPath, { recursive: true });
-}
-async function restoreWorktreeReseedState(backup, target) {
-  await restoreDirectoryBackup(backup.repoConfigDirBackup, target.repoConfigDir);
-  await restoreDirectoryBackup(backup.instanceRootBackup, target.instanceRoot);
-}
-async function worktreeReseedCommand(opts) {
-  printPaperclipCliBanner();
-  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree reseed ")));
-  if (!hasExplicitSourceSelection(opts)) {
-    throw new Error(
-      "Reseed requires an explicit source. Pass --from-config or --from-instance (optionally with --from-data-dir)."
-    );
-  }
-  const target = resolveCurrentWorktreeReseedState({ home: opts.home });
-  const sourceConfigPath = resolveSourceConfigPath(opts);
-  if (path23.resolve(sourceConfigPath) === target.currentConfigPath) {
-    throw new Error(
-      "Source and target Paperclip configs are the same. Pass a different source instance/config when reseeding."
-    );
-  }
-  const seedMode = opts.seedMode ?? "minimal";
-  if (!isWorktreeSeedMode(seedMode)) {
-    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
-  }
-  const confirmed = opts.yes ? true : await p16.confirm({
-    message: `Reseed the current worktree instance (${target.instanceId}) from ${sourceConfigPath}? This overwrites only the current worktree Paperclip instance data.`,
-    initialValue: false
-  });
-  if (p16.isCancel(confirmed) || !confirmed) {
-    p16.log.warn("Reseed cancelled.");
-    return;
-  }
-  const targetPaths = resolveWorktreeLocalPaths({
-    cwd: process.cwd(),
-    homeDir: target.homeDir,
-    instanceId: target.instanceId
-  });
-  const backup = await snapshotWorktreeReseedState(targetPaths);
-  try {
-    await runWorktreeInit({
-      name: target.worktreeName,
-      color: target.worktreeColor,
-      instance: target.instanceId,
-      home: target.homeDir,
-      fromConfig: opts.fromConfig,
-      fromDataDir: opts.fromDataDir,
-      fromInstance: opts.fromInstance,
-      sourceConfigPathOverride: sourceConfigPath,
-      serverPort: target.serverPort,
-      dbPort: target.dbPort,
-      seed: opts.seed ?? true,
-      seedMode,
-      force: true
-    });
-  } catch (error) {
-    await restoreWorktreeReseedState(backup, targetPaths);
-    throw error;
-  } finally {
-    rmSync(backup.tempRoot, { recursive: true, force: true });
-  }
-}
 async function worktreeMakeCommand(nameArg, opts) {
   printPaperclipCliBanner();
   p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree:make ")));
@@ -16435,7 +17994,7 @@ async function worktreeMakeCommand(nameArg, opts) {
   if (startPoint) {
     const [remote] = startPoint.split("/", 1);
     try {
-      execFileSync("git", ["fetch", remote], {
+      execFileSync2("git", ["fetch", remote], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"]
       });
@@ -16454,7 +18013,7 @@ async function worktreeMakeCommand(nameArg, opts) {
   const spinner4 = p16.spinner();
   spinner4.start(`Creating git worktree at ${targetPath}...`);
   try {
-    execFileSync("git", worktreeArgs, {
+    execFileSync2("git", worktreeArgs, {
       cwd: sourceCwd,
       stdio: ["ignore", "pipe", "pipe"]
     });
@@ -16463,18 +18022,7 @@ async function worktreeMakeCommand(nameArg, opts) {
     spinner4.stop(pc25.red("Failed to create git worktree."));
     throw new Error(extractExecSyncErrorMessage(error) ?? String(error));
   }
-  const installSpinner = p16.spinner();
-  installSpinner.start("Installing dependencies...");
-  try {
-    execFileSync("pnpm", ["install"], {
-      cwd: targetPath,
-      stdio: ["ignore", "pipe", "pipe"]
-    });
-    installSpinner.stop("Installed dependencies.");
-  } catch (error) {
-    installSpinner.stop(pc25.yellow("Failed to install dependencies (continuing anyway)."));
-    p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
-  }
+  installDependenciesBestEffort(targetPath);
   const originalCwd = process.cwd();
   try {
     process.chdir(targetPath);
@@ -16489,8 +18037,22 @@ async function worktreeMakeCommand(nameArg, opts) {
     process.chdir(originalCwd);
   }
 }
+function installDependenciesBestEffort(targetPath) {
+  const installSpinner = p16.spinner();
+  installSpinner.start("Installing dependencies...");
+  try {
+    execFileSync2("pnpm", ["install"], {
+      cwd: targetPath,
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+    installSpinner.stop("Installed dependencies.");
+  } catch (error) {
+    installSpinner.stop(pc25.yellow("Failed to install dependencies (continuing anyway)."));
+    p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
+  }
+}
 function parseGitWorktreeList(cwd) {
-  const raw = execFileSync("git", ["worktree", "list", "--porcelain"], {
+  const raw = execFileSync2("git", ["worktree", "list", "--porcelain"], {
     cwd,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
@@ -16542,7 +18104,7 @@ function toMergeSourceChoices(cwd) {
 }
 function branchHasUniqueCommits(cwd, branchName) {
   try {
-    const output = execFileSync(
+    const output = execFileSync2(
       "git",
       ["log", "--oneline", branchName, "--not", "--remotes", "--exclude", `refs/heads/${branchName}`, "--branches"],
       { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
@@ -16554,7 +18116,7 @@ function branchHasUniqueCommits(cwd, branchName) {
 }
 function branchExistsOnAnyRemote(cwd, branchName) {
   try {
-    const output = execFileSync(
+    const output = execFileSync2(
       "git",
       ["branch", "-r", "--list", `*/${branchName}`],
       { cwd, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
@@ -16566,7 +18128,7 @@ function branchExistsOnAnyRemote(cwd, branchName) {
 }
 function worktreePathHasUncommittedChanges(worktreePath) {
   try {
-    const output = execFileSync(
+    const output = execFileSync2(
       "git",
       ["status", "--porcelain"],
       { cwd: worktreePath, encoding: "utf8", stdio: ["ignore", "pipe", "pipe"] }
@@ -16634,7 +18196,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
       try {
         const removeArgs = ["worktree", "remove", linkedWorktree.worktree];
         if (opts.force) removeArgs.push("--force");
-        execFileSync("git", removeArgs, {
+        execFileSync2("git", removeArgs, {
           cwd: sourceCwd,
           stdio: ["ignore", "pipe", "pipe"]
         });
@@ -16645,14 +18207,14 @@ async function worktreeCleanupCommand(nameArg, opts) {
       }
     } else {
       spinner4.start("Pruning stale worktree entry...");
-      execFileSync("git", ["worktree", "prune"], {
+      execFileSync2("git", ["worktree", "prune"], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"]
       });
       spinner4.stop("Pruned stale worktree entry.");
     }
   } else {
-    execFileSync("git", ["worktree", "prune"], {
+    execFileSync2("git", ["worktree", "prune"], {
       cwd: sourceCwd,
       stdio: ["ignore", "pipe", "pipe"]
     });
@@ -16668,7 +18230,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
     spinner4.start(`Deleting local branch "${name}"...`);
     try {
       const deleteFlag = opts.force ? "-D" : "-d";
-      execFileSync("git", ["branch", deleteFlag, name], {
+      execFileSync2("git", ["branch", deleteFlag, name], {
         cwd: sourceCwd,
         stdio: ["ignore", "pipe", "pipe"]
       });
@@ -16888,6 +18450,12 @@ function renderMergePlan(plan, extras) {
   lines.push("Identifiers shown above are provisional preview values. `--apply` reserves fresh issue numbers at write time.");
   return lines.join("\n");
 }
+function resolveRunningEmbeddedPostgresPid(config) {
+  if (config.database.mode !== "embedded-postgres") {
+    return null;
+  }
+  return readRunningPostmasterPid2(path23.resolve(config.database.embeddedPostgresDataDir, "postmaster.pid"));
+}
 async function collectMergePlan(input) {
   const companyId = input.company.id;
   const [
@@ -17023,7 +18591,7 @@ async function collectMergePlan(input) {
     input.targetDb.select().from(agents).where(eq3(agents.companyId, companyId)),
     input.targetDb.select().from(projectWorkspaces).where(eq3(projectWorkspaces.companyId, companyId)),
     input.targetDb.select().from(goals).where(eq3(goals.companyId, companyId)),
-    input.sourceDb.select({ count: sql3`count(*)::int` }).from(heartbeatRuns).where(eq3(heartbeatRuns.companyId, companyId))
+    input.sourceDb.select({ count: sql6`count(*)::int` }).from(heartbeatRuns).where(eq3(heartbeatRuns.companyId, companyId))
   ]);
   if (!targetCompanyRow) {
     throw new Error(`Target company ${companyId} was not found.`);
@@ -17280,7 +18848,7 @@ async function applyMergePlan(input) {
     const issueInserts = issueCandidates.filter((issue) => !existingIssueIds.has(issue.source.id));
     let nextIssueNumber = 0;
     if (issueInserts.length > 0) {
-      const [companyRow] = await tx.update(companies).set({ issueCounter: sql3`${companies.issueCounter} + ${issueInserts.length}` }).where(eq3(companies.id, companyId)).returning({ issueCounter: companies.issueCounter });
+      const [companyRow] = await tx.update(companies).set({ issueCounter: sql6`${companies.issueCounter} + ${issueInserts.length}` }).where(eq3(companies.id, companyId)).returning({ issueCounter: companies.issueCounter });
       nextIssueNumber = companyRow.issueCounter - issueInserts.length + 1;
     }
     const insertedIssueIdentifiers = /* @__PURE__ */ new Map();
@@ -17593,14 +19161,174 @@ async function worktreeMergeHistoryCommand(sourceArg, opts) {
     await sourceHandle.stop();
   }
 }
+async function runWorktreeReseed(opts) {
+  const seedMode = opts.seedMode ?? "full";
+  if (!isWorktreeSeedMode(seedMode)) {
+    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+  }
+  const targetEndpoint = opts.to ? resolveWorktreeEndpointFromSelector(opts.to, { allowCurrent: true }) : resolveCurrentEndpoint();
+  const source = resolveWorktreeReseedSource(opts);
+  if (path23.resolve(source.configPath) === path23.resolve(targetEndpoint.configPath)) {
+    throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to values.");
+  }
+  if (!existsSync3(source.configPath)) {
+    throw new Error(`Source config not found at ${source.configPath}.`);
+  }
+  const targetConfig = readConfig(targetEndpoint.configPath);
+  if (!targetConfig) {
+    throw new Error(`Target config not found at ${targetEndpoint.configPath}.`);
+  }
+  const sourceConfig = readConfig(source.configPath);
+  if (!sourceConfig) {
+    throw new Error(`Source config not found at ${source.configPath}.`);
+  }
+  const targetPaths = resolveWorktreeReseedTargetPaths({
+    configPath: targetEndpoint.configPath,
+    rootPath: targetEndpoint.rootPath
+  });
+  const runningTargetPid = resolveRunningEmbeddedPostgresPid(targetConfig);
+  if (runningTargetPid && !opts.allowLiveTarget) {
+    throw new Error(
+      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${targetEndpoint.rootPath} before reseeding, or re-run with --allow-live-target if you want to override this guard.`
+    );
+  }
+  const confirmed = opts.yes ? true : await p16.confirm({
+    message: `Overwrite the isolated Paperclip DB for ${targetEndpoint.label} from ${source.label} using ${seedMode} seed mode?`,
+    initialValue: false
+  });
+  if (p16.isCancel(confirmed) || !confirmed) {
+    p16.log.warn("Reseed cancelled.");
+    return;
+  }
+  if (runningTargetPid && opts.allowLiveTarget) {
+    p16.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+  }
+  const spinner4 = p16.spinner();
+  spinner4.start(`Reseeding ${targetEndpoint.label} from ${source.label} (${seedMode})...`);
+  try {
+    const seeded = await seedWorktreeDatabase({
+      sourceConfigPath: source.configPath,
+      sourceConfig,
+      targetConfig,
+      targetPaths,
+      instanceId: targetPaths.instanceId,
+      seedMode,
+      preserveLiveWork: opts.preserveLiveWork
+    });
+    spinner4.stop(`Reseeded ${targetEndpoint.label} (${seedMode}).`);
+    p16.log.message(pc25.dim(`Source: ${source.configPath}`));
+    p16.log.message(pc25.dim(`Target: ${targetEndpoint.configPath}`));
+    p16.log.message(pc25.dim(`Seed snapshot: ${seeded.backupSummary}`));
+    if (opts.preserveLiveWork) {
+      p16.log.warning("Preserved copied live work; this worktree instance may auto-run source-instance assignments.");
+    } else {
+      p16.log.message(
+        pc25.dim(`Seed execution quarantine: ${formatSeededWorktreeExecutionQuarantineSummary(seeded.executionQuarantine)}`)
+      );
+    }
+    p16.log.message(pc25.dim(`Paused scheduled routines: ${seeded.pausedScheduledRoutines}`));
+    for (const rebound of seeded.reboundWorkspaces) {
+      p16.log.message(
+        pc25.dim(`Rebound workspace ${rebound.name}: ${rebound.fromCwd} -> ${rebound.toCwd}`)
+      );
+    }
+    p16.outro(pc25.green(`Reseed complete for ${targetEndpoint.label}.`));
+  } catch (error) {
+    spinner4.stop(pc25.red("Failed to reseed worktree database."));
+    throw error;
+  }
+}
+async function worktreeReseedCommand(opts) {
+  printPaperclipCliBanner();
+  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree reseed ")));
+  await runWorktreeReseed(opts);
+}
+async function worktreeRepairCommand(opts) {
+  printPaperclipCliBanner();
+  p16.intro(pc25.bgCyan(pc25.black(" paperclipai worktree repair ")));
+  const seedMode = opts.seedMode ?? "minimal";
+  if (!isWorktreeSeedMode(seedMode)) {
+    throw new Error(`Unsupported seed mode "${seedMode}". Expected one of: minimal, full.`);
+  }
+  const target = await ensureRepairTargetWorktree({
+    selector: nonEmpty3(opts.branch) ?? void 0,
+    seedMode,
+    opts
+  });
+  if (!target) {
+    p16.log.warn("Current checkout is the primary repo worktree. Pass --branch to create or repair a linked worktree.");
+    p16.outro(pc25.yellow("No worktree repaired."));
+    return;
+  }
+  const source = resolveWorktreeRepairSource(opts);
+  if (!existsSync3(source.configPath)) {
+    throw new Error(`Source config not found at ${source.configPath}.`);
+  }
+  if (path23.resolve(source.configPath) === path23.resolve(target.configPath)) {
+    throw new Error("Source and target Paperclip configs are the same. Use --from-config/--from-instance to point repair at a different source.");
+  }
+  const targetConfig = existsSync3(target.configPath) ? readConfig(target.configPath) : null;
+  const targetEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(target.configPath));
+  const targetHasWorktreeEnv = Boolean(
+    nonEmpty3(targetEnvEntries.PAPERCLIP_HOME) && nonEmpty3(targetEnvEntries.PAPERCLIP_INSTANCE_ID)
+  );
+  if (targetConfig && targetHasWorktreeEnv && opts.noSeed) {
+    p16.log.message(pc25.dim(`Target ${target.label} already has worktree-local config/env. Skipping reseed because --no-seed was passed.`));
+    p16.outro(pc25.green(`Worktree metadata already looks healthy for ${target.label}.`));
+    return;
+  }
+  if (targetConfig && targetHasWorktreeEnv) {
+    await runWorktreeReseed({
+      fromConfig: source.configPath,
+      to: target.rootPath,
+      seedMode,
+      preserveLiveWork: opts.preserveLiveWork,
+      yes: true,
+      allowLiveTarget: opts.allowLiveTarget
+    });
+    return;
+  }
+  const repairInstanceId = sanitizeWorktreeInstanceId(path23.basename(target.rootPath));
+  const repairPaths = resolveWorktreeLocalPaths({
+    cwd: target.rootPath,
+    homeDir: resolveWorktreeHome(opts.home),
+    instanceId: repairInstanceId
+  });
+  const runningTargetPid = readRunningPostmasterPid2(path23.resolve(repairPaths.embeddedPostgresDataDir, "postmaster.pid"));
+  if (runningTargetPid && !opts.allowLiveTarget) {
+    throw new Error(
+      `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${target.rootPath} before repairing, or re-run with --allow-live-target if you want to override this guard.`
+    );
+  }
+  if (runningTargetPid && opts.allowLiveTarget) {
+    p16.log.warning(`Proceeding even though the target embedded PostgreSQL appears to be running (pid ${runningTargetPid}).`);
+  }
+  const originalCwd = process.cwd();
+  try {
+    process.chdir(target.rootPath);
+    await runWorktreeInit({
+      home: opts.home,
+      fromConfig: source.configPath,
+      fromDataDir: opts.fromDataDir,
+      fromInstance: opts.fromInstance,
+      seed: opts.noSeed ? false : true,
+      seedMode,
+      preserveLiveWork: opts.preserveLiveWork,
+      force: true
+    });
+  } finally {
+    process.chdir(originalCwd);
+  }
+}
 function registerWorktreeCommands(program2) {
   const worktree = program2.command("worktree").description("Worktree-local Paperclip instance helpers");
-  program2.command("worktree:make").description("Create ~/NAME as a git worktree, then initialize an isolated Paperclip instance inside it").argument("<name>", "Worktree name \u2014 auto-prefixed with paperclip- if needed (created at ~/paperclip-NAME)").option("--start-point <ref>", "Remote ref to base the new branch on (env: PAPERCLIP_WORKTREE_START_POINT)").option("--instance <id>", "Explicit isolated instance id").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config", "default").option("--server-port <port>", "Preferred server port", (value) => Number(value)).option("--db-port <port>", "Preferred embedded Postgres port", (value) => Number(value)).option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--no-seed", "Skip database seeding from the source instance").option("--force", "Replace existing repo-local config and isolated instance data", false).action(worktreeMakeCommand);
-  worktree.command("init").description("Create repo-local config/env and an isolated instance for this worktree").option("--name <name>", "Display name used to derive the instance id").option("--instance <id>", "Explicit isolated instance id").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config", "default").option("--server-port <port>", "Preferred server port", (value) => Number(value)).option("--db-port <port>", "Preferred embedded Postgres port", (value) => Number(value)).option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--no-seed", "Skip database seeding from the source instance").option("--force", "Replace existing repo-local config and isolated instance data", false).action(worktreeInitCommand);
+  program2.command("worktree:make").description("Create ~/NAME as a git worktree, then initialize an isolated Paperclip instance inside it").argument("<name>", "Worktree name \u2014 auto-prefixed with paperclip- if needed (created at ~/paperclip-NAME)").option("--start-point <ref>", "Remote ref to base the new branch on (env: PAPERCLIP_WORKTREE_START_POINT)").option("--instance <id>", "Explicit isolated instance id").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config", "default").option("--server-port <port>", "Preferred server port", (value) => Number(value)).option("--db-port <port>", "Preferred embedded Postgres port", (value) => Number(value)).option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--preserve-live-work", "Do not quarantine copied agent timers or assigned open issues in the seeded worktree", false).option("--no-seed", "Skip database seeding from the source instance").option("--force", "Replace existing repo-local config and isolated instance data", false).action(worktreeMakeCommand);
+  worktree.command("init").description("Create repo-local config/env and an isolated instance for this worktree").option("--name <name>", "Display name used to derive the instance id").option("--instance <id>", "Explicit isolated instance id").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config", "default").option("--server-port <port>", "Preferred server port", (value) => Number(value)).option("--db-port <port>", "Preferred embedded Postgres port", (value) => Number(value)).option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--preserve-live-work", "Do not quarantine copied agent timers or assigned open issues in the seeded worktree", false).option("--no-seed", "Skip database seeding from the source instance").option("--force", "Replace existing repo-local config and isolated instance data", false).action(worktreeInitCommand);
   worktree.command("env").description("Print shell exports for the current worktree-local Paperclip instance").option("-c, --config <path>", "Path to config file").option("--json", "Print JSON instead of shell exports").action(worktreeEnvCommand);
-  worktree.command("reseed").description("Replace the current worktree instance with a fresh seed while preserving this worktree's ports and instance id").option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--yes", "Skip the destructive confirmation prompt", false).action(worktreeReseedCommand);
   program2.command("worktree:list").description("List git worktrees visible from this repo and whether they look like Paperclip worktrees").option("--json", "Print JSON instead of text output").action(worktreeListCommand);
   program2.command("worktree:merge-history").description("Preview or import issue/comment history from another worktree into the current instance").argument("[source]", "Optional source worktree path, directory name, or branch name (back-compat alias for --from)").option("--from <worktree>", "Source worktree path, directory name, branch name, or current").option("--to <worktree>", "Target worktree path, directory name, branch name, or current (defaults to current)").option("--company <id-or-prefix>", "Shared company id or issue prefix inside the chosen source/target instances").option("--scope <items>", "Comma-separated scopes to import (issues, comments)", "issues,comments").option("--apply", "Apply the import after previewing the plan", false).option("--dry", "Preview only and do not import anything", false).option("--yes", "Skip the interactive confirmation prompt when applying", false).action(worktreeMergeHistoryCommand);
+  worktree.command("reseed").description("Re-seed an existing worktree-local instance from another Paperclip instance or worktree").option("--from <worktree>", "Source worktree path, directory name, branch name, or current").option("--to <worktree>", "Target worktree path, directory name, branch name, or current (defaults to current)").option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config").option("--seed-mode <mode>", "Seed profile: minimal or full (default: full)", "full").option("--preserve-live-work", "Do not quarantine copied agent timers or assigned open issues in the seeded worktree", false).option("--yes", "Skip the destructive confirmation prompt", false).option("--allow-live-target", "Override the guard that requires the target worktree DB to be stopped first", false).action(worktreeReseedCommand);
+  worktree.command("repair").description("Create or repair a linked worktree-local Paperclip instance without touching the primary checkout").option("--branch <name>", "Existing branch/worktree selector to repair, or a branch name to create under .paperclip/worktrees").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--from-config <path>", "Source config.json to seed from").option("--from-data-dir <path>", "Source PAPERCLIP_HOME used when deriving the source config").option("--from-instance <id>", "Source instance id when deriving the source config (default: default)").option("--seed-mode <mode>", "Seed profile: minimal or full (default: minimal)", "minimal").option("--preserve-live-work", "Do not quarantine copied agent timers or assigned open issues in the seeded worktree", false).option("--no-seed", "Repair metadata only and skip reseeding when bootstrapping a missing worktree config", false).option("--allow-live-target", "Override the guard that requires the target worktree DB to be stopped first", false).action(worktreeRepairCommand);
   program2.command("worktree:cleanup").description("Safely remove a worktree, its branch, and its isolated instance data").argument("<name>", "Worktree name \u2014 auto-prefixed with paperclip- if needed").option("--instance <id>", "Explicit instance id (if different from the worktree name)").option("--home <path>", `Home root for worktree instances (env: PAPERCLIP_WORKTREES_DIR, default: ${DEFAULT_WORKTREE_HOME})`).option("--force", "Bypass safety checks (uncommitted changes, unique commits)", false).action(worktreeCleanupCommand);
 }
 
@@ -17899,7 +19627,7 @@ program.hook("preAction", (_thisCommand, actionCommand) => {
   loadPaperclipEnvFile(options.config);
   initTelemetryFromConfigFile(options.config);
 });
-program.command("onboard").description("Interactive first-run setup wizard").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("-y, --yes", "Accept defaults (quickstart + start immediately)", false).option("--run", "Start Paperclip immediately after saving config", false).action(onboard);
+program.command("onboard").description("Interactive first-run setup wizard").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--bind <mode>", "Quickstart reachability preset (loopback, lan, tailnet)").option("-y, --yes", "Accept quickstart defaults (trusted local loopback unless --bind is set) and start immediately", false).option("--run", "Start Paperclip immediately after saving config", false).action(onboard);
 program.command("doctor").description("Run diagnostic checks on your Paperclip setup").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--repair", "Attempt to repair issues automatically").alias("--fix").option("-y, --yes", "Skip repair confirmation prompts").action(async (opts) => {
   await doctor(opts);
 });
@@ -17909,7 +19637,7 @@ program.command("db:backup").description("Create a one-off database backup using
   await dbBackupCommand(opts);
 });
 program.command("allowed-hostname").description("Allow a hostname for authenticated/private mode access").argument("<host>", "Hostname to allow (for example dotta-macbook-pro)").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).action(addAllowedHostname);
-program.command("run").description("Bootstrap local setup (onboard + doctor) and run Paperclip").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("-i, --instance <id>", "Local instance id (default: default)").option("--repair", "Attempt automatic repairs during doctor", true).option("--no-repair", "Disable automatic repairs during doctor").action(runCommand);
+program.command("run").description("Bootstrap local setup (onboard + doctor) and run Paperclip").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("-i, --instance <id>", "Local instance id (default: default)").option("--bind <mode>", "On first run, use onboarding reachability preset (loopback, lan, tailnet)").option("--repair", "Attempt automatic repairs during doctor", true).option("--no-repair", "Disable automatic repairs during doctor").action(runCommand);
 var heartbeat = program.command("heartbeat").description("Heartbeat utilities");
 heartbeat.command("run").description("Run one agent heartbeat and stream live logs").requiredOption("-a, --agent-id <agentId>", "Agent ID to invoke").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--context <path>", "Path to CLI context file").option("--profile <name>", "CLI context profile name").option("--api-base <url>", "Base URL for the Paperclip server API").option("--api-key <token>", "Bearer token for agent-authenticated calls").option(
   "--source <source>",

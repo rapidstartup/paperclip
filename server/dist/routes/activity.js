@@ -1,12 +1,12 @@
 import { Router } from "express";
 import { z } from "zod";
 import { validate } from "../middleware/validate.js";
-import { activityService } from "../services/activity.js";
-import { assertBoard, assertCompanyAccess } from "./authz.js";
-import { issueService } from "../services/index.js";
+import { activityService, normalizeActivityLimit } from "../services/activity.js";
+import { assertAuthenticated, assertBoard, assertCompanyAccess } from "./authz.js";
+import { heartbeatService, issueService } from "../services/index.js";
 import { sanitizeRecord } from "../redaction.js";
 const createActivitySchema = z.object({
-    actorType: z.enum(["agent", "user", "system"]).optional().default("system"),
+    actorType: z.enum(["agent", "user", "system", "plugin"]).optional().default("system"),
     actorId: z.string().min(1),
     action: z.string().min(1),
     entityType: z.string().min(1),
@@ -17,6 +17,7 @@ const createActivitySchema = z.object({
 export function activityRoutes(db) {
     const router = Router();
     const svc = activityService(db);
+    const heartbeat = heartbeatService(db);
     const issueSvc = issueService(db);
     async function resolveIssueByRef(rawId) {
         if (/^[A-Z]+-\d+$/i.test(rawId)) {
@@ -32,6 +33,7 @@ export function activityRoutes(db) {
             agentId: req.query.agentId,
             entityType: req.query.entityType,
             entityId: req.query.entityId,
+            limit: normalizeActivityLimit(Number(req.query.limit)),
         };
         const result = await svc.list(filters);
         res.json(result);
@@ -39,6 +41,7 @@ export function activityRoutes(db) {
     router.post("/companies/:companyId/activity", validate(createActivitySchema), async (req, res) => {
         assertBoard(req);
         const companyId = req.params.companyId;
+        assertCompanyAccess(req, companyId);
         const event = await svc.create({
             companyId,
             ...req.body,
@@ -69,7 +72,14 @@ export function activityRoutes(db) {
         res.json(result);
     });
     router.get("/heartbeat-runs/:runId/issues", async (req, res) => {
+        assertAuthenticated(req);
         const runId = req.params.runId;
+        const run = await heartbeat.getRun(runId);
+        if (!run) {
+            res.json([]);
+            return;
+        }
+        assertCompanyAccess(req, run.companyId);
         const result = await svc.issuesForRun(runId);
         res.json(result);
     });

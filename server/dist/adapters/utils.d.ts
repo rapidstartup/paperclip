@@ -10,6 +10,7 @@ type BuildInvocationEnvForLogsOptions = {
 export declare const runningProcesses: Map<string, {
     child: ChildProcess;
     graceSec: number;
+    processGroupId: number | null;
 }>;
 export declare const MAX_CAPTURE_BYTES: number;
 export declare const MAX_EXCERPT_BYTES: number;
@@ -20,6 +21,7 @@ export declare const asBoolean: typeof serverUtils.asBoolean;
 export declare const asStringArray: typeof serverUtils.asStringArray;
 export declare const parseJson: typeof serverUtils.parseJson;
 export declare const appendWithCap: typeof serverUtils.appendWithCap;
+export declare const appendWithByteCap: typeof serverUtils.appendWithByteCap;
 export declare const resolvePathValue: typeof serverUtils.resolvePathValue;
 export declare const renderTemplate: typeof serverUtils.renderTemplate;
 export declare const redactEnvForLogs: typeof serverUtils.redactEnvForLogs;

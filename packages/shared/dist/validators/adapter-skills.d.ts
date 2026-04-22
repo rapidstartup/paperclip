@@ -19,10 +19,10 @@ export declare const agentSkillEntrySchema: z.ZodObject<{
     detail: z.ZodOptional<z.ZodNullable<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
     managed: boolean;
+    state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
     key: string;
     desired: boolean;
     runtimeName: string | null;
-    state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
     required?: boolean | undefined;
     requiredReason?: string | null | undefined;
     origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -34,10 +34,10 @@ export declare const agentSkillEntrySchema: z.ZodObject<{
     detail?: string | null | undefined;
 }, {
     managed: boolean;
+    state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
     key: string;
     desired: boolean;
     runtimeName: string | null;
-    state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
     required?: boolean | undefined;
     requiredReason?: string | null | undefined;
     origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -70,10 +70,10 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         detail: z.ZodOptional<z.ZodNullable<z.ZodString>>;
     }, "strip", z.ZodTypeAny, {
         managed: boolean;
+        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         key: string;
         desired: boolean;
         runtimeName: string | null;
-        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         required?: boolean | undefined;
         requiredReason?: string | null | undefined;
         origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -85,10 +85,10 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         detail?: string | null | undefined;
     }, {
         managed: boolean;
+        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         key: string;
         desired: boolean;
         runtimeName: string | null;
-        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         required?: boolean | undefined;
         requiredReason?: string | null | undefined;
         origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -101,13 +101,12 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
     }>, "many">;
     warnings: z.ZodArray<z.ZodString, "many">;
 }, "strip", z.ZodTypeAny, {
-    mode: "unsupported" | "persistent" | "ephemeral";
     entries: {
         managed: boolean;
+        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         key: string;
         desired: boolean;
         runtimeName: string | null;
-        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         required?: boolean | undefined;
         requiredReason?: string | null | undefined;
         origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -118,18 +117,18 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         targetPath?: string | null | undefined;
         detail?: string | null | undefined;
     }[];
+    warnings: string[];
+    mode: "unsupported" | "persistent" | "ephemeral";
     adapterType: string;
     supported: boolean;
-    warnings: string[];
     desiredSkills: string[];
 }, {
-    mode: "unsupported" | "persistent" | "ephemeral";
     entries: {
         managed: boolean;
+        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         key: string;
         desired: boolean;
         runtimeName: string | null;
-        state: "installed" | "external" | "available" | "configured" | "missing" | "stale";
         required?: boolean | undefined;
         requiredReason?: string | null | undefined;
         origin?: "company_managed" | "paperclip_required" | "user_installed" | "external_unknown" | undefined;
@@ -140,9 +139,10 @@ export declare const agentSkillSnapshotSchema: z.ZodObject<{
         targetPath?: string | null | undefined;
         detail?: string | null | undefined;
     }[];
+    warnings: string[];
+    mode: "unsupported" | "persistent" | "ephemeral";
     adapterType: string;
     supported: boolean;
-    warnings: string[];
     desiredSkills: string[];
 }>;
 export declare const agentSkillSyncSchema: z.ZodObject<{

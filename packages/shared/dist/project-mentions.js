@@ -1,5 +1,6 @@
 export const PROJECT_MENTION_SCHEME = "project://";
 export const AGENT_MENTION_SCHEME = "agent://";
+export const USER_MENTION_SCHEME = "user://";
 export const SKILL_MENTION_SCHEME = "skill://";
 const HEX_COLOR_RE = /^[0-9a-f]{6}$/i;
 const HEX_COLOR_SHORT_RE = /^[0-9a-f]{3}$/i;
@@ -7,6 +8,7 @@ const HEX_COLOR_WITH_HASH_RE = /^#[0-9a-f]{6}$/i;
 const HEX_COLOR_SHORT_WITH_HASH_RE = /^#[0-9a-f]{3}$/i;
 const PROJECT_MENTION_LINK_RE = /\[[^\]]*]\((project:\/\/[^)\s]+)\)/gi;
 const AGENT_MENTION_LINK_RE = /\[[^\]]*]\((agent:\/\/[^)\s]+)\)/gi;
+const USER_MENTION_LINK_RE = /\[[^\]]*]\((user:\/\/[^)\s]+)\)/gi;
 const SKILL_MENTION_LINK_RE = /\[[^\]]*]\((skill:\/\/[^)\s]+)\)/gi;
 const AGENT_ICON_NAME_RE = /^[a-z0-9-]+$/i;
 const SKILL_SLUG_RE = /^[a-z0-9][a-z0-9-]*$/i;
@@ -89,6 +91,26 @@ export function parseAgentMentionHref(href) {
         icon: normalizeAgentIcon(url.searchParams.get("i") ?? url.searchParams.get("icon")),
     };
 }
+export function buildUserMentionHref(userId) {
+    return `${USER_MENTION_SCHEME}${userId.trim()}`;
+}
+export function parseUserMentionHref(href) {
+    if (!href.startsWith(USER_MENTION_SCHEME))
+        return null;
+    let url;
+    try {
+        url = new URL(href);
+    }
+    catch {
+        return null;
+    }
+    if (url.protocol !== "user:")
+        return null;
+    const userId = `${url.hostname}${url.pathname}`.replace(/^\/+/, "").trim();
+    if (!userId)
+        return null;
+    return { userId };
+}
 export function buildSkillMentionHref(skillId, slug) {
     const trimmedSkillId = skillId.trim();
     const normalizedSlug = normalizeSkillSlug(slug ?? null);
@@ -140,6 +162,19 @@ export function extractAgentMentionIds(markdown) {
         const parsed = parseAgentMentionHref(match[1]);
         if (parsed)
             ids.add(parsed.agentId);
+    }
+    return [...ids];
+}
+export function extractUserMentionIds(markdown) {
+    if (!markdown)
+        return [];
+    const ids = new Set();
+    const re = new RegExp(USER_MENTION_LINK_RE);
+    let match;
+    while ((match = re.exec(markdown)) !== null) {
+        const parsed = parseUserMentionHref(match[1]);
+        if (parsed)
+            ids.add(parsed.userId);
     }
     return [...ids];
 }

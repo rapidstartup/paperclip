@@ -73,14 +73,14 @@ export declare const createSecretSchema: z.ZodObject<{
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     externalRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    name: string;
     value: string;
+    name: string;
     description?: string | null | undefined;
     provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
     externalRef?: string | null | undefined;
 }, {
-    name: string;
     value: string;
+    name: string;
     description?: string | null | undefined;
     provider?: "local_encrypted" | "aws_secrets_manager" | "gcp_secret_manager" | "vault" | undefined;
     externalRef?: string | null | undefined;
@@ -102,12 +102,12 @@ export declare const updateSecretSchema: z.ZodObject<{
     description: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     externalRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     externalRef?: string | null | undefined;
 }, {
-    name?: string | undefined;
     description?: string | null | undefined;
+    name?: string | undefined;
     externalRef?: string | null | undefined;
 }>;
 export type UpdateSecret = z.infer<typeof updateSecretSchema>;

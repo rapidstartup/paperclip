@@ -6,7 +6,7 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     vibedashOwnerUserId: z.ZodString;
     vibedashOwnerEmail: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     customerBoardUserId: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    customerBoardGrants: z.ZodOptional<z.ZodArray<z.ZodEnum<["agents:create", "users:invite", "users:manage_permissions", "tasks:assign", "tasks:assign_scope", "joins:approve"]>, "many">>;
+    customerBoardGrants: z.ZodOptional<z.ZodArray<z.ZodEnum<["agents:create", "users:invite", "users:manage_permissions", "tasks:assign", "tasks:assign_scope", "tasks:manage_active_checkouts", "joins:approve"]>, "many">>;
     githubRepoUrl: z.ZodString;
     githubRepoRef: z.ZodNullable<z.ZodOptional<z.ZodString>>;
     githubToken: z.ZodNullable<z.ZodOptional<z.ZodString>>;
@@ -57,7 +57,7 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     vibedashProjectDescription?: string | null | undefined;
     vibedashOwnerEmail?: string | null | undefined;
     customerBoardUserId?: string | null | undefined;
-    customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve")[] | undefined;
+    customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve")[] | undefined;
     githubRepoRef?: string | null | undefined;
     vibedashApiUrl?: string | null | undefined;
     workspaceRootHint?: string | null | undefined;
@@ -72,7 +72,7 @@ export declare const createVibedashProjectBootstrapSchema: z.ZodObject<{
     vibedashProjectDescription?: string | null | undefined;
     vibedashOwnerEmail?: string | null | undefined;
     customerBoardUserId?: string | null | undefined;
-    customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "joins:approve")[] | undefined;
+    customerBoardGrants?: ("agents:create" | "users:invite" | "users:manage_permissions" | "tasks:assign" | "tasks:assign_scope" | "tasks:manage_active_checkouts" | "joins:approve")[] | undefined;
     githubRepoRef?: string | null | undefined;
     vibedashApiUrl?: string | null | undefined;
     workspaceRootHint?: string | null | undefined;

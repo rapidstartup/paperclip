@@ -1,5 +1,5 @@
 import { companies, instanceSettings } from "@paperclipai/db";
-import { DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE, instanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, } from "@paperclipai/shared";
+import { DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE, DEFAULT_BACKUP_RETENTION, instanceGeneralSettingsSchema, instanceExperimentalSettingsSchema, } from "@paperclipai/shared";
 import { eq } from "drizzle-orm";
 const DEFAULT_SINGLETON_KEY = "default";
 function normalizeGeneralSettings(raw) {
@@ -9,12 +9,14 @@ function normalizeGeneralSettings(raw) {
             censorUsernameInLogs: parsed.data.censorUsernameInLogs ?? false,
             keyboardShortcuts: parsed.data.keyboardShortcuts ?? false,
             feedbackDataSharingPreference: parsed.data.feedbackDataSharingPreference ?? DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
+            backupRetention: parsed.data.backupRetention ?? DEFAULT_BACKUP_RETENTION,
         };
     }
     return {
         censorUsernameInLogs: false,
         keyboardShortcuts: false,
         feedbackDataSharingPreference: DEFAULT_FEEDBACK_DATA_SHARING_PREFERENCE,
+        backupRetention: DEFAULT_BACKUP_RETENTION,
     };
 }
 function normalizeExperimentalSettings(raw) {
@@ -65,7 +67,16 @@ export function instanceSettingsService(db) {
             },
         })
             .returning();
-        return created;
+        if (created)
+            return created;
+        const raced = await db
+            .select()
+            .from(instanceSettings)
+            .where(eq(instanceSettings.singletonKey, DEFAULT_SINGLETON_KEY))
+            .then((rows) => rows[0] ?? null);
+        if (raced)
+            return raced;
+        throw new Error("Failed to initialize instance settings row");
     }
     return {
         get: async () => toInstanceSettings(await getOrCreateRow()),

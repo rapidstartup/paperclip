@@ -1,4 +1,5 @@
 import type { Db } from "@paperclipai/db";
+export declare function getUtcMonthStart(date: Date): Date;
 export declare function dashboardService(db: Db): {
     summary: (companyId: string) => Promise<{
         companyId: string;
@@ -21,6 +22,13 @@ export declare function dashboardService(db: Db): {
             pausedAgents: number;
             pausedProjects: number;
         };
+        runActivity: {
+            date: string;
+            succeeded: number;
+            failed: number;
+            other: number;
+            total: number;
+        }[];
     }>;
 };
 //# sourceMappingURL=dashboard.d.ts.map

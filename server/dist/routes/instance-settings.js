@@ -3,7 +3,7 @@ import { patchInstanceExperimentalSettingsSchema, patchInstanceGeneralSettingsSc
 import { forbidden } from "../errors.js";
 import { validate } from "../middleware/validate.js";
 import { instanceSettingsService, logActivity } from "../services/index.js";
-import { getActorInfo } from "./authz.js";
+import { assertBoardOrgAccess, getActorInfo } from "./authz.js";
 function assertCanManageInstanceSettings(req) {
     if (req.actor.type !== "board") {
         throw forbidden("Board access required");
@@ -18,10 +18,8 @@ export function instanceSettingsRoutes(db) {
     const svc = instanceSettingsService(db);
     router.get("/instance/settings/general", async (req, res) => {
         // General settings (e.g. keyboardShortcuts) are readable by any
-        // authenticated board user.  Only PATCH requires instance-admin.
-        if (req.actor.type !== "board") {
-            throw forbidden("Board access required");
-        }
+        // authenticated org member or instance admin. Only PATCH requires instance-admin.
+        assertBoardOrgAccess(req);
         res.json(await svc.getGeneral());
     });
     router.patch("/instance/settings/general", validate(patchInstanceGeneralSettingsSchema), async (req, res) => {
@@ -46,11 +44,9 @@ export function instanceSettingsRoutes(db) {
         res.json(updated.general);
     });
     router.get("/instance/settings/experimental", async (req, res) => {
-        // Experimental settings are readable by any authenticated board user.
-        // Only PATCH requires instance-admin.
-        if (req.actor.type !== "board") {
-            throw forbidden("Board access required");
-        }
+        // Experimental settings are readable by any authenticated org member
+        // or instance admin. Only PATCH requires instance-admin.
+        assertBoardOrgAccess(req);
         res.json(await svc.getExperimental());
     });
     router.patch("/instance/settings/experimental", validate(patchInstanceExperimentalSettingsSchema), async (req, res) => {

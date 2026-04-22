@@ -200,9 +200,9 @@ export function workspaceOperationService(db) {
                 store: operation.logStore,
                 logRef: operation.logRef,
                 ...result,
-                content: redactCurrentUserText(result.content, {
-                    enabled: (await instanceSettings.getGeneral()).censorUsernameInLogs,
-                }),
+                // Workspace-operation log chunks are sanitized before append-time storage.
+                // Returning the stored chunk avoids another whole-string rewrite per poll.
+                content: result.content,
             };
         },
     };

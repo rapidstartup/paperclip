@@ -12,6 +12,7 @@ export declare const API: {
     readonly activity: "/api/activity";
     readonly dashboard: "/api/dashboard";
     readonly sidebarBadges: "/api/sidebar-badges";
+    readonly sidebarPreferences: "/api/sidebar-preferences";
     readonly invites: "/api/invites";
     readonly joinRequests: "/api/join-requests";
     readonly members: "/api/members";

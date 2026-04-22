@@ -1,6 +1,6 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { documentRevisions, documents, issueDocuments, issues } from "@paperclipai/db";
-import { issueDocumentKeySchema } from "@paperclipai/shared";
+import { isSystemIssueDocumentKey, issueDocumentKeySchema } from "@paperclipai/shared";
 import { conflict, notFound, unprocessable } from "../errors.js";
 function normalizeDocumentKey(key) {
     const normalized = key.trim().toLowerCase();
@@ -59,8 +59,9 @@ const issueDocumentSelect = {
     updatedAt: documents.updatedAt,
 };
 export function documentService(db) {
+    const filterSystemDocuments = (rows, includeSystem) => includeSystem ? rows : rows.filter((row) => !isSystemIssueDocumentKey(row.key));
     return {
-        getIssueDocumentPayload: async (issue) => {
+        getIssueDocumentPayload: async (issue, options = {}) => {
             const [planDocument, documentSummaries] = await Promise.all([
                 db
                     .select(issueDocumentSelect)
@@ -78,7 +79,8 @@ export function documentService(db) {
             const legacyPlanBody = planDocument ? null : extractLegacyPlanBody(issue.description);
             return {
                 planDocument: planDocument ? mapIssueDocumentRow(planDocument, true) : null,
-                documentSummaries: documentSummaries.map((row) => mapIssueDocumentRow(row, false)),
+                documentSummaries: filterSystemDocuments(documentSummaries, options.includeSystem ?? false)
+                    .map((row) => mapIssueDocumentRow(row, false)),
                 legacyPlanDocument: legacyPlanBody
                     ? {
                         key: "plan",
@@ -88,14 +90,14 @@ export function documentService(db) {
                     : null,
             };
         },
-        listIssueDocuments: async (issueId) => {
+        listIssueDocuments: async (issueId, options = {}) => {
             const rows = await db
                 .select(issueDocumentSelect)
                 .from(issueDocuments)
                 .innerJoin(documents, eq(issueDocuments.documentId, documents.id))
                 .where(eq(issueDocuments.issueId, issueId))
                 .orderBy(asc(issueDocuments.key), desc(documents.updatedAt));
-            return rows.map((row) => mapIssueDocumentRow(row, true));
+            return filterSystemDocuments(rows, options.includeSystem ?? false).map((row) => mapIssueDocumentRow(row, true));
         },
         getIssueDocumentByKey: async (issueId, rawKey) => {
             const key = normalizeDocumentKey(rawKey);

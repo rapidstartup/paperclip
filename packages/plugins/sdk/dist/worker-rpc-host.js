@@ -109,6 +109,7 @@ export function startWorkerRpcHost(options) {
     let initialized = false;
     let manifest = null;
     let currentConfig = {};
+    let databaseNamespace = null;
     // Plugin handler registrations (populated during setup())
     const eventHandlers = [];
     const jobHandlers = new Map();
@@ -246,6 +247,17 @@ export function startWorkerRpcHost(options) {
             launchers: {
                 register(launcher) {
                     launcherRegistrations.set(launcher.id, launcher);
+                },
+            },
+            db: {
+                get namespace() {
+                    return databaseNamespace ?? "";
+                },
+                async query(sql, params) {
+                    return callHost("db.query", { sql, params });
+                },
+                async execute(sql, params) {
+                    return callHost("db.execute", { sql, params });
                 },
             },
             http: {
@@ -393,6 +405,8 @@ export function startWorkerRpcHost(options) {
                         companyId: input.companyId,
                         projectId: input.projectId,
                         assigneeAgentId: input.assigneeAgentId,
+                        originKind: input.originKind,
+                        originId: input.originId,
                         status: input.status,
                         limit: input.limit,
                         offset: input.offset,
@@ -410,15 +424,73 @@ export function startWorkerRpcHost(options) {
                         inheritExecutionWorkspaceFromIssueId: input.inheritExecutionWorkspaceFromIssueId,
                         title: input.title,
                         description: input.description,
+                        status: input.status,
                         priority: input.priority,
                         assigneeAgentId: input.assigneeAgentId,
+                        assigneeUserId: input.assigneeUserId,
+                        requestDepth: input.requestDepth,
+                        billingCode: input.billingCode,
+                        originKind: input.originKind,
+                        originId: input.originId,
+                        originRunId: input.originRunId,
+                        blockedByIssueIds: input.blockedByIssueIds,
+                        labelIds: input.labelIds,
+                        executionWorkspaceId: input.executionWorkspaceId,
+                        executionWorkspacePreference: input.executionWorkspacePreference,
+                        executionWorkspaceSettings: input.executionWorkspaceSettings,
+                        actorAgentId: input.actor?.actorAgentId,
+                        actorUserId: input.actor?.actorUserId,
+                        actorRunId: input.actor?.actorRunId,
                     });
                 },
-                async update(issueId, patch, companyId) {
+                async update(issueId, patch, companyId, actor) {
                     return callHost("issues.update", {
                         issueId,
-                        patch: patch,
+                        patch: {
+                            ...patch,
+                            actorAgentId: actor?.actorAgentId,
+                            actorUserId: actor?.actorUserId,
+                            actorRunId: actor?.actorRunId,
+                        },
                         companyId,
+                    });
+                },
+                async assertCheckoutOwner(input) {
+                    return callHost("issues.assertCheckoutOwner", input);
+                },
+                async getSubtree(issueId, companyId, options) {
+                    return callHost("issues.getSubtree", {
+                        issueId,
+                        companyId,
+                        includeRoot: options?.includeRoot,
+                        includeRelations: options?.includeRelations,
+                        includeDocuments: options?.includeDocuments,
+                        includeActiveRuns: options?.includeActiveRuns,
+                        includeAssignees: options?.includeAssignees,
+                    });
+                },
+                async requestWakeup(issueId, companyId, options) {
+                    return callHost("issues.requestWakeup", {
+                        issueId,
+                        companyId,
+                        reason: options?.reason,
+                        contextSource: options?.contextSource,
+                        idempotencyKey: options?.idempotencyKey,
+                        actorAgentId: options?.actorAgentId,
+                        actorUserId: options?.actorUserId,
+                        actorRunId: options?.actorRunId,
+                    });
+                },
+                async requestWakeups(issueIds, companyId, options) {
+                    return callHost("issues.requestWakeups", {
+                        issueIds,
+                        companyId,
+                        reason: options?.reason,
+                        contextSource: options?.contextSource,
+                        idempotencyKeyPrefix: options?.idempotencyKeyPrefix,
+                        actorAgentId: options?.actorAgentId,
+                        actorUserId: options?.actorUserId,
+                        actorRunId: options?.actorRunId,
                     });
                 },
                 async listComments(issueId, companyId) {
@@ -426,6 +498,47 @@ export function startWorkerRpcHost(options) {
                 },
                 async createComment(issueId, body, companyId, options) {
                     return callHost("issues.createComment", { issueId, body, companyId, authorAgentId: options?.authorAgentId });
+                },
+                async createInteraction(issueId, interaction, companyId, options) {
+                    return callHost("issues.createInteraction", {
+                        issueId,
+                        companyId,
+                        interaction,
+                        authorAgentId: options?.authorAgentId,
+                    });
+                },
+                async suggestTasks(issueId, interaction, companyId, options) {
+                    return callHost("issues.createInteraction", {
+                        issueId,
+                        companyId,
+                        interaction: {
+                            ...interaction,
+                            kind: "suggest_tasks",
+                        },
+                        authorAgentId: options?.authorAgentId,
+                    });
+                },
+                async askUserQuestions(issueId, interaction, companyId, options) {
+                    return callHost("issues.createInteraction", {
+                        issueId,
+                        companyId,
+                        interaction: {
+                            ...interaction,
+                            kind: "ask_user_questions",
+                        },
+                        authorAgentId: options?.authorAgentId,
+                    });
+                },
+                async requestConfirmation(issueId, interaction, companyId, options) {
+                    return callHost("issues.createInteraction", {
+                        issueId,
+                        companyId,
+                        interaction: {
+                            ...interaction,
+                            kind: "request_confirmation",
+                        },
+                        authorAgentId: options?.authorAgentId,
+                    });
                 },
                 documents: {
                     async list(issueId, companyId) {
@@ -447,6 +560,46 @@ export function startWorkerRpcHost(options) {
                     },
                     async delete(issueId, key, companyId) {
                         return callHost("issues.documents.delete", { issueId, key, companyId });
+                    },
+                },
+                relations: {
+                    async get(issueId, companyId) {
+                        return callHost("issues.relations.get", { issueId, companyId });
+                    },
+                    async setBlockedBy(issueId, blockedByIssueIds, companyId, actor) {
+                        return callHost("issues.relations.setBlockedBy", {
+                            issueId,
+                            companyId,
+                            blockedByIssueIds,
+                            actorAgentId: actor?.actorAgentId,
+                            actorUserId: actor?.actorUserId,
+                            actorRunId: actor?.actorRunId,
+                        });
+                    },
+                    async addBlockers(issueId, blockerIssueIds, companyId, actor) {
+                        return callHost("issues.relations.addBlockers", {
+                            issueId,
+                            companyId,
+                            blockerIssueIds,
+                            actorAgentId: actor?.actorAgentId,
+                            actorUserId: actor?.actorUserId,
+                            actorRunId: actor?.actorRunId,
+                        });
+                    },
+                    async removeBlockers(issueId, blockerIssueIds, companyId, actor) {
+                        return callHost("issues.relations.removeBlockers", {
+                            issueId,
+                            companyId,
+                            blockerIssueIds,
+                            actorAgentId: actor?.actorAgentId,
+                            actorUserId: actor?.actorUserId,
+                            actorRunId: actor?.actorRunId,
+                        });
+                    },
+                },
+                summaries: {
+                    async getOrchestration(input) {
+                        return callHost("issues.summaries.getOrchestration", input);
                     },
                 },
             },
@@ -645,6 +798,8 @@ export function startWorkerRpcHost(options) {
                 return handleRunJob(params);
             case "handleWebhook":
                 return handleWebhook(params);
+            case "handleApiRequest":
+                return handleApiRequest(params);
             case "getData":
                 return handleGetData(params);
             case "performAction":
@@ -664,6 +819,7 @@ export function startWorkerRpcHost(options) {
         }
         manifest = params.manifest;
         currentConfig = params.config;
+        databaseNamespace = params.databaseNamespace ?? null;
         // Call the plugin's setup function
         await plugin.definition.setup(ctx);
         initialized = true;
@@ -677,6 +833,8 @@ export function startWorkerRpcHost(options) {
             supportedMethods.push("health");
         if (plugin.definition.onShutdown)
             supportedMethods.push("shutdown");
+        if (plugin.definition.onApiRequest)
+            supportedMethods.push("handleApiRequest");
         return { ok: true, supportedMethods };
     }
     async function handleHealth() {
@@ -753,6 +911,12 @@ export function startWorkerRpcHost(options) {
             throw Object.assign(new Error("handleWebhook is not implemented by this plugin"), { code: PLUGIN_RPC_ERROR_CODES.METHOD_NOT_IMPLEMENTED });
         }
         await plugin.definition.onWebhook(params);
+    }
+    async function handleApiRequest(params) {
+        if (!plugin.definition.onApiRequest) {
+            throw Object.assign(new Error("handleApiRequest is not implemented by this plugin"), { code: PLUGIN_RPC_ERROR_CODES.METHOD_NOT_IMPLEMENTED });
+        }
+        return plugin.definition.onApiRequest(params);
     }
     async function handleGetData(params) {
         const handler = dataHandlers.get(params.key);

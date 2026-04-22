@@ -22,6 +22,17 @@ function cloneRecord(value) {
         return null;
     return { ...value };
 }
+function readDesiredState(value) {
+    return value === "running" || value === "stopped" || value === "manual" ? value : null;
+}
+function readServiceStates(value) {
+    if (!isRecord(value))
+        return null;
+    const entries = Object.entries(value).filter(([, state]) => state === "running" || state === "stopped" || state === "manual");
+    return entries.length > 0
+        ? Object.fromEntries(entries)
+        : null;
+}
 async function pathExists(value) {
     if (!value)
         return false;
@@ -158,7 +169,8 @@ export function readExecutionWorkspaceConfig(metadata) {
         teardownCommand: readNullableString(raw.teardownCommand),
         cleanupCommand: readNullableString(raw.cleanupCommand),
         workspaceRuntime: cloneRecord(raw.workspaceRuntime),
-        desiredState: raw.desiredState === "running" || raw.desiredState === "stopped" ? raw.desiredState : null,
+        desiredState: readDesiredState(raw.desiredState),
+        serviceStates: readServiceStates(raw.serviceStates),
     };
     const hasConfig = Object.values(config).some((value) => {
         if (value === null)
@@ -177,6 +189,7 @@ export function mergeExecutionWorkspaceConfig(metadata, patch) {
         cleanupCommand: null,
         workspaceRuntime: null,
         desiredState: null,
+        serviceStates: null,
     };
     if (patch === null) {
         delete nextMetadata.config;
@@ -188,10 +201,9 @@ export function mergeExecutionWorkspaceConfig(metadata, patch) {
         cleanupCommand: patch.cleanupCommand !== undefined ? readNullableString(patch.cleanupCommand) : current.cleanupCommand,
         workspaceRuntime: patch.workspaceRuntime !== undefined ? cloneRecord(patch.workspaceRuntime) : current.workspaceRuntime,
         desiredState: patch.desiredState !== undefined
-            ? patch.desiredState === "running" || patch.desiredState === "stopped"
-                ? patch.desiredState
-                : null
+            ? readDesiredState(patch.desiredState)
             : current.desiredState,
+        serviceStates: patch.serviceStates !== undefined ? readServiceStates(patch.serviceStates) : current.serviceStates,
     };
     const hasConfig = Object.values(nextConfig).some((value) => {
         if (value === null)
@@ -207,6 +219,7 @@ export function mergeExecutionWorkspaceConfig(metadata, patch) {
             cleanupCommand: nextConfig.cleanupCommand,
             workspaceRuntime: nextConfig.workspaceRuntime,
             desiredState: nextConfig.desiredState,
+            serviceStates: nextConfig.serviceStates ?? null,
         };
     }
     else {
@@ -275,6 +288,14 @@ function toExecutionWorkspace(row, runtimeServices = []) {
         updatedAt: row.updatedAt,
     };
 }
+function toExecutionWorkspaceSummary(row) {
+    return {
+        id: row.id,
+        name: row.name,
+        mode: row.mode,
+        projectWorkspaceId: row.projectWorkspaceId ?? null,
+    };
+}
 function usesInheritedProjectRuntimeServices(row) {
     if (row.mode !== "shared_workspace" || !row.projectWorkspaceId)
         return false;
@@ -295,26 +316,30 @@ async function loadEffectiveRuntimeServicesByExecutionWorkspace(db, companyId, r
     ]));
 }
 export function executionWorkspaceService(db) {
+    function buildListConditions(companyId, filters) {
+        const conditions = [eq(executionWorkspaces.companyId, companyId)];
+        if (filters?.projectId)
+            conditions.push(eq(executionWorkspaces.projectId, filters.projectId));
+        if (filters?.projectWorkspaceId) {
+            conditions.push(eq(executionWorkspaces.projectWorkspaceId, filters.projectWorkspaceId));
+        }
+        if (filters?.issueId)
+            conditions.push(eq(executionWorkspaces.sourceIssueId, filters.issueId));
+        if (filters?.status) {
+            const statuses = filters.status.split(",").map((value) => value.trim()).filter(Boolean);
+            if (statuses.length === 1)
+                conditions.push(eq(executionWorkspaces.status, statuses[0]));
+            else if (statuses.length > 1)
+                conditions.push(inArray(executionWorkspaces.status, statuses));
+        }
+        if (filters?.reuseEligible) {
+            conditions.push(inArray(executionWorkspaces.status, ["active", "idle", "in_review"]));
+        }
+        return conditions;
+    }
     return {
         list: async (companyId, filters) => {
-            const conditions = [eq(executionWorkspaces.companyId, companyId)];
-            if (filters?.projectId)
-                conditions.push(eq(executionWorkspaces.projectId, filters.projectId));
-            if (filters?.projectWorkspaceId) {
-                conditions.push(eq(executionWorkspaces.projectWorkspaceId, filters.projectWorkspaceId));
-            }
-            if (filters?.issueId)
-                conditions.push(eq(executionWorkspaces.sourceIssueId, filters.issueId));
-            if (filters?.status) {
-                const statuses = filters.status.split(",").map((value) => value.trim()).filter(Boolean);
-                if (statuses.length === 1)
-                    conditions.push(eq(executionWorkspaces.status, statuses[0]));
-                else if (statuses.length > 1)
-                    conditions.push(inArray(executionWorkspaces.status, statuses));
-            }
-            if (filters?.reuseEligible) {
-                conditions.push(inArray(executionWorkspaces.status, ["active", "idle", "in_review"]));
-            }
+            const conditions = buildListConditions(companyId, filters);
             const rows = await db
                 .select()
                 .from(executionWorkspaces)
@@ -322,6 +347,20 @@ export function executionWorkspaceService(db) {
                 .orderBy(desc(executionWorkspaces.lastUsedAt), desc(executionWorkspaces.createdAt));
             const runtimeServicesByWorkspaceId = await loadEffectiveRuntimeServicesByExecutionWorkspace(db, companyId, rows);
             return rows.map((row) => toExecutionWorkspace(row, (runtimeServicesByWorkspaceId.get(row.id) ?? []).map(toRuntimeService)));
+        },
+        listSummaries: async (companyId, filters) => {
+            const conditions = buildListConditions(companyId, filters);
+            const rows = await db
+                .select({
+                id: executionWorkspaces.id,
+                name: executionWorkspaces.name,
+                mode: executionWorkspaces.mode,
+                projectWorkspaceId: executionWorkspaces.projectWorkspaceId,
+            })
+                .from(executionWorkspaces)
+                .where(and(...conditions))
+                .orderBy(desc(executionWorkspaces.lastUsedAt), desc(executionWorkspaces.createdAt));
+            return rows.map((row) => toExecutionWorkspaceSummary(row));
         },
         getById: async (id) => {
             const row = await db

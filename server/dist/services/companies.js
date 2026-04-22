@@ -44,7 +44,7 @@ export function companyService(db) {
         const rows = await database
             .select({
             companyId: costEvents.companyId,
-            spentMonthlyCents: sql `coalesce(sum(${costEvents.costCents}), 0)::int`,
+            spentMonthlyCents: sql `coalesce(sum(${costEvents.costCents}), 0)::double precision`,
         })
             .from(costEvents)
             .where(and(inArray(costEvents.companyId, companyIds), gte(costEvents.occurredAt, start), lt(costEvents.occurredAt, end)))

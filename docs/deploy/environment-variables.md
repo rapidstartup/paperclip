@@ -10,13 +10,16 @@ All environment variables that Paperclip uses for server configuration.
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `PORT` | `3100` | Server port |
-| `HOST` | `127.0.0.1` | Server host binding |
+| `PAPERCLIP_BIND` | `loopback` | Reachability preset: `loopback`, `lan`, `tailnet`, or `custom` |
+| `PAPERCLIP_BIND_HOST` | (unset) | Required when `PAPERCLIP_BIND=custom` |
+| `HOST` | `127.0.0.1` | Legacy host override; prefer `PAPERCLIP_BIND` for new setups |
 | `DATABASE_URL` | (embedded) | PostgreSQL connection string |
 | `PAPERCLIP_HOME` | `~/.paperclip` | Base directory for all Paperclip data |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Instance identifier (for multiple local instances) |
 | `PAPERCLIP_DEPLOYMENT_MODE` | `local_trusted` | Runtime mode override |
+| `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | Exposure policy when deployment mode is `authenticated` |
 | `PAPERCLIP_PUBLIC_URL` | — | Public site URL (e.g. `https://your-service.up.railway.app`). Used for auth and, when `PAPERCLIP_API_URL` is unset, as the API base URL injected into agent processes. |
-| `PAPERCLIP_API_URL` | (derived at startup) | **Optional override** for the API base URL agents use. If unset at process start, the server sets it from `PAPERCLIP_PUBLIC_URL`, then `RAILWAY_STATIC_URL`, then `https://${RAILWAY_PUBLIC_DOMAIN}`, then `http://localhost:${PORT}`. |
+| `PAPERCLIP_API_URL` | (auto-derived) | **Optional override** for the API base URL agents use. If unset at process start, the server sets it from `PAPERCLIP_PUBLIC_URL`, then `RAILWAY_STATIC_URL`, then `https://${RAILWAY_PUBLIC_DOMAIN}`, then the listen address. When set externally (e.g. Kubernetes, reverse proxy), the server preserves the value. |
 
 ## Secrets
 
@@ -34,7 +37,7 @@ These are set automatically by the server when invoking agents:
 |----------|-------------|
 | `PAPERCLIP_AGENT_ID` | Agent's unique ID |
 | `PAPERCLIP_COMPANY_ID` | Company ID |
-| `PAPERCLIP_API_URL` | Paperclip API base URL |
+| `PAPERCLIP_API_URL` | Paperclip API base URL (inherits the server-level value; see Server Configuration above) |
 | `PAPERCLIP_API_KEY` | Short-lived JWT for API auth |
 | `PAPERCLIP_RUN_ID` | Current heartbeat run ID |
 | `PAPERCLIP_TASK_ID` | Issue that triggered this wake |

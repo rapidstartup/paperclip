@@ -222,31 +222,34 @@ export declare function agentService(db: Db): {
     } & {
         urlKey: string;
     }) | null>;
-    activatePendingApproval: (id: string) => Promise<({
-        permissions: import("./agent-permissions.js").NormalizedAgentPermissions;
-        id: string;
-        name: string;
-        status: string;
-        pauseReason: string | null;
-        pausedAt: Date | null;
-        budgetMonthlyCents: number;
-        spentMonthlyCents: number;
-        createdAt: Date;
-        updatedAt: Date;
-        companyId: string;
-        role: string;
-        title: string | null;
-        icon: string | null;
-        reportsTo: string | null;
-        capabilities: string | null;
-        adapterType: string;
-        adapterConfig: Record<string, unknown>;
-        runtimeConfig: Record<string, unknown>;
-        lastHeartbeatAt: Date | null;
-        metadata: Record<string, unknown> | null;
-    } & {
-        urlKey: string;
-    }) | null>;
+    activatePendingApproval: (id: string) => Promise<{
+        agent: {
+            permissions: import("./agent-permissions.js").NormalizedAgentPermissions;
+            id: string;
+            name: string;
+            status: string;
+            pauseReason: string | null;
+            pausedAt: Date | null;
+            budgetMonthlyCents: number;
+            spentMonthlyCents: number;
+            createdAt: Date;
+            updatedAt: Date;
+            companyId: string;
+            role: string;
+            title: string | null;
+            icon: string | null;
+            reportsTo: string | null;
+            capabilities: string | null;
+            adapterType: string;
+            adapterConfig: Record<string, unknown>;
+            runtimeConfig: Record<string, unknown>;
+            lastHeartbeatAt: Date | null;
+            metadata: Record<string, unknown> | null;
+        } & {
+            urlKey: string;
+        };
+        activated: boolean;
+    } | null>;
     updatePermissions: (id: string, permissions: {
         canCreateAgents: boolean;
     }) => Promise<({
@@ -478,7 +481,15 @@ export declare function agentService(db: Db): {
             generated: undefined;
         }, {}, {}>;
     }>, "where">;
-    revokeKey: (keyId: string) => Promise<{
+    getKeyById: (keyId: string) => Promise<{
+        id: string;
+        agentId: string;
+        companyId: string;
+        name: string;
+        createdAt: Date;
+        revokedAt: Date | null;
+    }>;
+    revokeKey: (agentId: string, keyId: string) => Promise<{
         id: string;
         agentId: string;
         companyId: string;
@@ -942,6 +953,23 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        processGroupId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "process_group_id";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         processStartedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "process_started_at";
             tableName: "heartbeat_runs";
@@ -1010,6 +1038,57 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        scheduledRetryAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        scheduledRetryAttempt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_attempt";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        scheduledRetryReason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_reason";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         issueCommentStatus: import("drizzle-orm/pg-core").PgColumn<{
             name: "issue_comment_status";
             tableName: "heartbeat_runs";
@@ -1057,6 +1136,91 @@ export declare function agentService(db: Db): {
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        livenessState: import("drizzle-orm/pg-core").PgColumn<{
+            name: "liveness_state";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        livenessReason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "liveness_reason";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        continuationAttempt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "continuation_attempt";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        lastUsefulActionAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "last_useful_action_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        nextAction: import("drizzle-orm/pg-core").PgColumn<{
+            name: "next_action";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;
@@ -1143,13 +1307,22 @@ export declare function agentService(db: Db): {
         errorCode: string | null;
         externalRunId: string | null;
         processPid: number | null;
+        processGroupId: number | null;
         processStartedAt: Date | null;
         timeoutAt: Date | null;
         retryOfRunId: string | null;
         processLossRetryCount: number;
+        scheduledRetryAt: Date | null;
+        scheduledRetryAttempt: number;
+        scheduledRetryReason: string | null;
         issueCommentStatus: string;
         issueCommentSatisfiedByCommentId: string | null;
         issueCommentRetryQueuedAt: Date | null;
+        livenessState: string | null;
+        livenessReason: string | null;
+        continuationAttempt: number;
+        lastUsefulActionAt: Date | null;
+        nextAction: string | null;
         contextSnapshot: Record<string, unknown> | null;
     }[], {
         id: import("drizzle-orm/pg-core").PgColumn<{
@@ -1598,6 +1771,23 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        processGroupId: import("drizzle-orm/pg-core").PgColumn<{
+            name: "process_group_id";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         processStartedAt: import("drizzle-orm/pg-core").PgColumn<{
             name: "process_started_at";
             tableName: "heartbeat_runs";
@@ -1666,6 +1856,57 @@ export declare function agentService(db: Db): {
             identity: undefined;
             generated: undefined;
         }, {}, {}>;
+        scheduledRetryAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        scheduledRetryAttempt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_attempt";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        scheduledRetryReason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "scheduled_retry_reason";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         issueCommentStatus: import("drizzle-orm/pg-core").PgColumn<{
             name: "issue_comment_status";
             tableName: "heartbeat_runs";
@@ -1713,6 +1954,91 @@ export declare function agentService(db: Db): {
             isAutoincrement: false;
             hasRuntimeDefault: false;
             enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        livenessState: import("drizzle-orm/pg-core").PgColumn<{
+            name: "liveness_state";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        livenessReason: import("drizzle-orm/pg-core").PgColumn<{
+            name: "liveness_reason";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        continuationAttempt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "continuation_attempt";
+            tableName: "heartbeat_runs";
+            dataType: "number";
+            columnType: "PgInteger";
+            data: number;
+            driverParam: string | number;
+            notNull: true;
+            hasDefault: true;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        lastUsefulActionAt: import("drizzle-orm/pg-core").PgColumn<{
+            name: "last_useful_action_at";
+            tableName: "heartbeat_runs";
+            dataType: "date";
+            columnType: "PgTimestamp";
+            data: Date;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: undefined;
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
+        nextAction: import("drizzle-orm/pg-core").PgColumn<{
+            name: "next_action";
+            tableName: "heartbeat_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
             baseColumn: never;
             identity: undefined;
             generated: undefined;

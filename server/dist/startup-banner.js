@@ -96,6 +96,7 @@ export function printStartupBanner(opts) {
         color("  ───────────────────────────────────────────────────────", "blue"),
         row("Mode", `${dbMode}  |  ${uiMode}`),
         row("Deploy", `${opts.deploymentMode} (${opts.deploymentExposure})`),
+        row("Bind", `${opts.bind} ${color(`(${opts.host})`, "dim")}`),
         row("Auth", opts.authReady ? color("ready", "green") : color("not-ready", "yellow")),
         row("Server", portValue),
         row("API", `${apiUrl} ${color(`(health: ${apiUrl}/health)`, "dim")}`),

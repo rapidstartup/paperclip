@@ -1,4 +1,4 @@
-import type { DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
+import type { BindMode, DeploymentExposure, DeploymentMode } from "@paperclipai/shared";
 type UiMode = "none" | "static" | "vite-dev";
 type ExternalPostgresInfo = {
     mode: "external-postgres";
@@ -10,6 +10,7 @@ type EmbeddedPostgresInfo = {
     port: number;
 };
 type StartupBannerOptions = {
+    bind: BindMode;
     host: string;
     deploymentMode: DeploymentMode;
     deploymentExposure: DeploymentExposure;

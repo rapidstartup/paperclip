@@ -9,6 +9,7 @@ import { goalsApi } from "../api/goals";
 import { agentsApi } from "../api/agents";
 import { secretsApi } from "../api/secrets";
 import { ApiError } from "../api/client";
+import { approvalsApi } from "../api/approvals";
 import { issuesApi } from "../api/issues";
 import { projectsApi } from "../api/projects";
 import { queryKeys } from "../lib/queryKeys";
@@ -27,6 +28,7 @@ import {
 import { getUIAdapter } from "../adapters";
 import { listUIAdapters } from "../adapters";
 import { useDisabledAdaptersSync } from "../adapters/use-disabled-adapters";
+import { useAdapterCapabilities } from "../adapters/use-adapter-capabilities";
 import { getAdapterDisplay } from "../adapters/adapter-display-registry";
 import { defaultCreateValues } from "./agent-config-defaults";
 import { parseOnboardingGoalInput } from "../lib/onboarding-goal";
@@ -35,6 +37,7 @@ import {
   buildOnboardingProjectPayload,
   selectDefaultCompanyGoalId
 } from "../lib/onboarding-launch";
+import { buildNewAgentRuntimeConfig } from "../lib/new-agent-runtime-config";
 import {
   DEFAULT_CODEX_LOCAL_BYPASS_APPROVALS_AND_SANDBOX,
   DEFAULT_CODEX_LOCAL_MODEL
@@ -217,8 +220,9 @@ export function OnboardingWizard() {
       adapterType === "hermes_local"
   });
 
-  const NONLOCAL_TYPES = new Set(["process", "http", "openclaw_gateway"]);
-  const isLocalAdapter = !NONLOCAL_TYPES.has(adapterType);
+  const getCapabilities = useAdapterCapabilities();
+  const adapterCaps = getCapabilities(adapterType);
+  const isLocalAdapter = adapterCaps.supportsInstructionsBundle || adapterCaps.supportsSkills || adapterCaps.supportsLocalAgentJwt;
 
   const { recommendedAdapters, moreAdapters } = useMemo(() => {
     const SYSTEM_ADAPTER_TYPES = new Set(["process", "http"]);
@@ -590,21 +594,26 @@ export function OnboardingWizard() {
         if (!result) return;
       }
 
-      const agent = await agentsApi.create(createdCompanyId, {
+      const hire = await agentsApi.hire(createdCompanyId, {
         name: agentName.trim(),
         role: "ceo",
         adapterType,
         adapterConfig: buildAdapterConfig(hermesSecretForAgentCreate),
-        runtimeConfig: {
-          heartbeat: {
-            enabled: true,
-            intervalSec: 3600,
-            wakeOnDemand: true,
-            cooldownSec: 10,
-            maxConcurrentRuns: 1
-          }
-        }
+        runtimeConfig: buildNewAgentRuntimeConfig({
+          heartbeatEnabled: true,
+          intervalSec: 3600,
+        })
       });
+      if (hire.approval) {
+        await approvalsApi.approve(
+          hire.approval.id,
+          "Approved during onboarding first-agent setup."
+        );
+        queryClient.invalidateQueries({
+          queryKey: queryKeys.approvals.list(createdCompanyId)
+        });
+      }
+      const agent = hire.agent;
       setCreatedAgentId(agent.id);
       queryClient.invalidateQueries({
         queryKey: queryKeys.agents.list(createdCompanyId)

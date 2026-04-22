@@ -22,6 +22,7 @@ const OPERATION_CAPABILITIES = {
     "project.workspaces.get": ["project.workspaces.read"],
     "issues.list": ["issues.read"],
     "issues.get": ["issues.read"],
+    "issues.relations.get": ["issue.relations.read"],
     "issue.comments.list": ["issue.comments.read"],
     "issue.comments.get": ["issue.comments.read"],
     "agents.list": ["agents.read"],
@@ -32,13 +33,26 @@ const OPERATION_CAPABILITIES = {
     "activity.get": ["activity.read"],
     "costs.list": ["costs.read"],
     "costs.get": ["costs.read"],
+    "issues.summaries.getOrchestration": ["issues.orchestration.read"],
+    "db.namespace": ["database.namespace.read"],
+    "db.query": ["database.namespace.read"],
     // Data write operations
     "issues.create": ["issues.create"],
     "issues.update": ["issues.update"],
+    "issues.relations.setBlockedBy": ["issue.relations.write"],
+    "issues.relations.addBlockers": ["issue.relations.write"],
+    "issues.relations.removeBlockers": ["issue.relations.write"],
+    "issues.assertCheckoutOwner": ["issues.checkout"],
+    "issues.getSubtree": ["issue.subtree.read"],
+    "issues.requestWakeup": ["issues.wakeup"],
+    "issues.requestWakeups": ["issues.wakeup"],
     "issue.comments.create": ["issue.comments.create"],
+    "issue.interactions.create": ["issue.interactions.create"],
     "activity.log": ["activity.log.write"],
     "metrics.write": ["metrics.write"],
     "telemetry.track": ["telemetry.track"],
+    "db.migrate": ["database.namespace.migrate"],
+    "db.execute": ["database.namespace.write"],
     // Plugin state operations
     "plugin.state.get": ["plugin.state.read"],
     "plugin.state.list": ["plugin.state.read"],
@@ -102,6 +116,7 @@ const FEATURE_CAPABILITIES = {
     tools: "agent.tools.register",
     jobs: "jobs.schedule",
     webhooks: "webhooks.receive",
+    database: "database.namespace.migrate",
 };
 // ---------------------------------------------------------------------------
 // Factory

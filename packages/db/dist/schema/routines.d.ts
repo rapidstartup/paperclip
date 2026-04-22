@@ -44,7 +44,7 @@ export declare const routines: import("drizzle-orm/pg-core").PgTableWithColumns<
             columnType: "PgUUID";
             data: string;
             driverParam: string;
-            notNull: true;
+            notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
@@ -129,7 +129,7 @@ export declare const routines: import("drizzle-orm/pg-core").PgTableWithColumns<
             columnType: "PgUUID";
             data: string;
             driverParam: string;
-            notNull: true;
+            notNull: false;
             hasDefault: false;
             isPrimaryKey: false;
             isAutoincrement: false;
@@ -905,6 +905,23 @@ export declare const routineRuns: import("drizzle-orm/pg-core").PgTableWithColum
         }, {}, {
             $type: Record<string, unknown>;
         }>;
+        dispatchFingerprint: import("drizzle-orm/pg-core").PgColumn<{
+            name: "dispatch_fingerprint";
+            tableName: "routine_runs";
+            dataType: "string";
+            columnType: "PgText";
+            data: string;
+            driverParam: string;
+            notNull: false;
+            hasDefault: false;
+            isPrimaryKey: false;
+            isAutoincrement: false;
+            hasRuntimeDefault: false;
+            enumValues: [string, ...string[]];
+            baseColumn: never;
+            identity: undefined;
+            generated: undefined;
+        }, {}, {}>;
         linkedIssueId: import("drizzle-orm/pg-core").PgColumn<{
             name: "linked_issue_id";
             tableName: "routine_runs";

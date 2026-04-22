@@ -18,24 +18,18 @@ export declare const createApprovalSchema: z.ZodObject<{
 export type CreateApproval = z.infer<typeof createApprovalSchema>;
 export declare const resolveApprovalSchema: z.ZodObject<{
     decisionNote: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    decidedByUserId: z.ZodDefault<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    decidedByUserId: string;
     decisionNote?: string | null | undefined;
 }, {
     decisionNote?: string | null | undefined;
-    decidedByUserId?: string | undefined;
 }>;
 export type ResolveApproval = z.infer<typeof resolveApprovalSchema>;
 export declare const requestApprovalRevisionSchema: z.ZodObject<{
     decisionNote: z.ZodNullable<z.ZodOptional<z.ZodString>>;
-    decidedByUserId: z.ZodDefault<z.ZodOptional<z.ZodString>>;
 }, "strip", z.ZodTypeAny, {
-    decidedByUserId: string;
     decisionNote?: string | null | undefined;
 }, {
     decisionNote?: string | null | undefined;
-    decidedByUserId?: string | undefined;
 }>;
 export type RequestApprovalRevision = z.infer<typeof requestApprovalRevisionSchema>;
 export declare const resubmitApprovalSchema: z.ZodObject<{
