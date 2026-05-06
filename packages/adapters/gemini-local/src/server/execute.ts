@@ -281,12 +281,14 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const notes: string[] = [
       "Prompt is passed to Gemini via --prompt for non-interactive execution.",
       "Added --skip-trust so headless runs do not block on workspace trust / CLI relaunch.",
-      "Set GEMINI_CLI_NO_RELAUNCH=true so the CLI skips its outer relaunch wrapper (required for piped stdio / Docker).",
+      "Set GEMINI_CLI_NO_RELAUNCH=true and use node --import …/gemini-cli-preload.mjs so the ESM CLI entry skips its outer relaunch wrapper (piped stdio / Docker).",
     ];
     if (geminiSpawn.spawnArgPrefix.length > 0) {
-      notes.push(
-        `Spawning via Node entry (${process.execPath}) with script ${geminiSpawn.spawnArgPrefix[0]} (avoids global shim relaunch issues).`,
-      );
+      const entry =
+        geminiSpawn.spawnArgPrefix.length >= 3
+          ? `${geminiSpawn.spawnArgPrefix[0]} … ${geminiSpawn.spawnArgPrefix[2]}`
+          : geminiSpawn.spawnArgPrefix.join(" ");
+      notes.push(`Spawning via Node (${process.execPath}) ${entry} (avoids global shim / wrong preload order for ESM).`);
     }
     notes.push("Added --approval-mode yolo for unattended execution.");
     if (!instructionsFilePath) return notes;

@@ -1,5 +1,5 @@
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { access, open, readFile, realpath } from "node:fs/promises";
 import { resolveCommandPath } from "@paperclipai/adapter-utils/server-utils";
 
@@ -14,13 +14,18 @@ const COMMON_GLOBAL_BUNDLE_CANDIDATES = [
   "/opt/nodejs/lib/node_modules/@google/gemini-cli/bundle/gemini.js",
 ] as const;
 
-function geminiCliPreloadPath(): string {
-  return path.join(path.dirname(fileURLToPath(import.meta.url)), "gemini-cli-preload.cjs");
+function geminiCliPreloadMjsPath(): string {
+  return path.join(path.dirname(fileURLToPath(import.meta.url)), "gemini-cli-preload.mjs");
 }
 
+/**
+ * `@google/gemini-cli`'s `bundle/gemini.js` is ESM. Node does not reliably execute `--require` (CJS)
+ * preloads before the ESM entry runs, so the CLI relaunch gate still executes and fails under piped
+ * stdio. `--import` runs first for ESM mains.
+ */
 function nodeWithPreload(entryJs: string): string[] {
-  const preload = path.resolve(geminiCliPreloadPath());
-  return ["--require", preload, path.resolve(entryJs)];
+  const preloadMjs = path.resolve(geminiCliPreloadMjsPath());
+  return ["--import", pathToFileURL(preloadMjs).href, path.resolve(entryJs)];
 }
 
 function isBareGeminiCommand(command: string): boolean {
@@ -160,7 +165,7 @@ async function resolveGeminiBundleJs(resolvedBin: string): Promise<string | null
 }
 
 /**
- * Prefer `node --require ./gemini-cli-preload.cjs <bundle/gemini.js> …` so:
+ * Prefer `node --import ./gemini-cli-preload.mjs <bundle/gemini.js> …` so:
  * - `GEMINI_CLI_NO_RELAUNCH` is guaranteed before the CLI entry runs (relaunch+ipc breaks under piped stdio).
  * - Linux npm `#!/bin/sh` shims are bypassed.
  * - Windows extensionless shebang test fakes still work via Node spawn.
@@ -202,8 +207,8 @@ export async function resolveGeminiChildInvocation(
 }
 
 /**
- * Skip the Gemini CLI relaunch gate via argv (`--require`) and via NODE_OPTIONS (belt-and-suspenders
- * for odd spawn / env inheritance). Safe to call multiple times (idempotent merge).
+ * Skip the Gemini CLI relaunch gate via argv (`--import` preload) and via NODE_OPTIONS (backup).
+ * Safe to call multiple times (idempotent merge).
  */
 export async function augmentGeminiProcessEnvForSpawn(
   env: Record<string, string>,
@@ -214,15 +219,27 @@ export async function augmentGeminiProcessEnvForSpawn(
   if (path.resolve(spawn.spawnCommand) !== path.resolve(process.execPath)) {
     return;
   }
-  if (a0 !== "--require" || typeof a1 !== "string" || !a1.length) {
+  if (typeof a1 !== "string" || !a1.length) {
     return;
   }
-  try {
-    await access(a1);
-  } catch {
+  let flag: string;
+  if (a0 === "--import") {
+    try {
+      await access(geminiCliPreloadMjsPath());
+    } catch {
+      return;
+    }
+    flag = `--import ${a1}`;
+  } else if (a0 === "--require") {
+    try {
+      await access(a1);
+    } catch {
+      return;
+    }
+    flag = `--require ${a1}`;
+  } else {
     return;
   }
-  const flag = `--require ${a1}`;
   const fromEnv = (env.NODE_OPTIONS ?? "").trim();
   const fromHost = (process.env.NODE_OPTIONS ?? "").trim();
   const cur = fromEnv.length > 0 ? fromEnv : fromHost;

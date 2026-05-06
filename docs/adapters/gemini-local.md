@@ -3,7 +3,9 @@ title: Gemini Local
 summary: Gemini CLI local adapter setup and configuration
 ---
 
-The adapter spawns **`node --require …/gemini-cli-preload.cjs <Gemini bundle path>`** so the CLI skips its outer relaunch gate **before** `bundle/gemini.js` runs (that relaunch path uses `stdio: inherit` + `ipc` and often throws under Paperclip’s piped stdio — `Failed to relaunch the CLI process`). It also merges **`NODE_OPTIONS=--require …`** for the child when using Node, and falls back to well-known global paths (e.g. `/usr/local/lib/node_modules/@google/gemini-cli/bundle/gemini.js`) for bare `gemini` on `PATH`. Set adapter **`env.GEMINI_CLI_BUNDLE_PATH`** if your install layout needs an explicit `bundle/gemini.js`. It still sets **`GEMINI_CLI_NO_RELAUNCH=true`** in the environment. Invocation uses `--output-format stream-json`, `--skip-trust`, `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
+The adapter spawns **`node --import …/gemini-cli-preload.mjs <Gemini bundle path>`** so the preload runs **before** the CLI's **ESM** entry (`bundle/gemini.js` is ESM; **`--require` does not reliably run first**, which left the relaunch gate active). It also merges **`NODE_OPTIONS=--import …`**. It sets **`GEMINI_CLI_NO_RELAUNCH=true`** as a backup. See adapter package notes for path fallbacks and **`GEMINI_CLI_BUNDLE_PATH`**.
+
+Invocation uses `--output-format stream-json`, `--skip-trust`, `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
 
 ## Prerequisites
 
