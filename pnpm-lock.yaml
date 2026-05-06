@@ -88,6 +88,12 @@ importers:
       picocolors:
         specifier: ^1.1.1
         version: 1.1.1
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.8
+      zod:
+        specifier: ^3.24.2
+        version: 3.25.76
     devDependencies:
       '@types/node':
         specifier: ^22.12.0
@@ -1366,7 +1372,6 @@ packages:
   '@embedded-postgres/windows-x64@18.3.0-beta.16':
     resolution: {integrity: sha512-REupF2FhJMEsXqdeUG+wVWSKpykbruh9Ro5bHG/7RCBuSa/ncJ/8qhtVSI71RTJn1Cb9Shqa/gbnorz+8hat9Q==}
     engines: {node: '>=16'}
-    cpu: [x64]
     os: [win32]
 
   '@emnapi/runtime@1.9.1':

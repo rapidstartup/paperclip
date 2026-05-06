@@ -53,6 +53,7 @@ RUN test -f server/dist/index.js || (echo "ERROR: server dist missing. Build fai
 RUN npm install --global --omit=dev opencode-ai@1.2.26 && npm cache clean --force
 RUN npm install --global --omit=dev @openai/codex@latest && npm cache clean --force
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest && npm cache clean --force
+RUN npm install --global --omit=dev @google/gemini-cli@latest && npm cache clean --force
 # Hermes Agent CLI (hermes_local) — install from GitHub; not published on PyPI (see NousResearch/hermes-agent)
 ARG HERMES_AGENT_REF=v2026.4.3
 RUN python3 -m pip install --break-system-packages --no-cache-dir --upgrade pip \

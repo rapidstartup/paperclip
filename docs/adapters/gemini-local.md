@@ -15,7 +15,7 @@ The `gemini_local` adapter runs Google's Gemini CLI locally. It supports session
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `cwd` | string | Yes | Working directory for the agent process (absolute path; created automatically if missing when permissions allow) |
-| `model` | string | No | Gemini model to use. Defaults to `auto`. |
+| `model` | string | No | Model id for `gemini --model` (Gemini or hosted Gemma on the Gemini API, e.g. `gemma-4-26b-a4b-it`). Defaults to `auto`. |
 | `promptTemplate` | string | No | Prompt used for all runs |
 | `instructionsFilePath` | string | No | Markdown instructions file prepended to the prompt |
 | `env` | object | No | Environment variables (supports secret refs) |
@@ -42,4 +42,4 @@ Use the "Test Environment" button in the UI to validate the adapter config. It c
 - Gemini CLI is installed and accessible
 - Working directory is absolute and available (auto-created if missing and permitted)
 - API key/auth hints (`GEMINI_API_KEY` or `GOOGLE_API_KEY`)
-- A live hello probe (`gemini --output-format json "Respond with hello."`) to verify CLI readiness
+- A live hello probe (`gemini --output-format stream-json --prompt "Respond with hello."`) to verify CLI readiness (uses `--prompt` for headless mode)

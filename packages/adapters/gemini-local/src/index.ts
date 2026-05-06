@@ -4,11 +4,16 @@ export const DEFAULT_GEMINI_LOCAL_MODEL = "auto";
 
 export const models = [
   { id: DEFAULT_GEMINI_LOCAL_MODEL, label: "Auto" },
+  { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (preview)" },
+  { id: "gemini-3-flash-preview", label: "Gemini 3 Flash (preview)" },
+  { id: "gemini-3.1-flash-lite-preview", label: "Gemini 3.1 Flash Lite (preview)" },
   { id: "gemini-2.5-pro", label: "Gemini 2.5 Pro" },
   { id: "gemini-2.5-flash", label: "Gemini 2.5 Flash" },
   { id: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite" },
   { id: "gemini-2.0-flash", label: "Gemini 2.0 Flash" },
   { id: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite" },
+  { id: "gemma-4-31b-it", label: "Gemma 4 31B (Gemini API)" },
+  { id: "gemma-4-26b-a4b-it", label: "Gemma 4 26B A4B (Gemini API)" },
 ];
 
 export const agentConfigurationDoc = `# gemini_local agent configuration
@@ -29,7 +34,7 @@ Core fields:
 - cwd (string, optional): default absolute working directory fallback for the agent process (created if missing when possible)
 - instructionsFilePath (string, optional): absolute path to a markdown instructions file prepended to the run prompt
 - promptTemplate (string, optional): run prompt template
-- model (string, optional): Gemini model id. Defaults to auto.
+- model (string, optional): Gemini or Gemma API model id (e.g. gemma-4-26b-a4b-it). Defaults to auto.
 - sandbox (boolean, optional): run in sandbox mode (default: false, passes --sandbox=none)
 - command (string, optional): defaults to "gemini"
 - extraArgs (string[], optional): additional CLI args
@@ -40,7 +45,7 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period in seconds
 
 Notes:
-- Runs use positional prompt arguments, not stdin.
+- Headless runs pass the prompt with \`--prompt\` (required for non-interactive mode on current Gemini CLI).
 - Sessions resume with --resume when stored session cwd matches the current cwd.
 - Paperclip auto-injects local skills into \`~/.gemini/skills/\` via symlinks, so the CLI can discover both credentials and skills in their natural location.
 - Authentication can use GEMINI_API_KEY / GOOGLE_API_KEY or local Gemini CLI login.
