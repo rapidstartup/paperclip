@@ -5,6 +5,7 @@ import { and, eq, gt, isNull } from "drizzle-orm";
 import { createDb, instanceUserRoles, invites } from "@paperclipai/db";
 import { inferBindModeFromHost } from "@paperclipai/shared";
 import { loadPaperclipEnvFile } from "../config/env.js";
+import { paperclipConfigSchema, type PaperclipConfig } from "../config/schema.js";
 import { readConfig, resolveConfigPath } from "../config/store.js";
 
 function hashToken(token: string) {
@@ -13,6 +14,50 @@ function hashToken(token: string) {
 
 function createInviteToken() {
   return `pcp_bootstrap_${randomBytes(24).toString("hex")}`;
+}
+
+function nonEmptyTrimmed(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const t = value.trim();
+  return t.length > 0 ? t : undefined;
+}
+
+/**
+ * When running `railway run` locally, PAPERCLIP_CONFIG often points at a Linux path
+ * inside the container; that path does not exist on the developer's machine.
+ * If DATABASE_URL is injected and the instance is authenticated, we can still
+ * create a bootstrap invite without an on-disk config.json.
+ */
+function maybeSyntheticAuthenticatedConfig(
+  explicitDbUrl: string | undefined,
+): PaperclipConfig | null {
+  const dbUrl = nonEmptyTrimmed(explicitDbUrl) ?? nonEmptyTrimmed(process.env.DATABASE_URL);
+  if (!dbUrl) return null;
+  const deploymentMode = process.env.PAPERCLIP_DEPLOYMENT_MODE?.trim();
+  if (deploymentMode === "local_trusted") return null;
+
+  const raw = {
+    $meta: {
+      version: 1 as const,
+      updatedAt: new Date().toISOString(),
+      source: "onboard" as const,
+    },
+    database: { mode: "postgres" as const },
+    logging: { mode: "file" as const, logDir: "/tmp/paperclip-bootstrap-unused-logs" },
+    server: {
+      deploymentMode: "authenticated" as const,
+      exposure: "private" as const,
+      host: "0.0.0.0",
+      port: Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3100,
+    },
+    auth: {
+      baseUrlMode: "auto" as const,
+      disableSignUp: false,
+    },
+    telemetry: { enabled: false },
+  };
+  const parsed = paperclipConfigSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 
 function resolveDbUrl(configPath?: string, explicitDbUrl?: string) {
@@ -60,7 +105,17 @@ export async function bootstrapCeoInvite(opts: {
 }) {
   const configPath = resolveConfigPath(opts.config);
   loadPaperclipEnvFile(configPath);
-  const config = readConfig(configPath);
+  let config: PaperclipConfig | null = readConfig(configPath);
+  if (!config) {
+    config = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
+    if (config) {
+      p.log.message(
+        pc.dim(
+          `No config file at ${configPath}; using DATABASE_URL-only bootstrap (typical for railway run / remote Postgres).`,
+        ),
+      );
+    }
+  }
   if (!config) {
     p.log.error(`No config found at ${configPath}. Run ${pc.cyan("paperclip onboard")} first.`);
     return;

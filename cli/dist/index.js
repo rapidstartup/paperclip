@@ -8851,10 +8851,13 @@ function summarizeRecentLogs(recentLogs) {
 }
 function detectEmbeddedPostgresHint(recentLogs) {
   const haystack = recentLogs.join("\n").toLowerCase();
-  if (!haystack.includes("could not create shared memory segment")) {
-    return null;
+  if (haystack.includes("could not create shared memory segment")) {
+    return "Embedded PostgreSQL bootstrap could not allocate shared memory. On macOS, this usually means the host's kern.sysv.shm* limits are too low for another local PostgreSQL cluster. Stop other local PostgreSQL servers or raise the shared-memory sysctls, then retry.";
   }
-  return "Embedded PostgreSQL bootstrap could not allocate shared memory. On macOS, this usually means the host's kern.sysv.shm* limits are too low for another local PostgreSQL cluster. Stop other local PostgreSQL servers or raise the shared-memory sysctls, then retry.";
+  if (haystack.includes("already exist") || haystack.includes("data directory might already exist")) {
+    return "Embedded PostgreSQL init failed, often after a partial or interrupted init. For Railway, Docker, or other cloud hosts, set DATABASE_URL to managed Postgres instead of using embedded PostgreSQL. Otherwise remove the embedded data directory or retry so stale contents can be cleared automatically.";
+  }
+  return null;
 }
 function createEmbeddedPostgresLogBuffer(limit = DEFAULT_RECENT_LOG_LIMIT) {
   const recentLogs = [];
@@ -8895,6 +8898,30 @@ var init_embedded_postgres_error = __esm({
     "use strict";
     DEFAULT_RECENT_LOG_LIMIT = 40;
     RECENT_LOG_SUMMARY_LINES = 8;
+  }
+});
+
+// ../packages/db/src/prepare-embedded-postgres-data-dir.ts
+import { existsSync as existsSync2, readdirSync as readdirSync2, rmSync } from "node:fs";
+import path7 from "node:path";
+function prepareEmbeddedPostgresDataDirForInit(dataDir, options) {
+  const pgVersion = path7.resolve(dataDir, "PG_VERSION");
+  if (existsSync2(pgVersion)) return;
+  if (!existsSync2(dataDir)) return;
+  let entries;
+  try {
+    entries = readdirSync2(dataDir);
+  } catch {
+    return;
+  }
+  if (entries.length === 0) return;
+  const msg = `Embedded PostgreSQL data directory ${dataDir} is non-empty but missing PG_VERSION; clearing stale contents before init`;
+  options?.onStaleDir?.(msg);
+  rmSync(dataDir, { recursive: true, force: true });
+}
+var init_prepare_embedded_postgres_data_dir = __esm({
+  "../packages/db/src/prepare-embedded-postgres-data-dir.ts"() {
+    "use strict";
   }
 });
 
@@ -8976,6 +9003,7 @@ __export(src_exports, {
   pluginState: () => pluginState,
   pluginWebhookDeliveries: () => pluginWebhookDeliveries,
   plugins: () => plugins,
+  prepareEmbeddedPostgresDataDirForInit: () => prepareEmbeddedPostgresDataDirForInit,
   principalPermissionGrants: () => principalPermissionGrants,
   projectGoals: () => projectGoals,
   projectWorkspaces: () => projectWorkspaces,
@@ -8999,6 +9027,7 @@ var init_src2 = __esm({
     init_test_embedded_postgres();
     init_backup_lib();
     init_embedded_postgres_error();
+    init_prepare_embedded_postgres_data_dir();
     init_issue_relations();
     init_issue_reference_mentions();
     init_schema2();
@@ -9015,6 +9044,39 @@ function hashToken(token) {
 }
 function createInviteToken() {
   return `pcp_bootstrap_${randomBytes3(24).toString("hex")}`;
+}
+function nonEmptyTrimmed(value) {
+  if (value === void 0) return void 0;
+  const t = value.trim();
+  return t.length > 0 ? t : void 0;
+}
+function maybeSyntheticAuthenticatedConfig(explicitDbUrl) {
+  const dbUrl = nonEmptyTrimmed(explicitDbUrl) ?? nonEmptyTrimmed(process.env.DATABASE_URL);
+  if (!dbUrl) return null;
+  const deploymentMode = process.env.PAPERCLIP_DEPLOYMENT_MODE?.trim();
+  if (deploymentMode === "local_trusted") return null;
+  const raw = {
+    $meta: {
+      version: 1,
+      updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      source: "onboard"
+    },
+    database: { mode: "postgres" },
+    logging: { mode: "file", logDir: "/tmp/paperclip-bootstrap-unused-logs" },
+    server: {
+      deploymentMode: "authenticated",
+      exposure: "private",
+      host: "0.0.0.0",
+      port: Number(process.env.PORT) > 0 ? Number(process.env.PORT) : 3100
+    },
+    auth: {
+      baseUrlMode: "auto",
+      disableSignUp: false
+    },
+    telemetry: { enabled: false }
+  };
+  const parsed = paperclipConfigSchema.safeParse(raw);
+  return parsed.success ? parsed.data : null;
 }
 function resolveDbUrl(configPath, explicitDbUrl) {
   if (explicitDbUrl) return explicitDbUrl;
@@ -9046,7 +9108,17 @@ function resolveBaseUrl(configPath, explicitBaseUrl) {
 async function bootstrapCeoInvite(opts) {
   const configPath = resolveConfigPath(opts.config);
   loadPaperclipEnvFile(configPath);
-  const config = readConfig(configPath);
+  let config = readConfig(configPath);
+  if (!config) {
+    config = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
+    if (config) {
+      p7.log.message(
+        pc.dim(
+          `No config file at ${configPath}; using DATABASE_URL-only bootstrap (typical for railway run / remote Postgres).`
+        )
+      );
+    }
+  }
   if (!config) {
     p7.log.error(`No config found at ${configPath}. Run ${pc.cyan("paperclip onboard")} first.`);
     return;
@@ -9106,6 +9178,7 @@ var init_auth_bootstrap_ceo = __esm({
     init_src2();
     init_src();
     init_env();
+    init_schema();
     init_store();
   }
 });
@@ -9270,11 +9343,11 @@ var init_config = __esm({
 
 // ../packages/shared/src/telemetry/state.ts
 import { randomUUID, randomBytes as randomBytes4 } from "node:crypto";
-import { existsSync as existsSync2, mkdirSync as mkdirSync2, readFileSync, writeFileSync } from "node:fs";
-import path7 from "node:path";
+import { existsSync as existsSync3, mkdirSync as mkdirSync2, readFileSync, writeFileSync } from "node:fs";
+import path8 from "node:path";
 function loadOrCreateState(stateDir, version) {
-  const filePath = path7.join(stateDir, "state.json");
-  if (existsSync2(filePath)) {
+  const filePath = path8.join(stateDir, "state.json");
+  if (existsSync3(filePath)) {
     try {
       const raw = readFileSync(filePath, "utf-8");
       const parsed = JSON.parse(raw);
@@ -9345,12 +9418,12 @@ var init_version = __esm({
 });
 
 // src/telemetry.ts
-import path8 from "node:path";
+import path9 from "node:path";
 function initTelemetry(fileConfig) {
   if (client) return client;
   const config = resolveTelemetryConfig(fileConfig);
   if (!config.enabled) return null;
-  const stateDir = path8.join(resolvePaperclipInstanceRoot(), "telemetry");
+  const stateDir = path9.join(resolvePaperclipInstanceRoot(), "telemetry");
   client = new TelemetryClient(config, () => loadOrCreateState(stateDir, cliVersion), cliVersion);
   return client;
 }
@@ -9775,7 +9848,7 @@ var init_port_check = __esm({
 // src/checks/secrets-check.ts
 import { randomBytes as randomBytes5 } from "node:crypto";
 import fs8 from "node:fs";
-import path9 from "node:path";
+import path10 from "node:path";
 function decodeMasterKey(raw) {
   const trimmed = raw.trim();
   if (!trimmed) return null;
@@ -9845,7 +9918,7 @@ function secretsCheck(config, configPath) {
         message: `Secrets key file does not exist yet: ${keyFilePath}`,
         canRepair: true,
         repair: () => {
-          fs8.mkdirSync(path9.dirname(keyFilePath), { recursive: true });
+          fs8.mkdirSync(path10.dirname(keyFilePath), { recursive: true });
           fs8.writeFileSync(keyFilePath, randomBytes5(32).toString("base64"), {
             encoding: "utf8",
             mode: 384
@@ -10120,7 +10193,7 @@ __export(run_exports, {
   runCommand: () => runCommand
 });
 import fs10 from "node:fs";
-import path10 from "node:path";
+import path11 from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath as fileURLToPath2, pathToFileURL } from "node:url";
 import * as p9 from "@clack/prompts";
@@ -10215,7 +10288,7 @@ function maybeEnableUiDevMiddleware(entrypoint) {
   }
 }
 function ensureDevWorkspaceBuildDeps(projectRoot) {
-  const buildScript = path10.resolve(projectRoot, "scripts/ensure-plugin-build-deps.mjs");
+  const buildScript = path11.resolve(projectRoot, "scripts/ensure-plugin-build-deps.mjs");
   if (!fs10.existsSync(buildScript)) return;
   const result = spawnSync(process.execPath, [buildScript], {
     cwd: projectRoot,
@@ -10235,8 +10308,8 @@ ${formatError(result.error)}`
   }
 }
 async function importServerEntry() {
-  const projectRoot = path10.resolve(path10.dirname(fileURLToPath2(import.meta.url)), "../../..");
-  const devEntry = path10.resolve(projectRoot, "server/src/index.ts");
+  const projectRoot = path11.resolve(path11.dirname(fileURLToPath2(import.meta.url)), "../../..");
+  const devEntry = path11.resolve(projectRoot, "server/src/index.ts");
   if (fs10.existsSync(devEntry)) {
     ensureDevWorkspaceBuildDeps(projectRoot);
     maybeEnableUiDevMiddleware(devEntry);
@@ -10287,7 +10360,7 @@ var init_run = __esm({
 
 // src/commands/onboard.ts
 import * as p10 from "@clack/prompts";
-import path11 from "node:path";
+import path12 from "node:path";
 import pc5 from "picocolors";
 function parseBooleanFromEnv(rawValue) {
   if (rawValue === void 0) return null;
@@ -10308,7 +10381,7 @@ function parseEnumFromEnv(rawValue, allowedValues) {
 }
 function resolvePathFromEnv(rawValue) {
   if (!rawValue || rawValue.trim().length === 0) return null;
-  return path11.resolve(expandHomePrefix(rawValue.trim()));
+  return path12.resolve(expandHomePrefix(rawValue.trim()));
 }
 function describeServerBinding(server) {
   const bind = server.bind ?? inferBindModeFromHost(server.host);
@@ -11557,8 +11630,8 @@ function printItemCompleted(item) {
     const changes = Array.isArray(item.changes) ? item.changes : [];
     const entries = changes.map((changeRaw) => asRecord(changeRaw)).filter((change) => Boolean(change)).map((change) => {
       const kind = asString(change.kind, "update");
-      const path25 = asString(change.path, "unknown");
-      return `${kind} ${path25}`;
+      const path26 = asString(change.path, "unknown");
+      return `${kind} ${path26}`;
     });
     const preview = entries.length > 0 ? entries.slice(0, 6).join(", ") : "none";
     const more = entries.length > 6 ? ` (+${entries.length - 6} more)` : "";
@@ -12448,7 +12521,7 @@ import pc18 from "picocolors";
 // src/client/board-auth.ts
 import { spawn as spawn2 } from "node:child_process";
 import fs11 from "node:fs";
-import path12 from "node:path";
+import path13 from "node:path";
 import pc17 from "picocolors";
 
 // src/client/command-label.ts
@@ -12472,8 +12545,8 @@ function normalizeApiBase(apiBase) {
   return apiBase.trim().replace(/\/+$/, "");
 }
 function resolveBoardAuthStorePath(overridePath) {
-  if (overridePath?.trim()) return path12.resolve(overridePath.trim());
-  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path12.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
+  if (overridePath?.trim()) return path13.resolve(overridePath.trim());
+  if (process.env.PAPERCLIP_AUTH_STORE?.trim()) return path13.resolve(process.env.PAPERCLIP_AUTH_STORE.trim());
   return resolveDefaultCliAuthPath();
 }
 function readBoardAuthStore(storePath) {
@@ -12505,7 +12578,7 @@ function readBoardAuthStore(storePath) {
 }
 function writeBoardAuthStore(store, storePath) {
   const filePath = resolveBoardAuthStorePath(storePath);
-  fs11.mkdirSync(path12.dirname(filePath), { recursive: true });
+  fs11.mkdirSync(path13.dirname(filePath), { recursive: true });
   fs11.writeFileSync(filePath, `${JSON.stringify(store, null, 2)}
 `, { mode: 384 });
 }
@@ -12656,26 +12729,26 @@ init_store();
 // src/client/context.ts
 init_home();
 import fs12 from "node:fs";
-import path13 from "node:path";
+import path14 from "node:path";
 var DEFAULT_CONTEXT_BASENAME = "context.json";
 var DEFAULT_PROFILE = "default";
 function findContextFileFromAncestors(startDir) {
-  const absoluteStartDir = path13.resolve(startDir);
+  const absoluteStartDir = path14.resolve(startDir);
   let currentDir = absoluteStartDir;
   while (true) {
-    const candidate = path13.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
+    const candidate = path14.resolve(currentDir, ".paperclip", DEFAULT_CONTEXT_BASENAME);
     if (fs12.existsSync(candidate)) {
       return candidate;
     }
-    const nextDir = path13.resolve(currentDir, "..");
+    const nextDir = path14.resolve(currentDir, "..");
     if (nextDir === currentDir) break;
     currentDir = nextDir;
   }
   return null;
 }
 function resolveContextPath(overridePath) {
-  if (overridePath) return path13.resolve(overridePath);
-  if (process.env.PAPERCLIP_CONTEXT) return path13.resolve(process.env.PAPERCLIP_CONTEXT);
+  if (overridePath) return path14.resolve(overridePath);
+  if (process.env.PAPERCLIP_CONTEXT) return path14.resolve(process.env.PAPERCLIP_CONTEXT);
   return findContextFileFromAncestors(process.cwd()) ?? resolveDefaultContextPath();
 }
 function defaultClientContext() {
@@ -12743,7 +12816,7 @@ function readContext(contextPath) {
 }
 function writeContext(context, contextPath) {
   const filePath = resolveContextPath(contextPath);
-  const dir = path13.dirname(filePath);
+  const dir = path14.dirname(filePath);
   fs12.mkdirSync(dir, { recursive: true });
   const normalized = normalizeContext(context);
   fs12.writeFileSync(filePath, `${JSON.stringify(normalized, null, 2)}
@@ -12822,29 +12895,29 @@ var PaperclipApiClient = class {
     this.runId = opts.runId?.trim() || void 0;
     this.recoverAuth = opts.recoverAuth;
   }
-  get(path25, opts) {
-    return this.request(path25, { method: "GET" }, opts);
+  get(path26, opts) {
+    return this.request(path26, { method: "GET" }, opts);
   }
-  post(path25, body, opts) {
-    return this.request(path25, {
+  post(path26, body, opts) {
+    return this.request(path26, {
       method: "POST",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  patch(path25, body, opts) {
-    return this.request(path25, {
+  patch(path26, body, opts) {
+    return this.request(path26, {
       method: "PATCH",
       body: body === void 0 ? void 0 : JSON.stringify(body)
     }, opts);
   }
-  delete(path25, opts) {
-    return this.request(path25, { method: "DELETE" }, opts);
+  delete(path26, opts) {
+    return this.request(path26, { method: "DELETE" }, opts);
   }
   setApiKey(apiKey) {
     this.apiKey = apiKey?.trim() || void 0;
   }
-  async request(path25, init, opts, hasRetriedAuth = false) {
-    const url = buildUrl(this.apiBase, path25);
+  async request(path26, init, opts, hasRetriedAuth = false) {
+    const url = buildUrl(this.apiBase, path26);
     const method = String(init.method ?? "GET").toUpperCase();
     const headers = {
       accept: "application/json",
@@ -12868,7 +12941,7 @@ var PaperclipApiClient = class {
     } catch (error) {
       throw new ApiConnectionError({
         apiBase: this.apiBase,
-        path: path25,
+        path: path26,
         method,
         cause: error
       });
@@ -12880,13 +12953,13 @@ var PaperclipApiClient = class {
       const apiError = await toApiError(response);
       if (!hasRetriedAuth && this.recoverAuth) {
         const recoveredToken = await this.recoverAuth({
-          path: path25,
+          path: path26,
           method,
           error: apiError
         });
         if (recoveredToken) {
           this.setApiKey(recoveredToken);
-          return this.request(path25, init, opts, true);
+          return this.request(path26, init, opts, true);
         }
       }
       throw apiError;
@@ -12901,8 +12974,8 @@ var PaperclipApiClient = class {
     return safeParseJson(text71);
   }
 };
-function buildUrl(apiBase, path25) {
-  const normalizedPath = path25.startsWith("/") ? path25 : `/${path25}`;
+function buildUrl(apiBase, path26) {
+  const normalizedPath = path26.startsWith("/") ? path26 : `/${path26}`;
   const [pathname, query] = normalizedPath.split("?");
   const url = new URL2(apiBase);
   url.pathname = `${url.pathname.replace(/\/+$/, "")}${pathname}`;
@@ -13384,7 +13457,7 @@ init_src2();
 init_home();
 init_store();
 init_banner();
-import path14 from "node:path";
+import path15 from "node:path";
 import * as p14 from "@clack/prompts";
 import pc20 from "picocolors";
 function resolveConnectionString(configPath) {
@@ -13408,7 +13481,7 @@ function normalizeRetentionDays(value, fallback) {
   return candidate;
 }
 function resolveBackupDir(raw) {
-  return path14.resolve(expandHomePrefix(raw.trim()));
+  return path15.resolve(expandHomePrefix(raw.trim()));
 }
 async function dbBackupCommand(opts) {
   printPaperclipCliBanner();
@@ -13529,13 +13602,13 @@ function registerContextCommands(program2) {
 // src/commands/client/company.ts
 init_telemetry2();
 import { mkdir as mkdir2, readdir as readdir3, readFile as readFile3, stat as stat2, writeFile as writeFile2 } from "node:fs/promises";
-import path17 from "node:path";
+import path18 from "node:path";
 import * as p15 from "@clack/prompts";
 import pc23 from "picocolors";
 
 // src/commands/client/zip.ts
 import { inflateRawSync } from "node:zlib";
-import path15 from "node:path";
+import path16 from "node:path";
 var textDecoder = new TextDecoder();
 var binaryContentTypeByExtension = {
   ".gif": "image/gif",
@@ -13562,7 +13635,7 @@ function sharedArchiveRoot(paths) {
   return firstSegments.every((parts) => parts.length > 1 && parts[0] === candidate) ? candidate : null;
 }
 function bytesToPortableFileEntry(pathValue, bytes) {
-  const contentType = binaryContentTypeByExtension[path15.extname(pathValue).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path16.extname(pathValue).toLowerCase()];
   if (!contentType) return textDecoder.decode(bytes);
   return {
     encoding: "base64",
@@ -13628,7 +13701,7 @@ async function readZipArchive(source) {
 
 // src/commands/client/feedback.ts
 import { mkdir, readdir as readdir2, readFile as readFile2, stat, writeFile } from "node:fs/promises";
-import path16 from "node:path";
+import path17 from "node:path";
 import pc22 from "picocolors";
 function registerFeedbackCommands(program2) {
   const feedback = program2.command("feedback").description("Inspect and export local feedback traces");
@@ -13670,7 +13743,7 @@ function registerFeedbackCommands(program2) {
         const ctx = resolveCommandContext(opts);
         const companyId = await resolveFeedbackCompanyId(ctx, opts.companyId);
         const traces = await fetchCompanyFeedbackTraces(ctx, companyId, opts);
-        const outputDir = path16.resolve(opts.out?.trim() || defaultFeedbackExportDirName());
+        const outputDir = path17.resolve(opts.out?.trim() || defaultFeedbackExportDirName());
         const exported = await writeFeedbackExportBundle({
           apiBase: ctx.api.apiBase,
           companyId,
@@ -13837,9 +13910,9 @@ function renderFeedbackReport(input) {
 }
 async function writeFeedbackExportBundle(input) {
   await ensureEmptyOutputDirectory(input.outputDir);
-  await mkdir(path16.join(input.outputDir, "votes"), { recursive: true });
-  await mkdir(path16.join(input.outputDir, "traces"), { recursive: true });
-  await mkdir(path16.join(input.outputDir, "full-traces"), { recursive: true });
+  await mkdir(path17.join(input.outputDir, "votes"), { recursive: true });
+  await mkdir(path17.join(input.outputDir, "traces"), { recursive: true });
+  await mkdir(path17.join(input.outputDir, "full-traces"), { recursive: true });
   const summary = summarizeFeedbackTraces(input.traces);
   const voteFiles = [];
   const traceFiles = [];
@@ -13855,13 +13928,13 @@ async function writeFeedbackExportBundle(input) {
     traceFiles.push(traceFileName);
     issueSet.add(trace.issueIdentifier ?? trace.issueId);
     await writeFile(
-      path16.join(input.outputDir, "votes", voteFileName),
+      path17.join(input.outputDir, "votes", voteFileName),
       `${JSON.stringify(voteRecord, null, 2)}
 `,
       "utf8"
     );
     await writeFile(
-      path16.join(input.outputDir, "traces", traceFileName),
+      path17.join(input.outputDir, "traces", traceFileName),
       `${JSON.stringify(trace, null, 2)}
 `,
       "utf8"
@@ -13869,21 +13942,21 @@ async function writeFeedbackExportBundle(input) {
     if (input.traceBundleFetcher) {
       const bundle = await input.traceBundleFetcher(trace);
       const bundleDirName = `${issueRef}-${trace.id.slice(0, 8)}`;
-      const bundleDir = path16.join(input.outputDir, "full-traces", bundleDirName);
+      const bundleDir = path17.join(input.outputDir, "full-traces", bundleDirName);
       await mkdir(bundleDir, { recursive: true });
       fullTraceDirs.push(bundleDirName);
       await writeFile(
-        path16.join(bundleDir, "bundle.json"),
+        path17.join(bundleDir, "bundle.json"),
         `${JSON.stringify(bundle, null, 2)}
 `,
         "utf8"
       );
-      fullTraceFiles.push(path16.posix.join("full-traces", bundleDirName, "bundle.json"));
+      fullTraceFiles.push(path17.posix.join("full-traces", bundleDirName, "bundle.json"));
       for (const file of bundle.files) {
-        const targetPath = path16.join(bundleDir, file.path);
-        await mkdir(path16.dirname(targetPath), { recursive: true });
+        const targetPath = path17.join(bundleDir, file.path);
+        await mkdir(path17.dirname(targetPath), { recursive: true });
         await writeFile(targetPath, file.contents, "utf8");
-        fullTraceFiles.push(path16.posix.join("full-traces", bundleDirName, file.path.replace(/\\/g, "/")));
+        fullTraceFiles.push(path17.posix.join("full-traces", bundleDirName, file.path.replace(/\\/g, "/")));
       }
     }
   }
@@ -13901,22 +13974,22 @@ async function writeFeedbackExportBundle(input) {
       votes: voteFiles.slice().sort((left, right) => left.localeCompare(right)),
       traces: traceFiles.slice().sort((left, right) => left.localeCompare(right)),
       fullTraces: fullTraceDirs.slice().sort((left, right) => left.localeCompare(right)),
-      zip: path16.basename(zipPath)
+      zip: path17.basename(zipPath)
     }
   };
   await writeFile(
-    path16.join(input.outputDir, "index.json"),
+    path17.join(input.outputDir, "index.json"),
     `${JSON.stringify(manifest, null, 2)}
 `,
     "utf8"
   );
   const archiveFiles = await collectJsonFilesForArchive(input.outputDir, [
     "index.json",
-    ...manifest.files.votes.map((file) => path16.posix.join("votes", file)),
-    ...manifest.files.traces.map((file) => path16.posix.join("traces", file)),
+    ...manifest.files.votes.map((file) => path17.posix.join("votes", file)),
+    ...manifest.files.traces.map((file) => path17.posix.join("traces", file)),
     ...fullTraceFiles
   ]);
-  await writeFile(zipPath, createStoredZipArchive(archiveFiles, path16.basename(input.outputDir)));
+  await writeFile(zipPath, createStoredZipArchive(archiveFiles, path17.basename(input.outputDir)));
   return {
     outputDir: input.outputDir,
     zipPath,
@@ -13941,10 +14014,10 @@ function renderFeedbackExportSummary(exported) {
   lines.push(`  ${pc22.bold(String(exported.manifest.summary.uniqueIssues))}  unique issues`);
   lines.push("");
   lines.push(pc22.dim("Files:"));
-  lines.push(`  ${path16.join(exported.outputDir, "index.json")}`);
-  lines.push(`  ${path16.join(exported.outputDir, "votes")} (${exported.manifest.files.votes.length} files)`);
-  lines.push(`  ${path16.join(exported.outputDir, "traces")} (${exported.manifest.files.traces.length} files)`);
-  lines.push(`  ${path16.join(exported.outputDir, "full-traces")} (${exported.manifest.files.fullTraces.length} bundles)`);
+  lines.push(`  ${path17.join(exported.outputDir, "index.json")}`);
+  lines.push(`  ${path17.join(exported.outputDir, "votes")} (${exported.manifest.files.votes.length} files)`);
+  lines.push(`  ${path17.join(exported.outputDir, "traces")} (${exported.manifest.files.traces.length} files)`);
+  lines.push(`  ${path17.join(exported.outputDir, "full-traces")} (${exported.manifest.files.fullTraces.length} bundles)`);
   lines.push(`  ${exported.zipPath}`);
   lines.push("");
   return lines.join("\n");
@@ -14022,7 +14095,7 @@ async function collectJsonFilesForArchive(outputDir, relativePaths) {
   const files = {};
   for (const relativePath of relativePaths) {
     const normalized = relativePath.replace(/\\/g, "/");
-    files[normalized] = await readFile2(path16.join(outputDir, normalized), "utf8");
+    files[normalized] = await readFile2(path17.join(outputDir, normalized), "utf8");
   }
   return files;
 }
@@ -14132,7 +14205,7 @@ var IMPORT_INCLUDE_OPTIONS = [
 ];
 var IMPORT_PREVIEW_SAMPLE_LIMIT = 6;
 function readPortableFileEntry(filePath, contents) {
-  const contentType = binaryContentTypeByExtension[path17.extname(filePath).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path18.extname(filePath).toLowerCase()];
   if (!contentType) return contents.toString("utf8");
   return {
     encoding: "base64",
@@ -14187,10 +14260,10 @@ function normalizePortablePath(filePath) {
   return filePath.replace(/\\/g, "/");
 }
 function shouldIncludePortableFile(filePath) {
-  const baseName = path17.basename(filePath);
+  const baseName = path18.basename(filePath);
   const isMarkdown = baseName.endsWith(".md");
   const isPaperclipYaml = baseName === ".paperclip.yaml" || baseName === ".paperclip.yml";
-  const contentType = binaryContentTypeByExtension[path17.extname(baseName).toLowerCase()];
+  const contentType = binaryContentTypeByExtension[path18.extname(baseName).toLowerCase()];
   return isMarkdown || isPaperclipYaml || Boolean(contentType);
 }
 function findPortableExtensionPath(files) {
@@ -14750,7 +14823,7 @@ function normalizeGithubImportSource(input, refOverride) {
 }
 async function pathExists(inputPath) {
   try {
-    await stat2(path17.resolve(inputPath));
+    await stat2(path18.resolve(inputPath));
     return true;
   } catch {
     return false;
@@ -14760,45 +14833,45 @@ async function collectPackageFiles(root, current, files) {
   const entries = await readdir3(current, { withFileTypes: true });
   for (const entry of entries) {
     if (entry.name.startsWith(".git")) continue;
-    const absolutePath = path17.join(current, entry.name);
+    const absolutePath = path18.join(current, entry.name);
     if (entry.isDirectory()) {
       await collectPackageFiles(root, absolutePath, files);
       continue;
     }
     if (!entry.isFile()) continue;
-    const relativePath = path17.relative(root, absolutePath).replace(/\\/g, "/");
+    const relativePath = path18.relative(root, absolutePath).replace(/\\/g, "/");
     if (!shouldIncludePortableFile(relativePath)) continue;
     files[relativePath] = readPortableFileEntry(relativePath, await readFile3(absolutePath));
   }
 }
 async function resolveInlineSourceFromPath(inputPath) {
-  const resolved = path17.resolve(inputPath);
+  const resolved = path18.resolve(inputPath);
   const resolvedStat = await stat2(resolved);
-  if (resolvedStat.isFile() && path17.extname(resolved).toLowerCase() === ".zip") {
+  if (resolvedStat.isFile() && path18.extname(resolved).toLowerCase() === ".zip") {
     const archive = await readZipArchive(await readFile3(resolved));
     const filteredFiles = Object.fromEntries(
       Object.entries(archive.files).filter(([relativePath]) => shouldIncludePortableFile(relativePath))
     );
     return {
-      rootPath: archive.rootPath ?? path17.basename(resolved, ".zip"),
+      rootPath: archive.rootPath ?? path18.basename(resolved, ".zip"),
       files: filteredFiles
     };
   }
-  const rootDir = resolvedStat.isDirectory() ? resolved : path17.dirname(resolved);
+  const rootDir = resolvedStat.isDirectory() ? resolved : path18.dirname(resolved);
   const files = {};
   await collectPackageFiles(rootDir, rootDir, files);
   return {
-    rootPath: path17.basename(rootDir),
+    rootPath: path18.basename(rootDir),
     files
   };
 }
 async function writeExportToFolder(outDir, exported) {
-  const root = path17.resolve(outDir);
+  const root = path18.resolve(outDir);
   await mkdir2(root, { recursive: true });
   for (const [relativePath, content] of Object.entries(exported.files)) {
     const normalized = relativePath.replace(/\\/g, "/");
-    const filePath = path17.join(root, normalized);
-    await mkdir2(path17.dirname(filePath), { recursive: true });
+    const filePath = path18.join(root, normalized);
+    await mkdir2(path18.dirname(filePath), { recursive: true });
     const writeValue = portableFileEntryToWriteValue(content);
     if (typeof writeValue === "string") {
       await writeFile2(filePath, writeValue, "utf8");
@@ -14808,7 +14881,7 @@ async function writeExportToFolder(outDir, exported) {
   }
 }
 async function confirmOverwriteExportDirectory(outDir) {
-  const root = path17.resolve(outDir);
+  const root = path18.resolve(outDir);
   const stats = await stat2(root).catch(() => null);
   if (!stats) return;
   if (!stats.isDirectory()) {
@@ -15009,7 +15082,7 @@ function registerCompanyCommands(program2) {
         printOutput(
           {
             ok: true,
-            out: path17.resolve(opts.out),
+            out: path18.resolve(opts.out),
             rootPath: exported.rootPath,
             filesWritten: Object.keys(exported.files).length,
             paperclipExtensionPath: exported.paperclipExtensionPath,
@@ -15305,8 +15378,8 @@ function registerIssueCommands(program2) {
         if (opts.assigneeAgentId) params.set("assigneeAgentId", opts.assigneeAgentId);
         if (opts.projectId) params.set("projectId", opts.projectId);
         const query = params.toString();
-        const path25 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path25) ?? [];
+        const path26 = `/api/companies/${ctx.companyId}/issues${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path26) ?? [];
         const filtered = filterIssueRows(rows, opts.match);
         if (ctx.json) {
           printOutput(filtered, { json: true });
@@ -15522,7 +15595,7 @@ function filterIssueRows(rows, match) {
 
 // ../packages/adapter-utils/src/server-utils.ts
 import { constants as fsConstants, promises as fs13 } from "node:fs";
-import path18 from "node:path";
+import path19 from "node:path";
 var MAX_CAPTURE_BYTES = 4 * 1024 * 1024;
 var MAX_EXCERPT_BYTES = 32 * 1024;
 var TERMINAL_RESULT_SCAN_OVERLAP_CHARS = 64 * 1024;
@@ -15552,8 +15625,8 @@ function isMaintainerOnlySkillTarget(candidate) {
 }
 async function resolvePaperclipSkillsDir(moduleDir, additionalCandidates = []) {
   const candidates = [
-    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path18.resolve(moduleDir, relativePath)),
-    ...additionalCandidates.map((candidate) => path18.resolve(candidate))
+    ...PAPERCLIP_SKILL_ROOT_RELATIVE_CANDIDATES.map((relativePath) => path19.resolve(moduleDir, relativePath)),
+    ...additionalCandidates.map((candidate) => path19.resolve(candidate))
   ];
   const seenRoots = /* @__PURE__ */ new Set();
   for (const root of candidates) {
@@ -15571,12 +15644,12 @@ async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) 
     const removed = [];
     for (const entry of entries) {
       if (allowed.has(entry.name)) continue;
-      const target = path18.join(skillsHome, entry.name);
+      const target = path19.join(skillsHome, entry.name);
       const existing = await fs13.lstat(target).catch(() => null);
       if (!existing?.isSymbolicLink()) continue;
       const linkedPath = await fs13.readlink(target).catch(() => null);
       if (!linkedPath) continue;
-      const resolvedLinkedPath = path18.isAbsolute(linkedPath) ? linkedPath : path18.resolve(path18.dirname(target), linkedPath);
+      const resolvedLinkedPath = path19.isAbsolute(linkedPath) ? linkedPath : path19.resolve(path19.dirname(target), linkedPath);
       if (!isMaintainerOnlySkillTarget(linkedPath) && !isMaintainerOnlySkillTarget(resolvedLinkedPath)) {
         continue;
       }
@@ -15592,18 +15665,18 @@ async function removeMaintainerOnlySkillSymlinks(skillsHome, allowedSkillNames) 
 // src/commands/client/agent.ts
 import fs14 from "node:fs/promises";
 import os3 from "node:os";
-import path19 from "node:path";
+import path20 from "node:path";
 import { fileURLToPath as fileURLToPath3 } from "node:url";
-var __moduleDir = path19.dirname(fileURLToPath3(import.meta.url));
+var __moduleDir = path20.dirname(fileURLToPath3(import.meta.url));
 function codexSkillsHome() {
   const fromEnv = process.env.CODEX_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path19.join(os3.homedir(), ".codex");
-  return path19.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path20.join(os3.homedir(), ".codex");
+  return path20.join(base, "skills");
 }
 function claudeSkillsHome() {
   const fromEnv = process.env.CLAUDE_HOME?.trim();
-  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path19.join(os3.homedir(), ".claude");
-  return path19.join(base, "skills");
+  const base = fromEnv && fromEnv.length > 0 ? fromEnv : path20.join(os3.homedir(), ".claude");
+  return path20.join(base, "skills");
 }
 async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
   const summary = {
@@ -15622,8 +15695,8 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
   );
   for (const entry of entries) {
     if (!entry.isDirectory()) continue;
-    const source = path19.join(sourceSkillsDir, entry.name);
-    const target = path19.join(targetSkillsDir, entry.name);
+    const source = path20.join(sourceSkillsDir, entry.name);
+    const target = path20.join(targetSkillsDir, entry.name);
     const existing = await fs14.lstat(target).catch(() => null);
     if (existing) {
       if (existing.isSymbolicLink()) {
@@ -15644,7 +15717,7 @@ async function installSkillsForTarget(sourceSkillsDir, targetSkillsDir, tool) {
             continue;
           }
         }
-        const resolvedLinkedPath = path19.isAbsolute(linkedPath) ? linkedPath : path19.resolve(path19.dirname(target), linkedPath);
+        const resolvedLinkedPath = path20.isAbsolute(linkedPath) ? linkedPath : path20.resolve(path20.dirname(target), linkedPath);
         const linkedTargetExists = await fs14.stat(resolvedLinkedPath).then(() => true).catch(() => false);
         if (!linkedTargetExists) {
           await fs14.unlink(target);
@@ -15747,7 +15820,7 @@ function registerAgentCommands(program2) {
         }
         const installSummaries = [];
         if (opts.installSkills !== false) {
-          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path19.resolve(process.cwd(), "skills")]);
+          const skillsDir = await resolvePaperclipSkillsDir(__moduleDir, [path20.resolve(process.cwd(), "skills")]);
           if (!skillsDir) {
             throw new Error(
               "Could not locate local Paperclip skills directory. Expected ./skills in the repo checkout."
@@ -15980,8 +16053,8 @@ function registerActivityCommands(program2) {
         if (opts.entityType) params.set("entityType", opts.entityType);
         if (opts.entityId) params.set("entityId", opts.entityId);
         const query = params.toString();
-        const path25 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
-        const rows = await ctx.api.get(path25) ?? [];
+        const path26 = `/api/companies/${ctx.companyId}/activity${query ? `?${query}` : ""}`;
+        const rows = await ctx.api.get(path26) ?? [];
         if (ctx.json) {
           printOutput(rows, { json: true });
           return;
@@ -16034,7 +16107,7 @@ init_env();
 init_store();
 import fs15 from "node:fs";
 import net3 from "node:net";
-import path20 from "node:path";
+import path21 from "node:path";
 import pc24 from "picocolors";
 import { eq as eq2, inArray } from "drizzle-orm";
 function nonEmpty(value) {
@@ -16089,7 +16162,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
       "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again."
     );
   }
-  const postmasterPidFile = path20.resolve(dataDir, "postmaster.pid");
+  const postmasterPidFile = path21.resolve(dataDir, "postmaster.pid");
   const runningPid = readRunningPostmasterPid(postmasterPidFile);
   if (runningPid) {
     return {
@@ -16111,7 +16184,7 @@ async function ensureEmbeddedPostgres(dataDir, preferredPort) {
     onLog: logBuffer.append,
     onError: logBuffer.append
   });
-  if (!fs15.existsSync(path20.resolve(dataDir, "PG_VERSION"))) {
+  if (!fs15.existsSync(path21.resolve(dataDir, "PG_VERSION"))) {
     try {
       await instance.initialise();
     } catch (error) {
@@ -16233,11 +16306,11 @@ function registerRoutineCommands(program2) {
 
 // src/config/data-dir.ts
 init_home();
-import path21 from "node:path";
+import path22 from "node:path";
 function applyDataDirOverride(options, support = {}) {
   const rawDataDir = options.dataDir?.trim();
   if (!rawDataDir) return null;
-  const resolvedDataDir = path21.resolve(expandHomePrefix(rawDataDir));
+  const resolvedDataDir = path22.resolve(expandHomePrefix(rawDataDir));
   process.env.PAPERCLIP_HOME = resolvedDataDir;
   if (support.hasConfigOption) {
     const hasConfigOverride = Boolean(options.config?.trim()) || Boolean(process.env.PAPERCLIP_CONFIG?.trim());
@@ -16270,19 +16343,19 @@ init_path_resolver();
 import {
   chmodSync,
   copyFileSync,
-  existsSync as existsSync3,
+  existsSync as existsSync4,
   mkdirSync as mkdirSync3,
   promises as fsPromises,
-  readdirSync as readdirSync2,
+  readdirSync as readdirSync3,
   readFileSync as readFileSync2,
   readlinkSync,
-  rmSync,
+  rmSync as rmSync2,
   statSync as statSync2,
   symlinkSync,
   writeFileSync as writeFileSync2
 } from "node:fs";
 import os4 from "node:os";
-import path23 from "node:path";
+import path24 from "node:path";
 import { execFileSync as execFileSync2 } from "node:child_process";
 import { createServer } from "node:net";
 import { Readable } from "node:stream";
@@ -16293,7 +16366,7 @@ import { and as and2, eq as eq3, inArray as inArray2, sql as sql6 } from "drizzl
 // src/commands/worktree-lib.ts
 init_home();
 import { randomInt } from "node:crypto";
-import path22 from "node:path";
+import path23 from "node:path";
 var DEFAULT_WORKTREE_HOME = "~/.paperclip-worktrees";
 var WORKTREE_SEED_MODES = ["minimal", "full"];
 var MINIMAL_WORKTREE_EXCLUDED_TABLES = [
@@ -16341,7 +16414,7 @@ function sanitizeWorktreeInstanceId(rawValue) {
   return normalized || "worktree";
 }
 function resolveSuggestedWorktreeName(cwd, explicitName) {
-  return nonEmpty2(explicitName) ?? path22.basename(path22.resolve(cwd));
+  return nonEmpty2(explicitName) ?? path23.basename(path23.resolve(cwd));
 }
 function hslComponentToHex(n) {
   return Math.round(Math.max(0, Math.min(255, n))).toString(16).padStart(2, "0");
@@ -16381,24 +16454,24 @@ function generateWorktreeColor() {
   return hslToHex(randomInt(0, 360), 68, 56);
 }
 function resolveWorktreeLocalPaths(opts) {
-  const cwd = path22.resolve(opts.cwd);
-  const homeDir = path22.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
-  const instanceRoot = path22.resolve(homeDir, "instances", opts.instanceId);
-  const repoConfigDir = path22.resolve(cwd, ".paperclip");
+  const cwd = path23.resolve(opts.cwd);
+  const homeDir = path23.resolve(expandHomePrefix(opts.homeDir ?? DEFAULT_WORKTREE_HOME));
+  const instanceRoot = path23.resolve(homeDir, "instances", opts.instanceId);
+  const repoConfigDir = path23.resolve(cwd, ".paperclip");
   return {
     cwd,
     repoConfigDir,
-    configPath: path22.resolve(repoConfigDir, "config.json"),
-    envPath: path22.resolve(repoConfigDir, ".env"),
+    configPath: path23.resolve(repoConfigDir, "config.json"),
+    envPath: path23.resolve(repoConfigDir, ".env"),
     homeDir,
     instanceId: opts.instanceId,
     instanceRoot,
-    contextPath: path22.resolve(homeDir, "context.json"),
-    embeddedPostgresDataDir: path22.resolve(instanceRoot, "db"),
-    backupDir: path22.resolve(instanceRoot, "data", "backups"),
-    logDir: path22.resolve(instanceRoot, "logs"),
-    secretsKeyFilePath: path22.resolve(instanceRoot, "secrets", "master.key"),
-    storageDir: path22.resolve(instanceRoot, "data", "storage")
+    contextPath: path23.resolve(homeDir, "context.json"),
+    embeddedPostgresDataDir: path23.resolve(instanceRoot, "db"),
+    backupDir: path23.resolve(instanceRoot, "data", "backups"),
+    logDir: path23.resolve(instanceRoot, "logs"),
+    secretsKeyFilePath: path23.resolve(instanceRoot, "secrets", "master.key"),
+    storageDir: path23.resolve(instanceRoot, "data", "storage")
   };
 }
 function rewriteLocalUrlPort(rawUrl, port) {
@@ -16927,7 +17000,7 @@ function isCurrentSourceConfigPath(sourceConfigPath) {
   if (!currentConfigPath || currentConfigPath.trim().length === 0) {
     return false;
   }
-  return path23.resolve(currentConfigPath) === path23.resolve(sourceConfigPath);
+  return path24.resolve(currentConfigPath) === path24.resolve(sourceConfigPath);
 }
 function formatSeededWorktreeExecutionQuarantineSummary(summary) {
   return [
@@ -16974,9 +17047,9 @@ function normalizeStorageObjectKey(objectKey) {
   return parts.join("/");
 }
 function resolveLocalStoragePath(baseDir, objectKey) {
-  const resolved = path23.resolve(baseDir, normalizeStorageObjectKey(objectKey));
-  const root = path23.resolve(baseDir);
-  if (resolved !== root && !resolved.startsWith(`${root}${path23.sep}`)) {
+  const resolved = path24.resolve(baseDir, normalizeStorageObjectKey(objectKey));
+  const root = path24.resolve(baseDir);
+  if (resolved !== root && !resolved.startsWith(`${root}${path24.sep}`)) {
     throw new Error("Invalid object key path.");
   }
   return resolved;
@@ -17027,7 +17100,7 @@ function createConfiguredStorageFromPaperclipConfig(config) {
       async putObject(companyId, objectKey, body) {
         assertStorageCompanyPrefix(companyId, objectKey);
         const filePath = resolveLocalStoragePath(baseDir, objectKey);
-        await fsPromises.mkdir(path23.dirname(filePath), { recursive: true });
+        await fsPromises.mkdir(path24.dirname(filePath), { recursive: true });
         await fsPromises.writeFile(filePath, body);
       }
     };
@@ -17111,7 +17184,7 @@ async function readSourceAttachmentBody(sourceStorages, companyId, objectKey) {
   return null;
 }
 function resolveWorktreeMakeTargetPath(name) {
-  return path23.resolve(os4.homedir(), resolveWorktreeMakeName(name));
+  return path24.resolve(os4.homedir(), resolveWorktreeMakeName(name));
 }
 function extractExecSyncErrorMessage(error) {
   if (!error || typeof error !== "object") {
@@ -17145,7 +17218,7 @@ function resolveGitWorktreeAddArgs(input) {
   return ["worktree", "add", "-b", input.branchName, input.targetPath, commitish];
 }
 function readPidFilePort2(postmasterPidFile) {
-  if (!existsSync3(postmasterPidFile)) return null;
+  if (!existsSync4(postmasterPidFile)) return null;
   try {
     const lines = readFileSync2(postmasterPidFile, "utf8").split("\n");
     const port = Number(lines[3]?.trim());
@@ -17155,7 +17228,7 @@ function readPidFilePort2(postmasterPidFile) {
   }
 }
 function readRunningPostmasterPid2(postmasterPidFile) {
-  if (!existsSync3(postmasterPidFile)) return null;
+  if (!existsSync4(postmasterPidFile)) return null;
   try {
     const pid = Number(readFileSync2(postmasterPidFile, "utf8").split("\n")[0]?.trim());
     if (!Number.isInteger(pid) || pid <= 0) return null;
@@ -17183,33 +17256,33 @@ async function findAvailablePort2(preferredPort, reserved = /* @__PURE__ */ new 
   return port;
 }
 function resolveRepoManagedWorktreesRoot(cwd) {
-  const normalized = path23.resolve(cwd);
-  const marker = `${path23.sep}.paperclip${path23.sep}worktrees${path23.sep}`;
+  const normalized = path24.resolve(cwd);
+  const marker = `${path24.sep}.paperclip${path24.sep}worktrees${path24.sep}`;
   const index64 = normalized.indexOf(marker);
   if (index64 === -1) return null;
   const repoRoot = normalized.slice(0, index64);
-  return path23.resolve(repoRoot, ".paperclip", "worktrees");
+  return path24.resolve(repoRoot, ".paperclip", "worktrees");
 }
 function collectClaimedWorktreePorts(homeDir, currentInstanceId, cwd) {
   const serverPorts = /* @__PURE__ */ new Set();
   const databasePorts = /* @__PURE__ */ new Set();
   const configPaths = /* @__PURE__ */ new Set();
-  const instancesDir = path23.resolve(homeDir, "instances");
-  if (existsSync3(instancesDir)) {
-    for (const entry of readdirSync2(instancesDir, { withFileTypes: true })) {
+  const instancesDir = path24.resolve(homeDir, "instances");
+  if (existsSync4(instancesDir)) {
+    for (const entry of readdirSync3(instancesDir, { withFileTypes: true })) {
       if (!entry.isDirectory() || entry.name === currentInstanceId) continue;
-      const configPath = path23.resolve(instancesDir, entry.name, "config.json");
-      if (existsSync3(configPath)) {
+      const configPath = path24.resolve(instancesDir, entry.name, "config.json");
+      if (existsSync4(configPath)) {
         configPaths.add(configPath);
       }
     }
   }
   const repoManagedWorktreesRoot = resolveRepoManagedWorktreesRoot(cwd);
-  if (repoManagedWorktreesRoot && existsSync3(repoManagedWorktreesRoot)) {
-    for (const entry of readdirSync2(repoManagedWorktreesRoot, { withFileTypes: true })) {
+  if (repoManagedWorktreesRoot && existsSync4(repoManagedWorktreesRoot)) {
+    for (const entry of readdirSync3(repoManagedWorktreesRoot, { withFileTypes: true })) {
       if (!entry.isDirectory()) continue;
-      const configPath = path23.resolve(repoManagedWorktreesRoot, entry.name, ".paperclip", "config.json");
-      if (existsSync3(configPath)) {
+      const configPath = path24.resolve(repoManagedWorktreesRoot, entry.name, ".paperclip", "config.json");
+      if (existsSync4(configPath)) {
         configPaths.add(configPath);
       }
     }
@@ -17267,7 +17340,7 @@ function resolvePrimaryGitRepoRoot(cwd) {
   if (workspace.gitDir === workspace.commonDir) {
     return workspace.root;
   }
-  return path23.resolve(workspace.commonDir, "..");
+  return path24.resolve(workspace.commonDir, "..");
 }
 function resolveRepairWorktreeDirName(branchName) {
   const normalized = branchName.trim().replace(/[^A-Za-z0-9._-]+/g, "-").replace(/-+/g, "-").replace(/^[-._]+|[-._]+$/g, "");
@@ -17296,24 +17369,24 @@ function detectGitWorkspaceInfo(cwd) {
       stdio: ["ignore", "pipe", "ignore"]
     }).trim();
     return {
-      root: path23.resolve(root),
-      commonDir: path23.resolve(root, commonDirRaw),
-      gitDir: path23.resolve(root, gitDirRaw),
-      hooksPath: path23.resolve(root, hooksPathRaw)
+      root: path24.resolve(root),
+      commonDir: path24.resolve(root, commonDirRaw),
+      gitDir: path24.resolve(root, gitDirRaw),
+      hooksPath: path24.resolve(root, hooksPathRaw)
     };
   } catch {
     return null;
   }
 }
 function copyDirectoryContents(sourceDir, targetDir) {
-  if (!existsSync3(sourceDir)) return false;
-  const entries = readdirSync2(sourceDir, { withFileTypes: true });
+  if (!existsSync4(sourceDir)) return false;
+  const entries = readdirSync3(sourceDir, { withFileTypes: true });
   if (entries.length === 0) return false;
   mkdirSync3(targetDir, { recursive: true });
   let copied = false;
   for (const entry of entries) {
-    const sourcePath = path23.resolve(sourceDir, entry.name);
-    const targetPath = path23.resolve(targetDir, entry.name);
+    const sourcePath = path24.resolve(sourceDir, entry.name);
+    const targetPath = path24.resolve(targetDir, entry.name);
     if (entry.isDirectory()) {
       mkdirSync3(targetPath, { recursive: true });
       copyDirectoryContents(sourcePath, targetPath);
@@ -17321,7 +17394,7 @@ function copyDirectoryContents(sourceDir, targetDir) {
       continue;
     }
     if (entry.isSymbolicLink()) {
-      rmSync(targetPath, { recursive: true, force: true });
+      rmSync2(targetPath, { recursive: true, force: true });
       symlinkSync(readlinkSync(sourcePath), targetPath);
       copied = true;
       continue;
@@ -17339,7 +17412,7 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   const workspace = detectGitWorkspaceInfo(cwd);
   if (!workspace) return null;
   const sourceHooksPath = workspace.hooksPath;
-  const targetHooksPath = path23.resolve(workspace.gitDir, "hooks");
+  const targetHooksPath = path24.resolve(workspace.gitDir, "hooks");
   if (sourceHooksPath === targetHooksPath) {
     return {
       sourceHooksPath,
@@ -17354,17 +17427,17 @@ function copyGitHooksToWorktreeGitDir(cwd) {
   };
 }
 function rebindWorkspaceCwd(input) {
-  const sourceRepoRoot = path23.resolve(input.sourceRepoRoot);
-  const targetRepoRoot = path23.resolve(input.targetRepoRoot);
-  const workspaceCwd = path23.resolve(input.workspaceCwd);
-  const relative = path23.relative(sourceRepoRoot, workspaceCwd);
+  const sourceRepoRoot = path24.resolve(input.sourceRepoRoot);
+  const targetRepoRoot = path24.resolve(input.targetRepoRoot);
+  const workspaceCwd = path24.resolve(input.workspaceCwd);
+  const relative = path24.relative(sourceRepoRoot, workspaceCwd);
   if (!relative || relative === "") {
     return targetRepoRoot;
   }
-  if (relative.startsWith("..") || path23.isAbsolute(relative)) {
+  if (relative.startsWith("..") || path24.isAbsolute(relative)) {
     return null;
   }
-  return path23.resolve(targetRepoRoot, relative);
+  return path24.resolve(targetRepoRoot, relative);
 }
 async function rebindSeededProjectWorkspaces(input) {
   const targetRepo = detectGitWorkspaceInfo(input.currentCwd);
@@ -17390,9 +17463,9 @@ async function rebindSeededProjectWorkspaces(input) {
         workspaceCwd
       });
       if (!reboundCwd) continue;
-      const normalizedCurrent = path23.resolve(workspaceCwd);
+      const normalizedCurrent = path24.resolve(workspaceCwd);
       if (reboundCwd === normalizedCurrent) continue;
-      if (!existsSync3(reboundCwd)) continue;
+      if (!existsSync4(reboundCwd)) continue;
       await db.update(projectWorkspaces).set({
         cwd: reboundCwd,
         updatedAt: /* @__PURE__ */ new Date()
@@ -17409,14 +17482,14 @@ async function rebindSeededProjectWorkspaces(input) {
   }
 }
 function resolveSourceConfigPath(opts) {
-  if (opts.sourceConfigPathOverride) return path23.resolve(opts.sourceConfigPathOverride);
-  if (opts.fromConfig) return path23.resolve(opts.fromConfig);
+  if (opts.sourceConfigPathOverride) return path24.resolve(opts.sourceConfigPathOverride);
+  if (opts.fromConfig) return path24.resolve(opts.fromConfig);
   if (!opts.fromDataDir && !opts.fromInstance) {
     return resolveConfigPath();
   }
-  const sourceHome = path23.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
+  const sourceHome = path24.resolve(expandHomePrefix(opts.fromDataDir ?? "~/.paperclip"));
   const sourceInstanceId = sanitizeWorktreeInstanceId(opts.fromInstance ?? "default");
-  return path23.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
+  return path24.resolve(sourceHome, "instances", sourceInstanceId, "config.json");
 }
 function resolveWorktreeReseedSource(input) {
   const fromSelector = nonEmpty3(input.from);
@@ -17483,24 +17556,24 @@ function resolveWorktreeReseedTargetPaths(input) {
 function resolveExistingGitWorktree(selector, cwd) {
   const trimmed = selector.trim();
   if (trimmed.length === 0) return null;
-  const directPath = path23.resolve(trimmed);
-  if (existsSync3(directPath)) {
+  const directPath = path24.resolve(trimmed);
+  if (existsSync4(directPath)) {
     return {
       worktree: directPath,
       branch: null,
-      branchLabel: path23.basename(directPath),
-      hasPaperclipConfig: existsSync3(path23.resolve(directPath, ".paperclip", "config.json")),
-      isCurrent: directPath === path23.resolve(cwd)
+      branchLabel: path24.basename(directPath),
+      hasPaperclipConfig: existsSync4(path24.resolve(directPath, ".paperclip", "config.json")),
+      isCurrent: directPath === path24.resolve(cwd)
     };
   }
   return toMergeSourceChoices(cwd).find(
-    (choice) => choice.worktree === directPath || path23.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed || choice.branch === trimmed
+    (choice) => choice.worktree === directPath || path24.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed || choice.branch === trimmed
   ) ?? null;
 }
 async function ensureRepairTargetWorktree(input) {
   const cwd = process.cwd();
-  const currentRoot = path23.resolve(cwd);
-  const currentConfigPath = path23.resolve(currentRoot, ".paperclip", "config.json");
+  const currentRoot = path24.resolve(cwd);
+  const currentConfigPath = path24.resolve(currentRoot, ".paperclip", "config.json");
   if (!input.selector) {
     if (isPrimaryGitWorktree(cwd)) {
       return null;
@@ -17508,7 +17581,7 @@ async function ensureRepairTargetWorktree(input) {
     return {
       rootPath: currentRoot,
       configPath: currentConfigPath,
-      label: path23.basename(currentRoot),
+      label: path24.basename(currentRoot),
       branchName: detectGitBranchName(cwd),
       created: false
     };
@@ -17517,7 +17590,7 @@ async function ensureRepairTargetWorktree(input) {
   if (existing) {
     return {
       rootPath: existing.worktree,
-      configPath: path23.resolve(existing.worktree, ".paperclip", "config.json"),
+      configPath: path24.resolve(existing.worktree, ".paperclip", "config.json"),
       label: existing.branchLabel,
       branchName: existing.branchLabel === "(detached)" ? null : existing.branchLabel,
       created: false
@@ -17525,16 +17598,16 @@ async function ensureRepairTargetWorktree(input) {
   }
   const repoRoot = resolvePrimaryGitRepoRoot(cwd);
   const branchName = validateGitBranchName(repoRoot, input.selector);
-  const targetPath = path23.resolve(
+  const targetPath = path24.resolve(
     repoRoot,
     ".paperclip",
     "worktrees",
     resolveRepairWorktreeDirName(branchName)
   );
-  if (existsSync3(targetPath)) {
+  if (existsSync4(targetPath)) {
     throw new Error(`Target path already exists but is not a registered git worktree: ${targetPath}`);
   }
-  mkdirSync3(path23.dirname(targetPath), { recursive: true });
+  mkdirSync3(path24.dirname(targetPath), { recursive: true });
   const spinner4 = p16.spinner();
   spinner4.start(`Creating git worktree for ${branchName}...`);
   try {
@@ -17554,7 +17627,7 @@ async function ensureRepairTargetWorktree(input) {
   installDependenciesBestEffort(targetPath);
   return {
     rootPath: targetPath,
-    configPath: path23.resolve(targetPath, ".paperclip", "config.json"),
+    configPath: path24.resolve(targetPath, ".paperclip", "config.json"),
     label: branchName,
     branchName,
     created: true
@@ -17577,7 +17650,7 @@ function copySeededSecretsKey(input) {
   if (input.sourceConfig.secrets.provider !== "local_encrypted") {
     return;
   }
-  mkdirSync3(path23.dirname(input.targetKeyFilePath), { recursive: true });
+  mkdirSync3(path24.dirname(input.targetKeyFilePath), { recursive: true });
   const allowProcessEnvFallback = isCurrentSourceConfigPath(input.sourceConfigPath);
   const sourceInlineMasterKey = nonEmpty3(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY) ?? (allowProcessEnvFallback ? nonEmpty3(process.env.PAPERCLIP_SECRETS_MASTER_KEY) : null);
   if (sourceInlineMasterKey) {
@@ -17594,7 +17667,7 @@ function copySeededSecretsKey(input) {
   const sourceKeyFileOverride = nonEmpty3(input.sourceEnvEntries.PAPERCLIP_SECRETS_MASTER_KEY_FILE) ?? (allowProcessEnvFallback ? nonEmpty3(process.env.PAPERCLIP_SECRETS_MASTER_KEY_FILE) : null);
   const sourceConfiguredKeyPath = sourceKeyFileOverride ?? input.sourceConfig.secrets.localEncrypted.keyFilePath;
   const sourceKeyFilePath = resolveRuntimeLikePath(sourceConfiguredKeyPath, input.sourceConfigPath);
-  if (!existsSync3(sourceKeyFilePath)) {
+  if (!existsSync4(sourceKeyFilePath)) {
     throw new Error(
       `Cannot seed worktree database because source local_encrypted secrets key was not found at ${sourceKeyFilePath}.`
     );
@@ -17616,7 +17689,7 @@ async function ensureEmbeddedPostgres2(dataDir, preferredPort) {
       "Embedded PostgreSQL support requires dependency `embedded-postgres`. Reinstall dependencies and try again."
     );
   }
-  const postmasterPidFile = path23.resolve(dataDir, "postmaster.pid");
+  const postmasterPidFile = path24.resolve(dataDir, "postmaster.pid");
   const runningPid = readRunningPostmasterPid2(postmasterPidFile);
   if (runningPid) {
     return {
@@ -17638,7 +17711,7 @@ async function ensureEmbeddedPostgres2(dataDir, preferredPort) {
     onLog: logBuffer.append,
     onError: logBuffer.append
   });
-  if (!existsSync3(path23.resolve(dataDir, "PG_VERSION"))) {
+  if (!existsSync4(path24.resolve(dataDir, "PG_VERSION"))) {
     try {
       await instance.initialise();
     } catch (error) {
@@ -17648,8 +17721,8 @@ async function ensureEmbeddedPostgres2(dataDir, preferredPort) {
       });
     }
   }
-  if (existsSync3(postmasterPidFile)) {
-    rmSync(postmasterPidFile, { force: true });
+  if (existsSync4(postmasterPidFile)) {
+    rmSync2(postmasterPidFile, { force: true });
   }
   try {
     await instance.start();
@@ -17808,7 +17881,7 @@ async function seedWorktreeDatabase(input) {
     );
     const backup = await runDatabaseBackup({
       connectionString: sourceConnectionString,
-      backupDir: path23.resolve(input.targetPaths.backupDir, "seed"),
+      backupDir: path24.resolve(input.targetPaths.backupDir, "seed"),
       retention: { dailyDays: 7, weeklyWeeks: 4, monthlyMonths: 1 },
       filenamePrefix: `${input.instanceId}-seed`,
       includeMigrationJournal: true,
@@ -17869,15 +17942,15 @@ async function runWorktreeInit(opts) {
     color: opts.color ?? generateWorktreeColor()
   };
   const sourceConfigPath = resolveSourceConfigPath(opts);
-  const sourceConfig = existsSync3(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
-  if ((existsSync3(paths.configPath) || existsSync3(paths.instanceRoot)) && !opts.force) {
+  const sourceConfig = existsSync4(sourceConfigPath) ? readConfig(sourceConfigPath) : null;
+  if ((existsSync4(paths.configPath) || existsSync4(paths.instanceRoot)) && !opts.force) {
     throw new Error(
       `Worktree config already exists at ${paths.configPath} or instance data exists at ${paths.instanceRoot}. Re-run with --force to replace it.`
     );
   }
   if (opts.force) {
-    rmSync(paths.repoConfigDir, { recursive: true, force: true });
-    rmSync(paths.instanceRoot, { recursive: true, force: true });
+    rmSync2(paths.repoConfigDir, { recursive: true, force: true });
+    rmSync2(paths.instanceRoot, { recursive: true, force: true });
   }
   const claimedPorts = collectClaimedWorktreePorts(paths.homeDir, paths.instanceId, paths.cwd);
   const preferredServerPort = opts.serverPort ?? (sourceConfig?.server.port ?? 3100) + 1;
@@ -17987,10 +18060,10 @@ async function worktreeMakeCommand(nameArg, opts) {
   const sourceCwd = process.cwd();
   const sourceConfigPath = resolveSourceConfigPath(opts);
   const targetPath = resolveWorktreeMakeTargetPath(name);
-  if (existsSync3(targetPath)) {
+  if (existsSync4(targetPath)) {
     throw new Error(`Target path already exists: ${targetPath}`);
   }
-  mkdirSync3(path23.dirname(targetPath), { recursive: true });
+  mkdirSync3(path24.dirname(targetPath), { recursive: true });
   if (startPoint) {
     const [remote] = startPoint.split("/", 1);
     try {
@@ -18089,15 +18162,15 @@ function parseGitWorktreeList(cwd) {
   return entries;
 }
 function toMergeSourceChoices(cwd) {
-  const currentCwd = path23.resolve(cwd);
+  const currentCwd = path24.resolve(cwd);
   return parseGitWorktreeList(cwd).map((entry) => {
     const branchLabel = entry.branch?.replace(/^refs\/heads\//, "") ?? "(detached)";
-    const worktreePath = path23.resolve(entry.worktree);
+    const worktreePath = path24.resolve(entry.worktree);
     return {
       worktree: worktreePath,
       branch: entry.branch,
       branchLabel,
-      hasPaperclipConfig: existsSync3(path23.resolve(worktreePath, ".paperclip", "config.json")),
+      hasPaperclipConfig: existsSync4(path24.resolve(worktreePath, ".paperclip", "config.json")),
       isCurrent: worktreePath === currentCwd
     };
   });
@@ -18145,14 +18218,14 @@ async function worktreeCleanupCommand(nameArg, opts) {
   const sourceCwd = process.cwd();
   const targetPath = resolveWorktreeMakeTargetPath(name);
   const instanceId = sanitizeWorktreeInstanceId(opts.instance ?? name);
-  const homeDir = path23.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
-  const instanceRoot = path23.resolve(homeDir, "instances", instanceId);
+  const homeDir = path24.resolve(expandHomePrefix(resolveWorktreeHome(opts.home)));
+  const instanceRoot = path24.resolve(homeDir, "instances", instanceId);
   const hasBranch = localBranchExists(sourceCwd, name);
-  const hasTargetDir = existsSync3(targetPath);
-  const hasInstanceData = existsSync3(instanceRoot);
+  const hasTargetDir = existsSync4(targetPath);
+  const hasInstanceData = existsSync4(instanceRoot);
   const worktrees = parseGitWorktreeList(sourceCwd);
   const linkedWorktree = worktrees.find(
-    (wt) => wt.branch === `refs/heads/${name}` || path23.resolve(wt.worktree) === path23.resolve(targetPath)
+    (wt) => wt.branch === `refs/heads/${name}` || path24.resolve(wt.worktree) === path24.resolve(targetPath)
   );
   if (!hasBranch && !hasTargetDir && !hasInstanceData && !linkedWorktree) {
     p16.log.info("Nothing to clean up \u2014 no branch, worktree directory, or instance data found.");
@@ -18189,7 +18262,7 @@ async function worktreeCleanupCommand(nameArg, opts) {
     }
   }
   if (linkedWorktree) {
-    const worktreeDirExists = existsSync3(linkedWorktree.worktree);
+    const worktreeDirExists = existsSync4(linkedWorktree.worktree);
     const spinner4 = p16.spinner();
     if (worktreeDirExists) {
       spinner4.start(`Removing git worktree at ${linkedWorktree.worktree}...`);
@@ -18219,10 +18292,10 @@ async function worktreeCleanupCommand(nameArg, opts) {
       stdio: ["ignore", "pipe", "pipe"]
     });
   }
-  if (existsSync3(targetPath)) {
+  if (existsSync4(targetPath)) {
     const spinner4 = p16.spinner();
     spinner4.start(`Removing worktree directory ${targetPath}...`);
-    rmSync(targetPath, { recursive: true, force: true });
+    rmSync2(targetPath, { recursive: true, force: true });
     spinner4.stop(`Removed worktree directory ${targetPath}.`);
   }
   if (localBranchExists(sourceCwd, name)) {
@@ -18240,10 +18313,10 @@ async function worktreeCleanupCommand(nameArg, opts) {
       p16.log.warning(extractExecSyncErrorMessage(error) ?? String(error));
     }
   }
-  if (existsSync3(instanceRoot)) {
+  if (existsSync4(instanceRoot)) {
     const spinner4 = p16.spinner();
     spinner4.start(`Removing instance data at ${instanceRoot}...`);
-    rmSync(instanceRoot, { recursive: true, force: true });
+    rmSync2(instanceRoot, { recursive: true, force: true });
     spinner4.stop(`Removed instance data at ${instanceRoot}.`);
   }
   p16.outro(pc25.green("Cleanup complete."));
@@ -18270,7 +18343,7 @@ async function closeDb2(db) {
 }
 function resolveCurrentEndpoint() {
   return {
-    rootPath: path23.resolve(process.cwd()),
+    rootPath: path24.resolve(process.cwd()),
     configPath: resolveConfigPath(),
     label: "current",
     isCurrent: true
@@ -18281,13 +18354,13 @@ function resolveAttachmentLookupStorages(input) {
     input.sourceEndpoint.configPath,
     resolveCurrentEndpoint().configPath,
     input.targetEndpoint.configPath,
-    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path23.resolve(choice.worktree, ".paperclip", "config.json"))
+    ...toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig).map((choice) => path24.resolve(choice.worktree, ".paperclip", "config.json"))
   ];
   const seen = /* @__PURE__ */ new Set();
   const storages = [];
   for (const configPath of orderedConfigPaths) {
-    const resolved = path23.resolve(configPath);
-    if (seen.has(resolved) || !existsSync3(resolved)) continue;
+    const resolved = path24.resolve(configPath);
+    if (seen.has(resolved) || !existsSync4(resolved)) continue;
     seen.add(resolved);
     storages.push(openConfiguredStorage(resolved));
   }
@@ -18454,7 +18527,7 @@ function resolveRunningEmbeddedPostgresPid(config) {
   if (config.database.mode !== "embedded-postgres") {
     return null;
   }
-  return readRunningPostmasterPid2(path23.resolve(config.database.embeddedPostgresDataDir, "postmaster.pid"));
+  return readRunningPostmasterPid2(path24.resolve(config.database.embeddedPostgresDataDir, "postmaster.pid"));
 }
 async function collectMergePlan(input) {
   const companyId = input.company.id;
@@ -18711,7 +18784,7 @@ function resolveEndpointFromChoice(choice) {
   }
   return {
     rootPath: choice.worktree,
-    configPath: path23.resolve(choice.worktree, ".paperclip", "config.json"),
+    configPath: path24.resolve(choice.worktree, ".paperclip", "config.json"),
     label: choice.branchLabel,
     isCurrent: false
   };
@@ -18727,24 +18800,24 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
     return currentEndpoint;
   }
   const choices = toMergeSourceChoices(process.cwd());
-  const directPath = path23.resolve(trimmed);
-  if (existsSync3(directPath)) {
+  const directPath = path24.resolve(trimmed);
+  if (existsSync4(directPath)) {
     if (allowCurrent && directPath === currentEndpoint.rootPath) {
       return currentEndpoint;
     }
-    const configPath = path23.resolve(directPath, ".paperclip", "config.json");
-    if (!existsSync3(configPath)) {
+    const configPath = path24.resolve(directPath, ".paperclip", "config.json");
+    if (!existsSync4(configPath)) {
       throw new Error(`Resolved worktree path ${directPath} does not contain .paperclip/config.json.`);
     }
     return {
       rootPath: directPath,
       configPath,
-      label: path23.basename(directPath),
+      label: path24.basename(directPath),
       isCurrent: false
     };
   }
   const matched = choices.find(
-    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path23.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
+    (choice) => (allowCurrent || !choice.isCurrent) && (choice.worktree === directPath || path24.basename(choice.worktree) === trimmed || choice.branchLabel === trimmed)
   );
   if (!matched) {
     throw new Error(
@@ -18757,9 +18830,9 @@ function resolveWorktreeEndpointFromSelector(selector, opts) {
   return resolveEndpointFromChoice(matched);
 }
 async function promptForSourceEndpoint(excludeWorktreePath) {
-  const excluded = excludeWorktreePath ? path23.resolve(excludeWorktreePath) : null;
+  const excluded = excludeWorktreePath ? path24.resolve(excludeWorktreePath) : null;
   const currentEndpoint = resolveCurrentEndpoint();
-  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path23.resolve(choice.worktree) !== excluded).map((choice) => ({
+  const choices = toMergeSourceChoices(process.cwd()).filter((choice) => choice.hasPaperclipConfig || choice.isCurrent).filter((choice) => path24.resolve(choice.worktree) !== excluded).map((choice) => ({
     value: choice.isCurrent ? "__current__" : choice.worktree,
     label: choice.branchLabel,
     hint: `${choice.worktree}${choice.isCurrent ? " (current)" : ""}`
@@ -19083,7 +19156,7 @@ async function worktreeMergeHistoryCommand(sourceArg, opts) {
   }
   const targetEndpoint = opts.to ? resolveWorktreeEndpointFromSelector(opts.to, { allowCurrent: true }) : resolveCurrentEndpoint();
   const sourceEndpoint = opts.from ? resolveWorktreeEndpointFromSelector(opts.from, { allowCurrent: true }) : sourceArg ? resolveWorktreeEndpointFromSelector(sourceArg, { allowCurrent: true }) : await promptForSourceEndpoint(targetEndpoint.rootPath);
-  if (path23.resolve(sourceEndpoint.configPath) === path23.resolve(targetEndpoint.configPath)) {
+  if (path24.resolve(sourceEndpoint.configPath) === path24.resolve(targetEndpoint.configPath)) {
     throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to worktrees.");
   }
   const scopes = parseWorktreeMergeScopes(opts.scope);
@@ -19168,10 +19241,10 @@ async function runWorktreeReseed(opts) {
   }
   const targetEndpoint = opts.to ? resolveWorktreeEndpointFromSelector(opts.to, { allowCurrent: true }) : resolveCurrentEndpoint();
   const source = resolveWorktreeReseedSource(opts);
-  if (path23.resolve(source.configPath) === path23.resolve(targetEndpoint.configPath)) {
+  if (path24.resolve(source.configPath) === path24.resolve(targetEndpoint.configPath)) {
     throw new Error("Source and target Paperclip configs are the same. Choose different --from/--to values.");
   }
-  if (!existsSync3(source.configPath)) {
+  if (!existsSync4(source.configPath)) {
     throw new Error(`Source config not found at ${source.configPath}.`);
   }
   const targetConfig = readConfig(targetEndpoint.configPath);
@@ -19261,13 +19334,13 @@ async function worktreeRepairCommand(opts) {
     return;
   }
   const source = resolveWorktreeRepairSource(opts);
-  if (!existsSync3(source.configPath)) {
+  if (!existsSync4(source.configPath)) {
     throw new Error(`Source config not found at ${source.configPath}.`);
   }
-  if (path23.resolve(source.configPath) === path23.resolve(target.configPath)) {
+  if (path24.resolve(source.configPath) === path24.resolve(target.configPath)) {
     throw new Error("Source and target Paperclip configs are the same. Use --from-config/--from-instance to point repair at a different source.");
   }
-  const targetConfig = existsSync3(target.configPath) ? readConfig(target.configPath) : null;
+  const targetConfig = existsSync4(target.configPath) ? readConfig(target.configPath) : null;
   const targetEnvEntries = readPaperclipEnvEntries(resolvePaperclipEnvFile(target.configPath));
   const targetHasWorktreeEnv = Boolean(
     nonEmpty3(targetEnvEntries.PAPERCLIP_HOME) && nonEmpty3(targetEnvEntries.PAPERCLIP_INSTANCE_ID)
@@ -19288,13 +19361,13 @@ async function worktreeRepairCommand(opts) {
     });
     return;
   }
-  const repairInstanceId = sanitizeWorktreeInstanceId(path23.basename(target.rootPath));
+  const repairInstanceId = sanitizeWorktreeInstanceId(path24.basename(target.rootPath));
   const repairPaths = resolveWorktreeLocalPaths({
     cwd: target.rootPath,
     homeDir: resolveWorktreeHome(opts.home),
     instanceId: repairInstanceId
   });
-  const runningTargetPid = readRunningPostmasterPid2(path23.resolve(repairPaths.embeddedPostgresDataDir, "postmaster.pid"));
+  const runningTargetPid = readRunningPostmasterPid2(path24.resolve(repairPaths.embeddedPostgresDataDir, "postmaster.pid"));
   if (runningTargetPid && !opts.allowLiveTarget) {
     throw new Error(
       `Target worktree database appears to be running (pid ${runningTargetPid}). Stop Paperclip in ${target.rootPath} before repairing, or re-run with --allow-live-target if you want to override this guard.`
@@ -19333,16 +19406,16 @@ function registerWorktreeCommands(program2) {
 }
 
 // src/commands/client/plugin.ts
-import path24 from "node:path";
+import path25 from "node:path";
 import pc26 from "picocolors";
 function resolvePackageArg(packageArg, isLocal) {
   if (!isLocal) return packageArg;
-  if (path24.isAbsolute(packageArg)) return packageArg;
+  if (path25.isAbsolute(packageArg)) return packageArg;
   if (packageArg.startsWith("~")) {
     const home = process.env.HOME ?? process.env.USERPROFILE ?? "";
-    return path24.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
+    return path25.resolve(home, packageArg.slice(1).replace(/^[\\/]/, ""));
   }
-  return path24.resolve(process.cwd(), packageArg);
+  return path25.resolve(process.cwd(), packageArg);
 }
 function formatPlugin(p17) {
   const statusColor = p17.status === "ready" ? pc26.green(p17.status) : p17.status === "error" ? pc26.red(p17.status) : p17.status === "disabled" ? pc26.dim(p17.status) : pc26.yellow(p17.status);
