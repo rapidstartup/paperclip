@@ -123,6 +123,22 @@ function nonEmptyTrimmed(value: string | undefined): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/**
+ * Railway exposes the deployed URL as RAILWAY_STATIC_URL or RAILWAY_PUBLIC_DOMAIN.
+ * If PAPERCLIP_PUBLIC_URL / BETTER_AUTH_* are unset, still derive a public base URL so
+ * Better Auth trustedOrigins includes the browser-facing origin.
+ */
+function inferPublicBaseUrlFromRailwayEnv(): string | undefined {
+  const staticUrl = nonEmptyTrimmed(process.env.RAILWAY_STATIC_URL);
+  if (staticUrl && /^https?:\/\//i.test(staticUrl)) {
+    return staticUrl.replace(/\/+$/, "");
+  }
+  const railwayDomain = nonEmptyTrimmed(process.env.RAILWAY_PUBLIC_DOMAIN);
+  if (!railwayDomain) return undefined;
+  const host = railwayDomain.replace(/^https?:\/\//i, "").split("/")[0]?.trim();
+  return host ? `https://${host}` : undefined;
+}
+
 export function loadConfig(): Config {
   const fileConfig = readConfigFile();
   const fileDatabaseMode =
@@ -217,7 +233,8 @@ export function loadConfig(): Config {
     process.env.BETTER_AUTH_URL ??
     process.env.BETTER_AUTH_BASE_URL ??
     publicUrlFromEnv ??
-    fileConfig?.auth?.publicBaseUrl;
+    fileConfig?.auth?.publicBaseUrl ??
+    inferPublicBaseUrlFromRailwayEnv();
   const authPublicBaseUrl = authPublicBaseUrlRaw?.trim() || undefined;
   const authBaseUrlMode: AuthBaseUrlMode =
     authBaseUrlModeFromEnv ??

@@ -62,12 +62,11 @@ function headersFromExpressRequest(req: Request): Headers {
 }
 
 export function deriveAuthTrustedOrigins(config: Config): string[] {
-  const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
   const trustedOrigins = new Set<string>();
 
-  if (baseUrl) {
+  if (config.authPublicBaseUrl) {
     try {
-      trustedOrigins.add(new URL(baseUrl).origin);
+      trustedOrigins.add(new URL(config.authPublicBaseUrl).origin);
     } catch {
       // Better Auth will surface invalid base URL separately.
     }
@@ -85,7 +84,7 @@ export function deriveAuthTrustedOrigins(config: Config): string[] {
 }
 
 export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?: string[]): BetterAuthInstance {
-  const baseUrl = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
+  const baseUrlForBetterAuth = config.authBaseUrlMode === "explicit" ? config.authPublicBaseUrl : undefined;
   const secret = process.env.BETTER_AUTH_SECRET ?? process.env.PAPERCLIP_AGENT_JWT_SECRET;
   if (!secret) {
     throw new Error(
@@ -95,11 +94,11 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?
   }
   const effectiveTrustedOrigins = trustedOrigins ?? deriveAuthTrustedOrigins(config);
 
-  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL ?? baseUrl;
+  const publicUrl = process.env.PAPERCLIP_PUBLIC_URL ?? baseUrlForBetterAuth;
   const isHttpOnly = publicUrl ? publicUrl.startsWith("http://") : false;
 
   const authConfig = {
-    baseURL: baseUrl,
+    baseURL: baseUrlForBetterAuth,
     secret,
     trustedOrigins: effectiveTrustedOrigins,
     database: drizzleAdapter(db, {
@@ -119,7 +118,7 @@ export function createBetterAuthInstance(db: Db, config: Config, trustedOrigins?
     advanced: buildBetterAuthAdvancedOptions({ disableSecureCookies: isHttpOnly }),
   };
 
-  if (!baseUrl) {
+  if (!baseUrlForBetterAuth) {
     delete (authConfig as { baseURL?: string }).baseURL;
   }
 

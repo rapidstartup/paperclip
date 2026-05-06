@@ -9050,6 +9050,14 @@ function nonEmptyTrimmed(value) {
   const t = value.trim();
   return t.length > 0 ? t : void 0;
 }
+function postgresHostnameIsLoopback(url) {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return false;
+  }
+}
 function maybeSyntheticAuthenticatedConfig(explicitDbUrl) {
   const dbUrl = nonEmptyTrimmed(explicitDbUrl) ?? nonEmptyTrimmed(process.env.DATABASE_URL);
   if (!dbUrl) return null;
@@ -9109,6 +9117,18 @@ async function bootstrapCeoInvite(opts) {
   const configPath = resolveConfigPath(opts.config);
   loadPaperclipEnvFile(configPath);
   let config = readConfig(configPath);
+  const dbUrlForBootstrap = resolveDbUrl(configPath, opts.dbUrl);
+  if (config && config.server.deploymentMode !== "authenticated" && dbUrlForBootstrap && !postgresHostnameIsLoopback(dbUrlForBootstrap)) {
+    const synthetic = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
+    if (synthetic) {
+      p7.log.message(
+        pc.dim(
+          "Local Paperclip config uses deploymentMode=local_trusted, but DATABASE_URL/--db-url targets a non-loopback database (e.g. Railway). Using authenticated remote bootstrap for this command."
+        )
+      );
+      config = synthetic;
+    }
+  }
   if (!config) {
     config = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
     if (config) {
@@ -9138,16 +9158,22 @@ async function bootstrapCeoInvite(opts) {
   }
   if (config.server.deploymentMode !== "authenticated") {
     p7.log.info("Deployment mode is local_trusted. Bootstrap CEO invite is only required for authenticated mode.");
+    if (dbUrlForBootstrap && !postgresHostnameIsLoopback(dbUrlForBootstrap)) {
+      p7.log.message(
+        pc.dim(
+          "Hint: a remote DATABASE_URL is set but local config (or PAPERCLIP_DEPLOYMENT_MODE=local_trusted) blocked authenticated bootstrap. Unset PAPERCLIP_DEPLOYMENT_MODE for this shell, or run: pnpm --filter paperclipai build and retry with the latest CLI (it detects local_trusted + remote DB)."
+        )
+      );
+    }
     return;
   }
-  const dbUrl = resolveDbUrl(configPath, opts.dbUrl);
-  if (!dbUrl) {
+  if (!dbUrlForBootstrap) {
     p7.log.error(
       "Could not resolve database connection for bootstrap."
     );
     return;
   }
-  const db = createDb(dbUrl);
+  const db = createDb(dbUrlForBootstrap);
   const closableDb = db;
   try {
     const existingAdminCount = await db.select().from(instanceUserRoles).where(eq(instanceUserRoles.role, "instance_admin")).then((rows) => rows.length);
@@ -9179,8 +9205,19 @@ async function bootstrapCeoInvite(opts) {
     p7.log.message(`Invite URL: ${pc.cyan(inviteUrl)}`);
     p7.log.message(`Expires: ${pc.dim(created.expiresAt.toISOString())}`);
   } catch (err) {
-    p7.log.error(`Could not create bootstrap invite: ${err instanceof Error ? err.message : String(err)}`);
-    p7.log.info("If using embedded-postgres, start the Paperclip server and run this command again.");
+    const msg = err instanceof Error ? err.message : String(err);
+    p7.log.error(`Could not create bootstrap invite: ${msg}`);
+    const dbUrlForHint = nonEmptyTrimmed(opts.dbUrl) ?? nonEmptyTrimmed(process.env.DATABASE_URL) ?? "";
+    const railwayPrivate = /\.railway\.internal\b/i.test(dbUrlForHint) || msg.includes("railway.internal") || /ENOTFOUND/i.test(msg) && dbUrlForHint.includes("railway");
+    if (railwayPrivate) {
+      p7.log.message(
+        pc.dim(
+          "This DATABASE_URL uses a Railway private hostname. It only resolves inside Railway (deployed containers), not on your PC. Options: (1) railway ssh -s <app-service> -- node cli/dist/index.js auth bootstrap-ceo (2) In Railway Postgres variables, copy the public/database proxy URL and run the same command with DATABASE_URL=... in front, or add DATABASE_PUBLIC_URL to the app service and reference it for local CLI only."
+        )
+      );
+    } else {
+      p7.log.info("If using embedded-postgres, start the Paperclip server and run this command again.");
+    }
   } finally {
     await closableDb.$client?.end?.({ timeout: 5 }).catch(() => void 0);
   }
@@ -19742,7 +19779,18 @@ registerFeedbackCommands(program);
 registerWorktreeCommands(program);
 registerPluginCommands(program);
 var auth = program.command("auth").description("Authentication and bootstrap utilities");
-auth.command("bootstrap-ceo").description("Create a one-time bootstrap invite URL for first instance admin").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--force", "Create new invite even if admin already exists", false).option("--expires-hours <hours>", "Invite expiration window in hours", (value) => Number(value)).option("--base-url <url>", "Public base URL used to print invite link").action(bootstrapCeoInvite);
+auth.command("bootstrap-ceo").description("Create a one-time bootstrap invite URL for first instance admin").option("-c, --config <path>", "Path to config file").option("-d, --data-dir <path>", DATA_DIR_OPTION_HELP).option("--force", "Create new invite even if admin already exists", false).option("--expires-hours <hours>", "Invite expiration window in hours", (value) => Number(value)).option("--base-url <url>", "Public base URL used to print invite link").option(
+  "--db-url <url>",
+  "PostgreSQL connection URL for this command only (use your DB public/proxy URL; railway run overwrites DATABASE_URL with the private *.railway.internal URL)"
+).action(
+  (opts) => bootstrapCeoInvite({
+    config: opts.config,
+    force: opts.force,
+    expiresHours: opts.expiresHours,
+    baseUrl: opts.baseUrl,
+    dbUrl: opts.dbUrl
+  })
+);
 registerClientAuthCommands(auth);
 async function main() {
   let failed = false;

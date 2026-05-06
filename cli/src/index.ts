@@ -159,7 +159,20 @@ auth
   .option("--force", "Create new invite even if admin already exists", false)
   .option("--expires-hours <hours>", "Invite expiration window in hours", (value) => Number(value))
   .option("--base-url <url>", "Public base URL used to print invite link")
-  .action(bootstrapCeoInvite);
+  .option(
+    "--db-url <url>",
+    "PostgreSQL connection URL for this command only (use your DB public/proxy URL; " +
+      "railway run overwrites DATABASE_URL with the private *.railway.internal URL)",
+  )
+  .action((opts) =>
+    bootstrapCeoInvite({
+      config: opts.config,
+      force: opts.force,
+      expiresHours: opts.expiresHours,
+      baseUrl: opts.baseUrl,
+      dbUrl: opts.dbUrl,
+    }),
+  );
 
 registerClientAuthCommands(auth);
 

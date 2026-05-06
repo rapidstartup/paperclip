@@ -22,6 +22,16 @@ function nonEmptyTrimmed(value: string | undefined): string | undefined {
   return t.length > 0 ? t : undefined;
 }
 
+/** True when the postgres URL host is typical local dev (not a cloud/proxy DB). */
+function postgresHostnameIsLoopback(url: string): boolean {
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === "localhost" || host === "127.0.0.1" || host === "::1";
+  } catch {
+    return false;
+  }
+}
+
 /**
  * When running `railway run` locally, PAPERCLIP_CONFIG often points at a Linux path
  * inside the container; that path does not exist on the developer's machine.
@@ -106,6 +116,24 @@ export async function bootstrapCeoInvite(opts: {
   const configPath = resolveConfigPath(opts.config);
   loadPaperclipEnvFile(configPath);
   let config: PaperclipConfig | null = readConfig(configPath);
+  const dbUrlForBootstrap = resolveDbUrl(configPath, opts.dbUrl);
+  if (
+    config &&
+    config.server.deploymentMode !== "authenticated" &&
+    dbUrlForBootstrap &&
+    !postgresHostnameIsLoopback(dbUrlForBootstrap)
+  ) {
+    const synthetic = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
+    if (synthetic) {
+      p.log.message(
+        pc.dim(
+          "Local Paperclip config uses deploymentMode=local_trusted, but DATABASE_URL/--db-url targets a non-loopback database (e.g. Railway). " +
+            "Using authenticated remote bootstrap for this command.",
+        ),
+      );
+      config = synthetic;
+    }
+  }
   if (!config) {
     config = maybeSyntheticAuthenticatedConfig(opts.dbUrl);
     if (config) {
@@ -137,18 +165,26 @@ export async function bootstrapCeoInvite(opts: {
 
   if (config.server.deploymentMode !== "authenticated") {
     p.log.info("Deployment mode is local_trusted. Bootstrap CEO invite is only required for authenticated mode.");
+    if (dbUrlForBootstrap && !postgresHostnameIsLoopback(dbUrlForBootstrap)) {
+      p.log.message(
+        pc.dim(
+          "Hint: a remote DATABASE_URL is set but local config (or PAPERCLIP_DEPLOYMENT_MODE=local_trusted) blocked authenticated bootstrap. " +
+            "Unset PAPERCLIP_DEPLOYMENT_MODE for this shell, or run: pnpm --filter paperclipai build " +
+            "and retry with the latest CLI (it detects local_trusted + remote DB).",
+        ),
+      );
+    }
     return;
   }
 
-  const dbUrl = resolveDbUrl(configPath, opts.dbUrl);
-  if (!dbUrl) {
+  if (!dbUrlForBootstrap) {
     p.log.error(
       "Could not resolve database connection for bootstrap.",
     );
     return;
   }
 
-  const db = createDb(dbUrl);
+  const db = createDb(dbUrlForBootstrap);
   const closableDb = db as typeof db & {
     $client?: {
       end?: (options?: { timeout?: number }) => Promise<void>;
@@ -199,8 +235,25 @@ export async function bootstrapCeoInvite(opts: {
     p.log.message(`Invite URL: ${pc.cyan(inviteUrl)}`);
     p.log.message(`Expires: ${pc.dim(created.expiresAt.toISOString())}`);
   } catch (err) {
-    p.log.error(`Could not create bootstrap invite: ${err instanceof Error ? err.message : String(err)}`);
-    p.log.info("If using embedded-postgres, start the Paperclip server and run this command again.");
+    const msg = err instanceof Error ? err.message : String(err);
+    p.log.error(`Could not create bootstrap invite: ${msg}`);
+    const dbUrlForHint = nonEmptyTrimmed(opts.dbUrl) ?? nonEmptyTrimmed(process.env.DATABASE_URL) ?? "";
+    const railwayPrivate =
+      /\.railway\.internal\b/i.test(dbUrlForHint) ||
+      msg.includes("railway.internal") ||
+      (/ENOTFOUND/i.test(msg) && dbUrlForHint.includes("railway"));
+    if (railwayPrivate) {
+      p.log.message(
+        pc.dim(
+          "This DATABASE_URL uses a Railway private hostname. It only resolves inside Railway (deployed containers), not on your PC. " +
+            "Options: (1) railway ssh -s <app-service> -- node cli/dist/index.js auth bootstrap-ceo " +
+            "(2) In Railway Postgres variables, copy the public/database proxy URL and run the same command with DATABASE_URL=... in front, " +
+            "or add DATABASE_PUBLIC_URL to the app service and reference it for local CLI only.",
+        ),
+      );
+    } else {
+      p.log.info("If using embedded-postgres, start the Paperclip server and run this command again.");
+    }
   } finally {
     await closableDb.$client?.end?.({ timeout: 5 }).catch(() => undefined);
   }
