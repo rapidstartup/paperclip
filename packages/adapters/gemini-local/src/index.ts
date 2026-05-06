@@ -49,7 +49,8 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period in seconds
 
 Notes:
-- Headless runs set \`GEMINI_CLI_NO_RELAUNCH=true\` so the CLI skips its outer relaunch wrapper (piped stdio / Docker).
+- Paperclip spawns \`node --require …/gemini-cli-preload.cjs <bundle/gemini.js>\` so the CLI skips its outer relaunch wrapper **before** entry runs (the relaunch path uses \`stdio: inherit\` + \`ipc\` and often throws when the parent has piped stdio — the source of \`Failed to relaunch the CLI process\`).
+- \`GEMINI_CLI_NO_RELAUNCH=true\` is still set in the child environment as a secondary guard.
 - Headless runs pass \`--skip-trust\` so Docker/non-TTY hosts avoid trust prompts and failed CLI relaunch.
 - Headless runs pass the prompt with \`--prompt\` (required for non-interactive mode on current Gemini CLI).
 - Sessions resume with --resume when stored session cwd matches the current cwd.

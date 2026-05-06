@@ -3,7 +3,7 @@ title: Gemini Local
 summary: Gemini CLI local adapter setup and configuration
 ---
 
-The adapter invokes `gemini` with `--output-format stream-json`, `--skip-trust`, **`GEMINI_CLI_NO_RELAUNCH=true`** in the process environment (skips the CLI’s outer relaunch wrapper, which breaks under piped stdio in Docker), `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
+The adapter spawns **`node --require …/gemini-cli-preload.cjs <Gemini bundle path>`** so the CLI skips its outer relaunch gate **before** `bundle/gemini.js` runs (that relaunch path uses `stdio: inherit` + `ipc` and often throws under Paperclip’s piped stdio — `Failed to relaunch the CLI process`). It still sets **`GEMINI_CLI_NO_RELAUNCH=true`** in the environment as a secondary guard. Invocation uses `--output-format stream-json`, `--skip-trust`, `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
 
 ## Prerequisites
 
