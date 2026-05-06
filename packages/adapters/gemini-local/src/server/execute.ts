@@ -35,7 +35,7 @@ import {
   isGeminiUnknownSessionError,
   parseGeminiJsonl,
 } from "./parse.js";
-import { resolveGeminiChildInvocation } from "./resolve-invocation.js";
+import { resolveGeminiChildInvocation, augmentGeminiProcessEnvForSpawn } from "./resolve-invocation.js";
 import { firstNonEmptyLine } from "./utils.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -230,6 +230,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   await ensureCommandResolvable(command, cwd, runtimeEnv);
   const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
   const geminiSpawn = await resolveGeminiChildInvocation(command, cwd, runtimeEnv);
+  await augmentGeminiProcessEnvForSpawn(env, geminiSpawn);
   const loggedEnv = buildInvocationEnvForLogs(env, {
     runtimeEnv,
     includeRuntimeKeys: ["HOME"],

@@ -40,16 +40,18 @@ Core fields:
 - promptTemplate (string, optional): run prompt template
 - model (string, optional): Gemini or Gemma API model id (e.g. gemma-4-26b-a4b-it). Defaults to auto.
 - sandbox (boolean, optional): run in sandbox mode (default: false, passes --sandbox=none)
+- yolo (boolean, optional): pass \`--approval-mode yolo\` for unattended operation
 - command (string, optional): defaults to "gemini"
 - extraArgs (string[], optional): additional CLI args
-- env (object, optional): KEY=VALUE environment variables
+- env (object, optional): KEY=VALUE environment variables (may include \`GEMINI_CLI_BUNDLE_PATH\` — absolute path to \`bundle/gemini.js\` if PATH shims cannot be resolved; rare in Docker where \`/usr/local/lib/node_modules/@google/gemini-cli/bundle/gemini.js\` is the default global install).
 
 Operational fields:
 - timeoutSec (number, optional): run timeout in seconds
-- graceSec (number, optional): SIGTERM grace period in seconds
+- graceSec (number, optional): SIGTERM grace period before force-kill
 
 Notes:
 - Paperclip spawns \`node --require …/gemini-cli-preload.cjs <bundle/gemini.js>\` so the CLI skips its outer relaunch wrapper **before** entry runs (the relaunch path uses \`stdio: inherit\` + \`ipc\` and often throws when the parent has piped stdio — the source of \`Failed to relaunch the CLI process\`).
+- Bare \`gemini\` on PATH: Paperclip resolves \`bundle/gemini.js\` via the shim and well-known global paths (e.g. \`/usr/local/lib/node_modules/...\`), then sets \`NODE_OPTIONS=--require …\` when spawning Node as a second guard.
 - \`GEMINI_CLI_NO_RELAUNCH=true\` is still set in the child environment as a secondary guard.
 - Headless runs pass \`--skip-trust\` so Docker/non-TTY hosts avoid trust prompts and failed CLI relaunch.
 - Headless runs pass the prompt with \`--prompt\` (required for non-interactive mode on current Gemini CLI).

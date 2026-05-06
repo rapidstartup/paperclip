@@ -11,6 +11,7 @@ const GEMINI_BUNDLE_REL = path.join("@google/gemini-cli", "bundle", "gemini.js")
 const COMMON_GLOBAL_BUNDLE_CANDIDATES = [
   "/usr/local/lib/node_modules/@google/gemini-cli/bundle/gemini.js",
   "/usr/lib/node_modules/@google/gemini-cli/bundle/gemini.js",
+  "/opt/nodejs/lib/node_modules/@google/gemini-cli/bundle/gemini.js",
 ] as const;
 
 function geminiCliPreloadPath(): string {
@@ -20,6 +21,37 @@ function geminiCliPreloadPath(): string {
 function nodeWithPreload(entryJs: string): string[] {
   const preload = path.resolve(geminiCliPreloadPath());
   return ["--require", preload, path.resolve(entryJs)];
+}
+
+function isBareGeminiCommand(command: string): boolean {
+  const t = command.trim();
+  if (t === "gemini") return true;
+  if (t.includes("/") || t.includes("\\")) return false;
+  return path.basename(t).toLowerCase() === "gemini";
+}
+
+async function tryNodeInvokeKnownGlobalBundle(env: NodeJS.ProcessEnv): Promise<{
+  spawnCommand: string;
+  spawnArgPrefix: string[];
+} | null> {
+  const override = (env.GEMINI_CLI_BUNDLE_PATH ?? process.env.GEMINI_CLI_BUNDLE_PATH)?.trim();
+  if (override) {
+    try {
+      await access(override);
+      return { spawnCommand: process.execPath, spawnArgPrefix: nodeWithPreload(override) };
+    } catch {
+      /* fall through */
+    }
+  }
+  for (const c of COMMON_GLOBAL_BUNDLE_CANDIDATES) {
+    try {
+      await access(c);
+      return { spawnCommand: process.execPath, spawnArgPrefix: nodeWithPreload(c) };
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
 }
 
 async function fileStartsWithNodeShebang(filePath: string): Promise<boolean> {
@@ -140,6 +172,10 @@ export async function resolveGeminiChildInvocation(
 ): Promise<{ spawnCommand: string; spawnArgPrefix: string[] }> {
   const resolved = await resolveCommandPath(command, cwd, env);
   if (!resolved) {
+    if (isBareGeminiCommand(command)) {
+      const forced = await tryNodeInvokeKnownGlobalBundle(env);
+      if (forced) return forced;
+    }
     return { spawnCommand: command, spawnArgPrefix: [] };
   }
 
@@ -158,5 +194,41 @@ export async function resolveGeminiChildInvocation(
     return { spawnCommand: process.execPath, spawnArgPrefix: nodeWithPreload(scriptPath) };
   }
 
+  if (isBareGeminiCommand(command)) {
+    const forced = await tryNodeInvokeKnownGlobalBundle(env);
+    if (forced) return forced;
+  }
   return { spawnCommand: command, spawnArgPrefix: [] };
+}
+
+/**
+ * Skip the Gemini CLI relaunch gate via argv (`--require`) and via NODE_OPTIONS (belt-and-suspenders
+ * for odd spawn / env inheritance). Safe to call multiple times (idempotent merge).
+ */
+export async function augmentGeminiProcessEnvForSpawn(
+  env: Record<string, string>,
+  spawn: { spawnCommand: string; spawnArgPrefix: string[] },
+): Promise<void> {
+  env.GEMINI_CLI_NO_RELAUNCH = "true";
+  const [a0, a1] = spawn.spawnArgPrefix;
+  if (path.resolve(spawn.spawnCommand) !== path.resolve(process.execPath)) {
+    return;
+  }
+  if (a0 !== "--require" || typeof a1 !== "string" || !a1.length) {
+    return;
+  }
+  try {
+    await access(a1);
+  } catch {
+    return;
+  }
+  const flag = `--require ${a1}`;
+  const fromEnv = (env.NODE_OPTIONS ?? "").trim();
+  const fromHost = (process.env.NODE_OPTIONS ?? "").trim();
+  const cur = fromEnv.length > 0 ? fromEnv : fromHost;
+  if (cur.includes(a1)) {
+    if (fromEnv.length > 0) env.NODE_OPTIONS = fromEnv;
+    return;
+  }
+  env.NODE_OPTIONS = cur ? `${flag} ${cur}` : flag;
 }
