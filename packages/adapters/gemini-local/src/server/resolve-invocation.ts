@@ -1,4 +1,5 @@
-import { open } from "node:fs/promises";
+import path from "node:path";
+import { access, open, realpath } from "node:fs/promises";
 import { resolveCommandPath } from "@paperclipai/adapter-utils/server-utils";
 
 const NODE_SHEBANG_PREFIXES = ["#!/usr/bin/env node", "#!/usr/bin/node", "#! /usr/bin/env node"] as const;
@@ -21,9 +22,40 @@ async function fileStartsWithNodeShebang(filePath: string): Promise<boolean> {
 }
 
 /**
- * When the resolved executable is a Node shebang script (typical for `gemini` on Linux, or an
- * extensionless `gemini` in tests), spawn `node <script> …` so argv/env match `npm`'s behavior
- * and Windows can execute extensionless scripts. For `.cmd` shims, keep normal spawn.
+ * npm often installs `gemini` as a #!/bin/sh stub that execs `bundle/gemini.js`. That stub is not
+ * a Node shebang, so we locate the real bundle by realpath + common global layouts.
+ */
+async function resolveGeminiBundleJs(resolvedBin: string): Promise<string | null> {
+  const candidates: string[] = [];
+  try {
+    const rp = await realpath(resolvedBin);
+    if (rp.toLowerCase().endsWith(".js")) {
+      candidates.push(rp);
+    }
+  } catch {
+    /* keep */
+  }
+  const binDir = path.dirname(resolvedBin);
+  candidates.push(
+    path.resolve(binDir, "../lib/node_modules/@google/gemini-cli/bundle/gemini.js"),
+    path.resolve(binDir, "node_modules/@google/gemini-cli/bundle/gemini.js"),
+  );
+  for (const c of candidates) {
+    try {
+      await access(c);
+      return c;
+    } catch {
+      /* try next */
+    }
+  }
+  return null;
+}
+
+/**
+ * Prefer `node <bundle/gemini.js> …` so:
+ * - Linux npm `#!/bin/sh` shims are bypassed (avoids relaunch/stdio edge cases).
+ * - argv matches `npm exec gemini` / direct `node gemini.js`.
+ * - Windows extensionless shebang test fakes still work via Node spawn.
  */
 export async function resolveGeminiChildInvocation(
   command: string,
@@ -31,8 +63,24 @@ export async function resolveGeminiChildInvocation(
   env: NodeJS.ProcessEnv,
 ): Promise<{ spawnCommand: string; spawnArgPrefix: string[] }> {
   const resolved = await resolveCommandPath(command, cwd, env);
-  if (!resolved || !(await fileStartsWithNodeShebang(resolved))) {
+  if (!resolved) {
     return { spawnCommand: command, spawnArgPrefix: [] };
   }
-  return { spawnCommand: process.execPath, spawnArgPrefix: [resolved] };
+
+  const bundleJs = await resolveGeminiBundleJs(resolved);
+  if (bundleJs) {
+    return { spawnCommand: process.execPath, spawnArgPrefix: [bundleJs] };
+  }
+
+  if (await fileStartsWithNodeShebang(resolved)) {
+    let scriptPath = resolved;
+    try {
+      scriptPath = await realpath(resolved);
+    } catch {
+      /* keep resolved */
+    }
+    return { spawnCommand: process.execPath, spawnArgPrefix: [scriptPath] };
+  }
+
+  return { spawnCommand: command, spawnArgPrefix: [] };
 }
