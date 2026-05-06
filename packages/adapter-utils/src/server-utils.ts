@@ -842,7 +842,7 @@ async function pathExists(candidate: string) {
   }
 }
 
-async function resolveCommandPath(command: string, cwd: string, env: NodeJS.ProcessEnv): Promise<string | null> {
+export async function resolveCommandPath(command: string, cwd: string, env: NodeJS.ProcessEnv): Promise<string | null> {
   const hasPathSeparator = command.includes("/") || command.includes("\\");
   if (hasPathSeparator) {
     const absolute = path.isAbsolute(command) ? command : path.resolve(cwd, command);
@@ -860,7 +860,7 @@ async function resolveCommandPath(command: string, cwd: string, env: NodeJS.Proc
       process.platform === "win32"
         ? hasExtension
           ? [path.join(dir, command)]
-          : exts.map((ext) => path.join(dir, `${command}${ext}`))
+          : [path.join(dir, command), ...exts.map((ext) => path.join(dir, `${command}${ext}`))]
         : [path.join(dir, command)];
     for (const candidate of candidates) {
       if (await pathExists(candidate)) return candidate;

@@ -35,6 +35,7 @@ import {
   isGeminiUnknownSessionError,
   parseGeminiJsonl,
 } from "./parse.js";
+import { resolveGeminiChildInvocation } from "./resolve-invocation.js";
 import { firstNonEmptyLine } from "./utils.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -228,6 +229,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   const runtimeEnv = ensurePathInEnv(effectiveEnv);
   await ensureCommandResolvable(command, cwd, runtimeEnv);
   const resolvedCommand = await resolveCommandForLogs(command, cwd, runtimeEnv);
+  const geminiSpawn = await resolveGeminiChildInvocation(command, cwd, runtimeEnv);
   const loggedEnv = buildInvocationEnvForLogs(env, {
     runtimeEnv,
     includeRuntimeKeys: ["HOME"],
@@ -280,6 +282,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       "Added --skip-trust so headless runs do not block on workspace trust / CLI relaunch.",
       "Set GEMINI_CLI_NO_RELAUNCH=true so the CLI skips its outer relaunch wrapper (required for piped stdio / Docker).",
     ];
+    if (geminiSpawn.spawnArgPrefix.length > 0) {
+      notes.push(
+        `Spawning via Node entry (${process.execPath}) with script ${geminiSpawn.spawnArgPrefix[0]} (avoids global shim relaunch issues).`,
+      );
+    }
     notes.push("Added --approval-mode yolo for unattended execution.");
     if (!instructionsFilePath) return notes;
     if (instructionsPrefix.length > 0) {
@@ -350,11 +357,11 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   };
 
   const runAttempt = async (resumeSessionId: string | null) => {
-    const args = buildArgs(resumeSessionId);
+    const args = [...geminiSpawn.spawnArgPrefix, ...buildArgs(resumeSessionId)];
     if (onMeta) {
       await onMeta({
         adapterType: "gemini_local",
-        command: resolvedCommand,
+        command: geminiSpawn.spawnCommand,
         cwd,
         commandNotes,
         commandArgs: args.map((value, index) => (
@@ -367,7 +374,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
       });
     }
 
-    const proc = await runChildProcess(runId, command, args, {
+    const proc = await runChildProcess(runId, geminiSpawn.spawnCommand, args, {
       cwd,
       env,
       timeoutSec,

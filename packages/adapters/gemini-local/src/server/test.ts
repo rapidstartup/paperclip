@@ -17,6 +17,7 @@ import {
 } from "@paperclipai/adapter-utils/server-utils";
 import { GEMINI_HEADLESS_MANUAL_PROBE_COMMAND } from "../index.js";
 import { detectGeminiAuthRequired, detectGeminiQuotaExhausted, parseGeminiJsonl } from "./parse.js";
+import { resolveGeminiChildInvocation } from "./resolve-invocation.js";
 import { firstNonEmptyLine } from "./utils.js";
 
 function summarizeStatus(checks: AdapterEnvironmentCheck[]): AdapterEnvironmentTestResult["status"] {
@@ -159,11 +160,13 @@ export async function testEnvironment(
       if (extraArgs.length > 0) args.push(...extraArgs);
 
       const probeEnv: Record<string, string> = { ...env, GEMINI_CLI_NO_RELAUNCH: "true" };
+      const probeRuntimeEnv = ensurePathInEnv({ ...process.env, ...probeEnv });
+      const geminiSpawn = await resolveGeminiChildInvocation(command, cwd, probeRuntimeEnv);
 
       const probe = await runChildProcess(
         `gemini-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        command,
-        args,
+        geminiSpawn.spawnCommand,
+        [...geminiSpawn.spawnArgPrefix, ...args],
         {
           cwd,
           env: probeEnv,
