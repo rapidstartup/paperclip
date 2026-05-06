@@ -3,7 +3,7 @@ title: Gemini Local
 summary: Gemini CLI local adapter setup and configuration
 ---
 
-The `gemini_local` adapter runs Google's Gemini CLI locally. It supports session persistence with `--resume`, skills injection, and structured `stream-json` output parsing.
+The adapter invokes `gemini` with `--output-format stream-json`, `--skip-trust` (avoids trust/relaunch failures in non-interactive environments), `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
 
 ## Prerequisites
 
@@ -42,4 +42,4 @@ Use the "Test Environment" button in the UI to validate the adapter config. It c
 - Gemini CLI is installed and accessible
 - Working directory is absolute and available (auto-created if missing and permitted)
 - API key/auth hints (`GEMINI_API_KEY` or `GOOGLE_API_KEY`)
-- A live hello probe (`gemini --output-format stream-json --prompt "Respond with hello."`) to verify CLI readiness (uses `--prompt` for headless mode)
+- A live hello probe (`gemini --output-format stream-json --skip-trust --prompt "Respond with hello."`) to verify CLI readiness

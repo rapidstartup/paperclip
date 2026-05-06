@@ -1197,7 +1197,7 @@ export function OnboardingWizard() {
                               : adapterType === "codex_local"
                               ? `${effectiveAdapterCommand} exec --json -`
                               : adapterType === "gemini_local"
-                                ? `${effectiveAdapterCommand} --output-format json "Respond with hello."`
+                                ? `${effectiveAdapterCommand} --output-format stream-json --skip-trust --prompt "Respond with hello."`
                               : adapterType === "opencode_local"
                                 ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
                               : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}

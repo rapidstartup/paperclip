@@ -45,6 +45,7 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period in seconds
 
 Notes:
+- Headless runs pass \`--skip-trust\` so Docker/non-TTY hosts avoid trust prompts and failed CLI relaunch.
 - Headless runs pass the prompt with \`--prompt\` (required for non-interactive mode on current Gemini CLI).
 - Sessions resume with --resume when stored session cwd matches the current cwd.
 - Paperclip auto-injects local skills into \`~/.gemini/skills/\` via symlinks, so the CLI can discover both credentials and skills in their natural location.

@@ -274,7 +274,10 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     }
   }
   const commandNotes = (() => {
-    const notes: string[] = ["Prompt is passed to Gemini via --prompt for non-interactive execution."];
+    const notes: string[] = [
+      "Prompt is passed to Gemini via --prompt for non-interactive execution.",
+      "Added --skip-trust so headless runs do not block on workspace trust / CLI relaunch.",
+    ];
     notes.push("Added --approval-mode yolo for unattended execution.");
     if (!instructionsFilePath) return notes;
     if (instructionsPrefix.length > 0) {
@@ -330,7 +333,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   };
 
   const buildArgs = (resumeSessionId: string | null) => {
-    const args = ["--output-format", "stream-json"];
+    const args = ["--output-format", "stream-json", "--skip-trust"];
     if (resumeSessionId) args.push("--resume", resumeSessionId);
     if (model && model !== DEFAULT_GEMINI_LOCAL_MODEL) args.push("--model", model);
     args.push("--approval-mode", "yolo");
