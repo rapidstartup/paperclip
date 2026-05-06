@@ -118,6 +118,20 @@ export async function bootstrapCeoInvite(opts: {
   }
   if (!config) {
     p.log.error(`No config found at ${configPath}. Run ${pc.cyan("paperclip onboard")} first.`);
+    if (!nonEmptyTrimmed(process.env.DATABASE_URL) && !nonEmptyTrimmed(opts.dbUrl)) {
+      p.log.message(
+        pc.dim(
+          "If you meant to use `railway run`, DATABASE_URL must be non-empty in the child process. " +
+            "Verify with: railway run -s paperclip-nick -- node -e \"console.log(process.env.DATABASE_URL ? 'DATABASE_URL ok' : 'DATABASE_URL MISSING')\"",
+        ),
+      );
+    } else if (process.env.PAPERCLIP_DEPLOYMENT_MODE?.trim() === "local_trusted") {
+      p.log.message(
+        pc.dim(
+          "PAPERCLIP_DEPLOYMENT_MODE=local_trusted disables DATABASE_URL-only bootstrap. Unset it for this command or pass a real --config file.",
+        ),
+      );
+    }
     return;
   }
 
