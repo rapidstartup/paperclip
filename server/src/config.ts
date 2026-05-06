@@ -117,6 +117,12 @@ function detectTailnetBindHost(): string | undefined {
   }
 }
 
+function nonEmptyTrimmed(value: string | undefined): string | undefined {
+  if (value === undefined) return undefined;
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 export function loadConfig(): Config {
   const fileConfig = readConfigFile();
   const fileDatabaseMode =
@@ -335,8 +341,8 @@ export function loadConfig(): Config {
     authPublicBaseUrl,
     authDisableSignUp,
     databaseMode: fileDatabaseMode,
-    databaseUrl: process.env.DATABASE_URL ?? fileDbUrl,
-    databaseMigrationUrl: process.env.DATABASE_MIGRATION_URL,
+    databaseUrl: nonEmptyTrimmed(process.env.DATABASE_URL) ?? nonEmptyTrimmed(fileDbUrl),
+    databaseMigrationUrl: nonEmptyTrimmed(process.env.DATABASE_MIGRATION_URL),
     embeddedPostgresDataDir: resolveHomeAwarePath(
       fileConfig?.database.embeddedPostgresDataDir ?? resolveDefaultEmbeddedPostgresDir(),
     ),

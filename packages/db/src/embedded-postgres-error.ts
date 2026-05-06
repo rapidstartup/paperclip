@@ -24,15 +24,26 @@ function summarizeRecentLogs(recentLogs: string[]): string | null {
 
 function detectEmbeddedPostgresHint(recentLogs: string[]): string | null {
   const haystack = recentLogs.join("\n").toLowerCase();
-  if (!haystack.includes("could not create shared memory segment")) {
-    return null;
+  if (haystack.includes("could not create shared memory segment")) {
+    return (
+      "Embedded PostgreSQL bootstrap could not allocate shared memory. " +
+      "On macOS, this usually means the host's kern.sysv.shm* limits are too low for another local PostgreSQL cluster. " +
+      "Stop other local PostgreSQL servers or raise the shared-memory sysctls, then retry."
+    );
   }
 
-  return (
-    "Embedded PostgreSQL bootstrap could not allocate shared memory. " +
-    "On macOS, this usually means the host's kern.sysv.shm* limits are too low for another local PostgreSQL cluster. " +
-    "Stop other local PostgreSQL servers or raise the shared-memory sysctls, then retry."
-  );
+  if (
+    haystack.includes("already exist") ||
+    haystack.includes("data directory might already exist")
+  ) {
+    return (
+      "Embedded PostgreSQL init failed, often after a partial or interrupted init. " +
+      "For Railway, Docker, or other cloud hosts, set DATABASE_URL to managed Postgres instead of using embedded PostgreSQL. " +
+      "Otherwise remove the embedded data directory or retry so stale contents can be cleared automatically."
+    );
+  }
+
+  return null;
 }
 
 export function createEmbeddedPostgresLogBuffer(limit = DEFAULT_RECENT_LOG_LIMIT): {

@@ -3,6 +3,7 @@ import { createServer } from "node:net";
 import path from "node:path";
 import { ensurePostgresDatabase, getPostgresDataDirectory } from "./client.js";
 import { createEmbeddedPostgresLogBuffer, formatEmbeddedPostgresError } from "./embedded-postgres-error.js";
+import { prepareEmbeddedPostgresDataDirForInit } from "./prepare-embedded-postgres-data-dir.js";
 import { resolveDatabaseTarget } from "./runtime-config.js";
 
 type EmbeddedPostgresInstance = {
@@ -133,6 +134,12 @@ async function ensureEmbeddedPostgresConnection(
       stop: async () => {},
     };
   }
+
+  prepareEmbeddedPostgresDataDirForInit(dataDir, {
+    onStaleDir: (msg) => {
+      process.emitWarning(msg, "Paperclip");
+    },
+  });
 
   const instance = new EmbeddedPostgres({
     databaseDir: dataDir,

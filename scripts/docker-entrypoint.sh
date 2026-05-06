@@ -23,7 +23,7 @@ fi
 
 # Ensure runtime directories exist and are writable by the node user.
 # Railway volumes can retain prior ownership across deploys.
-mkdir -p /paperclip /paperclip/instances/default/data /paperclip/.local /paperclip/.config
+mkdir -p /paperclip /paperclip/instances/default/data /paperclip/instances/default/logs /paperclip/.local /paperclip/.config
 
 if [ "$changed" = "1" ]; then
     chown -R node:node /paperclip
@@ -31,8 +31,8 @@ else
     if ! gosu node test -w /paperclip; then
         chown -R node:node /paperclip
     else
-        # Narrow repair for common write targets to avoid unnecessary recursive chown.
-        chown -R node:node /paperclip/instances/default/data /paperclip/.local /paperclip/.config 2>/dev/null || true
+        # Own the whole instance dir (not just .../data): server creates siblings like .../logs for file logging.
+        chown -R node:node /paperclip/instances /paperclip/.local /paperclip/.config 2>/dev/null || true
     fi
 fi
 

@@ -15,6 +15,7 @@ import {
   inspectMigrations,
   applyPendingMigrations,
   createEmbeddedPostgresLogBuffer,
+  prepareEmbeddedPostgresDataDirForInit,
   reconcilePendingMigrationHistory,
   formatDatabaseBackupResult,
   runDatabaseBackup,
@@ -295,6 +296,12 @@ export async function startServer(): Promise<StartedServer> {
     activeDatabaseConnectionString = config.databaseUrl;
     startupDbInfo = { mode: "external-postgres", connectionString: config.databaseUrl };
   } else {
+    const rawEnvDatabaseUrl = process.env.DATABASE_URL;
+    if (rawEnvDatabaseUrl !== undefined && rawEnvDatabaseUrl.trim().length === 0) {
+      logger.warn(
+        "DATABASE_URL is set but empty. Railway variable references that fail to resolve often become an empty string (check the Postgres service slug matches ${{ ServiceName.DATABASE_URL }}, avoid putting this reference in a shared variable set, and confirm the database exists in this deployment environment).",
+      );
+    }
     const moduleName = "embedded-postgres";
     let EmbeddedPostgres: EmbeddedPostgresCtor;
     try {
@@ -394,6 +401,7 @@ export async function startServer(): Promise<StartedServer> {
         }
         port = detectedPort;
         logger.info(`Using embedded PostgreSQL because no DATABASE_URL set (dataDir=${dataDir}, port=${port})`);
+        prepareEmbeddedPostgresDataDirForInit(dataDir, { onStaleDir: (msg) => logger.warn(msg) });
         embeddedPostgres = new EmbeddedPostgres({
           databaseDir: dataDir,
           user: "paperclip",
