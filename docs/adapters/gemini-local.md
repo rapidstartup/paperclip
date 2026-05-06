@@ -3,7 +3,7 @@ title: Gemini Local
 summary: Gemini CLI local adapter setup and configuration
 ---
 
-The adapter invokes `gemini` with `--output-format stream-json`, `--skip-trust` (avoids trust/relaunch failures in non-interactive environments), `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
+The adapter invokes `gemini` with `--output-format stream-json`, `--skip-trust`, **`GEMINI_CLI_NO_RELAUNCH=true`** in the process environment (skips the CLI’s outer relaunch wrapper, which breaks under piped stdio in Docker), `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
 
 ## Prerequisites
 
@@ -42,4 +42,4 @@ Use the "Test Environment" button in the UI to validate the adapter config. It c
 - Gemini CLI is installed and accessible
 - Working directory is absolute and available (auto-created if missing and permitted)
 - API key/auth hints (`GEMINI_API_KEY` or `GOOGLE_API_KEY`)
-- A live hello probe (`gemini --output-format stream-json --skip-trust --prompt "Respond with hello."`) to verify CLI readiness
+- A live hello probe using the same flags plus `GEMINI_CLI_NO_RELAUNCH=true` (see package constant `GEMINI_HEADLESS_MANUAL_PROBE_COMMAND` for the exact shell one-liner)

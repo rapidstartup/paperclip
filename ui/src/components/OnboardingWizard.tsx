@@ -43,7 +43,7 @@ import {
   DEFAULT_CODEX_LOCAL_MODEL
 } from "@paperclipai/adapter-codex-local";
 import { DEFAULT_CURSOR_LOCAL_MODEL } from "@paperclipai/adapter-cursor-local";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "@paperclipai/adapter-gemini-local";
+import { DEFAULT_GEMINI_LOCAL_MODEL, GEMINI_HEADLESS_MANUAL_PROBE_COMMAND } from "@paperclipai/adapter-gemini-local";
 import { resolveRouteOnboardingOptions } from "../lib/onboarding-route";
 import { AsciiArtAnimation } from "./AsciiArtAnimation";
 import {
@@ -1197,7 +1197,7 @@ export function OnboardingWizard() {
                               : adapterType === "codex_local"
                               ? `${effectiveAdapterCommand} exec --json -`
                               : adapterType === "gemini_local"
-                                ? `${effectiveAdapterCommand} --output-format stream-json --skip-trust --prompt "Respond with hello."`
+                                ? GEMINI_HEADLESS_MANUAL_PROBE_COMMAND
                               : adapterType === "opencode_local"
                                 ? `${effectiveAdapterCommand} run --format json "Respond with hello."`
                               : `${effectiveAdapterCommand} --print - --output-format stream-json --verbose`}

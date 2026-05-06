@@ -15,7 +15,7 @@ import {
   parseObject,
   runChildProcess,
 } from "@paperclipai/adapter-utils/server-utils";
-import { DEFAULT_GEMINI_LOCAL_MODEL } from "../index.js";
+import { GEMINI_HEADLESS_MANUAL_PROBE_COMMAND } from "../index.js";
 import { detectGeminiAuthRequired, detectGeminiQuotaExhausted, parseGeminiJsonl } from "./parse.js";
 import { firstNonEmptyLine } from "./utils.js";
 
@@ -132,8 +132,6 @@ export async function testEnvironment(
         hint: "Use the `gemini` CLI command to run the automatic installation and auth probe.",
       });
     } else {
-      const model = asString(config.model, DEFAULT_GEMINI_LOCAL_MODEL).trim();
-      const approvalMode = asString(config.approvalMode, asBoolean(config.yolo, false) ? "yolo" : "default");
       const sandbox = asBoolean(config.sandbox, false);
       const helloProbeTimeoutSec = Math.max(1, asNumber(config.helloProbeTimeoutSec, 10));
       const extraArgs = (() => {
@@ -146,11 +144,13 @@ export async function testEnvironment(
         "--output-format",
         "stream-json",
         "--skip-trust",
+        "--approval-mode",
+        "yolo",
         "--prompt",
         "Respond with hello.",
       ];
-      if (model && model !== DEFAULT_GEMINI_LOCAL_MODEL) args.push("--model", model);
-      if (approvalMode !== "default") args.push("--approval-mode", approvalMode);
+      // Connectivity check only: do not pass --model so the probe stays fast and only validates
+      // CLI install + auth. Runtime execute() still uses the configured model.
       if (sandbox) {
         args.push("--sandbox");
       } else {
@@ -158,13 +158,15 @@ export async function testEnvironment(
       }
       if (extraArgs.length > 0) args.push(...extraArgs);
 
+      const probeEnv: Record<string, string> = { ...env, GEMINI_CLI_NO_RELAUNCH: "true" };
+
       const probe = await runChildProcess(
         `gemini-envtest-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         command,
         args,
         {
           cwd,
-          env,
+          env: probeEnv,
           timeoutSec: helloProbeTimeoutSec,
           graceSec: 5,
           onLog: async () => { },
@@ -198,7 +200,7 @@ export async function testEnvironment(
           code: "gemini_hello_probe_timed_out",
           level: "warn",
           message: "Gemini hello probe timed out.",
-          hint: "Retry the probe. If this persists, verify Gemini can run `Respond with hello.` from this directory manually.",
+          hint: `Retry the probe. If this persists, run ${GEMINI_HEADLESS_MANUAL_PROBE_COMMAND} in this directory.`,
         });
       } else if ((probe.exitCode ?? 1) === 0) {
         const summary = parsed.summary.trim();
@@ -213,7 +215,7 @@ export async function testEnvironment(
           ...(hasHello
             ? {}
             : {
-              hint: 'Try `gemini --output-format stream-json --prompt "Respond with hello."` manually to inspect full output.',
+              hint: `Try ${GEMINI_HEADLESS_MANUAL_PROBE_COMMAND} manually to inspect full output.`,
             }),
         });
       } else if (authMeta.requiresAuth) {
@@ -230,7 +232,7 @@ export async function testEnvironment(
           level: "error",
           message: "Gemini hello probe failed.",
           ...(detail ? { detail } : {}),
-          hint: 'Run `gemini --output-format stream-json --prompt "Respond with hello."` manually in this working directory to debug.',
+          hint: `Run ${GEMINI_HEADLESS_MANUAL_PROBE_COMMAND} in this working directory to debug.`,
         });
       }
     }

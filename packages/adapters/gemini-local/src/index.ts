@@ -2,6 +2,10 @@ export const type = "gemini_local";
 export const label = "Gemini CLI (local)";
 export const DEFAULT_GEMINI_LOCAL_MODEL = "auto";
 
+/** One-liner for manual env checks when stdin is piped (Docker, CI, Paperclip probes). */
+export const GEMINI_HEADLESS_MANUAL_PROBE_COMMAND =
+  'GEMINI_CLI_NO_RELAUNCH=true gemini --output-format stream-json --skip-trust --approval-mode yolo --sandbox=none --prompt "Respond with hello."';
+
 export const models = [
   { id: DEFAULT_GEMINI_LOCAL_MODEL, label: "Auto" },
   { id: "gemini-3.1-pro-preview", label: "Gemini 3.1 Pro (preview)" },
@@ -45,6 +49,7 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period in seconds
 
 Notes:
+- Headless runs set \`GEMINI_CLI_NO_RELAUNCH=true\` so the CLI skips its outer relaunch wrapper (piped stdio / Docker).
 - Headless runs pass \`--skip-trust\` so Docker/non-TTY hosts avoid trust prompts and failed CLI relaunch.
 - Headless runs pass the prompt with \`--prompt\` (required for non-interactive mode on current Gemini CLI).
 - Sessions resume with --resume when stored session cwd matches the current cwd.

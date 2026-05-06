@@ -218,6 +218,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
   if (!hasExplicitApiKey && authToken) {
     env.PAPERCLIP_API_KEY = authToken;
   }
+  env.GEMINI_CLI_NO_RELAUNCH = "true";
   const effectiveEnv = Object.fromEntries(
     Object.entries({ ...process.env, ...env }).filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -277,6 +278,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const notes: string[] = [
       "Prompt is passed to Gemini via --prompt for non-interactive execution.",
       "Added --skip-trust so headless runs do not block on workspace trust / CLI relaunch.",
+      "Set GEMINI_CLI_NO_RELAUNCH=true so the CLI skips its outer relaunch wrapper (required for piped stdio / Docker).",
     ];
     notes.push("Added --approval-mode yolo for unattended execution.");
     if (!instructionsFilePath) return notes;
