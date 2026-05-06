@@ -50,7 +50,7 @@ Operational fields:
 - graceSec (number, optional): SIGTERM grace period before force-kill
 
 Notes:
-- Paperclip spawns \`node --import …/gemini-cli-preload.mjs <bundle/gemini.js>\` (ESM preload; \`--require\` does not run before the CLI's ESM entry, so the relaunch gate still fired with only CJS preload).
+- Paperclip spawns \`node --import …/gemini-cli-preload.mjs <bundle/gemini.js>\` and sets child \`SANDBOX=paperclip-gemini-relaunch-skip\` because google/gemini-cli skips its outer **process relaunch** when **either** \`GEMINI_CLI_NO_RELAUNCH\` **or** \`SANDBOX\` is truthy (\`bundle/gemini.js\` line ~51). That sentinel is **not** the CLI's \`--sandbox\` / docker sandboxing.
 - Bare \`gemini\` on PATH: Paperclip resolves \`bundle/gemini.js\` via the shim and well-known global paths, then sets \`NODE_OPTIONS=--import …\` when spawning Node as a second guard.
 - \`GEMINI_CLI_NO_RELAUNCH=true\` is still set in the child environment as a secondary guard.
 - Headless runs pass \`--skip-trust\` so Docker/non-TTY hosts avoid trust prompts and failed CLI relaunch.

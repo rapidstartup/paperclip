@@ -5,6 +5,14 @@ import { resolveCommandPath } from "@paperclipai/adapter-utils/server-utils";
 
 const NODE_SHEBANG_PREFIXES = ["#!/usr/bin/env node", "#!/usr/bin/node", "#! /usr/bin/env node"] as const;
 
+/**
+ * `@google/gemini-cli` `bundle/gemini.js` only skips its outer relaunch when
+ * `GEMINI_CLI_NO_RELAUNCH` **or** `SANDBOX` is truthy (`!a && !b`). Some Node / ESM preload
+ * timings still left `GEMINI_CLI_NO_RELAUNCH` unset at the first `run()` check in the wild, so we set
+ * this harmless sentinel in the **child** env (not Docker sandbox — unrelated to `--sandbox`).
+ */
+export const PAPERCLIP_GEMINI_RELAUNCH_SKIP_SANDBOX = "paperclip-gemini-relaunch-skip";
+
 const GEMINI_BUNDLE_REL = path.join("@google/gemini-cli", "bundle", "gemini.js");
 
 /** Well-known global install paths (e.g. official Node Docker image + npm -g). */
@@ -215,6 +223,7 @@ export async function augmentGeminiProcessEnvForSpawn(
   spawn: { spawnCommand: string; spawnArgPrefix: string[] },
 ): Promise<void> {
   env.GEMINI_CLI_NO_RELAUNCH = "true";
+  env.SANDBOX = PAPERCLIP_GEMINI_RELAUNCH_SKIP_SANDBOX;
   const [a0, a1] = spawn.spawnArgPrefix;
   if (path.resolve(spawn.spawnCommand) !== path.resolve(process.execPath)) {
     return;

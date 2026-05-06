@@ -35,7 +35,11 @@ import {
   isGeminiUnknownSessionError,
   parseGeminiJsonl,
 } from "./parse.js";
-import { resolveGeminiChildInvocation, augmentGeminiProcessEnvForSpawn } from "./resolve-invocation.js";
+import {
+  augmentGeminiProcessEnvForSpawn,
+  PAPERCLIP_GEMINI_RELAUNCH_SKIP_SANDBOX,
+  resolveGeminiChildInvocation,
+} from "./resolve-invocation.js";
 import { firstNonEmptyLine } from "./utils.js";
 
 const __moduleDir = path.dirname(fileURLToPath(import.meta.url));
@@ -220,6 +224,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     env.PAPERCLIP_API_KEY = authToken;
   }
   env.GEMINI_CLI_NO_RELAUNCH = "true";
+  env.SANDBOX = PAPERCLIP_GEMINI_RELAUNCH_SKIP_SANDBOX;
   const effectiveEnv = Object.fromEntries(
     Object.entries({ ...process.env, ...env }).filter(
       (entry): entry is [string, string] => typeof entry[1] === "string",
@@ -281,7 +286,7 @@ export async function execute(ctx: AdapterExecutionContext): Promise<AdapterExec
     const notes: string[] = [
       "Prompt is passed to Gemini via --prompt for non-interactive execution.",
       "Added --skip-trust so headless runs do not block on workspace trust / CLI relaunch.",
-      "Set GEMINI_CLI_NO_RELAUNCH=true and use node --import …/gemini-cli-preload.mjs so the ESM CLI entry skips its outer relaunch wrapper (piped stdio / Docker).",
+      "Set GEMINI_CLI_NO_RELAUNCH, SANDBOX=paperclip-gemini-relaunch-skip (gemini.js gate), and node --import …/gemini-cli-preload.mjs for ESM preload order.",
     ];
     if (geminiSpawn.spawnArgPrefix.length > 0) {
       const entry =

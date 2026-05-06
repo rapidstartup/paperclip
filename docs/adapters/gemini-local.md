@@ -3,7 +3,7 @@ title: Gemini Local
 summary: Gemini CLI local adapter setup and configuration
 ---
 
-The adapter spawns **`node --import …/gemini-cli-preload.mjs <Gemini bundle path>`** so the preload runs **before** the CLI's **ESM** entry (`bundle/gemini.js` is ESM; **`--require` does not reliably run first**, which left the relaunch gate active). It also merges **`NODE_OPTIONS=--import …`**. It sets **`GEMINI_CLI_NO_RELAUNCH=true`** as a backup. See adapter package notes for path fallbacks and **`GEMINI_CLI_BUNDLE_PATH`**.
+The adapter sets child **`GEMINI_CLI_NO_RELAUNCH=true`**, **`SANDBOX=paperclip-gemini-relaunch-skip`** (google/gemini-cli skips its outer **process** relaunch when either variable is truthy; this is **not** the CLI’s `--sandbox` / container mode), runs **`node --import …/gemini-cli-preload.mjs`** so the preload runs before the ESM **`bundle/gemini.js`** entry, and merges **`NODE_OPTIONS=--import …`**. See adapter package notes for path fallbacks and **`GEMINI_CLI_BUNDLE_PATH`**.
 
 Invocation uses `--output-format stream-json`, `--skip-trust`, `--prompt` for headless prompts, `--resume` when continuing a session, and parses structured output.
 
