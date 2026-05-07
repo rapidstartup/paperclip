@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
-import { isGeminiUnknownSessionError, parseGeminiJsonl } from "@paperclipai/adapter-gemini-local/server";
+import {
+  isGeminiStreamConnectivitySuccess,
+  isGeminiUnknownSessionError,
+  parseGeminiJsonl,
+} from "@paperclipai/adapter-gemini-local/server";
 import { parseGeminiStdoutLine } from "@paperclipai/adapter-gemini-local/ui";
 import { printGeminiStreamEvent } from "@paperclipai/adapter-gemini-local/cli";
 
@@ -38,6 +42,39 @@ describe("gemini_local parser", () => {
     });
     expect(parsed.costUsd).toBeCloseTo(0.00123, 6);
     expect(parsed.errorMessage).toBe("model access denied");
+  });
+
+  it("ignores stream-json warning errors when final result is success (hello probe)", () => {
+    const stdout = [
+      JSON.stringify({
+        type: "init",
+        timestamp: "2026-01-01T00:00:00.000Z",
+        session_id: "sess-1",
+        model: "gemini-2.0-flash",
+      }),
+      JSON.stringify({
+        type: "error",
+        timestamp: "2026-01-01T00:00:01.000Z",
+        severity: "warning",
+        message: "Optional deprecation notice",
+      }),
+      JSON.stringify({
+        type: "message",
+        timestamp: "2026-01-01T00:00:02.000Z",
+        role: "assistant",
+        content: "Hi there.",
+      }),
+      JSON.stringify({
+        type: "result",
+        timestamp: "2026-01-01T00:00:03.000Z",
+        status: "success",
+        stats: { total_tokens: 10, input_tokens: 4, output_tokens: 6, cached: 0, input: 4, duration_ms: 1, tool_calls: 0, models: {} },
+      }),
+    ].join("\n");
+
+    const parsed = parseGeminiJsonl(stdout);
+    expect(parsed.errorMessage).toBeNull();
+    expect(isGeminiStreamConnectivitySuccess(parsed)).toBe(true);
   });
 
   it("extracts structured questions", () => {

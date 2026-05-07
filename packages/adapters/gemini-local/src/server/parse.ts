@@ -97,6 +97,26 @@ export function parseGeminiJsonl(stdout: string) {
 
     const type = asString(event.type, "").trim();
 
+    // Current @google/gemini-cli stream-json (see JsonStreamEventType.MESSAGE)
+    if (type === "message") {
+      const role = asString(event.role, "").toLowerCase();
+      if (role === "assistant" || role === "model") {
+        if (typeof event.content === "string") {
+          const text = event.content.trim();
+          if (text) messages.push(text);
+        } else {
+          messages.push(...collectMessageText(event.content));
+        }
+      }
+      continue;
+    }
+
+    if (type === "tool_result") {
+      const out = asString(event.output, "").trim();
+      if (out) messages.push(out);
+      continue;
+    }
+
     if (type === "assistant") {
       messages.push(...collectMessageText(event.message));
       const messageObj = parseObject(event.message);
@@ -123,14 +143,17 @@ export function parseGeminiJsonl(stdout: string) {
 
     if (type === "result") {
       resultEvent = event;
-      accumulateUsage(usage, event.usage ?? event.usageMetadata);
+      accumulateUsage(usage, event.stats ?? event.usage ?? event.usageMetadata);
       const resultText =
         asString(event.result, "").trim() ||
         asString(event.text, "").trim() ||
         asString(event.response, "").trim();
       if (resultText && messages.length === 0) messages.push(resultText);
       costUsd = asNumber(event.total_cost_usd, asNumber(event.cost_usd, asNumber(event.cost, costUsd ?? 0))) || costUsd;
-      const isError = event.is_error === true || asString(event.subtype, "").toLowerCase() === "error";
+      const status = asString(event.status, "").toLowerCase();
+      const subtype = asString(event.subtype, "").toLowerCase();
+      const isError =
+        event.is_error === true || status === "error" || subtype === "error";
       if (isError) {
         const text = asErrorText(event.error ?? event.message ?? event.result).trim();
         if (text) errorMessage = text;
@@ -139,8 +162,15 @@ export function parseGeminiJsonl(stdout: string) {
     }
 
     if (type === "error") {
-      const text = asErrorText(event.error ?? event.message ?? event.detail).trim();
-      if (text) errorMessage = text;
+      // Current stream-json uses ErrorEvent.severity: "warning" | "error". Warnings must not
+      // clobber terminal state — they were causing false negatives in the hello probe when a
+      // final `result` with status "success" was present (see JsonStreamEvent in @google/gemini-cli).
+      const severity = asString(event.severity, "").trim().toLowerCase();
+      const isWarning = severity === "warning" || severity === "warn";
+      if (!isWarning) {
+        const text = asErrorText(event.error ?? event.message ?? event.detail).trim();
+        if (text) errorMessage = text;
+      }
       continue;
     }
 
@@ -176,6 +206,19 @@ export function parseGeminiJsonl(stdout: string) {
     resultEvent,
     question,
   };
+}
+
+/**
+ * `stream-json` result events from current Gemini CLI use `status: success|error` (legacy used
+ * `subtype`). Used by the adapter hello probe when the model does not literally say “hello”.
+ */
+export function isGeminiStreamConnectivitySuccess(parsed: ReturnType<typeof parseGeminiJsonl>): boolean {
+  const e = parsed.resultEvent;
+  if (!e || parsed.errorMessage) return false;
+  const status = asString(e.status, "").toLowerCase();
+  const subtype = asString(e.subtype, "").toLowerCase();
+  if (e.is_error === true || status === "error" || subtype === "error") return false;
+  return status === "success" || subtype === "success";
 }
 
 export function isGeminiUnknownSessionError(stdout: string, stderr: string): boolean {
