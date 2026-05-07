@@ -16,7 +16,12 @@ import {
   runChildProcess,
 } from "@paperclipai/adapter-utils/server-utils";
 import { GEMINI_HEADLESS_MANUAL_PROBE_COMMAND } from "../index.js";
-import { detectGeminiAuthRequired, detectGeminiQuotaExhausted, parseGeminiJsonl } from "./parse.js";
+import {
+  detectGeminiAuthRequired,
+  detectGeminiQuotaExhausted,
+  isGeminiStreamConnectivitySuccess,
+  parseGeminiJsonl,
+} from "./parse.js";
 import {
   augmentGeminiProcessEnvForSpawn,
   PAPERCLIP_GEMINI_RELAUNCH_SKIP_SANDBOX,
@@ -226,19 +231,31 @@ export async function testEnvironment(
         });
       } else if ((probe.exitCode ?? 1) === 0) {
         const summary = parsed.summary.trim();
-        const hasHello = /\bhello\b/i.test(summary);
+        const haystack = `${summary}\n${probe.stdout}\n${probe.stderr}`;
+        const hasHello = /\bhello\b/i.test(haystack);
+        const streamOk = isGeminiStreamConnectivitySuccess(parsed);
+        const ok = hasHello || streamOk;
         checks.push({
-          code: hasHello ? "gemini_hello_probe_passed" : "gemini_hello_probe_unexpected_output",
-          level: hasHello ? "info" : "warn",
-          message: hasHello
-            ? "Gemini hello probe succeeded."
+          code: ok ? "gemini_hello_probe_passed" : "gemini_hello_probe_unexpected_output",
+          level: ok ? "info" : "warn",
+          message: ok
+            ? hasHello
+              ? "Gemini hello probe succeeded."
+              : "Gemini hello probe succeeded (CLI reported success; output format or wording may omit the word `hello`)."
             : "Gemini probe ran but did not return `hello` as expected.",
-          ...(summary ? { detail: summary.replace(/\s+/g, " ").trim().slice(0, 240) } : {}),
-          ...(hasHello
+          ...(summary || haystack.trim()
+            ? {
+                detail: (summary || haystack.replace(/\s+/g, " ").trim())
+                  .replace(/\s+/g, " ")
+                  .trim()
+                  .slice(0, 240),
+              }
+            : {}),
+          ...(ok
             ? {}
             : {
-              hint: `Try ${GEMINI_HEADLESS_MANUAL_PROBE_COMMAND} manually to inspect full output.`,
-            }),
+                hint: `Try ${GEMINI_HEADLESS_MANUAL_PROBE_COMMAND} manually to inspect full output.`,
+              }),
         });
       } else if (authMeta.requiresAuth) {
         checks.push({
